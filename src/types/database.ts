@@ -1,7 +1,8 @@
-// Hand-written types matching the Mooves schema.
-// Replace with `npx supabase gen types typescript` output once Supabase CLI is set up.
+// Mooves database types — replace with Supabase CLI generated types later:
+//   npx supabase login
+//   npx supabase gen types typescript --project-id YOUR_PROJECT_ID > src/types/database.ts
 
-export type UserRow = {
+export interface UserRow {
   id: string
   phone: string
   display_name: string | null
@@ -15,16 +16,13 @@ export type UserRow = {
   created_at: string
 }
 
-export type UserInsert = Partial<Omit<UserRow, 'id' | 'created_at'>> & { phone: string }
-export type UserUpdate = Partial<Omit<UserRow, 'id' | 'created_at' | 'phone'>>
-
-export type FriendshipRow = {
+export interface FriendshipRow {
   user_id: string
   friend_id: string
   created_at: string
 }
 
-export type GroupRow = {
+export interface GroupRow {
   id: string
   owner_id: string
   name: string
@@ -32,34 +30,10 @@ export type GroupRow = {
   created_at: string
 }
 
-export type GroupMemberRow = {
+export interface GroupMemberRow {
   group_id: string
   user_id: string
 }
 
-export type Database = {
-  public: {
-    Tables: {
-      users: {
-        Row: UserRow
-        Insert: UserInsert
-        Update: UserUpdate
-      }
-      friendships: {
-        Row: FriendshipRow
-        Insert: Omit<FriendshipRow, 'created_at'>
-        Update: never
-      }
-      groups: {
-        Row: GroupRow
-        Insert: Omit<GroupRow, 'id' | 'created_at'>
-        Update: Partial<Omit<GroupRow, 'id' | 'created_at'>>
-      }
-      group_members: {
-        Row: GroupMemberRow
-        Insert: GroupMemberRow
-        Update: never
-      }
-    }
-  }
-}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type Database = Record<string, any>
