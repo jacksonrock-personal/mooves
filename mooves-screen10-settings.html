@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mooves — Screen 10: Settings</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --purple: #7C5CDB;
+    --purple-light: #EDE9FF;
+    --green: #2ECC71;
+    --grey-status: #BDB5D4;
+    --bg: #F8F6FF;
+    --white: #FFFFFF;
+    --text: #1C1730;
+    --text-secondary: #6B628A;
+    --border: #E8E4F5;
+    --red: #E8405A;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #1C1730;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    gap: 32px;
+  }
+
+  .state-bar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .state-btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 7px 16px;
+    border-radius: 100px;
+    border: 1.5px solid rgba(255,255,255,0.2);
+    background: transparent;
+    color: rgba(255,255,255,0.5);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .state-btn.active {
+    background: rgba(255,255,255,0.12);
+    color: white;
+    border-color: rgba(255,255,255,0.4);
+  }
+
+  /* ── Phone frame ── */
+  .phone {
+    width: 320px;
+    height: 640px;
+    border-radius: 44px;
+    border: 3px solid rgba(255,255,255,0.1);
+    overflow: hidden;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.5);
+    position: relative;
+  }
+
+  .screen { display: none; flex-direction: column; height: 100%; }
+  .screen.visible { display: flex; }
+
+  /* ── Screen header ── */
+  .screen-header {
+    background: var(--white);
+    padding: 44px 20px 14px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .screen-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 800;
+    font-size: 22px;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+
+  /* ── Settings body ── */
+  .settings-body {
+    flex: 1;
+    overflow-y: auto;
+    background: var(--bg);
+  }
+
+  /* ── Profile card ── */
+  .profile-card {
+    background: var(--white);
+    margin-top: 16px;
+    padding: 28px 20px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .avatar-wrap {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    margin-bottom: 14px;
+    cursor: pointer;
+  }
+  .avatar-circle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #7C5CDB, #9B7FE8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    font-size: 26px;
+    color: white;
+  }
+  .camera-badge {
+    position: absolute;
+    bottom: 1px;
+    right: 1px;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--white);
+    border: 2px solid var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+  }
+
+  /* ── Name field ── */
+  .name-display {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    margin-bottom: 6px;
+  }
+  .name-text {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+    color: var(--text);
+    letter-spacing: -0.01em;
+  }
+  .edit-hint {
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+  }
+  .name-field-active {
+    margin-bottom: 6px;
+    text-align: center;
+  }
+  .name-input {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+    color: var(--text);
+    letter-spacing: -0.01em;
+    border: none;
+    border-bottom: 2px solid var(--purple);
+    background: transparent;
+    text-align: center;
+    outline: none;
+    padding: 2px 8px 4px;
+    width: 180px;
+  }
+
+  .phone-display {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  /* ── Account action buttons ── */
+  .section-gap { height: 8px; }
+
+  .action-btn-wrap {
+    display: flex;
+    justify-content: center;
+    padding: 6px 20px;
+  }
+  .action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 40px;
+    border-radius: 100px;
+    border: none;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: -0.01em;
+  }
+  .action-btn.purple {
+    background: var(--purple-light);
+    color: var(--purple);
+  }
+  .action-btn.red {
+    background: #FFF0F2;
+    color: var(--red);
+  }
+
+  /* ── Sheet overlay ── */
+  .sheet-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(28,23,48,0.48);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    z-index: 10;
+  }
+  .sheet {
+    background: var(--white);
+    border-radius: 24px 24px 0 0;
+    padding: 16px 20px 36px;
+  }
+  .sheet-handle {
+    width: 36px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 100px;
+    margin: 0 auto 20px;
+  }
+  .sheet-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--text);
+    letter-spacing: -0.01em;
+    margin-bottom: 8px;
+  }
+  .sheet-body {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.55;
+    margin-bottom: 24px;
+  }
+  .sheet-input-wrap {
+    margin-bottom: 20px;
+  }
+  .sheet-input {
+    width: 100%;
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    color: var(--text);
+    outline: none;
+    letter-spacing: 0.04em;
+  }
+  .sheet-input.valid {
+    border-color: var(--red);
+    background: #FFF8F8;
+  }
+  .sheet-btn-row {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 8px;
+  }
+  .sheet-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 48px;
+    border-radius: 100px;
+    border: none;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    min-width: 200px;
+  }
+  .sheet-btn.purple-fill { background: var(--purple); color: white; }
+  .sheet-btn.destructive { background: var(--red); color: white; }
+  .sheet-btn.destructive.disabled {
+    background: var(--border);
+    color: var(--text-secondary);
+    cursor: default;
+  }
+  .sheet-btn.cancel { background: var(--bg); color: var(--text-secondary); }
+
+  /* ── Bottom nav ── */
+  .bottom-nav {
+    display: flex;
+    align-items: center;
+    background: var(--white);
+    border-top: 1px solid var(--border);
+    padding: 10px 0 26px;
+    flex-shrink: 0;
+  }
+  .nav-tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    padding: 4px 0;
+  }
+  .nav-icon { width: 22px; height: 22px; }
+  .nav-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .nav-tab.active .nav-label { color: var(--purple); }
+  .nav-tab:not(.active) .nav-label { color: var(--grey-status); }
+  .nav-tab.active svg { stroke: var(--purple); }
+  .nav-tab:not(.active) svg { stroke: var(--grey-status); }
+
+  .screen-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="state-bar">
+  <button class="state-btn active" onclick="show('default')">Default</button>
+  <button class="state-btn" onclick="show('name-editing')">Name editing</button>
+  <button class="state-btn" onclick="show('logout-confirm')">Log out</button>
+  <button class="state-btn" onclick="show('delete-confirm')">Delete account</button>
+</div>
+
+<div class="phone">
+
+  <!-- ───────────────────────── -->
+  <!-- STATE 1: Default          -->
+  <!-- ───────────────────────── -->
+  <div class="screen visible" id="screen-default">
+    <div class="screen-header">
+      <div class="screen-title">Settings</div>
+    </div>
+    <div class="settings-body">
+      <div class="profile-card">
+        <div class="avatar-wrap">
+          <div class="avatar-circle">JV</div>
+          <div class="camera-badge">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7C5CDB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </div>
+        </div>
+        <div class="name-display">
+          <div class="name-text">Jackson</div>
+          <div class="edit-hint">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </div>
+        </div>
+        <div class="phone-display">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          +1 (555) 123-4567
+        </div>
+      </div>
+
+      <div class="section-gap"></div>
+      <div class="section-gap"></div>
+      <div class="section-gap"></div>
+
+      <div class="action-btn-wrap">
+        <button class="action-btn purple">Log out</button>
+      </div>
+
+      <div class="section-gap"></div>
+
+      <div class="action-btn-wrap">
+        <button class="action-btn red">Delete account</button>
+      </div>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-tab">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span class="nav-label">Home</span>
+      </div>
+      <div class="nav-tab">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span class="nav-label">People</span>
+      </div>
+      <div class="nav-tab active">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span class="nav-label">Settings</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ───────────────────────── -->
+  <!-- STATE 2: Name editing     -->
+  <!-- ───────────────────────── -->
+  <div class="screen" id="screen-name-editing">
+    <div class="screen-header">
+      <div class="screen-title">Settings</div>
+    </div>
+    <div class="settings-body">
+      <div class="profile-card">
+        <div class="avatar-wrap">
+          <div class="avatar-circle">JV</div>
+          <div class="camera-badge">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7C5CDB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </div>
+        </div>
+        <div class="name-field-active">
+          <input class="name-input" value="Jackson" />
+        </div>
+        <div class="phone-display">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          +1 (555) 123-4567
+        </div>
+      </div>
+      <!-- Keyboard placeholder -->
+      <div style="background:#D1D5DB; height:216px; margin-top:auto; flex-shrink:0; display:flex; align-items:flex-start; justify-content:center; padding-top:8px;">
+        <div style="font-family:'Inter',sans-serif; font-size:11px; color:#6B7280; letter-spacing:0.05em; text-transform:uppercase; font-weight:600;">Keyboard</div>
+      </div>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-tab">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span class="nav-label">Home</span>
+      </div>
+      <div class="nav-tab">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span class="nav-label">People</span>
+      </div>
+      <div class="nav-tab active">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span class="nav-label">Settings</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ───────────────────────── -->
+  <!-- STATE 3: Log out confirm  -->
+  <!-- ───────────────────────── -->
+  <div class="screen" id="screen-logout-confirm">
+    <div class="screen-header">
+      <div class="screen-title">Settings</div>
+    </div>
+    <div class="settings-body">
+      <div class="profile-card">
+        <div class="avatar-wrap">
+          <div class="avatar-circle">JV</div>
+          <div class="camera-badge">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7C5CDB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </div>
+        </div>
+        <div class="name-display">
+          <div class="name-text">Jackson</div>
+          <div class="edit-hint">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </div>
+        </div>
+        <div class="phone-display">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          +1 (555) 123-4567
+        </div>
+      </div>
+      <div class="section-gap"></div><div class="section-gap"></div>
+      <div class="settings-section">
+        <div class="settings-row"><div class="row-label purple">Log out</div></div>
+      </div>
+      <div class="section-gap"></div>
+      <div class="settings-section">
+        <div class="settings-row"><div class="row-label red">Delete account</div></div>
+      </div>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-tab"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="nav-label">Home</span></div>
+      <div class="nav-tab"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="nav-label">People</span></div>
+      <div class="nav-tab active"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span class="nav-label">Settings</span></div>
+    </div>
+    <div class="sheet-overlay">
+      <div class="sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title">Log out?</div>
+        <div class="sheet-body">You'll need to verify your number again to get back in.</div>
+        <div class="sheet-btn-row"><button class="sheet-btn purple-fill">Log out</button></div>
+        <div class="sheet-btn-row"><button class="sheet-btn cancel">Cancel</button></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────── -->
+  <!-- STATE 4a: Delete — empty input  -->
+  <!-- ─────────────────────────────── -->
+  <div class="screen" id="screen-delete-confirm">
+    <div class="screen-header">
+      <div class="screen-title">Settings</div>
+    </div>
+    <div class="settings-body">
+      <div class="profile-card">
+        <div class="avatar-wrap">
+          <div class="avatar-circle">JV</div>
+          <div class="camera-badge">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7C5CDB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </div>
+        </div>
+        <div class="name-display">
+          <div class="name-text">Jackson</div>
+          <div class="edit-hint">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </div>
+        </div>
+        <div class="phone-display">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          +1 (555) 123-4567
+        </div>
+      </div>
+      <div class="section-gap"></div><div class="section-gap"></div>
+      <div class="settings-section">
+        <div class="settings-row"><div class="row-label purple">Log out</div></div>
+      </div>
+      <div class="section-gap"></div>
+      <div class="settings-section">
+        <div class="settings-row"><div class="row-label red">Delete account</div></div>
+      </div>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-tab"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="nav-label">Home</span></div>
+      <div class="nav-tab"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="nav-label">People</span></div>
+      <div class="nav-tab active"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span class="nav-label">Settings</span></div>
+    </div>
+    <!-- Delete sheet — toggling between empty and typed state -->
+    <div class="sheet-overlay">
+      <div class="sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title">Delete your account?</div>
+        <div class="sheet-body">This permanently removes your profile, friendships, and groups. Type DELETE to confirm.</div>
+        <div class="sheet-input-wrap">
+          <!-- Toggle shows both states side by side via inner buttons -->
+          <div style="display:flex;gap:6px;margin-bottom:10px;">
+            <button onclick="setDeleteState('empty')" style="flex:1;padding:6px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg);font-family:'Inter',sans-serif;font-size:11px;font-weight:600;color:var(--text-secondary);cursor:pointer;" id="del-btn-empty">Empty</button>
+            <button onclick="setDeleteState('typed')" style="flex:1;padding:6px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg);font-family:'Inter',sans-serif;font-size:11px;font-weight:600;color:var(--text-secondary);cursor:pointer;" id="del-btn-typed">Typed "DELETE"</button>
+          </div>
+          <div id="del-input-empty">
+            <div class="sheet-input" style="color:var(--text-secondary);">Type DELETE</div>
+          </div>
+          <div id="del-input-typed" style="display:none;">
+            <div class="sheet-input valid" style="color:var(--text);font-weight:600;letter-spacing:0.12em;">DELETE</div>
+          </div>
+        </div>
+        <div class="sheet-btn-row"><button class="sheet-btn destructive disabled" id="del-cta">Delete account</button></div>
+        <div class="sheet-btn-row"><button class="sheet-btn cancel">Cancel</button></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="screen-label">Screen 10 — Settings</div>
+
+<script>
+  function show(state) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('visible'));
+    document.querySelectorAll('.state-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('screen-' + state).classList.add('visible');
+    event.target.classList.add('active');
+  }
+
+  function setDeleteState(state) {
+    const emptyInput = document.getElementById('del-input-empty');
+    const typedInput = document.getElementById('del-input-typed');
+    const cta = document.getElementById('del-cta');
+    const btnEmpty = document.getElementById('del-btn-empty');
+    const btnTyped = document.getElementById('del-btn-typed');
+
+    if (state === 'typed') {
+      emptyInput.style.display = 'none';
+      typedInput.style.display = 'block';
+      cta.classList.remove('disabled');
+      btnTyped.style.background = 'var(--purple-light)';
+      btnTyped.style.borderColor = 'var(--purple)';
+      btnTyped.style.color = 'var(--purple)';
+      btnEmpty.style.background = 'var(--bg)';
+      btnEmpty.style.borderColor = 'var(--border)';
+      btnEmpty.style.color = 'var(--text-secondary)';
+    } else {
+      emptyInput.style.display = 'block';
+      typedInput.style.display = 'none';
+      cta.classList.add('disabled');
+      btnEmpty.style.background = 'var(--purple-light)';
+      btnEmpty.style.borderColor = 'var(--purple)';
+      btnEmpty.style.color = 'var(--purple)';
+      btnTyped.style.background = 'var(--bg)';
+      btnTyped.style.borderColor = 'var(--border)';
+      btnTyped.style.color = 'var(--text-secondary)';
+    }
+  }
+
+  // Init delete state
+  setDeleteState('empty');
+</script>
+
+</body>
+</html>

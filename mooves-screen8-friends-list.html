@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mooves — Screen 8: Friends List</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --purple: #7C5CDB;
+    --purple-light: #EDE9FF;
+    --green: #2ECC71;
+    --grey-status: #BDB5D4;
+    --bg: #F8F6FF;
+    --white: #FFFFFF;
+    --text: #1C1730;
+    --text-secondary: #6B628A;
+    --border: #E8E4F5;
+    --red: #E8405A;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #1C1730;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    gap: 32px;
+  }
+
+  .state-bar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .state-btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 7px 16px;
+    border-radius: 100px;
+    border: 1.5px solid rgba(255,255,255,0.2);
+    background: transparent;
+    color: rgba(255,255,255,0.5);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .state-btn.active {
+    background: rgba(255,255,255,0.12);
+    color: white;
+    border-color: rgba(255,255,255,0.4);
+  }
+
+  /* ── Phone frame ── */
+  .phone {
+    width: 320px;
+    height: 640px;
+    border-radius: 44px;
+    border: 3px solid rgba(255,255,255,0.1);
+    overflow: hidden;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.5);
+    position: relative;
+  }
+
+  .screen { display: none; flex-direction: column; height: 100%; }
+  .screen.visible { display: flex; }
+
+  /* ── Screen header ── */
+  .screen-header {
+    background: var(--white);
+    padding: 48px 20px 14px;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .screen-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 800;
+    font-size: 24px;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+  .screen-subtitle {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+  }
+
+  /* ── Search bar ── */
+  .search-wrap {
+    background: var(--white);
+    padding: 10px 16px 12px;
+    flex-shrink: 0;
+    position: relative;
+    border-bottom: 1px solid var(--border);
+  }
+  .search-inner {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  .search-icon {
+    position: absolute;
+    left: 11px;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+    pointer-events: none;
+  }
+  .search-field {
+    width: 100%;
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 9px 14px 9px 36px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: var(--text);
+    outline: none;
+    -webkit-appearance: none;
+  }
+  .search-field.has-query {
+    border-color: var(--purple);
+  }
+
+  /* ── Friend list ── */
+  .friend-list {
+    flex: 1;
+    overflow-y: auto;
+    background: var(--white);
+  }
+  .friend-row-wrap {
+    position: relative;
+    overflow: hidden;
+    border-bottom: 1px solid var(--border);
+  }
+  .friend-row {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    padding: 12px 20px;
+    background: var(--white);
+    position: relative;
+    transition: transform 0.22s ease;
+  }
+  .friend-row.swiped {
+    transform: translateX(-68px);
+  }
+  .remove-reveal {
+    position: absolute;
+    right: 0;
+    top: 0;
+    height: 100%;
+    width: 68px;
+    background: var(--red);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: white;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    color: white;
+    flex-shrink: 0;
+  }
+  .row-name {
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ── Swipe hint label ── */
+  .swipe-hint {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-align: center;
+    padding: 8px 20px 4px;
+    background: var(--white);
+    opacity: 0.7;
+  }
+
+  /* ── Invite sticky area ── */
+  .invite-area {
+    padding: 10px 16px 10px;
+    background: var(--white);
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .invite-btn {
+    width: 100%;
+    padding: 14px;
+    border-radius: 16px;
+    border: none;
+    background: var(--purple);
+    color: white;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: -0.01em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  /* ── Empty state ── */
+  .empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 32px;
+    text-align: center;
+    background: var(--bg);
+  }
+  .empty-headline {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 800;
+    font-size: 19px;
+    color: var(--text);
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+  .empty-sub {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+
+  /* ── Search empty ── */
+  .search-empty {
+    padding: 32px 20px;
+    text-align: center;
+  }
+  .search-empty-text {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: var(--text-secondary);
+  }
+  .search-empty-text em {
+    font-style: normal;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  /* ── Remove confirmation sheet overlay ── */
+  .sheet-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(28,23,48,0.48);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    z-index: 10;
+  }
+  .confirm-sheet {
+    background: var(--white);
+    border-radius: 24px 24px 0 0;
+    padding: 16px 20px 32px;
+  }
+  .sheet-handle {
+    width: 36px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 100px;
+    margin: 0 auto 20px;
+  }
+  .sheet-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--text);
+    letter-spacing: -0.01em;
+    margin-bottom: 8px;
+  }
+  .sheet-body {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-bottom: 24px;
+  }
+  .sheet-btn {
+    width: 100%;
+    padding: 15px;
+    border-radius: 14px;
+    border: none;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    margin-bottom: 8px;
+  }
+  .sheet-btn.destructive {
+    background: #FFF0F2;
+    color: var(--red);
+  }
+  .sheet-btn.cancel {
+    background: var(--bg);
+    color: var(--text-secondary);
+  }
+
+  /* ── Bottom nav ── */
+  .bottom-nav {
+    display: flex;
+    align-items: center;
+    background: var(--white);
+    border-top: 1px solid var(--border);
+    padding: 10px 0 26px;
+    flex-shrink: 0;
+  }
+  .nav-tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    padding: 4px 0;
+  }
+  .nav-icon { width: 22px; height: 22px; }
+  .nav-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .nav-tab.active .nav-label { color: var(--purple); }
+  .nav-tab:not(.active) .nav-label { color: var(--grey-status); }
+  .nav-tab.active svg { stroke: var(--purple); }
+  .nav-tab:not(.active) svg { stroke: var(--grey-status); }
+
+  .screen-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="state-bar">
+  <button class="state-btn active" onclick="show('default')">Friends list</button>
+  <button class="state-btn" onclick="show('remove')">Remove friend</button>
+  <button class="state-btn" onclick="show('empty')">Empty</button>
+  <button class="state-btn" onclick="show('search-results')">Search — results</button>
+  <button class="state-btn" onclick="show('search-empty')">Search — no results</button>
+</div>
+
+<div class="phone">
+
+  <!-- ─────────────────────────────────── -->
+  <!-- STATE 1: Default friends list       -->
+  <!-- ─────────────────────────────────── -->
+  <div class="screen visible" id="screen-default">
+    <div class="screen-header">
+      <div class="screen-title">Friends</div>
+      <div class="screen-subtitle">5 friends</div>
+    </div>
+    <div class="search-wrap">
+      <div class="search-inner">
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <div class="search-field" style="color:var(--text-secondary);">Search friends</div>
+      </div>
+    </div>
+    <div class="friend-list">
+      <div class="friend-row-wrap">
+        <div class="friend-row">
+          <div class="avatar" style="background:linear-gradient(135deg,#7C5CDB,#9B7FE8);">AB</div>
+          <div class="row-name">Alex B.</div>
+        </div>
+      </div>
+      <div class="friend-row-wrap">
+        <div class="friend-row">
+          <div class="avatar" style="background:linear-gradient(135deg,#F5A623,#F76B1C);">CD</div>
+          <div class="row-name">Casey D.</div>
+        </div>
+      </div>
+      <div class="friend-row-wrap">
+        <div class="friend-row">
+          <div class="avatar" style="background:linear-gradient(135deg,#E8405A,#FF6B6B);">JM</div>
+          <div class="row-name">Jake M.</div>
+        </div>
+      </div>
+      <div class="friend-row-wrap">
+        <div class="friend-row">
+          <div class="avatar" style="background:linear-gradient(135deg,#43C6AC,#2E86AB);">MT</div>
+          <div class="row-name">Mia T.</div>
+        </div>
+      </div>
+      <div class="friend-row-wrap">
+        <div class="friend-row">
+          <div class="avatar" style="background:linear-gradient(135deg,#F093FB,#C471ED);">SR</div>
+          <div class="row-name">Sarah R.</div>
+        </div>
+      </div>
+      <div class="swipe-hint">Swipe left on any friend to remove them</div>
+    </div>
+    <div class="invite-area">
+      <button class="invite-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+        Invite friends
+      </button>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-tab">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span class="nav-label">Home</span>
+      </div>
+      <div class="nav-tab active">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span class="nav-label">People</span>
+      </div>
+      <div class="nav-tab">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span class="nav-label">Settings</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────── -->
+  <!-- STATE 2: Remove friend (swipe + sheet) -->
+  <!-- ─────────────────────────────────── -->
+  <div class="screen" id="screen-remove">
+    <div class="screen-header">
+      <div class="screen-title">Friends</div>
+      <div class="screen-subtitle">5 friends</div>
+    </div>
+    <div class="search-wrap">
+      <div class="search-inner">
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <div class="search-field" style="color:var(--text-secondary);">Search friends</div>
+      </div>
+    </div>
+    <div class="friend-list">
+      <div class="friend-row-wrap">
+        <div class="friend-row">
+          <div class="avatar" style="background:linear-gradient(135deg,#7C5CDB,#9B7FE8);">AB</div>
+          <div class="row-name">Alex B.</div>
+        </div>
+      </div>
+      <div class="friend-row-wrap">
+        <div class="friend-row">
+          <div class="avatar" style="background:linear-gradient(135deg,#F5A623,#F76B1C);">CD</div>
+          <div class="row-name">Casey D.</div>
+        </div>
+      </div>
+      <!-- Jake M. — swiped -->
+      <div class="friend-row-wrap">
+        <div class="remove-reveal">Remove</div>
+        <div class="friend-row swiped">
+          <div class="avatar" style="background:linear-gradient(135deg,#E8405A,#FF6B6B);">JM</div>
+          <div class="row-name">Jake M.</div>
+        </div>
+      </div>
+      <div class="friend-row-wrap">
+        <div class="friend-row">
+          <div class="avatar" style="background:linear-gradient(135deg,#43C6AC,#2E86AB);">MT</div>
+          <div class="row-name">Mia T.</div>
+        </div>
+      </div>
+      <div class="friend-row-wrap">
+        <div class="friend-row">
+          <div class="avatar" style="background:linear-gradient(135deg,#F093FB,#C471ED);">SR</div>
+          <div class="row-name">Sarah R.</div>
+        </div>
+      </div>
+    </div>
+    <div class="invite-area">
+      <button class="invite-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+        Invite friends
+      </button>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-tab">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span class="nav-label">Home</span>
+      </div>
+      <div class="nav-tab active">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span class="nav-label">People</span>
+      </div>
+      <div class="nav-tab">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span class="nav-label">Settings</span>
+      </div>
+    </div>
+    <!-- Confirmation sheet overlay -->
+    <div class="sheet-overlay">
+      <div class="confirm-sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title">Remove Jake M.?</div>
+        <div class="sheet-body">They won't be able to see you on Mooves, and you won't see them.</div>
+        <button class="sheet-btn destructive">Remove</button>
+        <button class="sheet-btn cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────── -->
+  <!-- STATE 3: Empty (no friends)         -->
+  <!-- ─────────────────────────────────── -->
+  <div class="screen" id="screen-empty">
+    <div class="screen-header">
+      <div class="screen-title">Friends</div>
+      <div class="screen-subtitle">0 friends</div>
+    </div>
+    <div class="empty-state">
+      <svg width="72" height="80" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" style="margin-bottom:20px;">
+        <ellipse cx="11" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(-28 11 33)"/>
+        <ellipse cx="109" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(28 109 33)"/>
+        <ellipse cx="11" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(-28 11 34)"/>
+        <ellipse cx="109" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(28 109 34)"/>
+        <ellipse cx="38" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(-14 38 19)"/>
+        <ellipse cx="82" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(14 82 19)"/>
+        <rect x="15" y="20" width="90" height="92" rx="30" fill="#F5F0ED"/>
+        <ellipse cx="41" cy="44" rx="19" ry="13" fill="#7A7282" transform="rotate(-10 41 44)"/>
+        <ellipse cx="79" cy="69" rx="14" ry="9" fill="#7A7282" transform="rotate(16 79 69)"/>
+        <circle cx="44" cy="57" r="6" fill="#2A1E38"/>
+        <circle cx="76" cy="57" r="6" fill="#2A1E38"/>
+        <circle cx="46.5" cy="54.5" r="2.2" fill="white"/>
+        <circle cx="78.5" cy="54.5" r="2.2" fill="white"/>
+        <ellipse cx="60" cy="90" rx="27" ry="20" fill="#F0AABB"/>
+        <circle cx="50" cy="91" r="9" fill="#2ECC71"/>
+        <circle cx="70" cy="91" r="9" fill="#BDB5D4"/>
+      </svg>
+      <div class="empty-headline">Nobody here yet.</div>
+      <div class="empty-sub">Invite your people, and they'll show up here.</div>
+    </div>
+    <div class="invite-area">
+      <button class="invite-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+        Invite friends
+      </button>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-tab">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span class="nav-label">Home</span>
+      </div>
+      <div class="nav-tab active">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span class="nav-label">People</span>
+      </div>
+      <div class="nav-tab">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span class="nav-label">Settings</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────── -->
+  <!-- STATE 4: Search — results           -->
+  <!-- ─────────────────────────────────── -->
+  <div class="screen" id="screen-search-results">
+    <div class="screen-header">
+      <div class="screen-title">Friends</div>
+      <div class="screen-subtitle">5 friends</div>
+    </div>
+    <div class="search-wrap">
+      <div class="search-inner">
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <div class="search-field has-query">ja</div>
+      </div>
+    </div>
+    <div class="friend-list">
+      <div class="friend-row-wrap">
+        <div class="friend-row">
+          <div class="avatar" style="background:linear-gradient(135deg,#E8405A,#FF6B6B);">JM</div>
+          <div class="row-name">Jake M.</div>
+        </div>
+      </div>
+    </div>
+    <div class="invite-area">
+      <button class="invite-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+        Invite friends
+      </button>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-tab">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span class="nav-label">Home</span>
+      </div>
+      <div class="nav-tab active">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span class="nav-label">People</span>
+      </div>
+      <div class="nav-tab">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span class="nav-label">Settings</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────── -->
+  <!-- STATE 5: Search — no results        -->
+  <!-- ─────────────────────────────────── -->
+  <div class="screen" id="screen-search-empty">
+    <div class="screen-header">
+      <div class="screen-title">Friends</div>
+      <div class="screen-subtitle">5 friends</div>
+    </div>
+    <div class="search-wrap">
+      <div class="search-inner">
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <div class="search-field has-query">xyz</div>
+      </div>
+    </div>
+    <div class="friend-list" style="background:var(--bg);">
+      <div class="search-empty">
+        <div class="search-empty-text">No friends named <em>"xyz"</em></div>
+      </div>
+    </div>
+    <div class="invite-area">
+      <button class="invite-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+        Invite friends
+      </button>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-tab">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span class="nav-label">Home</span>
+      </div>
+      <div class="nav-tab active">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span class="nav-label">People</span>
+      </div>
+      <div class="nav-tab">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span class="nav-label">Settings</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="screen-label">Screen 8 — Friends List</div>
+
+<script>
+  function show(state) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('visible'));
+    document.querySelectorAll('.state-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('screen-' + state).classList.add('visible');
+    event.target.classList.add('active');
+  }
+</script>
+
+</body>
+</html>

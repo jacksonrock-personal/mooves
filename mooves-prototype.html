@@ -1,0 +1,1399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mooves — Interactive Prototype</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --purple: #7C5CDB;
+  --purple-light: #EDE9FF;
+  --green: #2ECC71;
+  --green-bg: rgba(46,204,113,0.07);
+  --green-border: rgba(46,204,113,0.22);
+  --grey-status: #BDB5D4;
+  --bg: #F8F6FF;
+  --white: #FFFFFF;
+  --text: #1C1730;
+  --text2: #6B628A;
+  --border: #E8E4F5;
+  --red: #E8405A;
+  --red-light: rgba(232,64,90,0.08);
+  --grad: linear-gradient(160deg, #7C5CDB 0%, #9B7FE8 60%, #A98FF0 100%);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: #1C1730;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px 40px;
+  gap: 20px;
+}
+
+/* ── Controls ── */
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ctrl-btn {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 16px;
+  border-radius: 100px;
+  border: 1.5px solid rgba(255,255,255,0.2);
+  background: transparent;
+  color: rgba(255,255,255,0.6);
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.02em;
+}
+.ctrl-btn:hover { background: rgba(255,255,255,0.08); color: white; border-color: rgba(255,255,255,0.35); }
+#screen-name {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+  min-width: 260px;
+  text-align: center;
+}
+
+/* ── Phone frame ── */
+.phone {
+  width: 320px;
+  height: 680px;
+  border-radius: 44px;
+  border: 3px solid rgba(255,255,255,0.1);
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.5);
+  background: var(--bg);
+}
+
+/* ── All screens ── */
+.screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.screen.visible {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* ── SMS toast ── */
+.sms-toast {
+  position: absolute;
+  bottom: 90px;
+  left: 16px;
+  right: 16px;
+  background: rgba(28,23,48,0.93);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 14px;
+  padding: 13px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 999;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+}
+.sms-toast.show { opacity: 1; transform: translateY(0); }
+.sms-toast-text {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: white;
+}
+
+/* ══════════════════════════════════
+   SHARED DESIGN SYSTEM
+   ══════════════════════════════════ */
+
+/* Wordmark — white (for gradient screens) */
+.wordmark {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 800;
+  font-size: 20px;
+  color: white;
+  letter-spacing: -0.02em;
+  display: inline-flex;
+  align-items: center;
+}
+.wm-oo { display: inline-flex; align-items: center; gap: 1px; position: relative; top: 0.5px; }
+.wm-g { width: 11px; height: 11px; background: var(--green); border-radius: 50%; box-shadow: 0 0 6px rgba(46,204,113,0.6); }
+.wm-gr { width: 11px; height: 11px; background: rgba(255,255,255,0.35); border-radius: 50%; }
+
+/* Wordmark — dark (for white bg screens) */
+.wordmark-dark {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 800;
+  font-size: 16px;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  display: inline-flex;
+  align-items: center;
+}
+.wmd-oo { display: inline-flex; align-items: center; gap: 1px; position: relative; top: 0.5px; }
+.wmd-g { width: 9px; height: 9px; background: var(--green); border-radius: 50%; }
+.wmd-gr { width: 9px; height: 9px; background: var(--grey-status); border-radius: 50%; margin-right: 1px; }
+
+/* Purple gradient feed header */
+.feed-header {
+  background: var(--grad);
+  padding: 44px 20px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Feed scrollable body */
+.feed-body {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Status button */
+.status-btn {
+  width: 100%;
+  padding: 14px 20px;
+  border-radius: 16px;
+  border: none;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 800;
+  font-size: 16px;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-shrink: 0;
+}
+.status-btn.not-free { background: var(--white); color: var(--text2); border: 1.5px solid var(--border); }
+.status-btn.is-free  { background: var(--green); color: white; box-shadow: 0 4px 16px rgba(46,204,113,0.3); animation: green-glow 3s ease-in-out infinite; }
+@keyframes green-glow {
+  0%, 100% { box-shadow: 0 4px 16px rgba(46,204,113,0.3); }
+  50% { box-shadow: 0 4px 28px rgba(46,204,113,0.55), 0 0 48px rgba(46,204,113,0.1); }
+}
+.sbd { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.not-free .sbd { background: var(--grey-status); }
+.is-free .sbd  { background: rgba(255,255,255,0.7); }
+
+/* ── Availability row (not-now state) ── */
+.avail-row {
+  display: flex;
+  align-items: center;
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  padding: 13px 16px;
+  gap: 9px;
+  margin-bottom: 20px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  flex-shrink: 0;
+}
+.avail-row:hover { border-color: rgba(46,204,113,0.35); }
+.avail-status-text {
+  flex: 1;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+.avail-go-cta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(46,204,113,0.1);
+  border: 1.5px solid rgba(46,204,113,0.28);
+  border-radius: 100px;
+  padding: 8px 14px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 800;
+  font-size: 13px;
+  color: #15803d;
+  flex-shrink: 0;
+  letter-spacing: -0.01em;
+}
+.adot-grey { width: 9px; height: 9px; border-radius: 50%; background: var(--grey-status); flex-shrink: 0; }
+.adot-green {
+  width: 9px; height: 9px; border-radius: 50%; background: var(--green); flex-shrink: 0;
+  box-shadow: 0 0 7px rgba(46,204,113,0.8);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { box-shadow: 0 0 7px rgba(46,204,113,0.8); transform: scale(1); }
+  50% { box-shadow: 0 0 14px rgba(46,204,113,1), 0 0 22px rgba(46,204,113,0.3); transform: scale(1.15); }
+}
+
+/* ── Visibility chips (go green sheet) ── */
+.vis-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 9px;
+}
+.vis-chips { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 18px; }
+.vis-chip {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 13px;
+  border-radius: 100px;
+  border: 1.5px solid var(--border);
+  background: transparent;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+}
+.vis-chip.active {
+  background: var(--purple-light);
+  border-color: var(--purple);
+  color: var(--purple);
+}
+
+/* Section label */
+.section-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0 4px 12px;
+  flex-shrink: 0;
+}
+
+/* Green friend card */
+.friend-card {
+  border-radius: 18px;
+  border: 1.5px solid var(--green-border);
+  background: var(--green-bg);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.friend-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  color: white;
+  flex-shrink: 0;
+}
+.friend-info { flex: 1; min-width: 0; }
+.friend-name { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+.friend-note { font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card-chev { color: rgba(46,204,113,0.4); font-size: 20px; flex-shrink: 0; }
+
+/* Grey friend card (not free) */
+.grey-card {
+  border-radius: 18px;
+  border: 1.5px solid var(--border);
+  background: var(--white);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-bottom: 8px;
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+/* Empty state */
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 32px 40px;
+  text-align: center;
+}
+.empty-headline { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 20px; color: var(--text); letter-spacing: -0.02em; margin-bottom: 8px; }
+.empty-sub { font-family: 'Inter', sans-serif; font-size: 15px; color: var(--text2); line-height: 1.5; }
+.empty-cta {
+  width: 100%;
+  padding: 16px;
+  border-radius: 16px;
+  border: none;
+  background: var(--purple);
+  color: white;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 800;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 24px;
+}
+
+/* Bottom nav */
+.bottom-nav {
+  display: flex;
+  align-items: center;
+  background: var(--white);
+  border-top: 1px solid var(--border);
+  padding: 10px 0 26px;
+  flex-shrink: 0;
+}
+.nav-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  padding: 4px 0;
+}
+.nav-icon { width: 22px; height: 22px; }
+.nav-label { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.02em; }
+.nav-tab.active .nav-label { color: var(--purple); }
+.nav-tab:not(.active) .nav-label { color: var(--grey-status); }
+.nav-tab.active svg { stroke: var(--purple); }
+.nav-tab:not(.active) svg { stroke: var(--grey-status); }
+
+/* Auth back nav */
+.auth-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 52px 24px 0;
+  flex-shrink: 0;
+}
+.auth-back {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--purple);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.auth-body {
+  flex: 1;
+  padding: 36px 28px 0;
+  display: flex;
+  flex-direction: column;
+}
+.auth-heading { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 28px; color: var(--text); letter-spacing: -0.025em; line-height: 1.15; margin-bottom: 10px; }
+.auth-sub { font-family: 'Inter', sans-serif; font-size: 15px; color: var(--text2); line-height: 1.5; margin-bottom: 36px; }
+
+/* Phone input */
+.phone-input-wrap {
+  display: flex;
+  align-items: center;
+  background: var(--white);
+  border: 2px solid var(--purple);
+  border-radius: 16px;
+  padding: 0 16px;
+  height: 60px;
+  gap: 10px;
+  box-shadow: 0 0 0 4px rgba(124,92,219,0.1);
+}
+.phone-prefix { font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 500; color: var(--text2); display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.prefix-div { width: 1px; height: 24px; background: var(--border); flex-shrink: 0; }
+.phone-val { font-family: 'Inter', sans-serif; font-size: 18px; font-weight: 500; color: var(--text); letter-spacing: 0.02em; }
+
+/* OTP */
+.otp-row { display: flex; gap: 8px; justify-content: center; margin-bottom: 28px; }
+.otp-box {
+  width: 42px; height: 52px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--white);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Inter', sans-serif; font-size: 22px; font-weight: 700; color: var(--text);
+}
+.otp-box.filled { background: var(--purple-light); border-color: var(--purple); color: var(--purple); }
+.otp-box.active { border-color: var(--purple); box-shadow: 0 0 0 4px rgba(124,92,219,0.1); }
+
+/* CTA block */
+.cta-block { padding: 24px 28px 44px; margin-top: auto; flex-shrink: 0; }
+.cta-btn {
+  width: 100%; padding: 17px; border-radius: 16px; border: none;
+  background: var(--purple); color: white;
+  font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 17px; letter-spacing: -0.01em;
+  cursor: pointer;
+}
+.cta-btn-white {
+  width: 100%; padding: 17px; border-radius: 16px; border: none;
+  background: white; color: var(--purple);
+  font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 17px; letter-spacing: -0.01em;
+  cursor: pointer; box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+
+/* Onboarding step dots */
+.step-dots { display: flex; gap: 6px; justify-content: center; padding: 52px 0 0; flex-shrink: 0; }
+.sdot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); }
+.sdot.filled { background: var(--purple); }
+
+/* Onboarding body */
+.ob-body { flex: 1; padding: 32px 28px 0; display: flex; flex-direction: column; align-items: center; overflow-y: auto; }
+.ob-heading { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 26px; color: var(--text); letter-spacing: -0.025em; text-align: center; margin-bottom: 8px; width: 100%; }
+.ob-sub { font-family: 'Inter', sans-serif; font-size: 15px; color: var(--text2); text-align: center; line-height: 1.5; margin-bottom: 32px; width: 100%; }
+.photo-circle {
+  width: 88px; height: 88px; border-radius: 50%;
+  background: var(--purple-light); border: 2px dashed var(--purple);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; position: relative; margin-bottom: 8px;
+}
+.photo-label { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; color: var(--purple); cursor: pointer; margin-bottom: 28px; }
+.name-input-wrap { width: 100%; }
+.input-label { font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; color: var(--text2); letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 8px; display: block; }
+.text-input {
+  width: 100%; height: 56px; border-radius: 14px;
+  border: 2px solid var(--purple); background: var(--white);
+  padding: 0 16px; font-family: 'Inter', sans-serif; font-size: 17px; font-weight: 500; color: var(--text);
+  display: flex; align-items: center;
+  box-shadow: 0 0 0 4px rgba(124,92,219,0.1);
+}
+
+/* Invite link pill */
+.invite-link-pill {
+  display: flex; align-items: center;
+  background: var(--white); border: 1.5px solid var(--border); border-radius: 14px;
+  padding: 14px 16px; gap: 12px; width: 100%; margin-bottom: 12px;
+}
+.link-text { font-family: 'Inter', sans-serif; font-size: 13px; color: var(--purple); font-weight: 600; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.link-copy { font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; color: var(--text2); background: var(--bg); border: none; border-radius: 8px; padding: 6px 10px; cursor: pointer; flex-shrink: 0; }
+
+/* Bottom sheet overlay */
+.sheet-overlay {
+  position: absolute; inset: 0;
+  background: rgba(28,23,48,0.55);
+  z-index: 10; display: flex; flex-direction: column; justify-content: flex-end;
+}
+.sheet { background: white; border-radius: 24px 24px 0 0; padding: 8px 20px 36px; }
+.sheet-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 8px auto 20px; }
+.sheet-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 20px; color: var(--text); letter-spacing: -0.02em; margin-bottom: 8px; }
+.sheet-sub { font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text2); line-height: 1.5; margin-bottom: 20px; }
+.vibe-input {
+  width: 100%; background: var(--bg); border: 1.5px solid var(--border);
+  border-radius: 14px; padding: 14px 16px;
+  font-family: 'Inter', sans-serif; font-size: 15px; color: var(--text2);
+  margin-bottom: 16px; font-style: italic;
+}
+.sheet-btn-primary {
+  width: 100%; padding: 17px; border-radius: 16px; border: none;
+  background: var(--green); color: white;
+  font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 17px;
+  cursor: pointer; box-shadow: 0 4px 16px rgba(46,204,113,0.3);
+}
+
+/* Action sheet (go grey) */
+.action-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 18px; color: var(--text); text-align: center; margin-bottom: 6px; }
+.action-sub { font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text2); text-align: center; line-height: 1.5; margin-bottom: 20px; }
+.action-btn-row { display: flex; flex-direction: column; gap: 10px; }
+.action-btn-red { width: 100%; padding: 16px; border-radius: 14px; border: none; background: var(--red-light); color: var(--red); font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 16px; cursor: pointer; }
+.action-btn-cancel { width: 100%; padding: 16px; border-radius: 14px; border: 1.5px solid var(--border); background: transparent; color: var(--text2); font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 16px; cursor: pointer; }
+
+/* People header */
+.people-header { padding: 44px 20px 0; background: var(--bg); flex-shrink: 0; }
+.people-title-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.people-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 24px; color: var(--text); letter-spacing: -0.02em; }
+.people-add { width: 36px; height: 36px; border-radius: 12px; background: var(--purple-light); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 22px; color: var(--purple); font-weight: 300; line-height: 1; }
+.sub-tabs { display: flex; border-bottom: 1.5px solid var(--border); }
+.sub-tab { flex: 1; padding: 10px 0; text-align: center; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600; color: var(--text2); cursor: pointer; border-bottom: 2.5px solid transparent; margin-bottom: -1.5px; }
+.sub-tab.active { color: var(--purple); border-bottom-color: var(--purple); }
+
+/* Search bar */
+.search-bar-wrap { padding: 12px 16px 8px; flex-shrink: 0; }
+.search-bar { background: var(--white); border: 1.5px solid var(--border); border-radius: 12px; padding: 10px 14px; display: flex; align-items: center; gap: 8px; color: var(--text2); font-family: 'Inter', sans-serif; font-size: 14px; }
+
+/* Friend row (list) */
+.friend-row { display: flex; align-items: center; padding: 12px 16px; gap: 12px; flex-shrink: 0; }
+.friend-row-avatar { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 15px; color: white; flex-shrink: 0; }
+.friend-row-name { font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 600; color: var(--text); }
+.list-divider { height: 1px; background: var(--border); margin: 0 16px; flex-shrink: 0; }
+
+/* Sticky invite */
+.sticky-invite { position: absolute; bottom: 82px; left: 16px; right: 16px; z-index: 5; }
+.sticky-invite-btn { width: 100%; padding: 15px; border-radius: 16px; border: none; background: var(--purple); color: white; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 15px; cursor: pointer; box-shadow: 0 4px 20px rgba(124,92,219,0.3); }
+
+/* Group row */
+.group-row { display: flex; align-items: center; padding: 12px 16px; gap: 12px; cursor: pointer; flex-shrink: 0; }
+.group-emoji-icon { width: 42px; height: 42px; border-radius: 12px; background: var(--purple-light); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+.group-info { flex: 1; }
+.group-name { font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 600; color: var(--text); }
+.group-count { font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text2); }
+.group-chevron { color: var(--border); font-size: 20px; }
+
+/* Settings */
+.settings-header { padding: 44px 20px 20px; background: var(--bg); flex-shrink: 0; }
+.settings-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 24px; color: var(--text); letter-spacing: -0.02em; }
+.settings-body { flex: 1; padding: 0 20px 20px; display: flex; flex-direction: column; }
+.profile-card { background: var(--white); border-radius: 20px; padding: 24px 20px; display: flex; flex-direction: column; align-items: center; gap: 4px; margin-bottom: 24px; border: 1.5px solid var(--border); flex-shrink: 0; }
+.profile-avatar { width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #5B8AF5, #7C5CDB); display: flex; align-items: center; justify-content: center; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 24px; color: white; position: relative; margin-bottom: 12px; }
+.avatar-cam-badge { position: absolute; bottom: 0; right: 0; width: 26px; height: 26px; border-radius: 50%; background: var(--purple); border: 2px solid white; display: flex; align-items: center; justify-content: center; font-size: 11px; }
+.profile-name { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 18px; color: var(--text); display: flex; align-items: center; gap: 6px; }
+.profile-phone { font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text2); display: flex; align-items: center; gap: 6px; }
+.action-btn-wrap { display: flex; justify-content: center; padding: 6px 0; }
+.action-pill { display: inline-flex; align-items: center; justify-content: center; padding: 12px 40px; border-radius: 100px; border: none; font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; min-width: 200px; }
+.action-pill.logout { background: var(--purple-light); color: var(--purple); }
+.action-pill.delete-acct { background: var(--red-light); color: var(--red); }
+
+/* Sheet pills (log out / delete confirm) */
+.sheet-btn-row { display: flex; justify-content: center; padding: 6px 0; }
+.sheet-pill { display: inline-flex; align-items: center; justify-content: center; padding: 14px 40px; border-radius: 100px; border: none; font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; min-width: 200px; }
+.sheet-pill.confirm-logout { background: var(--purple-light); color: var(--purple); }
+.sheet-pill.confirm-delete { background: var(--red-light); color: var(--red); opacity: 0.4; cursor: default; }
+.sheet-pill.cancel { background: transparent; border: 1.5px solid var(--border); color: var(--text2); }
+
+/* Create group */
+.create-header { padding: 44px 20px 16px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; border-bottom: 1.5px solid var(--border); background: var(--bg); }
+.create-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 18px; color: var(--text); }
+.create-done { font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 600; color: var(--purple); background: none; border: none; cursor: pointer; }
+.create-back { font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600; color: var(--purple); background: none; border: none; cursor: pointer; }
+.create-body { flex: 1; overflow-y: auto; padding: 20px 16px; }
+.group-identity-row { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+.group-emoji-tap { width: 50px; height: 50px; border-radius: 14px; background: var(--purple-light); display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; position: relative; flex-shrink: 0; }
+.emoji-pencil { position: absolute; bottom: -4px; right: -4px; width: 18px; height: 18px; border-radius: 50%; background: var(--purple); border: 2px solid var(--bg); display: flex; align-items: center; justify-content: center; font-size: 8px; color: white; }
+.group-name-input { flex: 1; height: 50px; border-radius: 14px; border: 2px solid var(--purple); background: var(--white); padding: 0 14px; font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 600; color: var(--text); box-shadow: 0 0 0 4px rgba(124,92,219,0.1); }
+.friends-label { font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+.checklist-search { background: var(--white); border: 1.5px solid var(--border); border-radius: 12px; padding: 10px 14px; display: flex; align-items: center; gap: 8px; color: var(--text2); font-family: 'Inter', sans-serif; font-size: 14px; margin-bottom: 12px; }
+.checklist-row { display: flex; align-items: center; padding: 10px 0; gap: 12px; }
+.checklist-avatar { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 14px; color: white; flex-shrink: 0; }
+.checklist-name { font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 500; color: var(--text); flex: 1; }
+.checkbox { width: 22px; height: 22px; border-radius: 6px; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.checkbox.checked { background: var(--purple); border-color: var(--purple); color: white; font-size: 13px; }
+.checklist-div { height: 1px; background: var(--border); }
+
+/* Blobs for landing */
+.blob { position: absolute; border-radius: 50%; pointer-events: none; }
+
+/* Flow map at bottom */
+.flow-map { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; justify-content: center; max-width: 440px; }
+.flow-btn { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; padding: 5px 11px; border-radius: 100px; border: 1.5px solid rgba(255,255,255,0.15); background: transparent; color: rgba(255,255,255,0.45); cursor: pointer; transition: all 0.15s; letter-spacing: 0.01em; }
+.flow-btn:hover { color: white; border-color: rgba(255,255,255,0.35); background: rgba(255,255,255,0.06); }
+.flow-sep { color: rgba(255,255,255,0.18); font-size: 12px; }
+</style>
+</head>
+<body>
+
+<!-- ── Top controls ── -->
+<div class="controls">
+  <button class="ctrl-btn" onclick="restart()">↺ Restart</button>
+  <span id="screen-name">Screen 1 — Invite Landing</span>
+  <button class="ctrl-btn" style="opacity:0;" id="dummy-btn">·</button>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PHONE FRAME
+     ══════════════════════════════════════════ -->
+<div class="phone">
+
+  <!-- Toast (floats over everything) -->
+  <div class="sms-toast" id="sms-toast">
+    <span style="font-size:18px;" id="sms-toast-icon">💬</span>
+    <span class="sms-toast-text" id="sms-toast-text">Opening Messages...</span>
+  </div>
+
+  <!-- ═══════════════════════════════
+       S1 — INVITE LANDING
+       ═══════════════════════════════ -->
+  <div class="screen visible" id="s1" style="background:var(--grad);">
+    <div class="blob" style="width:200px;height:200px;background:rgba(255,255,255,0.06);top:-60px;right:-60px;"></div>
+    <div class="blob" style="width:120px;height:120px;background:rgba(46,204,113,0.08);bottom:120px;left:-30px;"></div>
+    <!-- top bar -->
+    <div style="display:flex;justify-content:center;padding:52px 24px 0;position:relative;z-index:2;">
+      <div class="wordmark">M<span class="wm-oo"><span class="wm-g"></span><span class="wm-gr"></span></span>VES</div>
+    </div>
+    <!-- hero -->
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 32px;position:relative;z-index:2;">
+      <div style="position:relative;margin-bottom:24px;">
+        <div style="position:absolute;inset:-12px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,0.15)0%,transparent 70%);"></div>
+        <div style="position:absolute;inset:-6px;border-radius:50%;border:2px solid rgba(255,255,255,0.25);"></div>
+        <div style="width:88px;height:88px;border-radius:50%;background:linear-gradient(135deg,#E8405A,#FF6B6B);display:flex;align-items:center;justify-content:center;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:28px;color:white;position:relative;z-index:1;border:3px solid rgba(255,255,255,0.3);">SR</div>
+      </div>
+      <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:22px;color:white;text-align:center;letter-spacing:-0.02em;line-height:1.2;margin-bottom:12px;">Sarah R. is on Mooves</div>
+      <div style="font-family:'Inter',sans-serif;font-size:15px;color:rgba(255,255,255,0.7);text-align:center;line-height:1.5;max-width:220px;">See when your friends are free, without having to ask.</div>
+    </div>
+    <!-- CTA -->
+    <div style="padding:24px 24px 44px;position:relative;z-index:2;display:flex;flex-direction:column;gap:10px;">
+      <button class="cta-btn-white" onclick="go('s2a')">Join Mooves</button>
+      <span style="font-family:'Inter',sans-serif;font-size:12px;color:rgba(255,255,255,0.45);text-align:center;">Invite-only. Sarah invited you.</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════
+       S2A — AUTH: PHONE ENTRY
+       ═══════════════════════════════ -->
+  <div class="screen" id="s2a">
+    <div class="auth-nav">
+      <button class="auth-back" onclick="go('s1')">‹ Back</button>
+      <div class="wordmark-dark">M<span class="wmd-oo"><span class="wmd-gr"></span><span class="wmd-g"></span></span>VES</div>
+      <div style="width:48px;"></div>
+    </div>
+    <div class="auth-body">
+      <div class="auth-heading">What's your number?</div>
+      <div class="auth-sub">We'll send you a one-time code. No passwords.</div>
+      <div class="phone-input-wrap">
+        <div class="phone-prefix">🇺🇸 +1</div>
+        <div class="prefix-div"></div>
+        <div class="phone-val">555 867-5309</div>
+      </div>
+    </div>
+    <div class="cta-block">
+      <button class="cta-btn" onclick="go('s2b')">Send code</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════
+       S2B — AUTH: OTP
+       ═══════════════════════════════ -->
+  <div class="screen" id="s2b">
+    <div class="auth-nav">
+      <button class="auth-back" onclick="go('s2a')">‹ Back</button>
+      <div class="wordmark-dark">M<span class="wmd-oo"><span class="wmd-gr"></span><span class="wmd-g"></span></span>VES</div>
+      <div style="width:48px;"></div>
+    </div>
+    <div class="auth-body">
+      <div class="auth-heading">Check your texts</div>
+      <div class="auth-sub">Sent a 6-digit code to +1 (555) 867-5309</div>
+      <div class="otp-row">
+        <div class="otp-box filled">4</div>
+        <div class="otp-box filled">2</div>
+        <div class="otp-box filled">7</div>
+        <div class="otp-box filled">1</div>
+        <div class="otp-box active"></div>
+        <div class="otp-box"></div>
+      </div>
+      <div style="font-family:'Inter',sans-serif;font-size:13px;color:var(--text2);text-align:center;">
+        Didn't get it? <span style="color:var(--purple);font-weight:600;cursor:pointer;">Resend code</span>
+      </div>
+    </div>
+    <div class="cta-block">
+      <button class="cta-btn" onclick="go('s3a')">Continue →</button>
+      <div style="font-family:'Inter',sans-serif;font-size:12px;color:var(--text2);text-align:center;margin-top:12px;">Enter all 6 digits to auto-verify</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════
+       S3A — ONBOARDING: PROFILE SETUP
+       ═══════════════════════════════ -->
+  <div class="screen" id="s3a">
+    <div class="step-dots">
+      <div class="sdot filled"></div>
+      <div class="sdot"></div>
+    </div>
+    <div class="ob-body">
+      <div class="ob-heading">Set up your profile</div>
+      <div class="ob-sub">Your friends will see your name and photo when you're free.</div>
+      <div class="photo-circle">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      </div>
+      <div class="photo-label">Add photo</div>
+      <div class="name-input-wrap">
+        <label class="input-label">Your name</label>
+        <div class="text-input">Jackson V.</div>
+      </div>
+    </div>
+    <div class="cta-block">
+      <button class="cta-btn" onclick="go('s3b')">Continue</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════
+       S3B — ONBOARDING: INVITE NUDGE
+       ═══════════════════════════════ -->
+  <div class="screen" id="s3b">
+    <div class="step-dots">
+      <div class="sdot filled"></div>
+      <div class="sdot filled"></div>
+    </div>
+    <div class="ob-body">
+      <div class="ob-heading">Invite your first friend</div>
+      <div class="ob-sub">Mooves is invite-only. Share your link to bring someone in.</div>
+      <svg width="80" height="80" viewBox="0 0 120 115" xmlns="http://www.w3.org/2000/svg" style="margin-bottom:28px;"><ellipse cx="11" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(-28 11 33)"/><ellipse cx="109" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(28 109 33)"/><ellipse cx="11" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(-28 11 34)"/><ellipse cx="109" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(28 109 34)"/><ellipse cx="38" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(-14 38 19)"/><ellipse cx="82" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(14 82 19)"/><rect x="15" y="20" width="90" height="92" rx="30" fill="#F5F0ED"/><ellipse cx="41" cy="44" rx="19" ry="13" fill="#7A7282" transform="rotate(-10 41 44)"/><ellipse cx="79" cy="69" rx="14" ry="9" fill="#7A7282" transform="rotate(16 79 69)"/><circle cx="44" cy="57" r="6" fill="#2A1E38"/><circle cx="76" cy="57" r="6" fill="#2A1E38"/><circle cx="46.5" cy="54.5" r="2.2" fill="white"/><circle cx="78.5" cy="54.5" r="2.2" fill="white"/><ellipse cx="60" cy="90" rx="27" ry="20" fill="#F0AABB"/><circle cx="50" cy="91" r="9" fill="#2ECC71"/><circle cx="70" cy="91" r="9" fill="#BDB5D4"/></svg>
+      <div class="invite-link-pill">
+        <span style="font-size:18px;">🔗</span>
+        <span class="link-text">makemooves.app/join/JK8X2QMP</span>
+        <button class="link-copy">Copy</button>
+      </div>
+    </div>
+    <div class="cta-block" style="display:flex;flex-direction:column;gap:0;">
+      <button class="cta-btn" onclick="go('s4-quiet')" style="margin-bottom:12px;">Share your link</button>
+      <button onclick="go('s4-quiet')" style="background:none;border:none;font-family:'Inter',sans-serif;font-size:14px;color:var(--text2);cursor:pointer;padding:8px;">Skip for now</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════
+       S4-ACTIVE — FEED: FRIENDS FREE, I'M NOT
+       ═══════════════════════════════ -->
+  <div class="screen" id="s4-active">
+    <div class="feed-header">
+      <div class="wordmark">M<span class="wm-oo"><span class="wm-g"></span><span class="wm-gr"></span></span>VES</div>
+    </div>
+    <div class="feed-body">
+      <div class="avail-row" onclick="go('s5-sheet')">
+        <span class="adot-grey"></span>
+        <span class="avail-status-text">Not now</span>
+        <div class="avail-go-cta">
+          <span class="adot-green"></span>
+          Go free
+        </div>
+      </div>
+      <div class="section-label">Free right now</div>
+      <div class="friend-card" onclick="showSmsToast('Jake M.')">
+        <div class="friend-avatar" style="background:linear-gradient(135deg,#E8405A,#FF6B6B);">JM</div>
+        <div class="friend-info">
+          <div class="friend-name">Jake M.</div>
+          <div class="friend-note">up for anything tbh</div>
+        </div>
+        <span class="card-chev">›</span>
+      </div>
+      <div class="friend-card" onclick="showSmsToast('Sarah R.')">
+        <div class="friend-avatar" style="background:linear-gradient(135deg,#F5A623,#F76B1C);">SR</div>
+        <div class="friend-info">
+          <div class="friend-name">Sarah R.</div>
+          <div class="friend-note">coffee? drinks? idk</div>
+        </div>
+        <span class="card-chev">›</span>
+      </div>
+      <div class="friend-card" onclick="showSmsToast('Mia T.')">
+        <div class="friend-avatar" style="background:linear-gradient(135deg,#43C6AC,#2E86AB);">MT</div>
+        <div class="friend-info">
+          <div class="friend-name">Mia T.</div>
+        </div>
+        <span class="card-chev">›</span>
+      </div>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-tab active">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span class="nav-label">Home</span>
+      </div>
+      <div class="nav-tab" onclick="go('s8-friends')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span class="nav-label">People</span>
+      </div>
+      <div class="nav-tab" onclick="go('s10-settings')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span class="nav-label">Settings</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════
+       S4-QUIET — FEED: EMPTY STATE (NEW USER)
+       ═══════════════════════════════ -->
+  <div class="screen" id="s4-quiet">
+    <div class="feed-header">
+      <div class="wordmark">M<span class="wm-oo"><span class="wm-g"></span><span class="wm-gr"></span></span>VES</div>
+    </div>
+    <div class="feed-body" style="display:flex;flex-direction:column;">
+      <div class="avail-row" onclick="go('s5-sheet')">
+        <span class="adot-grey"></span>
+        <span class="avail-status-text">Not now</span>
+        <div class="avail-go-cta">
+          <span class="adot-green"></span>
+          Go free
+        </div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding-bottom:20px;">
+        <svg width="90" height="90" viewBox="0 0 120 115" xmlns="http://www.w3.org/2000/svg" style="margin-bottom:20px;"><ellipse cx="11" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(-28 11 33)"/><ellipse cx="109" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(28 109 33)"/><ellipse cx="11" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(-28 11 34)"/><ellipse cx="109" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(28 109 34)"/><ellipse cx="38" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(-14 38 19)"/><ellipse cx="82" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(14 82 19)"/><rect x="15" y="20" width="90" height="92" rx="30" fill="#F5F0ED"/><ellipse cx="41" cy="44" rx="19" ry="13" fill="#7A7282" transform="rotate(-10 41 44)"/><ellipse cx="79" cy="69" rx="14" ry="9" fill="#7A7282" transform="rotate(16 79 69)"/><circle cx="44" cy="57" r="6" fill="#2A1E38"/><circle cx="76" cy="57" r="6" fill="#2A1E38"/><circle cx="46.5" cy="54.5" r="2.2" fill="white"/><circle cx="78.5" cy="54.5" r="2.2" fill="white"/><ellipse cx="60" cy="90" rx="27" ry="20" fill="#F0AABB"/><circle cx="50" cy="91" r="9" fill="#2ECC71"/><circle cx="70" cy="91" r="9" fill="#BDB5D4"/></svg>
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:18px;color:var(--text);letter-spacing:-0.01em;margin-bottom:8px;">Nobody's free yet.</div>
+        <div style="font-family:'Inter',sans-serif;font-size:14px;color:var(--purple);font-weight:600;cursor:pointer;" onclick="go('s5-sheet')">You could change that.</div>
+      </div>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-tab active">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span class="nav-label">Home</span>
+      </div>
+      <div class="nav-tab" onclick="go('s8-friends')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span class="nav-label">People</span>
+      </div>
+      <div class="nav-tab" onclick="go('s10-settings')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span class="nav-label">Settings</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════
+       S4-GREEN — FEED: I'M FREE
+       ═══════════════════════════════ -->
+  <div class="screen" id="s4-green">
+    <div class="feed-header">
+      <div class="wordmark">M<span class="wm-oo"><span class="wm-g"></span><span class="wm-gr"></span></span>VES</div>
+    </div>
+    <div class="feed-body">
+      <button class="status-btn is-free" onclick="go('s5-grey')">
+        <span class="sbd"></span>I'm free
+      </button>
+      <div class="section-label">Free right now</div>
+      <div class="friend-card" onclick="showSmsToast('Jake M.')">
+        <div class="friend-avatar" style="background:linear-gradient(135deg,#E8405A,#FF6B6B);">JM</div>
+        <div class="friend-info">
+          <div class="friend-name">Jake M.</div>
+          <div class="friend-note">up for anything tbh</div>
+        </div>
+        <span class="card-chev">›</span>
+      </div>
+      <div class="friend-card" onclick="showSmsToast('Sarah R.')">
+        <div class="friend-avatar" style="background:linear-gradient(135deg,#F5A623,#F76B1C);">SR</div>
+        <div class="friend-info">
+          <div class="friend-name">Sarah R.</div>
+          <div class="friend-note">coffee? drinks? idk</div>
+        </div>
+        <span class="card-chev">›</span>
+      </div>
+      <div class="friend-card" onclick="showSmsToast('Mia T.')">
+        <div class="friend-avatar" style="background:linear-gradient(135deg,#43C6AC,#2E86AB);">MT</div>
+        <div class="friend-info">
+          <div class="friend-name">Mia T.</div>
+        </div>
+        <span class="card-chev">›</span>
+      </div>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-tab active">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span class="nav-label">Home</span>
+      </div>
+      <div class="nav-tab" onclick="go('s8-friends')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span class="nav-label">People</span>
+      </div>
+      <div class="nav-tab" onclick="go('s10-settings')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span class="nav-label">Settings</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════
+       S5-SHEET — GO GREEN SHEET
+       Tap outside sheet or "I'm free" to navigate
+       ═══════════════════════════════ -->
+  <div class="screen" id="s5-sheet">
+    <!-- dimmed feed behind -->
+    <div class="feed-header" style="opacity:0.45;">
+      <div class="wordmark">M<span class="wm-oo"><span class="wm-g"></span><span class="wm-gr"></span></span>VES</div>
+    </div>
+    <div style="flex:1;padding:16px;opacity:0.3;pointer-events:none;">
+      <div class="avail-row" style="pointer-events:none;">
+        <span class="adot-grey"></span>
+        <span class="avail-status-text">Not now</span>
+        <div class="avail-go-cta" style="animation:none;">
+          <span style="width:9px;height:9px;border-radius:50%;background:var(--green);flex-shrink:0;display:inline-block;"></span>
+          Go free
+        </div>
+      </div>
+      <div class="section-label">Free right now</div>
+      <div class="friend-card" style="pointer-events:none;">
+        <div class="friend-avatar" style="background:linear-gradient(135deg,#E8405A,#FF6B6B);">JM</div>
+        <div class="friend-info"><div class="friend-name">Jake M.</div><div class="friend-note">up for anything tbh</div></div>
+      </div>
+      <div class="friend-card" style="pointer-events:none;">
+        <div class="friend-avatar" style="background:linear-gradient(135deg,#F5A623,#F76B1C);">SR</div>
+        <div class="friend-info"><div class="friend-name">Sarah R.</div></div>
+      </div>
+    </div>
+    <!-- sheet overlay (tap backdrop to dismiss) -->
+    <div class="sheet-overlay" onclick="if(event.target===this)go('s4-active')">
+      <div class="sheet" onclick="event.stopPropagation()">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title">What's the vibe?</div>
+        <div class="sheet-sub" style="margin-bottom:14px;">Optional, your friends will see this.</div>
+        <div class="vibe-input" style="margin-bottom:18px;">coffee, park, whatever...</div>
+        <div class="vis-label">Who can see you?</div>
+        <div class="vis-chips">
+          <div class="vis-chip active" onclick="toggleVis(this,true)">All friends</div>
+          <div class="vis-chip" onclick="toggleVis(this,false)">🎾 Tennis crew</div>
+          <div class="vis-chip" onclick="toggleVis(this,false)">🍕 Friday pizza ppl</div>
+          <div class="vis-chip" onclick="toggleVis(this,false)">🏠 Old neighborhood</div>
+        </div>
+        <button class="sheet-btn-primary" onclick="go('s4-green')">I'm free</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════
+       S5-GREY — GO GREY CONFIRM
+       ═══════════════════════════════ -->
+  <div class="screen" id="s5-grey">
+    <!-- dimmed green feed behind -->
+    <div class="feed-header" style="opacity:0.45;">
+      <div class="wordmark">M<span class="wm-oo"><span class="wm-g"></span><span class="wm-gr"></span></span>VES</div>
+    </div>
+    <div style="flex:1;padding:16px;opacity:0.3;pointer-events:none;">
+      <div class="status-btn is-free"><span class="sbd"></span>I'm free</div>
+      <div class="section-label">Free right now</div>
+      <div class="friend-card">
+        <div class="friend-avatar" style="background:linear-gradient(135deg,#E8405A,#FF6B6B);">JM</div>
+        <div class="friend-info"><div class="friend-name">Jake M.</div><div class="friend-note">up for anything tbh</div></div>
+      </div>
+      <div class="friend-card">
+        <div class="friend-avatar" style="background:linear-gradient(135deg,#43C6AC,#2E86AB);">MT</div>
+        <div class="friend-info"><div class="friend-name">Mia T.</div></div>
+      </div>
+    </div>
+    <!-- action sheet -->
+    <div class="sheet-overlay">
+      <div class="sheet">
+        <div class="sheet-handle"></div>
+        <div class="action-title">Go grey?</div>
+        <div class="action-sub">Your friends will see you as not free. You can go green again any time.</div>
+        <div class="action-btn-row">
+          <button class="action-btn-red" onclick="go('s4-active')">Go grey</button>
+          <button class="action-btn-cancel" onclick="go('s4-green')">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════
+       S8 — FRIENDS LIST (People > Friends)
+       ═══════════════════════════════ -->
+  <div class="screen" id="s8-friends">
+    <div class="people-header">
+      <div style="display:flex;justify-content:center;margin-bottom:10px;">
+        <div class="wordmark-dark">M<span class="wmd-oo"><span class="wmd-g"></span><span class="wmd-gr"></span></span>VES</div>
+      </div>
+      <div class="people-title-row">
+        <div class="people-title">People</div>
+      </div>
+      <div class="sub-tabs">
+        <div class="sub-tab active">Friends</div>
+        <div class="sub-tab" onclick="go('s9-groups')">Groups</div>
+      </div>
+    </div>
+    <div class="search-bar-wrap">
+      <div class="search-bar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Search friends
+      </div>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding-bottom:90px;">
+      <div class="friend-row">
+        <div class="friend-row-avatar" style="background:linear-gradient(135deg,#E8405A,#FF6B6B);">JM</div>
+        <div class="friend-row-name">Jake M.</div>
+      </div>
+      <div class="list-divider"></div>
+      <div class="friend-row">
+        <div class="friend-row-avatar" style="background:linear-gradient(135deg,#8B5CF6,#6D28D9);">KP</div>
+        <div class="friend-row-name">Kyle P.</div>
+      </div>
+      <div class="list-divider"></div>
+      <div class="friend-row">
+        <div class="friend-row-avatar" style="background:linear-gradient(135deg,#43C6AC,#2E86AB);">MT</div>
+        <div class="friend-row-name">Mia T.</div>
+      </div>
+      <div class="list-divider"></div>
+      <div class="friend-row">
+        <div class="friend-row-avatar" style="background:linear-gradient(135deg,#F5A623,#F76B1C);">SR</div>
+        <div class="friend-row-name">Sarah R.</div>
+      </div>
+      <div class="list-divider"></div>
+      <div class="friend-row">
+        <div class="friend-row-avatar" style="background:linear-gradient(135deg,#EC4899,#BE185D);">TL</div>
+        <div class="friend-row-name">Taylor L.</div>
+      </div>
+      <div class="list-divider"></div>
+      <div class="friend-row">
+        <div class="friend-row-avatar" style="background:linear-gradient(135deg,#10B981,#059669);">ZK</div>
+        <div class="friend-row-name">Zack K.</div>
+      </div>
+    </div>
+    <!-- sticky invite -->
+    <div class="sticky-invite">
+      <button class="sticky-invite-btn">+ Invite a friend</button>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-tab" onclick="go('s4-active')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span class="nav-label">Home</span>
+      </div>
+      <div class="nav-tab active">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span class="nav-label">People</span>
+      </div>
+      <div class="nav-tab" onclick="go('s10-settings')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span class="nav-label">Settings</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════
+       S9 — GROUPS LIST (People > Groups)
+       ═══════════════════════════════ -->
+  <div class="screen" id="s9-groups">
+    <div class="people-header">
+      <div style="display:flex;justify-content:center;margin-bottom:10px;">
+        <div class="wordmark-dark">M<span class="wmd-oo"><span class="wmd-g"></span><span class="wmd-gr"></span></span>VES</div>
+      </div>
+      <div class="people-title-row">
+        <div class="people-title">People</div>
+        <button class="people-add" onclick="go('s9-create')">+</button>
+      </div>
+      <div class="sub-tabs">
+        <div class="sub-tab" onclick="go('s8-friends')">Friends</div>
+        <div class="sub-tab active">Groups</div>
+      </div>
+    </div>
+    <div style="flex:1;overflow-y:auto;">
+      <div class="group-row" onclick="go('s9-create')">
+        <div class="group-emoji-icon">🎾</div>
+        <div class="group-info">
+          <div class="group-name">Tennis crew</div>
+          <div class="group-count">4 friends</div>
+        </div>
+        <span class="group-chevron">›</span>
+      </div>
+      <div class="list-divider"></div>
+      <div class="group-row" onclick="go('s9-create')">
+        <div class="group-emoji-icon">🍕</div>
+        <div class="group-info">
+          <div class="group-name">Friday pizza ppl</div>
+          <div class="group-count">6 friends</div>
+        </div>
+        <span class="group-chevron">›</span>
+      </div>
+      <div class="list-divider"></div>
+      <div class="group-row" onclick="go('s9-create')">
+        <div class="group-emoji-icon">🏠</div>
+        <div class="group-info">
+          <div class="group-name">Old neighborhood</div>
+          <div class="group-count">3 friends</div>
+        </div>
+        <span class="group-chevron">›</span>
+      </div>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-tab" onclick="go('s4-active')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span class="nav-label">Home</span>
+      </div>
+      <div class="nav-tab active">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span class="nav-label">People</span>
+      </div>
+      <div class="nav-tab" onclick="go('s10-settings')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span class="nav-label">Settings</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════
+       S9-CREATE — CREATE / EDIT GROUP
+       ═══════════════════════════════ -->
+  <div class="screen" id="s9-create">
+    <div class="create-header">
+      <button class="create-back" onclick="go('s9-groups')">‹ Back</button>
+      <div class="create-title">New group</div>
+      <button class="create-done" onclick="go('s9-groups')">Done</button>
+    </div>
+    <div class="create-body">
+      <div class="group-identity-row">
+        <div class="group-emoji-tap">
+          🎉
+          <div class="emoji-pencil">✎</div>
+        </div>
+        <input class="group-name-input" type="text" placeholder="Group name" value="Weekend ppl">
+      </div>
+      <div class="friends-label">Add friends</div>
+      <div class="checklist-search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Search friends
+      </div>
+      <div class="checklist-row">
+        <div class="checklist-avatar" style="background:linear-gradient(135deg,#E8405A,#FF6B6B);">JM</div>
+        <div class="checklist-name">Jake M.</div>
+        <div class="checkbox checked">✓</div>
+      </div>
+      <div class="checklist-div"></div>
+      <div class="checklist-row">
+        <div class="checklist-avatar" style="background:linear-gradient(135deg,#43C6AC,#2E86AB);">MT</div>
+        <div class="checklist-name">Mia T.</div>
+        <div class="checkbox checked">✓</div>
+      </div>
+      <div class="checklist-div"></div>
+      <div class="checklist-row">
+        <div class="checklist-avatar" style="background:linear-gradient(135deg,#8B5CF6,#6D28D9);">KP</div>
+        <div class="checklist-name">Kyle P.</div>
+        <div class="checkbox"></div>
+      </div>
+      <div class="checklist-div"></div>
+      <div class="checklist-row">
+        <div class="checklist-avatar" style="background:linear-gradient(135deg,#F5A623,#F76B1C);">SR</div>
+        <div class="checklist-name">Sarah R.</div>
+        <div class="checkbox"></div>
+      </div>
+      <div class="checklist-div"></div>
+      <div class="checklist-row">
+        <div class="checklist-avatar" style="background:linear-gradient(135deg,#EC4899,#BE185D);">TL</div>
+        <div class="checklist-name">Taylor L.</div>
+        <div class="checkbox"></div>
+      </div>
+      <div class="checklist-div"></div>
+      <div class="checklist-row">
+        <div class="checklist-avatar" style="background:linear-gradient(135deg,#10B981,#059669);">ZK</div>
+        <div class="checklist-name">Zack K.</div>
+        <div class="checkbox"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════
+       S10 — SETTINGS
+       ═══════════════════════════════ -->
+  <div class="screen" id="s10-settings">
+    <div class="settings-header">
+      <div style="display:flex;justify-content:center;margin-bottom:10px;">
+        <div class="wordmark-dark">M<span class="wmd-oo"><span class="wmd-g"></span><span class="wmd-gr"></span></span>VES</div>
+      </div>
+      <div class="settings-title">Settings</div>
+    </div>
+    <div class="settings-body">
+      <div class="profile-card">
+        <div class="profile-avatar">
+          JV
+          <div class="avatar-cam-badge">📷</div>
+        </div>
+        <div class="profile-name">Jackson V. <span style="font-size:14px;color:var(--text2);">✎</span></div>
+        <div class="profile-phone">🔒 +1 (555) 867-5309</div>
+      </div>
+      <div class="action-btn-wrap">
+        <button class="action-pill logout" onclick="go('s10-logout')">Log out</button>
+      </div>
+      <div class="action-btn-wrap">
+        <button class="action-pill delete-acct" onclick="go('s10-delete')">Delete account</button>
+      </div>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-tab" onclick="go('s4-active')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span class="nav-label">Home</span>
+      </div>
+      <div class="nav-tab" onclick="go('s8-friends')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span class="nav-label">People</span>
+      </div>
+      <div class="nav-tab active">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span class="nav-label">Settings</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════
+       S10-LOGOUT — SETTINGS + LOG OUT CONFIRM
+       ═══════════════════════════════ -->
+  <div class="screen" id="s10-logout">
+    <div class="settings-header">
+      <div style="display:flex;justify-content:center;margin-bottom:10px;">
+        <div class="wordmark-dark">M<span class="wmd-oo"><span class="wmd-g"></span><span class="wmd-gr"></span></span>VES</div>
+      </div>
+      <div class="settings-title">Settings</div>
+    </div>
+    <div class="settings-body" style="opacity:0.3;pointer-events:none;">
+      <div class="profile-card">
+        <div class="profile-avatar">JV</div>
+        <div class="profile-name">Jackson V.</div>
+        <div class="profile-phone">🔒 +1 (555) 867-5309</div>
+      </div>
+    </div>
+    <div class="sheet-overlay">
+      <div class="sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title">Log out?</div>
+        <div class="sheet-sub">You can always log back in with your phone number.</div>
+        <div class="sheet-btn-row">
+          <button class="sheet-pill confirm-logout" onclick="go('s1')">Log out</button>
+        </div>
+        <div style="height:10px;"></div>
+        <div class="sheet-btn-row">
+          <button class="sheet-pill cancel" onclick="go('s10-settings')">Cancel</button>
+        </div>
+      </div>
+    </div>
+    <div class="bottom-nav" style="opacity:0.3;pointer-events:none;">
+      <div class="nav-tab"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="var(--grey-status)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="nav-label" style="color:var(--grey-status);">Home</span></div>
+      <div class="nav-tab"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="var(--grey-status)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="nav-label" style="color:var(--grey-status);">People</span></div>
+      <div class="nav-tab"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span class="nav-label" style="color:var(--purple);">Settings</span></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════
+       S10-DELETE — SETTINGS + DELETE CONFIRM
+       ═══════════════════════════════ -->
+  <div class="screen" id="s10-delete">
+    <div class="settings-header">
+      <div style="display:flex;justify-content:center;margin-bottom:10px;">
+        <div class="wordmark-dark">M<span class="wmd-oo"><span class="wmd-g"></span><span class="wmd-gr"></span></span>VES</div>
+      </div>
+      <div class="settings-title">Settings</div>
+    </div>
+    <div class="settings-body" style="opacity:0.3;pointer-events:none;">
+      <div class="profile-card">
+        <div class="profile-avatar">JV</div>
+        <div class="profile-name">Jackson V.</div>
+        <div class="profile-phone">🔒 +1 (555) 867-5309</div>
+      </div>
+    </div>
+    <div class="sheet-overlay">
+      <div class="sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title" style="color:var(--red);">Delete account?</div>
+        <div class="sheet-sub">This will permanently remove your account and all your data. Your friends won't be affected.</div>
+        <div style="background:var(--bg);border:1.5px solid var(--border);border-radius:12px;padding:12px 14px;font-family:'Inter',sans-serif;font-size:14px;color:var(--text2);margin-bottom:16px;">Type <strong style="color:var(--text);">DELETE</strong> to confirm</div>
+        <div class="sheet-btn-row">
+          <button class="sheet-pill confirm-delete" disabled>Delete account</button>
+        </div>
+        <div style="height:10px;"></div>
+        <div class="sheet-btn-row">
+          <button class="sheet-pill cancel" onclick="go('s10-settings')">Cancel</button>
+        </div>
+      </div>
+    </div>
+    <div class="bottom-nav" style="opacity:0.3;pointer-events:none;">
+      <div class="nav-tab"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="var(--grey-status)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="nav-label" style="color:var(--grey-status);">Home</span></div>
+      <div class="nav-tab"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="var(--grey-status)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="nav-label" style="color:var(--grey-status);">People</span></div>
+      <div class="nav-tab"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span class="nav-label" style="color:var(--purple);">Settings</span></div>
+    </div>
+  </div>
+
+</div><!-- /phone -->
+
+<!-- ── Flow map ── -->
+<div class="flow-map">
+  <button class="flow-btn" onclick="go('s1')">Landing</button>
+  <span class="flow-sep">→</span>
+  <button class="flow-btn" onclick="go('s2a')">Phone</button>
+  <span class="flow-sep">→</span>
+  <button class="flow-btn" onclick="go('s2b')">OTP</button>
+  <span class="flow-sep">→</span>
+  <button class="flow-btn" onclick="go('s3a')">Profile</button>
+  <span class="flow-sep">→</span>
+  <button class="flow-btn" onclick="go('s3b')">Invite</button>
+  <span class="flow-sep">→</span>
+  <button class="flow-btn" onclick="go('s4-quiet')">Empty Feed</button>
+  <span class="flow-sep">→</span>
+  <button class="flow-btn" onclick="go('s4-active')">Feed</button>
+  <span class="flow-sep">→</span>
+  <button class="flow-btn" onclick="go('s4-green')">I'm free</button>
+  <span class="flow-sep">·</span>
+  <button class="flow-btn" onclick="go('s8-friends')">Friends</button>
+  <span class="flow-sep">·</span>
+  <button class="flow-btn" onclick="go('s9-groups')">Groups</button>
+  <span class="flow-sep">·</span>
+  <button class="flow-btn" onclick="go('s10-settings')">Settings</button>
+</div>
+
+<script>
+const screenNames = {
+  's1':           'Screen 1 — Invite Landing',
+  's2a':          'Screen 2a — Phone Entry',
+  's2b':          'Screen 2b — OTP Verify',
+  's3a':          'Screen 3a — Profile Setup',
+  's3b':          'Screen 3b — Invite Nudge',
+  's4-quiet':     'Screen 4 — Feed (Empty State)',
+  's4-active':    'Screen 4 — Feed (Friends Free)',
+  's4-green':     "Screen 4 — Feed (I'm Free)",
+  's5-sheet':     'Screen 5 — Go Green Sheet',
+  's5-grey':      'Screen 5 — Go Grey Confirm',
+  's8-friends':   'Screen 8 — Friends List',
+  's9-groups':    'Screen 9 — Groups List',
+  's9-create':    'Screen 9 — Create Group',
+  's10-settings': 'Screen 10 — Settings',
+  's10-logout':   'Screen 10 — Log Out Confirm',
+  's10-delete':   'Screen 10 — Delete Account',
+};
+
+let current = 's1';
+
+function go(screenId) {
+  if (current === screenId) return;
+  const prev = current;
+  document.getElementById(current).classList.remove('visible');
+  document.getElementById(screenId).classList.add('visible');
+  current = screenId;
+  document.getElementById('screen-name').textContent = screenNames[screenId] || screenId;
+  // Celebratory toast when going green
+  if (screenId === 's4-green' && prev === 's5-sheet') {
+    setTimeout(() => showToast(COW_SVG, "You're live — go make a move."), 250);
+  }
+}
+
+function restart() {
+  go('s1');
+}
+
+const COW_SVG = `<svg width="22" height="22" viewBox="0 0 120 115" xmlns="http://www.w3.org/2000/svg"><ellipse cx="11" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(-28 11 33)"/><ellipse cx="109" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(28 109 33)"/><ellipse cx="11" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(-28 11 34)"/><ellipse cx="109" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(28 109 34)"/><ellipse cx="38" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(-14 38 19)"/><ellipse cx="82" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(14 82 19)"/><rect x="15" y="20" width="90" height="92" rx="30" fill="#F5F0ED"/><ellipse cx="41" cy="44" rx="19" ry="13" fill="#7A7282" transform="rotate(-10 41 44)"/><ellipse cx="79" cy="69" rx="14" ry="9" fill="#7A7282" transform="rotate(16 79 69)"/><circle cx="44" cy="57" r="6" fill="#2A1E38"/><circle cx="76" cy="57" r="6" fill="#2A1E38"/><circle cx="46.5" cy="54.5" r="2.2" fill="white"/><circle cx="78.5" cy="54.5" r="2.2" fill="white"/><ellipse cx="60" cy="90" rx="27" ry="20" fill="#F0AABB"/><circle cx="50" cy="91" r="9" fill="#2ECC71"/><circle cx="70" cy="91" r="9" fill="#BDB5D4"/></svg>`;
+
+function showToast(icon, message, duration) {
+  duration = duration || 2200;
+  const toast = document.getElementById('sms-toast');
+  document.getElementById('sms-toast-icon').innerHTML = icon;
+  document.getElementById('sms-toast-text').textContent = message;
+  toast.classList.add('show');
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => document.getElementById('sms-toast-icon').innerHTML = '💬', 200);
+  }, duration);
+}
+
+function showSmsToast(name) {
+  showToast('💬', 'Opening Messages with ' + name + '...', 1800);
+}
+
+function toggleVis(el, isAll) {
+  const chips = el.closest('.vis-chips').querySelectorAll('.vis-chip');
+  const allChip = chips[0];
+  if (isAll) {
+    chips.forEach(c => c.classList.remove('active'));
+    allChip.classList.add('active');
+  } else {
+    allChip.classList.remove('active');
+    el.classList.toggle('active');
+    // If no group selected, fall back to All friends
+    const anyActive = Array.from(chips).slice(1).some(c => c.classList.contains('active'));
+    if (!anyActive) allChip.classList.add('active');
+  }
+}
+</script>
+</body>
+</html>

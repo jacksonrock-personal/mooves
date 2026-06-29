@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mooves -- Screen 1: Invite Landing</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #1C1730;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    gap: 48px;
+  }
+
+  /* ── State toggle ── */
+  .state-bar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .state-btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 7px 16px;
+    border-radius: 100px;
+    border: 1.5px solid rgba(255,255,255,0.2);
+    background: transparent;
+    color: rgba(255,255,255,0.5);
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.02em;
+  }
+  .state-btn.active {
+    background: rgba(255,255,255,0.12);
+    color: white;
+    border-color: rgba(255,255,255,0.4);
+  }
+
+  /* ── Phone frame ── */
+  .phone {
+    width: 320px;
+    min-height: 620px;
+    border-radius: 44px;
+    border: 3px solid rgba(255,255,255,0.1);
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.5);
+  }
+
+  /* ── Screen states ── */
+  .screen {
+    display: none;
+    flex-direction: column;
+    min-height: 620px;
+    position: relative;
+  }
+  .screen.visible { display: flex; }
+
+  /* ── State A: New User ── */
+  .screen-a {
+    background: linear-gradient(160deg, #7C5CDB 0%, #9B7FE8 60%, #A98FF0 100%);
+  }
+
+  .screen-b {
+    background: linear-gradient(160deg, #7C5CDB 0%, #9B7FE8 60%, #A98FF0 100%);
+  }
+
+  .screen-d {
+    background: linear-gradient(160deg, #7C5CDB 0%, #9B7FE8 60%, #A98FF0 100%);
+  }
+
+  /* Background blobs */
+  .blob {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .blob-1 {
+    width: 200px; height: 200px;
+    background: rgba(255,255,255,0.06);
+    top: -60px; right: -60px;
+  }
+  .blob-2 {
+    width: 120px; height: 120px;
+    background: rgba(46,204,113,0.08);
+    bottom: 120px; left: -30px;
+  }
+
+  /* Top bar */
+  .top-bar {
+    display: flex;
+    justify-content: center;
+    padding: 52px 24px 0;
+    position: relative;
+    z-index: 2;
+  }
+  .wordmark {
+    display: flex;
+    align-items: center;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 800;
+    font-size: 22px;
+    color: white;
+    letter-spacing: -0.02em;
+  }
+  .wordmark .dot {
+    display: inline-block;
+    border-radius: 50%;
+    position: relative;
+    top: 1px;
+  }
+  .wordmark .dot-g {
+    width: 13px; height: 13px;
+    background: #2ECC71;
+    box-shadow: 0 0 8px rgba(46,204,113,0.6);
+  }
+  .wordmark .dot-gr {
+    width: 13px; height: 13px;
+    background: rgba(255,255,255,0.3);
+    margin-right: 1px;
+  }
+
+  /* Hero */
+  .hero {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0 32px;
+    position: relative;
+    z-index: 2;
+    gap: 0;
+  }
+
+  .avatar-wrap {
+    position: relative;
+    margin-bottom: 24px;
+  }
+  .avatar-glow {
+    position: absolute;
+    inset: -12px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+  }
+  .avatar-ring {
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.25);
+  }
+  .avatar {
+    width: 88px;
+    height: 88px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #E8405A, #FF6B6B);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    font-size: 28px;
+    color: white;
+    position: relative;
+    z-index: 1;
+    border: 3px solid rgba(255,255,255,0.3);
+  }
+  .avatar-generic {
+    background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.1));
+    font-size: 36px;
+  }
+
+  .hero-name {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 800;
+    font-size: 22px;
+    color: white;
+    text-align: center;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin-bottom: 12px;
+  }
+  .hero-sub {
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    color: rgba(255,255,255,0.7);
+    text-align: center;
+    line-height: 1.5;
+    max-width: 220px;
+  }
+
+  /* CTA block */
+  .cta-block {
+    padding: 24px 24px 44px;
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .cta-btn {
+    width: 100%;
+    padding: 17px;
+    border-radius: 16px;
+    border: none;
+    background: white;
+    color: #7C5CDB;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 800;
+    font-size: 17px;
+    letter-spacing: -0.01em;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  }
+  .cta-sub {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: rgba(255,255,255,0.5);
+    text-align: center;
+    line-height: 1.5;
+  }
+
+  /* Toast (shown on state C) */
+  .toast {
+    position: absolute;
+    bottom: 100px;
+    left: 20px;
+    right: 20px;
+    background: rgba(30,24,50,0.92);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 14px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 10;
+    backdrop-filter: blur(12px);
+  }
+  .toast-text {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: white;
+    line-height: 1.4;
+  }
+
+  /* Desktop note */
+  .desktop-note {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    right: 16px;
+    background: rgba(0,0,0,0.25);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    color: rgba(255,255,255,0.6);
+    text-align: center;
+    display: none; /* hidden on mobile, shown on desktop via JS */
+    z-index: 3;
+  }
+
+  /* ── Labels ── */
+  .screen-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="state-bar">
+  <button class="state-btn active" onclick="show('a')">A -- New User</button>
+  <button class="state-btn" onclick="show('b')">B -- Existing, Not Friends</button>
+  <button class="state-btn" onclick="show('c')">C -- Already Friends</button>
+  <button class="state-btn" onclick="show('d')">D -- Invalid Code</button>
+</div>
+
+<div class="phone">
+
+  <!-- STATE A: New User -->
+  <div class="screen screen-a visible" id="screen-a">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+
+    <div class="top-bar">
+      <div class="wordmark">
+        M<span class="dot dot-g"></span><span class="dot dot-gr"></span>VES
+      </div>
+    </div>
+
+    <div class="hero">
+      <div class="avatar-wrap">
+        <div class="avatar-glow"></div>
+        <div class="avatar-ring"></div>
+        <div class="avatar">SR</div>
+      </div>
+      <div class="hero-name">Sarah R. invited you<br>to Mooves</div>
+      <div class="hero-sub">See when your friends are free, without having to ask.</div>
+    </div>
+
+    <div class="cta-block">
+      <button class="cta-btn">Join</button>
+    </div>
+  </div>
+
+  <!-- STATE B: Existing User, Not Yet Friends -->
+  <div class="screen screen-b" id="screen-b">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+
+    <div class="top-bar">
+      <div class="wordmark">
+        M<span class="dot dot-g"></span><span class="dot dot-gr"></span>VES
+      </div>
+    </div>
+
+    <div class="hero">
+      <div class="avatar-wrap">
+        <div class="avatar-glow"></div>
+        <div class="avatar-ring"></div>
+        <div class="avatar">SR</div>
+      </div>
+      <div class="hero-name">Sarah R. wants to<br>see you on Mooves</div>
+      <div class="hero-sub">Tap below and you'll both be able to see when the other is free.</div>
+    </div>
+
+    <div class="cta-block">
+      <button class="cta-btn">Let's Go</button>
+    </div>
+  </div>
+
+  <!-- STATE C: Already Friends (redirect state, shown as feed with toast) -->
+  <div class="screen" id="screen-c" style="background: #F8F6FF; min-height: 620px; position: relative;">
+    <!-- Minimal feed preview -->
+    <div style="background: #F8F6FF; padding: 52px 20px 12px; display: flex; align-items: center; justify-content: space-between;">
+      <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:22px;letter-spacing:-0.02em;color:#1C1730;display:flex;align-items:center;">
+        M<span style="display:inline-block;width:13px;height:13px;background:#2ECC71;border-radius:50%;position:relative;top:1px;box-shadow:0 0 6px rgba(46,204,113,0.5);"></span><span style="display:inline-block;width:13px;height:13px;background:#BDB5D4;border-radius:50%;position:relative;top:1px;margin-right:1px;"></span>VES
+      </div>
+    </div>
+    <div style="padding: 8px 16px; font-family:'Inter',sans-serif; font-size:11px;font-weight:600;color:#6B628A;text-transform:uppercase;letter-spacing:.08em;">Free right now</div>
+    <div style="margin: 0 16px 10px; background:white;border-radius:16px;padding:14px;display:flex;align-items:center;gap:12px;border:1px solid rgba(46,204,113,0.2);box-shadow:0 2px 10px rgba(46,204,113,0.06);">
+      <div style="width:44px;height:44px;border-radius:50%;background:#7C5CDB;display:flex;align-items:center;justify-content:center;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:15px;color:white;position:relative;flex-shrink:0;">
+        JM
+        <div style="position:absolute;bottom:0;right:0;width:12px;height:12px;border-radius:50%;background:#2ECC71;border:2px solid white;"></div>
+      </div>
+      <div style="flex:1;">
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;font-weight:700;color:#1C1730;margin-bottom:2px;">Jake M.</div>
+        <div style="font-size:12px;color:#6B628A;">up for anything tbh</div>
+      </div>
+      <div style="font-size:11px;color:#6B628A;font-weight:500;">12m</div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast">
+      <span style="font-size:18px;">🟢</span>
+      <div class="toast-text">You can already see Sarah R.<br>on Mooves!</div>
+    </div>
+  </div>
+
+  <!-- STATE D: Invalid Code -->
+  <div class="screen screen-d" id="screen-d">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+
+    <div class="top-bar">
+      <div class="wordmark">
+        M<span class="dot dot-g"></span><span class="dot dot-gr"></span>VES
+      </div>
+    </div>
+
+    <div class="hero">
+      <div class="avatar-wrap">
+        <div class="avatar-glow"></div>
+        <div class="avatar-ring"></div>
+        <div class="avatar avatar-generic">🐮</div>
+      </div>
+      <div class="hero-name">You've been invited<br>to Mooves</div>
+      <div class="hero-sub">See when your friends are free, without having to ask.</div>
+    </div>
+
+    <div class="cta-block">
+      <button class="cta-btn">Join</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="screen-label">Screen 1 -- Invite Link Landing Page</div>
+
+<script>
+  function show(state) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('visible'));
+    document.querySelectorAll('.state-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('screen-' + state).classList.add('visible');
+    event.target.classList.add('active');
+  }
+</script>
+
+</body>
+</html>

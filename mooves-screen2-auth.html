@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mooves -- Screen 2: Auth</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --purple: #7C5CDB;
+    --purple-light: #EDE9FF;
+    --green: #2ECC71;
+    --grey-status: #BDB5D4;
+    --bg: #F8F6FF;
+    --white: #FFFFFF;
+    --text: #1C1730;
+    --text-secondary: #6B628A;
+    --border: #E8E4F5;
+    --red: #E8405A;
+    --red-light: #FEE8EC;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #1C1730;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    gap: 32px;
+  }
+
+  .state-bar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .state-btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 7px 16px;
+    border-radius: 100px;
+    border: 1.5px solid rgba(255,255,255,0.2);
+    background: transparent;
+    color: rgba(255,255,255,0.5);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .state-btn.active {
+    background: rgba(255,255,255,0.12);
+    color: white;
+    border-color: rgba(255,255,255,0.4);
+  }
+
+  .phone {
+    width: 320px;
+    min-height: 620px;
+    border-radius: 44px;
+    border: 3px solid rgba(255,255,255,0.1);
+    overflow: hidden;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.5);
+    position: relative;
+  }
+
+  .screen { display: none; flex-direction: column; min-height: 620px; }
+  .screen.visible { display: flex; }
+
+  /* ── Shared nav bar ── */
+  .nav-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 52px 24px 0;
+  }
+  .back-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--purple);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+  }
+  .back-chevron {
+    font-size: 18px;
+    line-height: 1;
+  }
+  .wordmark-small {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 800;
+    font-size: 16px;
+    color: var(--text);
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+  }
+  .wordmark-small .d {
+    display: inline-block;
+    border-radius: 50%;
+    position: relative;
+    top: 0.5px;
+  }
+  .wordmark-small .d-g { width: 10px; height: 10px; background: var(--green); }
+  .wordmark-small .d-gr { width: 10px; height: 10px; background: var(--grey-status); margin-right: 1px; }
+
+  /* ── Screen body ── */
+  .screen-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 40px 28px 0;
+  }
+  .screen-heading {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 800;
+    font-size: 28px;
+    color: var(--text);
+    letter-spacing: -0.025em;
+    line-height: 1.15;
+    margin-bottom: 10px;
+  }
+  .screen-subtext {
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-bottom: 36px;
+  }
+
+  /* ── Phone input (2a) ── */
+  .phone-input-wrap {
+    display: flex;
+    align-items: center;
+    background: var(--white);
+    border: 2px solid var(--border);
+    border-radius: 16px;
+    padding: 0 16px;
+    height: 60px;
+    gap: 10px;
+    transition: border-color 0.15s;
+    margin-bottom: 12px;
+  }
+  .phone-input-wrap.focused {
+    border-color: var(--purple);
+    box-shadow: 0 0 0 4px rgba(124,92,219,0.1);
+  }
+  .phone-prefix {
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .prefix-divider {
+    width: 1px;
+    height: 24px;
+    background: var(--border);
+    flex-shrink: 0;
+  }
+  .phone-number {
+    font-family: 'Inter', sans-serif;
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--text);
+    letter-spacing: 0.02em;
+    flex: 1;
+    border: none;
+    background: transparent;
+    outline: none;
+  }
+  .phone-number::placeholder { color: var(--grey-status); font-weight: 400; }
+
+  .inline-error {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    color: var(--red);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* ── CTA button ── */
+  .cta-block {
+    padding: 24px 28px 44px;
+    margin-top: auto;
+  }
+  .cta-btn {
+    width: 100%;
+    padding: 17px;
+    border-radius: 16px;
+    border: none;
+    background: var(--purple);
+    color: white;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 800;
+    font-size: 17px;
+    letter-spacing: -0.01em;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .cta-btn:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+
+  /* ── OTP boxes (2b) ── */
+  .otp-row {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 28px;
+  }
+  .otp-box {
+    width: 42px;
+    height: 52px;
+    border-radius: 12px;
+    border: 2px solid var(--border);
+    background: var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Inter', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    transition: all 0.15s;
+  }
+  .otp-box.active {
+    border-color: var(--purple);
+    box-shadow: 0 0 0 4px rgba(124,92,219,0.1);
+  }
+  .otp-box.filled {
+    background: var(--purple-light);
+    border-color: var(--purple);
+    color: var(--purple);
+  }
+  .otp-box.error {
+    background: var(--red-light);
+    border-color: var(--red);
+    color: var(--red);
+  }
+
+  .otp-error-msg {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    color: var(--red);
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  .resend-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .resend-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: var(--text-secondary);
+  }
+  .resend-btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+  }
+  .resend-btn.inactive { color: var(--grey-status); cursor: default; }
+  .resend-btn.active { color: var(--purple); }
+
+  /* ── ToS line ── */
+  .tos-line {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-align: center;
+    line-height: 1.5;
+    padding: 0 28px;
+    margin-bottom: 20px;
+  }
+  .tos-line a { color: var(--purple); text-decoration: none; font-weight: 500; }
+
+  .screen-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="state-bar">
+  <button class="state-btn active" onclick="show('2a')">2a -- Phone Entry</button>
+  <button class="state-btn" onclick="show('2b')">2b -- OTP Entry</button>
+  <button class="state-btn" onclick="show('2b-error')">2b -- Wrong Code</button>
+</div>
+
+<div class="phone">
+
+  <!-- 2a: Phone Entry -->
+  <div class="screen visible" id="screen-2a">
+    <div class="nav-bar">
+      <button class="back-btn"><span class="back-chevron">‹</span></button>
+      <div class="wordmark-small">M<span class="d d-g"></span><span class="d d-gr"></span>VES</div>
+      <div style="width:40px;"></div>
+    </div>
+
+    <div class="screen-body">
+      <div class="screen-heading">What's your<br>number?</div>
+      <div class="screen-subtext">We'll text you a code to verify it's you.</div>
+
+      <div class="phone-input-wrap focused">
+        <div class="phone-prefix">🇺🇸 +1</div>
+        <div class="prefix-divider"></div>
+        <div class="phone-number" style="color:var(--text);">(312) 555-12<span style="opacity:0.3;">|</span></div>
+      </div>
+    </div>
+
+    <div class="tos-line">
+      By continuing, you agree to our <a href="#">Terms</a> and <a href="#">Privacy Policy</a>.
+    </div>
+    <div class="cta-block" style="padding-top: 0;">
+      <button class="cta-btn">Send code</button>
+    </div>
+  </div>
+
+  <!-- 2b: OTP Entry (clean) -->
+  <div class="screen" id="screen-2b">
+    <div class="nav-bar">
+      <button class="back-btn"><span class="back-chevron">‹</span> Wrong number?</button>
+      <div style="width:40px;"></div>
+    </div>
+
+    <div class="screen-body">
+      <div class="screen-heading">Check your<br>texts</div>
+      <div class="screen-subtext">We sent a 6-digit code to (312) 555-1234.</div>
+
+      <div class="otp-row">
+        <div class="otp-box filled">4</div>
+        <div class="otp-box filled">7</div>
+        <div class="otp-box filled">2</div>
+        <div class="otp-box active"></div>
+        <div class="otp-box"></div>
+        <div class="otp-box"></div>
+      </div>
+
+      <div class="resend-wrap">
+        <span class="resend-label">Didn't get it?</span>
+        <button class="resend-btn inactive">Resend in 0:21</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2b: OTP Error state -->
+  <div class="screen" id="screen-2b-error">
+    <div class="nav-bar">
+      <button class="back-btn"><span class="back-chevron">‹</span> Wrong number?</button>
+      <div style="width:40px;"></div>
+    </div>
+
+    <div class="screen-body">
+      <div class="screen-heading">Check your<br>texts</div>
+      <div class="screen-subtext">We sent a 6-digit code to (312) 555-1234.</div>
+
+      <div class="otp-row">
+        <div class="otp-box error">4</div>
+        <div class="otp-box error">7</div>
+        <div class="otp-box error">2</div>
+        <div class="otp-box error">9</div>
+        <div class="otp-box error">1</div>
+        <div class="otp-box error">3</div>
+      </div>
+
+      <div class="otp-error-msg">That code isn't right, try again.</div>
+
+      <div class="resend-wrap">
+        <span class="resend-label">Didn't get it?</span>
+        <button class="resend-btn active">Resend code</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="screen-label">Screen 2 -- Auth (Phone + OTP)</div>
+
+<script>
+  function show(state) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('visible'));
+    document.querySelectorAll('.state-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('screen-' + state).classList.add('visible');
+    event.target.classList.add('active');
+  }
+</script>
+
+</body>
+</html>

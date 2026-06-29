@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Google Fonts — loaded in layout.tsx via next/font or link tag */
+/* Plus Jakarta Sans: headings/display | Inter: all body/UI */
+
+@layer base {
+  body {
+    @apply bg-surface-bg text-text-primary font-sans;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}

@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mooves -- Screen 5: Go Green Sheet</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --purple: #7C5CDB;
+    --purple-mid: #9B7FE8;
+    --green: #2ECC71;
+    --green-card-bg: rgba(46,204,113,0.07);
+    --green-card-border: rgba(46,204,113,0.22);
+    --grey-status: #BDB5D4;
+    --bg: #F8F6FF;
+    --white: #FFFFFF;
+    --text: #1C1730;
+    --text-secondary: #6B628A;
+    --border: #E8E4F5;
+    --red: #E8405A;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #1C1730;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    gap: 32px;
+  }
+
+  .state-bar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .state-btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 7px 16px;
+    border-radius: 100px;
+    border: 1.5px solid rgba(255,255,255,0.2);
+    background: transparent;
+    color: rgba(255,255,255,0.5);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .state-btn.active {
+    background: rgba(255,255,255,0.12);
+    color: white;
+    border-color: rgba(255,255,255,0.4);
+  }
+
+  /* ── Phone frame ── */
+  .phone {
+    width: 320px;
+    min-height: 620px;
+    border-radius: 44px;
+    border: 3px solid rgba(255,255,255,0.1);
+    overflow: hidden;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.5);
+    position: relative;
+  }
+
+  .screen { display: none; flex-direction: column; min-height: 620px; position: relative; }
+  .screen.visible { display: flex; }
+
+  /* ── Feed background (dimmed) ── */
+  .feed-bg {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .feed-header-bg {
+    background: linear-gradient(160deg, #7C5CDB 0%, #9B7FE8 70%, #A98FF0 100%);
+    padding: 52px 20px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .wordmark {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 800;
+    font-size: 20px;
+    color: white;
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+  }
+  .wordmark .oo {
+    display: inline-flex;
+    align-items: center;
+    gap: 1px;
+    position: relative;
+    top: 0.5px;
+  }
+  .wordmark .dot-g { width: 11px; height: 11px; background: var(--green); border-radius: 50%; box-shadow: 0 0 6px rgba(46,204,113,0.6); }
+  .wordmark .dot-gr { width: 11px; height: 11px; background: rgba(255,255,255,0.35); border-radius: 50%; }
+
+  .feed-content-bg {
+    flex: 1;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  /* Dimmed status button */
+  .status-btn-bg {
+    width: 100%;
+    padding: 14px 20px;
+    border-radius: 16px;
+    border: 1.5px solid var(--border);
+    background: var(--white);
+    color: var(--text-secondary);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 800;
+    font-size: 16px;
+    opacity: 0.4;
+    margin-bottom: 4px;
+  }
+  .section-label-bg {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 4px 4px 8px;
+    opacity: 0.4;
+  }
+  .friend-card-bg {
+    border-radius: 18px;
+    border: 1.5px solid var(--green-card-border);
+    background: var(--green-card-bg);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    opacity: 0.35;
+  }
+  .friend-avatar-bg {
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700; font-size: 16px; color: white;
+    flex-shrink: 0;
+  }
+  .friend-name-bg {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 15px; font-weight: 700; color: var(--text);
+  }
+  .friend-note-bg {
+    font-size: 13px; color: var(--text-secondary); margin-top: 2px;
+  }
+
+  /* ── Dim overlay ── */
+  .dim {
+    position: absolute;
+    inset: 0;
+    background: rgba(28,23,48,0.5);
+    border-radius: 41px;
+    z-index: 5;
+  }
+
+  /* ── Bottom sheet ── */
+  .sheet {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--white);
+    border-radius: 28px 28px 0 0;
+    padding: 12px 20px 44px;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .drag-handle {
+    width: 36px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 100px;
+    margin: 0 auto 24px;
+  }
+
+  .sheet-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 10px;
+  }
+
+  /* Note input */
+  .note-input {
+    width: 100%;
+    height: 52px;
+    border-radius: 14px;
+    border: 2px solid var(--border);
+    background: var(--bg);
+    padding: 0 16px;
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    color: var(--text);
+    outline: none;
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  .note-input.focused {
+    border-color: var(--purple);
+    box-shadow: 0 0 0 4px rgba(124,92,219,0.1);
+  }
+  .note-input.has-value { border-color: var(--purple); }
+  .note-placeholder { color: var(--grey-status); font-size: 15px; }
+
+  /* Group checkbox list */
+  .check-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 20px;
+    background: var(--bg);
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1.5px solid var(--border);
+  }
+  .check-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 13px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+  }
+  .check-row:last-child { border-bottom: none; }
+  .check-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .check-label.muted { color: var(--text-secondary); }
+  .check-box {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    border: 2px solid var(--border);
+    background: var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+  .check-box.checked {
+    background: var(--purple);
+    border-color: var(--purple);
+  }
+  .check-box.checked::after {
+    content: '';
+    display: block;
+    width: 5px;
+    height: 9px;
+    border: 2px solid white;
+    border-top: none;
+    border-left: none;
+    transform: rotate(45deg) translate(-1px, -1px);
+  }
+
+  /* Sheet CTA */
+  .sheet-cta {
+    width: 100%;
+    padding: 16px;
+    border-radius: 16px;
+    border: none;
+    background: var(--green);
+    color: white;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 800;
+    font-size: 17px;
+    letter-spacing: -0.01em;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(46,204,113,0.3);
+  }
+
+  /* ── Action sheet (go grey) ── */
+  .action-sheet {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    padding: 0 8px 44px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .action-card {
+    background: rgba(248,246,255,0.96);
+    backdrop-filter: blur(20px);
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .action-title {
+    padding: 12px 16px 6px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .action-btn {
+    width: 100%;
+    padding: 16px;
+    background: none;
+    border: none;
+    font-family: 'Inter', sans-serif;
+    font-size: 17px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+  }
+  .action-btn.destructive { color: var(--red); }
+  .action-btn.cancel {
+    background: rgba(248,246,255,0.96);
+    backdrop-filter: blur(20px);
+    border-radius: 16px;
+    color: var(--text);
+    font-weight: 700;
+    border: 1px solid var(--border);
+  }
+
+  /* Bottom nav */
+  .bottom-nav {
+    display: flex;
+    align-items: center;
+    background: var(--white);
+    border-top: 1px solid var(--border);
+    padding: 10px 0 26px;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+  }
+  .nav-tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    padding: 4px 0;
+  }
+  .nav-icon { width: 22px; height: 22px; }
+  .nav-label { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.02em; }
+  .nav-tab.active .nav-label { color: var(--purple); }
+  .nav-tab.active svg { stroke: var(--purple); }
+  .nav-tab:not(.active) .nav-label { color: var(--grey-status); }
+  .nav-tab:not(.active) svg { stroke: var(--grey-status); }
+
+  .screen-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="state-bar">
+  <button class="state-btn active" onclick="show('sheet-empty')">Sheet — empty</button>
+  <button class="state-btn" onclick="show('sheet-filled')">Sheet — with note + groups</button>
+  <button class="state-btn" onclick="show('go-grey')">Go grey confirmation</button>
+</div>
+
+<div class="phone">
+
+  <!-- STATE 1: Sheet open, empty -->
+  <div class="screen visible" id="screen-sheet-empty">
+    <!-- Dimmed feed background -->
+    <div class="feed-bg">
+      <div class="feed-header-bg">
+        <div class="wordmark">M<span class="oo"><span class="dot-g"></span><span class="dot-gr"></span></span>VES</div>
+      </div>
+      <div class="feed-content-bg">
+        <div class="status-btn-bg">Not free</div>
+        <div class="section-label-bg">Free right now</div>
+        <div class="friend-card-bg">
+          <div class="friend-avatar-bg" style="background:linear-gradient(135deg,#E8405A,#FF6B6B);">JM</div>
+          <div><div class="friend-name-bg">Jake M.</div><div class="friend-note-bg">up for anything tbh</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="dim"></div>
+
+    <!-- Bottom sheet -->
+    <div class="sheet">
+      <div class="drag-handle"></div>
+      <div class="sheet-label">What's the vibe?</div>
+      <div class="note-input">
+        <span class="note-placeholder">up for anything, drinks?, etc.</span>
+      </div>
+      <button class="sheet-cta">I'm free</button>
+    </div>
+  </div>
+
+  <!-- STATE 2: Sheet with note typed + groups -->
+  <div class="screen" id="screen-sheet-filled">
+    <div class="feed-bg">
+      <div class="feed-header-bg">
+        <div class="wordmark">M<span class="oo"><span class="dot-g"></span><span class="dot-gr"></span></span>VES</div>
+      </div>
+      <div class="feed-content-bg">
+        <div class="status-btn-bg">Not free</div>
+        <div class="section-label-bg">Free right now</div>
+        <div class="friend-card-bg">
+          <div class="friend-avatar-bg" style="background:linear-gradient(135deg,#E8405A,#FF6B6B);">JM</div>
+          <div><div class="friend-name-bg">Jake M.</div><div class="friend-note-bg">up for anything tbh</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="dim"></div>
+
+    <div class="sheet">
+      <div class="drag-handle"></div>
+      <div class="sheet-label">What's the vibe?</div>
+      <div class="note-input has-value" style="color:var(--text);">drinks after 7?</div>
+
+      <div class="sheet-label">Who can see you?</div>
+      <div class="check-list">
+        <div class="check-row">
+          <span class="check-label">Everyone</span>
+          <div class="check-box"></div>
+        </div>
+        <div class="check-row">
+          <span class="check-label">Work</span>
+          <div class="check-box checked"></div>
+        </div>
+        <div class="check-row">
+          <span class="check-label">College</span>
+          <div class="check-box checked"></div>
+        </div>
+        <div class="check-row">
+          <span class="check-label muted">Neighbors</span>
+          <div class="check-box"></div>
+        </div>
+      </div>
+
+      <button class="sheet-cta">I'm free</button>
+    </div>
+  </div>
+
+  <!-- STATE 3: Go grey confirmation -->
+  <div class="screen" id="screen-go-grey">
+    <!-- Feed (I'm free state) -->
+    <div class="feed-bg">
+      <div class="feed-header-bg">
+        <div class="wordmark">M<span class="oo"><span class="dot-g"></span><span class="dot-gr"></span></span>VES</div>
+      </div>
+      <div class="feed-content-bg">
+        <!-- Green button, dimmed -->
+        <div style="width:100%;padding:14px 20px;border-radius:16px;background:var(--green);color:white;font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:16px;opacity:0.35;margin-bottom:4px;text-align:center;">I'm free</div>
+        <div class="section-label-bg">Free right now</div>
+        <div class="friend-card-bg">
+          <div class="friend-avatar-bg" style="background:linear-gradient(135deg,#E8405A,#FF6B6B);">JM</div>
+          <div><div class="friend-name-bg">Jake M.</div><div class="friend-note-bg">up for anything tbh</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="dim"></div>
+
+    <!-- Action sheet -->
+    <div class="action-sheet">
+      <div class="action-card">
+        <div class="action-title">You're going dark and won't be visible</div>
+        <button class="action-btn destructive">Go grey</button>
+      </div>
+      <button class="action-btn cancel">Cancel</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="screen-label">Screen 5 — Go Green Sheet</div>
+
+<script>
+  function show(state) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('visible'));
+    document.querySelectorAll('.state-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('screen-' + state).classList.add('visible');
+    event.target.classList.add('active');
+  }
+</script>
+
+</body>
+</html>

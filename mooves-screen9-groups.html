@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mooves — Screen 9: Groups Management</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --purple: #7C5CDB;
+    --purple-light: #EDE9FF;
+    --green: #2ECC71;
+    --grey-status: #BDB5D4;
+    --bg: #F8F6FF;
+    --white: #FFFFFF;
+    --text: #1C1730;
+    --text-secondary: #6B628A;
+    --border: #E8E4F5;
+    --red: #E8405A;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #1C1730;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    gap: 32px;
+  }
+
+  .state-bar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .state-btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 7px 16px;
+    border-radius: 100px;
+    border: 1.5px solid rgba(255,255,255,0.2);
+    background: transparent;
+    color: rgba(255,255,255,0.5);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .state-btn.active {
+    background: rgba(255,255,255,0.12);
+    color: white;
+    border-color: rgba(255,255,255,0.4);
+  }
+
+  .phone {
+    width: 320px;
+    height: 640px;
+    border-radius: 44px;
+    border: 3px solid rgba(255,255,255,0.1);
+    overflow: hidden;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.5);
+    position: relative;
+  }
+
+  .screen { display: none; flex-direction: column; height: 100%; }
+  .screen.visible { display: flex; }
+
+  /* ── People tab header ── */
+  .people-header {
+    background: var(--white);
+    padding: 44px 20px 0;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .people-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .people-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 800;
+    font-size: 22px;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+  .header-add-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--purple-light);
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--purple);
+    flex-shrink: 0;
+  }
+  .sub-tabs {
+    display: flex;
+  }
+  .sub-tab {
+    flex: 1;
+    text-align: center;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 8px 0 10px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+  }
+  .sub-tab.active {
+    color: var(--purple);
+    border-bottom-color: var(--purple);
+  }
+
+  /* ── Group list ── */
+  .group-list {
+    flex: 1;
+    overflow-y: auto;
+    background: var(--white);
+  }
+  .group-row-wrap {
+    position: relative;
+    overflow: hidden;
+    border-bottom: 1px solid var(--border);
+  }
+  .group-row {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    padding: 12px 20px;
+    background: var(--white);
+    cursor: pointer;
+    transition: transform 0.22s ease;
+  }
+  .group-row.swiped { transform: translateX(-72px); }
+  .group-emoji-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: var(--purple-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+  .group-info { flex: 1; min-width: 0; }
+  .group-name {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .group-count {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 1px;
+  }
+  .group-chevron {
+    color: var(--border);
+    font-size: 22px;
+    font-weight: 300;
+    flex-shrink: 0;
+  }
+  .delete-reveal {
+    position: absolute;
+    right: 0; top: 0;
+    height: 100%; width: 72px;
+    background: var(--red);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: white;
+    cursor: pointer;
+  }
+
+  /* ── Empty state ── */
+  .empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 32px;
+    text-align: center;
+    background: var(--bg);
+  }
+  .empty-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+    background: var(--purple-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    font-size: 26px;
+    line-height: 1;
+  }
+  .empty-headline {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 800;
+    font-size: 18px;
+    color: var(--text);
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+  .empty-sub {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-bottom: 28px;
+  }
+  .empty-cta {
+    width: 100%;
+    padding: 14px;
+    border-radius: 16px;
+    border: none;
+    background: var(--purple);
+    color: white;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: -0.01em;
+    cursor: pointer;
+  }
+
+  /* ── Sheet overlay ── */
+  .sheet-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(28,23,48,0.48);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    z-index: 10;
+  }
+  .confirm-sheet {
+    background: var(--white);
+    border-radius: 24px 24px 0 0;
+    padding: 16px 20px 36px;
+  }
+  .sheet-handle {
+    width: 36px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 100px;
+    margin: 0 auto 20px;
+  }
+  .sheet-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--text);
+    letter-spacing: -0.01em;
+    margin-bottom: 8px;
+  }
+  .sheet-body {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-bottom: 24px;
+  }
+  .sheet-btn {
+    width: 100%;
+    padding: 15px;
+    border-radius: 14px;
+    border: none;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    margin-bottom: 8px;
+  }
+  .sheet-btn.destructive { background: #FFF0F2; color: var(--red); }
+  .sheet-btn.cancel { background: var(--bg); color: var(--text-secondary); }
+
+  /* ── Emoji picker sheet ── */
+  .emoji-picker-sheet {
+    background: var(--white);
+    border-radius: 24px 24px 0 0;
+    padding: 16px 20px 32px;
+  }
+  .emoji-picker-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--text);
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .emoji-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+  .emoji-cell {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    border-radius: 10px;
+    cursor: pointer;
+    line-height: 1;
+  }
+  .emoji-cell.selected {
+    background: var(--purple-light);
+    outline: 2px solid var(--purple);
+  }
+  .emoji-cell:hover { background: var(--bg); }
+
+  /* ── Create / Edit screen ── */
+  .edit-header {
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    padding: 44px 16px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .edit-back {
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--purple);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 56px;
+  }
+  .edit-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--text);
+    letter-spacing: -0.01em;
+    text-align: center;
+    flex: 1;
+  }
+  .edit-done {
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--purple);
+    cursor: pointer;
+    text-align: right;
+    min-width: 56px;
+  }
+  .edit-done.disabled { color: var(--grey-status); cursor: default; }
+
+  .edit-body {
+    flex: 1;
+    overflow-y: auto;
+    background: var(--bg);
+  }
+
+  /* ── Emoji + name row ── */
+  .emoji-name-row {
+    background: var(--white);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 16px;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .emoji-tap-target {
+    width: 50px;
+    height: 50px;
+    border-radius: 14px;
+    background: var(--purple-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    flex-shrink: 0;
+    cursor: pointer;
+    position: relative;
+    line-height: 1;
+  }
+  .emoji-edit-badge {
+    position: absolute;
+    bottom: -4px;
+    right: -4px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--purple);
+    border: 2px solid var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .name-input-wrap { flex: 1; }
+  .name-input-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
+  }
+  .name-input-value {
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .name-input-placeholder {
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    color: var(--text-secondary);
+  }
+
+  /* ── Friends section with search ── */
+  .friends-section {
+    background: var(--white);
+    margin-top: 8px;
+    border-top: 1px solid var(--border);
+  }
+  .section-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px 8px;
+  }
+  .section-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .friends-count-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: var(--purple);
+    font-weight: 600;
+  }
+  .friends-search-wrap {
+    padding: 0 16px 10px;
+    position: relative;
+  }
+  .friends-search-icon {
+    position: absolute;
+    left: 27px;
+    top: 50%;
+    transform: translateY(-60%);
+    color: var(--text-secondary);
+    pointer-events: none;
+  }
+  .friends-search-field {
+    width: 100%;
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 12px 8px 32px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    color: var(--text-secondary);
+    outline: none;
+  }
+  .friends-search-field.has-query {
+    border-color: var(--purple);
+    color: var(--text);
+  }
+
+  /* ── Member checklist ── */
+  .member-row {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    padding: 10px 20px;
+    background: var(--white);
+    border-top: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .member-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    color: white;
+    flex-shrink: 0;
+  }
+  .member-name {
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+    flex: 1;
+  }
+  .checkbox {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .checkbox.checked {
+    background: var(--purple);
+    border-color: var(--purple);
+  }
+  .checkbox.checked::after {
+    content: '';
+    width: 5px;
+    height: 9px;
+    border: 2px solid white;
+    border-top: none;
+    border-left: none;
+    transform: rotate(45deg) translate(-1px, -1px);
+    display: block;
+  }
+
+  /* ── Delete group button ── */
+  .delete-group-btn {
+    margin: 20px 20px 8px;
+    padding: 14px;
+    border-radius: 14px;
+    border: none;
+    background: #FFF0F2;
+    color: var(--red);
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    width: calc(100% - 40px);
+    cursor: pointer;
+  }
+
+  /* ── Bottom nav ── */
+  .bottom-nav {
+    display: flex;
+    align-items: center;
+    background: var(--white);
+    border-top: 1px solid var(--border);
+    padding: 10px 0 26px;
+    flex-shrink: 0;
+  }
+  .nav-tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    padding: 4px 0;
+  }
+  .nav-icon { width: 22px; height: 22px; }
+  .nav-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .nav-tab.active .nav-label { color: var(--purple); }
+  .nav-tab:not(.active) .nav-label { color: var(--grey-status); }
+  .nav-tab.active svg { stroke: var(--purple); }
+  .nav-tab:not(.active) svg { stroke: var(--grey-status); }
+
+  .screen-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="state-bar">
+  <button class="state-btn active" onclick="show('groups-list')">Groups list</button>
+  <button class="state-btn" onclick="show('groups-empty')">Empty</button>
+  <button class="state-btn" onclick="show('groups-delete')">Delete group</button>
+  <button class="state-btn" onclick="show('create-group')">Create group</button>
+  <button class="state-btn" onclick="show('emoji-picker')">Emoji picker</button>
+  <button class="state-btn" onclick="show('edit-group')">Edit group</button>
+</div>
+
+<div class="phone">
+
+  <!-- ───────────────────────── -->
+  <!-- STATE 1: Groups list      -->
+  <!-- ───────────────────────── -->
+  <div class="screen visible" id="screen-groups-list">
+    <div class="people-header">
+      <div class="people-header-row">
+        <div class="people-title">People</div>
+        <button class="header-add-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+      </div>
+      <div class="sub-tabs">
+        <div class="sub-tab">Friends</div>
+        <div class="sub-tab active">Groups</div>
+      </div>
+    </div>
+    <div class="group-list">
+      <div class="group-row-wrap">
+        <div class="group-row">
+          <div class="group-emoji-icon">🤝</div>
+          <div class="group-info">
+            <div class="group-name">Close friends</div>
+            <div class="group-count">8 friends</div>
+          </div>
+          <div class="group-chevron">›</div>
+        </div>
+      </div>
+      <div class="group-row-wrap">
+        <div class="group-row">
+          <div class="group-emoji-icon">🎓</div>
+          <div class="group-info">
+            <div class="group-name">College</div>
+            <div class="group-count">12 friends</div>
+          </div>
+          <div class="group-chevron">›</div>
+        </div>
+      </div>
+      <div class="group-row-wrap">
+        <div class="group-row">
+          <div class="group-emoji-icon">💼</div>
+          <div class="group-info">
+            <div class="group-name">Work crew</div>
+            <div class="group-count">3 friends</div>
+          </div>
+          <div class="group-chevron">›</div>
+        </div>
+      </div>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-tab">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span class="nav-label">Home</span>
+      </div>
+      <div class="nav-tab active">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span class="nav-label">People</span>
+      </div>
+      <div class="nav-tab">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span class="nav-label">Settings</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ───────────────────────── -->
+  <!-- STATE 2: Empty groups     -->
+  <!-- ───────────────────────── -->
+  <div class="screen" id="screen-groups-empty">
+    <div class="people-header">
+      <div class="people-header-row">
+        <div class="people-title">People</div>
+        <button class="header-add-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+      </div>
+      <div class="sub-tabs">
+        <div class="sub-tab">Friends</div>
+        <div class="sub-tab active">Groups</div>
+      </div>
+    </div>
+    <div class="empty-state">
+      <div class="empty-icon">👥</div>
+      <div class="empty-headline">No groups yet.</div>
+      <div class="empty-sub">Groups let you choose who sees you when you go green.</div>
+      <button class="empty-cta">Create a group</button>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-tab">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span class="nav-label">Home</span>
+      </div>
+      <div class="nav-tab active">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span class="nav-label">People</span>
+      </div>
+      <div class="nav-tab">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span class="nav-label">Settings</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ───────────────────────────────── -->
+  <!-- STATE 3: Delete group confirmation -->
+  <!-- ───────────────────────────────── -->
+  <div class="screen" id="screen-groups-delete">
+    <div class="people-header">
+      <div class="people-header-row">
+        <div class="people-title">People</div>
+        <button class="header-add-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+      </div>
+      <div class="sub-tabs">
+        <div class="sub-tab">Friends</div>
+        <div class="sub-tab active">Groups</div>
+      </div>
+    </div>
+    <div class="group-list">
+      <div class="group-row-wrap">
+        <div class="group-row">
+          <div class="group-emoji-icon">🤝</div>
+          <div class="group-info">
+            <div class="group-name">Close friends</div>
+            <div class="group-count">8 friends</div>
+          </div>
+          <div class="group-chevron">›</div>
+        </div>
+      </div>
+      <div class="group-row-wrap">
+        <div class="delete-reveal">Delete</div>
+        <div class="group-row swiped">
+          <div class="group-emoji-icon">🎓</div>
+          <div class="group-info">
+            <div class="group-name">College</div>
+            <div class="group-count">12 friends</div>
+          </div>
+          <div class="group-chevron">›</div>
+        </div>
+      </div>
+      <div class="group-row-wrap">
+        <div class="group-row">
+          <div class="group-emoji-icon">💼</div>
+          <div class="group-info">
+            <div class="group-name">Work crew</div>
+            <div class="group-count">3 friends</div>
+          </div>
+          <div class="group-chevron">›</div>
+        </div>
+      </div>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-tab">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span class="nav-label">Home</span>
+      </div>
+      <div class="nav-tab active">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span class="nav-label">People</span>
+      </div>
+      <div class="nav-tab">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span class="nav-label">Settings</span>
+      </div>
+    </div>
+    <div class="sheet-overlay">
+      <div class="confirm-sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title">Delete College?</div>
+        <div class="sheet-body">Your friends won't be affected, this just removes the group.</div>
+        <button class="sheet-btn destructive">Delete</button>
+        <button class="sheet-btn cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ───────────────────────── -->
+  <!-- STATE 4: Create group     -->
+  <!-- ───────────────────────── -->
+  <div class="screen" id="screen-create-group">
+    <div class="edit-header">
+      <div class="edit-back">
+        <svg width="9" height="15" viewBox="0 0 9 15" fill="none"><path d="M8 1L1.5 7.5L8 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Back
+      </div>
+      <div class="edit-title">New group</div>
+      <div class="edit-done disabled">Done</div>
+    </div>
+    <div class="edit-body">
+      <div class="emoji-name-row">
+        <div class="emoji-tap-target">
+          👥
+          <div class="emoji-edit-badge">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </div>
+        </div>
+        <div class="name-input-wrap">
+          <div class="name-input-label">Group name</div>
+          <div class="name-input-placeholder">e.g. College friends</div>
+        </div>
+      </div>
+      <div class="friends-section">
+        <div class="section-label-row">
+          <div class="section-label">Add friends</div>
+        </div>
+        <div class="friends-search-wrap">
+          <svg class="friends-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <div class="friends-search-field">Search friends</div>
+        </div>
+        <div class="member-row">
+          <div class="member-avatar" style="background:linear-gradient(135deg,#7C5CDB,#9B7FE8);">AB</div>
+          <div class="member-name">Alex B.</div>
+          <div class="checkbox"></div>
+        </div>
+        <div class="member-row">
+          <div class="member-avatar" style="background:linear-gradient(135deg,#F5A623,#F76B1C);">CD</div>
+          <div class="member-name">Casey D.</div>
+          <div class="checkbox"></div>
+        </div>
+        <div class="member-row">
+          <div class="member-avatar" style="background:linear-gradient(135deg,#E8405A,#FF6B6B);">JM</div>
+          <div class="member-name">Jake M.</div>
+          <div class="checkbox"></div>
+        </div>
+        <div class="member-row">
+          <div class="member-avatar" style="background:linear-gradient(135deg,#43C6AC,#2E86AB);">MT</div>
+          <div class="member-name">Mia T.</div>
+          <div class="checkbox"></div>
+        </div>
+        <div class="member-row">
+          <div class="member-avatar" style="background:linear-gradient(135deg,#F093FB,#C471ED);">SR</div>
+          <div class="member-name">Sarah R.</div>
+          <div class="checkbox"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ───────────────────────── -->
+  <!-- STATE 5: Emoji picker     -->
+  <!-- ───────────────────────── -->
+  <div class="screen" id="screen-emoji-picker">
+    <div class="edit-header">
+      <div class="edit-back">
+        <svg width="9" height="15" viewBox="0 0 9 15" fill="none"><path d="M8 1L1.5 7.5L8 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Back
+      </div>
+      <div class="edit-title">New group</div>
+      <div class="edit-done disabled">Done</div>
+    </div>
+    <div class="edit-body">
+      <div class="emoji-name-row">
+        <div class="emoji-tap-target" style="outline: 2.5px solid var(--purple); outline-offset: 2px;">
+          🤝
+          <div class="emoji-edit-badge">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </div>
+        </div>
+        <div class="name-input-wrap">
+          <div class="name-input-label">Group name</div>
+          <div class="name-input-placeholder">e.g. College friends</div>
+        </div>
+      </div>
+      <div class="friends-section">
+        <div class="section-label-row">
+          <div class="section-label">Add friends</div>
+        </div>
+        <div class="friends-search-wrap">
+          <svg class="friends-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <div class="friends-search-field">Search friends</div>
+        </div>
+        <div class="member-row" style="opacity:0.4;">
+          <div class="member-avatar" style="background:linear-gradient(135deg,#7C5CDB,#9B7FE8);">AB</div>
+          <div class="member-name">Alex B.</div>
+          <div class="checkbox"></div>
+        </div>
+        <div class="member-row" style="opacity:0.4;">
+          <div class="member-avatar" style="background:linear-gradient(135deg,#F5A623,#F76B1C);">CD</div>
+          <div class="member-name">Casey D.</div>
+          <div class="checkbox"></div>
+        </div>
+      </div>
+    </div>
+    <!-- Emoji picker sheet -->
+    <div class="sheet-overlay">
+      <div class="emoji-picker-sheet">
+        <div class="sheet-handle"></div>
+        <div class="emoji-picker-title">Pick an emoji</div>
+        <div class="emoji-grid">
+          <div class="emoji-cell selected">🤝</div>
+          <div class="emoji-cell">👥</div>
+          <div class="emoji-cell">⭐</div>
+          <div class="emoji-cell">🎓</div>
+          <div class="emoji-cell">💼</div>
+          <div class="emoji-cell">🏠</div>
+          <div class="emoji-cell">🏋️</div>
+          <div class="emoji-cell">🎉</div>
+          <div class="emoji-cell">🍕</div>
+          <div class="emoji-cell">🎮</div>
+          <div class="emoji-cell">🎸</div>
+          <div class="emoji-cell">✈️</div>
+          <div class="emoji-cell">🏄</div>
+          <div class="emoji-cell">🌙</div>
+          <div class="emoji-cell">🔥</div>
+          <div class="emoji-cell">💯</div>
+          <div class="emoji-cell">🐶</div>
+          <div class="emoji-cell">🌿</div>
+          <div class="emoji-cell">☕</div>
+          <div class="emoji-cell">🎨</div>
+          <div class="emoji-cell">📍</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ───────────────────────── -->
+  <!-- STATE 6: Edit group       -->
+  <!-- ───────────────────────── -->
+  <div class="screen" id="screen-edit-group">
+    <div class="edit-header">
+      <div class="edit-back">
+        <svg width="9" height="15" viewBox="0 0 9 15" fill="none"><path d="M8 1L1.5 7.5L8 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Back
+      </div>
+      <div class="edit-title">Close friends</div>
+      <div class="edit-done">Done</div>
+    </div>
+    <div class="edit-body">
+      <div class="emoji-name-row">
+        <div class="emoji-tap-target">
+          🤝
+          <div class="emoji-edit-badge">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </div>
+        </div>
+        <div class="name-input-wrap">
+          <div class="name-input-label">Group name</div>
+          <div class="name-input-value">Close friends</div>
+        </div>
+      </div>
+      <div class="friends-section">
+        <div class="section-label-row">
+          <div class="section-label">Friends</div>
+          <div class="friends-count-label">3 selected</div>
+        </div>
+        <div class="friends-search-wrap">
+          <svg class="friends-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <div class="friends-search-field">Search friends</div>
+        </div>
+        <div class="member-row">
+          <div class="member-avatar" style="background:linear-gradient(135deg,#7C5CDB,#9B7FE8);">AB</div>
+          <div class="member-name">Alex B.</div>
+          <div class="checkbox checked"></div>
+        </div>
+        <div class="member-row">
+          <div class="member-avatar" style="background:linear-gradient(135deg,#F5A623,#F76B1C);">CD</div>
+          <div class="member-name">Casey D.</div>
+          <div class="checkbox"></div>
+        </div>
+        <div class="member-row">
+          <div class="member-avatar" style="background:linear-gradient(135deg,#E8405A,#FF6B6B);">JM</div>
+          <div class="member-name">Jake M.</div>
+          <div class="checkbox checked"></div>
+        </div>
+        <div class="member-row">
+          <div class="member-avatar" style="background:linear-gradient(135deg,#43C6AC,#2E86AB);">MT</div>
+          <div class="member-name">Mia T.</div>
+          <div class="checkbox checked"></div>
+        </div>
+        <div class="member-row">
+          <div class="member-avatar" style="background:linear-gradient(135deg,#F093FB,#C471ED);">SR</div>
+          <div class="member-name">Sarah R.</div>
+          <div class="checkbox"></div>
+        </div>
+      </div>
+      <button class="delete-group-btn">Delete group</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="screen-label">Screen 9 — Groups Management</div>
+
+<script>
+  function show(state) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('visible'));
+    document.querySelectorAll('.state-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('screen-' + state).classList.add('visible');
+    event.target.classList.add('active');
+  }
+</script>
+
+</body>
+</html>
