@@ -55,7 +55,7 @@ export default async function OGImage({ params }: { params: Promise<{ code: stri
         <div style={{ fontSize: 40, fontWeight: 700, textAlign: 'center', maxWidth: 800 }}>
           {inviter
             ? `${inviter.display_name} invited you to Mooves`
-            : 'You've been invited to Mooves'}
+            : "You've been invited to Mooves"}
         </div>
 
         {/* Value prop */}

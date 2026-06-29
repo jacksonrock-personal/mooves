@@ -55,7 +55,7 @@ export default async function InvitePage({ params }: Props) {
       <p className="text-white font-display font-bold text-xl">
         {inviter
           ? `${inviter.display_name} invited you to Mooves`
-          : 'You've been invited to Mooves'}
+          : "You've been invited to Mooves"}
       </p>
     </main>
   )
