@@ -46,7 +46,7 @@ export async function POST(req: Request) {
     .from('users')
     .select('id')
     .eq('phone', phoneNumber)
-    .maybeSingle()
+    .maybeSingle() as { data: { id: string } | null }
 
   if (existing) {
     userId = existing.id
