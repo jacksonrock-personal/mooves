@@ -58,7 +58,7 @@ export async function POST(req: Request) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .insert({ phone: phoneNumber } as any)
       .select('id')
-      .single()
+      .single() as { data: { id: string } | null, error: unknown }
 
     if (error || !created) {
       console.error('Failed to create user:', error)
