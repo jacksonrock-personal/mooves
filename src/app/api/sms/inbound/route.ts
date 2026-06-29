@@ -4,7 +4,8 @@
 // Uses service role to query across user data without RLS restrictions.
 
 import { createServiceClient } from '@/lib/supabase/server'
-import type { UserRow } from '@/types/database'
+
+type GreenFriend = { display_name: string | null; status_note: string | null }
 
 // ── TwiML helper ─────────────────────────────────────────────────────────────
 function twimlResponse(message: string) {
@@ -21,12 +22,12 @@ function twimlResponse(message: string) {
 }
 
 // ── Reply copy ────────────────────────────────────────────────────────────────
-function composeReply(friends: Pick<UserRow, 'display_name' | 'status_note'>[]): string {
+function composeReply(friends: GreenFriend[]): string {
   if (friends.length === 0) {
     return "Nobody's free right now. You could be first, open Mooves to go green."
   }
 
-  const format = (f: typeof friends[number]) =>
+  const format = (f: GreenFriend) =>
     f.status_note ? `${f.display_name} (${f.status_note})` : (f.display_name ?? 'Someone')
 
   if (friends.length <= 4) {
