@@ -12,3 +12,28 @@
     -moz-osx-font-smoothing: grayscale;
   }
 }
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 4px 16px rgba(46,204,113,0.3); }
+  50% { box-shadow: 0 4px 26px rgba(46,204,113,0.55); }
+}
+@keyframes card-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes toast-pop {
+  0% { opacity: 0; transform: translateY(8px) scale(0.92); }
+  60% { opacity: 1; transform: translateY(0) scale(1.03); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@layer utilities {
+  .animate-pulse-dot { animation: pulse-dot 1.6s ease-in-out infinite; }
+  .animate-glow-pulse { animation: glow-pulse 2.2s ease-in-out infinite; }
+  .animate-card-in { animation: card-in 0.25s ease-out; }
+  .animate-toast-pop { animation: toast-pop 0.35s ease-out; }
+}

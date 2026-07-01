@@ -21,11 +21,11 @@ export default function Toast({ message, duration = 3000, onDismiss }: ToastProp
 
   return (
     <div
-      className={`fixed bottom-24 left-4 right-4 z-50 transition-opacity duration-300 ${
-        visible ? 'opacity-100' : 'opacity-0'
+      className={`fixed bottom-24 left-4 right-4 z-50 transition-all duration-300 ${
+        visible ? 'opacity-100' : 'opacity-0 scale-95'
       }`}
     >
-      <div className="bg-gray-900 text-white text-sm font-sans rounded-xl px-4 py-3 text-center shadow-lg">
+      <div className="bg-card-white text-text-primary text-sm font-sans font-semibold rounded-2xl px-4 py-3.5 text-center shadow-[0_8px_24px_rgba(124,92,219,0.25)] border border-purple-tint animate-toast-pop">
         {message}
       </div>
     </div>
