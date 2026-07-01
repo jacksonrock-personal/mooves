@@ -4,26 +4,23 @@
 // Returns 201 on success, 409 if already friends, 404 if code not found.
 
 import { NextResponse } from 'next/server'
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
 
 export async function POST(req: Request) {
-  // 1. Verify the caller is authenticated
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) {
+  const userId = req.headers.get('x-user-id')
+  if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // 2. Parse body
   const { referral_code } = await req.json() as { referral_code?: string }
   if (!referral_code) {
     return NextResponse.json({ error: 'referral_code is required' }, { status: 400 })
   }
 
-  // 3. Resolve referral_code → inviter user ID (use service client to bypass RLS)
-  const admin = createServiceClient()
-  const { data: inviter } = await admin
+  const supabase = createServiceClient()
+
+  // Resolve referral_code → inviter
+  const { data: inviter } = await supabase
     .from('users')
     .select('id, display_name')
     .eq('referral_code', referral_code)
@@ -33,16 +30,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Referral code not found' }, { status: 404 })
   }
 
-  // 4. Prevent self-friending
-  if (inviter.id === user.id) {
+  if (inviter.id === userId) {
     return NextResponse.json({ error: 'Cannot friend yourself' }, { status: 400 })
   }
 
-  // 5. Check if friendship already exists
-  const { data: existing } = await admin
+  // Check for existing friendship
+  const { data: existing } = await supabase
     .from('friendships')
     .select('user_id')
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .eq('friend_id', inviter.id)
     .maybeSingle()
 
@@ -53,14 +49,13 @@ export async function POST(req: Request) {
     )
   }
 
-  // 6. Insert both rows — mutual friendship model
-  const { error } = await admin.from('friendships').insert([
-    { user_id: user.id,    friend_id: inviter.id },
-    { user_id: inviter.id, friend_id: user.id    },
+  // Insert both rows — mutual friendship model
+  const { error } = await supabase.from('friendships').insert([
+    { user_id: userId,     friend_id: inviter.id },
+    { user_id: inviter.id, friend_id: userId     },
   ])
 
   if (error) {
-    // Postgres unique constraint violation → already friends (race condition)
     if (error.code === '23505') {
       return NextResponse.json(
         { error: 'Already friends', display_name: inviter.display_name },
