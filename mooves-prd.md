@@ -14,10 +14,10 @@
 | # | Screen | Status |
 |---|---|---|
 | 1 | Invite Link Landing Page | ✅ Approved |
-| 2 | Auth -- Phone + OTP | ✅ Approved |
-| 3 | Onboarding | ✅ Approved |
-| 4 | Home Feed | ✅ Approved |
-| 5 | Go Green Sheet | ✅ Approved |
+| 2 | Auth -- Phone + OTP | ✅ Approved · ✅ Coded |
+| 3 | Onboarding | ✅ Approved · ✅ Coded |
+| 4 | Home Feed | ✅ Approved — see Amendment A for status control UI |
+| 5 | Go Green Sheet | ✅ Approved — see Amendment B for group selector UI |
 | 6 | Friend Tap → SMS Handoff (non-screen) | ✅ Approved |
 | 7 | ~~Friend Connection Confirmation~~ | ❌ Removed — web flow already covered by Screen 1 + feed toast |
 | 8 | Friends List | ✅ Approved |
@@ -25,6 +25,14 @@
 | 10 | Settings / Profile Edit | ✅ Approved |
 | 11 | SMS Feed Check (non-screen, Twilio flow) | ✅ Approved |
 | 12 | Invite Link Deep-Link Flow (non-screen, technical) | ✅ Approved |
+| — | Spec Amendments (A/B/C) | ✅ Approved — overrides noted above |
+| 13 | Canonical Data Model | ✅ Approved |
+| 14 | Auth Integration (Firebase → Supabase) | ✅ Approved |
+| 15 | API Routes | ✅ Approved |
+| 16 | Next.js File Structure | ✅ Approved |
+| 17 | Supabase Setup (RLS, Storage, Realtime) | ✅ Approved |
+| 18 | Middleware | ✅ Approved |
+| 19 | Environment Variables | ✅ Approved |
 
 ---
 
@@ -2015,5 +2023,833 @@ Conversion rate at each step is the primary growth metric for MVP.
 | Referral code in URL after user is already authenticated | Skip auth, go straight to friendship creation (State B logic from Screen 1) |
 | OG image fetch fails (inviter deleted their account) | `getInviterByCode` returns null → fall back to generic OG metadata and State D landing |
 | Two simultaneous POST /api/friendships for same pair | Postgres unique constraint on `(user_id, friend_id)` → second insert fails gracefully, return 409 |
+
+---
+
+## Spec Amendments
+
+### Amendment A: Screen 4 — Feed Status Control (overrides locked-UI note)
+
+**Approved treatment (from prototype):**
+
+**Not-free state:** A single tappable "avail-row" — white bg, `#E8E4F5` 1.5px border, 16px radius. Left: grey status dot + `Not now` (Plus Jakarta Sans 700, 15px). Right: inline `Go free` pill (green-tint bg, green border, `#15803d` text, pulsing green dot). Tapping anywhere on the row opens the Go Green sheet.
+
+**Free state:** Full-width `I'm free` button — solid `#2ECC71`, white text, Plus Jakarta Sans 800, subtle glow animation. Tapping opens Go Grey confirmation.
+
+**Copy corrections:**
+- Not-free row text: `Not now` (not "Not free")
+- Not-free CTA pill: `Go free`
+- Free button: `I'm free`
+
+**Overrides:** "full-width button pinned above 'Free right now' section label — 'Not free' (outlined, muted) / 'I'm free' (solid green)" in Screen 4 locked UI decisions.
+
+---
+
+### Amendment B: Screen 5 — Group Selector (overrides locked-UI note)
+
+**Approved treatment (from prototype):** Horizontally scrollable **chips**, not a vertical checkbox list.
+
+Chip behavior:
+- Default: `All friends` chip selected (Mooves Purple bg/border/text)
+- Tapping a group chip: deselects `All friends`, selects that chip (multi-select allowed)
+- Tapping `All friends` while groups are selected: deselects all group chips, re-selects `All friends`
+- If all group chips manually deselected: `All friends` re-selects automatically
+
+**Overrides:** "Vertical checkbox list for group selector (not chips)" in Screen 5 locked UI decisions.
+
+---
+
+### Amendment C: Push Notifications — Removed from MVP
+
+Push notifications (go green → notify friends) were listed in `mooves-project-instructions.md` under MVP scope. **Removed.** Mooves is web-first; Web Push on iOS Safari is too experimental for MVP. Friends see status changes the next time they open the app or via SMS feed check (Screen 11). Revisit in Phase 2 alongside the Expo native app.
+
+---
+
+## Section 13: Canonical Data Model
+
+This is the authoritative schema. All migrations derive from this.
+
+```sql
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+CREATE TABLE users (
+  id                  UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+  phone               TEXT         UNIQUE NOT NULL,       -- E.164 format: +15551234567
+  display_name        TEXT,                               -- null until onboarding 3a
+  avatar_url          TEXT,                               -- Supabase Storage public URL
+  referral_code       VARCHAR(8)   UNIQUE NOT NULL,       -- generated at user creation
+  is_available        BOOLEAN      NOT NULL DEFAULT FALSE,
+  status_note         TEXT,                               -- null when not available
+  visible_to          UUID[],                             -- null = all friends; array of group IDs owned by this user
+  status_set_at       TIMESTAMPTZ,
+  onboarding_complete BOOLEAN      NOT NULL DEFAULT FALSE,
+  created_at          TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE friendships (
+  user_id    UUID         NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  friend_id  UUID         NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (user_id, friend_id)
+);
+CREATE INDEX friendships_friend_id_idx ON friendships(friend_id);
+
+CREATE TABLE groups (
+  id         UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_id   UUID         NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name       TEXT         NOT NULL,
+  emoji      TEXT         NOT NULL DEFAULT '👥',
+  created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE group_members (
+  group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+  user_id  UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  PRIMARY KEY (group_id, user_id)
+);
+```
+
+### Referral code generation
+
+```ts
+const CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' // no ambiguous chars (0/O, 1/I/L)
+function generateReferralCode(): string {
+  return Array.from({ length: 8 }, () =>
+    CHARS[Math.floor(Math.random() * CHARS.length)]
+  ).join('')
+}
+// Retry on unique constraint violation (collision probability negligible at MVP scale)
+```
+
+### Key queries
+
+```sql
+-- Feed: green friends who have included the current user in their visible audience
+SELECT u.id, u.display_name, u.avatar_url, u.status_note, u.phone, u.status_set_at
+FROM users u
+JOIN friendships f ON f.friend_id = u.id AND f.user_id = :me
+WHERE u.is_available = true
+  AND (
+    u.visible_to IS NULL
+    OR EXISTS (
+      SELECT 1 FROM group_members gm
+      WHERE gm.group_id = ANY(u.visible_to)
+        AND gm.user_id = :me
+    )
+  )
+ORDER BY u.status_set_at DESC NULLS LAST;
+
+-- Friends list (alphabetical, all statuses)
+SELECT u.id, u.display_name, u.avatar_url
+FROM users u
+JOIN friendships f ON f.friend_id = u.id AND f.user_id = :me
+ORDER BY u.display_name ASC;
+
+-- Groups with member count
+SELECT g.id, g.name, g.emoji, COUNT(gm.user_id) AS member_count
+FROM groups g
+LEFT JOIN group_members gm ON gm.group_id = g.id
+WHERE g.owner_id = :me
+GROUP BY g.id
+ORDER BY g.created_at ASC;
+
+-- Check if two users are already friends
+SELECT 1 FROM friendships
+WHERE user_id = :me AND friend_id = :them;
+
+-- Mutual friendship delete
+DELETE FROM friendships
+WHERE (user_id = :me AND friend_id = :them)
+   OR (user_id = :them AND friend_id = :me);
+```
+
+### visible_to semantics
+
+`visible_to` on the `users` table contains group IDs **owned by the green user**. When user A goes green with `visible_to = [group_id_1]`, only users who are members of group_id_1 (as recorded in `group_members`) will see A in their feed. The feed query joins `group_members` to enforce this. `visible_to = null` means all mutual friends can see them.
+
+---
+
+## Section 14: Auth Integration (Firebase → Supabase)
+
+### Architecture
+
+Firebase handles all OTP delivery and phone verification. Our server issues a custom session token. All data queries go through Next.js API routes using the Supabase service role key — Supabase Auth is not used.
+
+```
+Client                        Server                         Supabase (service role)
+  │                              │                                 │
+  │── Firebase OTP ──────────▶  Firebase                          │
+  │◀── idToken ─────────────────│                                 │
+  │                              │                                 │
+  │── POST /api/auth/verify ──▶  │── verifyIdToken (Firebase Admin)│
+  │   { idToken }               │── upsert user ───────────────▶  │
+  │                              │◀── { id, isNewUser } ──────────│
+  │◀── Set-Cookie: mooves-token  │                                 │
+  │    { isNewUser,              │                                 │
+  │      onboardingComplete }    │                                 │
+  │                              │                                 │
+  │── GET /api/auth/supabase-token ▶ (issues short-lived Supabase JWT)
+  │◀── { token }                │                                 │
+  │                              │                                 │
+  │── Supabase Realtime ─────── (uses Supabase JWT for RLS) ────▶  │
+```
+
+### Session token (`mooves-token`)
+
+A HS256 JWT signed with `SESSION_SECRET`:
+
+```ts
+interface SessionPayload {
+  sub: string    // users.id (UUID)
+  iat: number
+  exp: number    // iat + 30 days
+}
+```
+
+Cookie attributes: `httpOnly`, `Secure`, `SameSite=Lax`, `Path=/`, `Max-Age=2592000` (30 days).
+
+### Supabase-compatible JWT (for Realtime only)
+
+Since `mooves-token` is httpOnly, the browser Supabase client cannot read it. For Realtime subscriptions, the client fetches a short-lived Supabase-compatible JWT via `GET /api/auth/supabase-token`. This JWT is stored in memory (not persisted) and refreshed as needed.
+
+```ts
+// Supabase JWT payload (signed with SUPABASE_JWT_SECRET)
+{
+  sub: userId,            // users.id — becomes auth.uid() in RLS
+  role: 'authenticated',
+  aud: 'authenticated',
+  iss: `${SUPABASE_URL}/auth/v1`,
+  iat: now,
+  exp: now + 3600         // 1 hour
+}
+```
+
+### `POST /api/auth/verify` — implementation spec
+
+```
+Body:     { idToken: string }
+Response: { isNewUser: boolean, onboardingComplete: boolean, userId: string }
+
+1. Verify idToken with Firebase Admin SDK → extract phone_number (E.164)
+   On failure → 401
+
+2. SELECT id, onboarding_complete FROM users WHERE phone = $1
+   → found:     { userId: row.id, isNewUser: false, onboardingComplete: row.onboarding_complete }
+   → not found: INSERT INTO users (phone, referral_code) VALUES ($1, generateReferralCode())
+                RETURNING id
+                → { userId: newId, isNewUser: true, onboardingComplete: false }
+
+3. Sign mooves-token: { sub: userId, iat, exp: +30d }
+
+4. Set-Cookie: mooves-token=<jwt>; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=2592000
+
+5. Return: { isNewUser, onboardingComplete, userId }
+```
+
+### Client navigation after verify
+
+```
+isNewUser: true                    → /onboarding
+isNewUser: false, onboardingComplete: false, display_name null → /onboarding
+isNewUser: false, onboardingComplete: false, display_name set → /onboarding/invite
+isNewUser: false, onboardingComplete: true                    → /feed
+```
+
+### `GET /api/auth/supabase-token`
+
+Auth: mooves-token cookie required.
+
+```
+Response: { token: string }   // 1-hour Supabase-compatible JWT
+```
+
+Client usage:
+```ts
+const { token } = await fetch('/api/auth/supabase-token').then(r => r.json())
+const supabase = createClient(url, anonKey, {
+  global: { headers: { Authorization: `Bearer ${token}` } },
+  auth: { persistSession: false }
+})
+// Use this client ONLY for Realtime subscriptions
+// Refresh token before expiry (e.g. on re-focus after 50+ minutes)
+```
+
+---
+
+## Section 15: API Routes
+
+All routes live under `app/api/`. All routes except those listed as public require a valid `mooves-token` cookie. Middleware validates the cookie and sets `x-user-id` header. Route handlers read `userId` from `req.headers.get('x-user-id')`.
+
+**Public routes (no auth):**
+- `GET /api/invite/[code]`
+- `POST /api/auth/verify`
+- `POST /api/sms/inbound` (validated via Twilio signature header instead)
+
+---
+
+### `GET /api/invite/[code]`
+
+Returns inviter's public profile for the invite landing page.
+
+```
+Response 200: { displayName: string, avatarUrl: string | null }
+Response 404: code not found → client renders State D (generic landing)
+```
+
+Cache: `next: { revalidate: 3600 }`.
+
+---
+
+### `GET /api/auth/supabase-token`
+
+Returns a short-lived Supabase-compatible JWT for client-side Realtime.
+
+```
+Response 200: { token: string }   // 1-hour JWT
+```
+
+---
+
+### `GET /api/users/me`
+
+Returns the current user's full profile.
+
+```ts
+// Response 200:
+{
+  id: string
+  phone: string
+  displayName: string | null
+  avatarUrl: string | null
+  referralCode: string
+  isAvailable: boolean
+  statusNote: string | null
+  visibleTo: string[] | null
+  onboardingComplete: boolean
+}
+```
+
+---
+
+### `PATCH /api/users/me`
+
+Partial update of profile fields.
+
+```ts
+// Request body (all optional):
+{
+  displayName?: string         // trimmed; min 1 non-whitespace char; max 30 chars
+  avatarUrl?: string | null    // null removes the photo
+  onboardingComplete?: boolean
+}
+
+// Response 200: updated user (same shape as GET /api/users/me)
+// Response 400: { error: string }
+```
+
+---
+
+### `DELETE /api/users/me`
+
+Hard-deletes the account. FK cascades handle friendships, groups, group_members. Server also deletes the avatar from Supabase Storage and calls Supabase Admin API to remove the auth record if one exists.
+
+```
+Response 204: no content
+Response 500: deletion failed (client shows error toast; does not log out)
+```
+
+---
+
+### `PATCH /api/status`
+
+Updates availability (go green or go grey).
+
+```ts
+// Request body:
+{
+  isAvailable: boolean
+  statusNote?: string | null    // trimmed; whitespace-only stored as null; max 60 chars
+  visibleTo?: string[] | null   // group IDs; null = all friends
+}
+
+// On isAvailable: false → server ignores statusNote/visibleTo,
+// forces: status_note = null, visible_to = null, status_set_at = NOW()
+
+// On isAvailable: true → sets status_note, visible_to, status_set_at = NOW()
+
+// Response 200: { isAvailable: boolean, statusNote: string | null }
+// Response 400: { error: string }
+```
+
+---
+
+### `POST /api/friendships`
+
+Creates a mutual friendship via referral code.
+
+```ts
+// Request body: { referralCode: string }
+
+// Flow:
+// 1. Look up inviter by referral_code → 404 if not found
+// 2. If inviter.id === me → 400 "Can't add yourself"
+// 3. Check existing friendship → 409 if already friends
+// 4. INSERT (me → inviter) and (inviter → me) in a single transaction
+
+// Response 201: { friendId: string, displayName: string, avatarUrl: string | null }
+// Response 400: self-add
+// Response 404: code not found
+// Response 409: already friends
+```
+
+---
+
+### `DELETE /api/friendships/[friendId]`
+
+Removes mutual friendship (both rows).
+
+```
+Response 204: no content
+Response 404: friendship not found
+```
+
+---
+
+### `GET /api/feed`
+
+Returns green friends visible to the current user (visibility-filtered server-side).
+
+```ts
+// Response 200:
+{
+  friends: Array<{
+    id: string
+    displayName: string
+    avatarUrl: string | null
+    statusNote: string | null
+    phone: string          // for sms: URL on card tap
+    statusSetAt: string    // ISO timestamp
+  }>
+}
+```
+
+Uses the feed query from Section 13.
+
+---
+
+### `GET /api/friends`
+
+Returns all mutual friends (for People screen).
+
+```ts
+// Response 200:
+{
+  friends: Array<{
+    id: string
+    displayName: string
+    avatarUrl: string | null
+  }>
+}
+```
+
+---
+
+### `GET /api/groups`
+
+Returns current user's groups with member counts and member IDs.
+
+```ts
+// Response 200:
+{
+  groups: Array<{
+    id: string
+    name: string
+    emoji: string
+    memberCount: number
+    memberIds: string[]   // included so edit group screen can pre-check members
+  }>
+}
+```
+
+---
+
+### `POST /api/groups`
+
+Creates a new group.
+
+```ts
+// Request body:
+{
+  name: string          // trimmed; max 40 chars; min 1 non-whitespace
+  emoji: string         // single emoji character
+  memberIds: string[]   // UUIDs; min 1; all must be mutual friends of caller
+}
+
+// Flow:
+// 1. Validate name, emoji, memberIds (verify each is a mutual friend)
+// 2. INSERT into groups → get new group ID
+// 3. INSERT all (groupId, memberId) rows into group_members
+
+// Response 201: { id, name, emoji, memberCount, memberIds }
+// Response 400: { error: string }
+```
+
+---
+
+### `PATCH /api/groups/[id]`
+
+Updates group. All fields optional; `memberIds` is a full replacement.
+
+```ts
+// Request body (all optional):
+{
+  name?: string
+  emoji?: string
+  memberIds?: string[]   // full replacement — server diffs and INSERT/DELETE accordingly
+}
+
+// Response 200: { id, name, emoji, memberCount, memberIds }
+// Response 403: caller doesn't own this group
+// Response 404: group not found
+```
+
+---
+
+### `DELETE /api/groups/[id]`
+
+Deletes group (cascades to group_members).
+
+```
+Response 204: no content
+Response 403: caller doesn't own this group
+Response 404: not found
+```
+
+---
+
+### `POST /api/sms/inbound`
+
+Twilio webhook — see Screen 11 spec for full implementation. Validates via Twilio signature header (not mooves-token).
+
+```ts
+// Twilio signature validation (must run before any processing):
+import twilio from 'twilio'
+const valid = twilio.validateRequest(
+  process.env.TWILIO_AUTH_TOKEN!,
+  req.headers.get('x-twilio-signature')!,
+  `${process.env.NEXT_PUBLIC_APP_URL}/api/sms/inbound`,
+  Object.fromEntries(formData)
+)
+if (!valid) return new Response('Forbidden', { status: 403 })
+```
+
+---
+
+## Section 16: Next.js File Structure
+
+```
+app/
+  layout.tsx                      ← root layout: fonts, PostHog provider
+  page.tsx                        ← root redirect: → /feed (authed) or /auth (not)
+
+  auth/
+    page.tsx                      ← Screen 2a: phone number entry
+    otp/
+      page.tsx                    ← Screen 2b: OTP entry
+
+  join/
+    [code]/
+      page.tsx                    ← Screen 1: invite landing (Server Component + generateMetadata)
+      opengraph-image.tsx         ← dynamic OG image (Next.js ImageResponse)
+
+  onboarding/
+    page.tsx                      ← Screen 3a: profile setup
+    invite/
+      page.tsx                    ← Screen 3b: invite nudge
+
+  feed/
+    page.tsx                      ← Screen 4: home feed
+
+  people/
+    page.tsx                      ← Screens 8+9: People tab (Friends | Groups sub-tabs)
+    groups/
+      new/
+        page.tsx                  ← Screen 9: create group
+      [id]/
+        page.tsx                  ← Screen 9: edit group
+
+  settings/
+    page.tsx                      ← Screen 10: settings / profile edit
+
+  api/
+    invite/[code]/route.ts
+    auth/
+      verify/route.ts
+      supabase-token/route.ts
+    users/
+      me/route.ts
+    status/route.ts
+    friendships/
+      route.ts
+      [friendId]/route.ts
+    groups/
+      route.ts
+      [id]/route.ts
+    feed/route.ts
+    friends/route.ts
+    sms/
+      inbound/route.ts
+
+middleware.ts
+
+lib/
+  supabase/
+    client.ts                     ← browser Supabase client (Realtime only)
+    server.ts                     ← server Supabase client (service role)
+  firebase/
+    client.ts                     ← browser Firebase app + auth
+    admin.ts                      ← server Firebase Admin SDK (lazy-initialized)
+  auth/
+    session.ts                    ← signSessionToken(), verifySessionToken()
+    supabase-jwt.ts               ← signSupabaseJwt() for /api/auth/supabase-token
+  referral.ts                     ← generateReferralCode()
+  twilio.ts                       ← validateTwilioSignature(), twimlResponse()
+  posthog.ts                      ← server-side PostHog Node SDK client
+
+components/
+  ui/
+    Avatar.tsx                    ← circular avatar with initials fallback
+    StatusDot.tsx                 ← green or grey dot
+    BottomNav.tsx                 ← 3-tab nav bar (Home / People / Settings)
+    Sheet.tsx                     ← bottom sheet wrapper with drag handle + overlay
+    Toast.tsx                     ← ephemeral toast notification
+    CowIllustration.tsx           ← SVG cow for empty states
+  feed/
+    FeedScreen.tsx
+    AvailRow.tsx                  ← "Not now / Go free" avail-row (Amendment A)
+    FriendCard.tsx                ← green friend card with SMS tap
+  go-green/
+    GoGreenSheet.tsx
+    GoGreyConfirm.tsx
+    VisibilityChips.tsx           ← chip row for group selector (Amendment B)
+  people/
+    FriendsList.tsx
+    GroupsList.tsx
+    FriendRow.tsx
+    GroupRow.tsx
+  groups/
+    GroupForm.tsx                 ← shared create/edit form
+    EmojiPicker.tsx               ← bottom sheet with curated 21-emoji grid
+    FriendChecklist.tsx           ← searchable checklist with checkboxes
+  settings/
+    ProfileCard.tsx
+    LogoutSheet.tsx
+    DeleteSheet.tsx               ← type-to-confirm DELETE sheet
+```
+
+### Route protection summary
+
+| Path prefix | Auth required | If no valid token |
+|---|---|---|
+| `/join/[code]` | No | Render normally |
+| `/auth`, `/auth/otp` | No | Render (redirect to /feed if already authed) |
+| `/api/invite/[code]` | No | Render |
+| `/api/auth/verify` | No | Render |
+| `/api/sms/inbound` | No (Twilio sig) | Render |
+| `/api/*` (all others) | Yes | 401 JSON |
+| All page routes (all others) | Yes | 302 → `/auth` |
+
+---
+
+## Section 17: Supabase Setup
+
+### RLS Policies
+
+All server-side queries use the service role key (bypasses RLS). The Supabase-compatible JWT is used only for client-side Realtime — those must pass RLS.
+
+```sql
+ALTER TABLE users        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE friendships  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE groups       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE group_members ENABLE ROW LEVEL SECURITY;
+
+-- users: read self and mutual friends; write only self
+CREATE POLICY "users_select" ON users FOR SELECT USING (
+  id = auth.uid()
+  OR EXISTS (
+    SELECT 1 FROM friendships
+    WHERE user_id = auth.uid() AND friend_id = users.id
+  )
+);
+CREATE POLICY "users_update" ON users FOR UPDATE USING (id = auth.uid());
+CREATE POLICY "users_delete" ON users FOR DELETE USING (id = auth.uid());
+
+-- friendships: read own rows; insert as user_id; delete own rows
+CREATE POLICY "friendships_select" ON friendships FOR SELECT
+  USING (user_id = auth.uid() OR friend_id = auth.uid());
+CREATE POLICY "friendships_insert" ON friendships FOR INSERT
+  WITH CHECK (user_id = auth.uid());
+CREATE POLICY "friendships_delete" ON friendships FOR DELETE
+  USING (user_id = auth.uid() OR friend_id = auth.uid());
+
+-- groups: owner has full access
+CREATE POLICY "groups_all" ON groups FOR ALL USING (owner_id = auth.uid());
+
+-- group_members: owner of the group controls writes; members can read their own rows
+CREATE POLICY "group_members_select" ON group_members FOR SELECT USING (
+  user_id = auth.uid()
+  OR EXISTS (SELECT 1 FROM groups WHERE id = group_id AND owner_id = auth.uid())
+);
+CREATE POLICY "group_members_write" ON group_members FOR ALL USING (
+  EXISTS (SELECT 1 FROM groups WHERE id = group_id AND owner_id = auth.uid())
+);
+```
+
+### Realtime
+
+Enable Realtime on the `users` table: Supabase dashboard → Database → Replication → add `users` to the publication.
+
+Client-side subscription (initialized after fetching Supabase JWT):
+
+```ts
+const channel = supabase
+  .channel('feed-updates')
+  .on('postgres_changes', {
+    event: 'UPDATE',
+    schema: 'public',
+    table: 'users'
+  }, (payload) => {
+    const updated = payload.new as UserRow
+    // RLS ensures only rows the user can see are delivered
+    // Check if updated.id is in the local friendIds set
+    // If yes: update local feed state (add/remove/update card)
+  })
+  .subscribe()
+
+// Cleanup on unmount:
+return () => { supabase.removeChannel(channel) }
+```
+
+### Storage
+
+Bucket: `avatars` — public read, authenticated write.
+
+```sql
+-- Via Supabase dashboard SQL editor:
+CREATE POLICY "avatars_public_read" ON storage.objects FOR SELECT
+  USING (bucket_id = 'avatars');
+
+CREATE POLICY "avatars_owner_write" ON storage.objects FOR ALL
+  USING (
+    bucket_id = 'avatars'
+    AND auth.uid()::text = (storage.foldername(name))[1]
+  );
+```
+
+File path convention: `avatars/{userId}.jpg` (always use `upsert: true` on upload to overwrite on re-upload). On avatar removal: delete the file and set `users.avatar_url = null`.
+
+---
+
+## Section 18: Middleware
+
+```ts
+// middleware.ts
+import { NextRequest, NextResponse } from 'next/server'
+import { verifySessionToken } from '@/lib/auth/session'
+
+const PUBLIC_PREFIXES = [
+  '/join/',
+  '/auth',
+  '/api/invite/',
+  '/api/auth/verify',
+  '/api/sms/inbound',
+  '/_next/',
+  '/favicon',
+]
+
+export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl
+
+  if (PUBLIC_PREFIXES.some(p => pathname.startsWith(p))) {
+    return NextResponse.next()
+  }
+
+  const token = req.cookies.get('mooves-token')?.value
+
+  if (!token) {
+    if (pathname.startsWith('/api/')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    return NextResponse.redirect(new URL('/auth', req.url))
+  }
+
+  const payload = await verifySessionToken(token)
+
+  if (!payload) {
+    const res = pathname.startsWith('/api/')
+      ? NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      : NextResponse.redirect(new URL('/auth', req.url))
+    res.cookies.delete('mooves-token')
+    return res
+  }
+
+  const headers = new Headers(req.headers)
+  headers.set('x-user-id', payload.sub)
+  return NextResponse.next({ request: { headers } })
+}
+
+export const config = {
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+}
+```
+
+**Onboarding guard (per-page, not middleware):**
+
+The `/feed` server component checks `onboardingComplete` for the current user. If false, it redirects to `/onboarding`. This prevents middleware from creating a redirect loop on the onboarding routes themselves.
+
+---
+
+## Section 19: Environment Variables
+
+```bash
+# .env.local
+
+# Firebase (client-side)
+NEXT_PUBLIC_FIREBASE_API_KEY=
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=
+NEXT_PUBLIC_FIREBASE_APP_ID=
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
+
+# Firebase Admin (server-side only)
+FIREBASE_ADMIN_PROJECT_ID=
+FIREBASE_ADMIN_CLIENT_EMAIL=
+FIREBASE_ADMIN_PRIVATE_KEY=       # include \n: "-----BEGIN PRIVATE KEY-----\n..."
+
+# Supabase (client-side)
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+
+# Supabase (server-side only)
+SUPABASE_SERVICE_ROLE_KEY=
+SUPABASE_JWT_SECRET=              # Supabase dashboard → Settings → API → JWT Secret
+
+# Session signing (our own secret, independent of Supabase)
+SESSION_SECRET=                   # 32+ random bytes, base64-encoded
+
+# Twilio (server-side only)
+TWILIO_ACCOUNT_SID=
+TWILIO_AUTH_TOKEN=
+TWILIO_PHONE_NUMBER=              # E.164: +18005551234
+
+# PostHog
+NEXT_PUBLIC_POSTHOG_KEY=
+NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
+
+# App
+NEXT_PUBLIC_APP_URL=https://makemooves.app
+```
+
+**Vercel setup:** All `NEXT_PUBLIC_` vars are exposed to the browser. All others are server-only. Add every variable to Vercel project settings for Production, Preview, and Development environments separately. `FIREBASE_ADMIN_PRIVATE_KEY` must have literal `\n` characters — paste as-is; Vercel preserves them.
 
 ---

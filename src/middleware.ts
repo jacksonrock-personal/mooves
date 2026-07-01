@@ -1,45 +1,47 @@
-// Middleware runs on every request (except static assets).
-// Validates the mooves-token cookie using the Supabase JWT secret.
-// Redirects unauthenticated users away from protected routes and vice versa.
-//
-// Uses `jose` (not `jsonwebtoken`) because middleware runs in the Edge Runtime
-// which doesn't have Node.js crypto. jose is Edge-compatible.
-
-import { jwtVerify } from 'jose'
 import { NextResponse, type NextRequest } from 'next/server'
+import { verifySessionToken } from '@/lib/auth/session'
 
-const PROTECTED = ['/feed', '/people', '/settings', '/onboarding']
-const AUTH_ONLY = ['/auth']  // redirect to /feed if already logged in
+const PUBLIC_PREFIXES = [
+  '/join/',
+  '/auth',
+  '/api/invite/',
+  '/api/auth/verify',
+  '/api/sms/inbound',
+  '/_next/',
+  '/favicon',
+]
 
-export async function middleware(request: NextRequest) {
-  const token = request.cookies.get('mooves-token')?.value
-  const path  = request.nextUrl.pathname
+export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl
 
-  let isAuthenticated = false
+  if (PUBLIC_PREFIXES.some(p => pathname.startsWith(p))) {
+    return NextResponse.next()
+  }
 
-  if (token) {
-    try {
-      const secret = new TextEncoder().encode(process.env.SUPABASE_JWT_SECRET!)
-      await jwtVerify(token, secret)
-      isAuthenticated = true
-    } catch {
-      // Token missing, expired, or tampered — treat as unauthenticated
+  const token = req.cookies.get('mooves-token')?.value
+
+  if (!token) {
+    if (pathname.startsWith('/api/')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    return NextResponse.redirect(new URL('/auth', req.url))
   }
 
-  if (!isAuthenticated && PROTECTED.some(r => path.startsWith(r))) {
-    return NextResponse.redirect(new URL('/auth', request.url))
+  const payload = await verifySessionToken(token)
+
+  if (!payload) {
+    const res = pathname.startsWith('/api/')
+      ? NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      : NextResponse.redirect(new URL('/auth', req.url))
+    res.cookies.delete('mooves-token')
+    return res
   }
 
-  if (isAuthenticated && AUTH_ONLY.some(r => path.startsWith(r))) {
-    return NextResponse.redirect(new URL('/feed', request.url))
-  }
-
-  return NextResponse.next()
+  const headers = new Headers(req.headers)
+  headers.set('x-user-id', payload.sub)
+  return NextResponse.next({ request: { headers } })
 }
 
 export const config = {
-  matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-  ],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 }
