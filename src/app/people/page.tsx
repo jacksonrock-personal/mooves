@@ -1,11 +1,9 @@
-// Screen 8 + 9: Friends List + Groups (People tab)
-// Mockups: mooves-screen8-friends-list.html, mooves-screen9-groups.html
-// Status: scaffold stub — implementation pending
+// Screen 8: Friends List (People tab)
+// Mockup: mooves-screen8-friends-list.html
+// Groups sub-tab (Screen 9) is out of scope — People = Friends list for now.
+
+import FriendsScreen from '@/components/people/FriendsScreen'
 
 export default function PeoplePage() {
-  return (
-    <main className="min-h-screen bg-surface-bg flex items-center justify-center">
-      <p className="text-text-secondary font-sans">People — coming soon</p>
-    </main>
-  )
+  return <FriendsScreen />
 }

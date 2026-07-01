@@ -13,18 +13,18 @@
 
 | # | Screen | Status |
 |---|---|---|
-| 1 | Invite Link Landing Page | ✅ Approved |
+| 1 | Invite Link Landing Page | ✅ Approved · ✅ Coded |
 | 2 | Auth -- Phone + OTP | ✅ Approved · ✅ Coded |
 | 3 | Onboarding | ✅ Approved · ✅ Coded |
 | 4 | Home Feed | ✅ Approved — see Amendment A for status control UI · ✅ Coded |
 | 5 | Go Green Sheet | ✅ Approved — see Amendment B for group selector UI · ✅ Coded |
 | 6 | Friend Tap → SMS Handoff (non-screen) | ✅ Approved · ✅ Coded |
 | 7 | ~~Friend Connection Confirmation~~ | ❌ Removed — web flow already covered by Screen 1 + feed toast |
-| 8 | Friends List | ✅ Approved |
+| 8 | Friends List | ✅ Approved · ✅ Coded |
 | 9 | Groups Management | ✅ Approved |
 | 10 | Settings / Profile Edit | ✅ Approved |
 | 11 | SMS Feed Check (non-screen, Twilio flow) | ✅ Approved |
-| 12 | Invite Link Deep-Link Flow (non-screen, technical) | ✅ Approved |
+| 12 | Invite Link Deep-Link Flow (non-screen, technical) | ✅ Approved · ✅ Coded |
 | — | Spec Amendments (A/B/C) | ✅ Approved — overrides noted above |
 | 13 | Canonical Data Model | ✅ Approved |
 | 14 | Auth Integration (Firebase → Supabase) | ✅ Approved |
