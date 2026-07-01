@@ -16,9 +16,9 @@
 | 1 | Invite Link Landing Page | ✅ Approved |
 | 2 | Auth -- Phone + OTP | ✅ Approved · ✅ Coded |
 | 3 | Onboarding | ✅ Approved · ✅ Coded |
-| 4 | Home Feed | ✅ Approved — see Amendment A for status control UI |
-| 5 | Go Green Sheet | ✅ Approved — see Amendment B for group selector UI |
-| 6 | Friend Tap → SMS Handoff (non-screen) | ✅ Approved |
+| 4 | Home Feed | ✅ Approved — see Amendment A for status control UI · ✅ Coded |
+| 5 | Go Green Sheet | ✅ Approved — see Amendment B for group selector UI · ✅ Coded |
+| 6 | Friend Tap → SMS Handoff (non-screen) | ✅ Approved · ✅ Coded |
 | 7 | ~~Friend Connection Confirmation~~ | ❌ Removed — web flow already covered by Screen 1 + feed toast |
 | 8 | Friends List | ✅ Approved |
 | 9 | Groups Management | ✅ Approved |
