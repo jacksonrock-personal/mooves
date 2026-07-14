@@ -1,8 +1,15 @@
 'use client'
 
-// Bottom sheet with curated 21-emoji grid — implementation pending (Phase 1 Screen 9)
+// Screen 9: emoji picker — bottom sheet with a curated 21-emoji grid.
+// Selection is immediate (no save button); tapping an emoji closes the sheet.
 
-const EMOJIS = ['🤝','👥','⭐','🎓','💼','🏠','🏋️','🎉','🍕','🎮','🎸','✈️','🏄','🌙','🔥','💯','🐶','🌿','☕','🎨','📍']
+import Sheet from '@/components/ui/Sheet'
+
+const EMOJIS = [
+  '🤝', '👥', '⭐', '🎓', '💼', '🏠', '🏋️',
+  '🎉', '🍕', '🎮', '🎸', '✈️', '🏄', '🌙',
+  '🔥', '💯', '🐶', '🌿', '☕', '🎨', '📍',
+]
 
 interface EmojiPickerProps {
   open: boolean
@@ -12,23 +19,27 @@ interface EmojiPickerProps {
 }
 
 export default function EmojiPicker({ open, selected, onSelect, onClose }: EmojiPickerProps) {
-  if (!open) return null
   return (
-    <div className="fixed inset-0 z-50 flex items-end">
-      <div className="w-full bg-white rounded-t-2xl p-6">
-        <p className="font-sans font-semibold mb-4">Pick an emoji</p>
-        <div className="grid grid-cols-7 gap-3">
-          {EMOJIS.map(e => (
-            <button
-              key={e}
-              onClick={() => { onSelect(e); onClose() }}
-              className={`text-2xl rounded-lg p-2 ${selected === e ? 'bg-purple-100 ring-2 ring-mooves-purple' : ''}`}
-            >
-              {e}
-            </button>
-          ))}
-        </div>
+    <Sheet open={open} onClose={onClose} className="px-5 pb-8">
+      <p className="font-display font-bold text-[16px] text-text-primary text-center mb-4">
+        Pick an emoji
+      </p>
+      <div className="grid grid-cols-7 gap-1">
+        {EMOJIS.map(e => (
+          <button
+            key={e}
+            onClick={() => {
+              onSelect(e)
+              onClose()
+            }}
+            className={`aspect-square flex items-center justify-center text-[26px] leading-none rounded-[10px] ${
+              selected === e ? 'bg-purple-tint outline outline-2 outline-mooves-purple' : ''
+            }`}
+          >
+            {e}
+          </button>
+        ))}
       </div>
-    </div>
+    </Sheet>
   )
 }

@@ -1,24 +1,17 @@
 // POST /api/sms/inbound
 // Twilio webhook — fires when someone texts the Mooves toll-free number.
-// Looks up the sender, finds their green friends, returns a TwiML SMS reply.
-// Uses service role to query across user data without RLS restrictions.
+// Looks up the sender, finds their green friends (respecting group visibility),
+// and returns a TwiML SMS reply. Uses the service role to query across users.
 
 import { createServiceClient } from '@/lib/supabase/server'
+import { validateTwilioSignature, twimlResponse } from '@/lib/twilio'
+import { captureServerEvent } from '@/lib/posthog-server'
 
-type GreenFriend = { display_name: string | null; status_note: string | null }
-
-// ── TwiML helper ─────────────────────────────────────────────────────────────
-function twimlResponse(message: string) {
-  // Escape XML special chars in any user-generated content
-  const safe = message
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-
-  return new Response(
-    `<?xml version="1.0" encoding="UTF-8"?><Response><Message>${safe}</Message></Response>`,
-    { headers: { 'Content-Type': 'text/xml' } }
-  )
+type GreenFriend = {
+  id: string
+  display_name: string | null
+  status_note: string | null
+  visible_to: string[] | null
 }
 
 // ── Reply copy ────────────────────────────────────────────────────────────────
@@ -49,8 +42,19 @@ function composeReply(friends: GreenFriend[]): string {
 // ── Handler ───────────────────────────────────────────────────────────────────
 export async function POST(req: Request) {
   const formData = await req.formData()
-  const from = formData.get('From') as string | null
 
+  // Validate the Twilio signature before doing any work.
+  const params: Record<string, string> = {}
+  for (const [key, value] of formData.entries()) {
+    if (typeof value === 'string') params[key] = value
+  }
+  const signature = req.headers.get('x-twilio-signature') ?? ''
+  const url = `${process.env.NEXT_PUBLIC_APP_URL}/api/sms/inbound`
+  if (!validateTwilioSignature(signature, url, params)) {
+    return new Response('Forbidden', { status: 403 })
+  }
+
+  const from = params.From
   if (!from) {
     return twimlResponse("Couldn't process that. Try again in a moment.")
   }
@@ -69,6 +73,9 @@ export async function POST(req: Request) {
       "Hey! Looks like you're not on Mooves yet. Join at makemooves.app"
     )
   }
+
+  // Known Mooves user — record the check (best-effort, non-blocking on failure).
+  await captureServerEvent(sender.id, 'sms_feed_check')
 
   // 2. Get sender's friend IDs
   const { data: friendships } = await supabase
@@ -97,9 +104,30 @@ export async function POST(req: Request) {
     )
   }
 
-  // 4. Filter: only friends whose visible_to includes sender (or is null = everyone)
-  const visible = greenFriends.filter(f =>
-    f.visible_to === null || (Array.isArray(f.visible_to) && f.visible_to.includes(sender.id))
+  // 4. Resolve group visibility. A green friend with visible_to = null is public.
+  //    Otherwise `visible_to` holds GROUP IDs owned by that friend — the sender
+  //    only sees them if they're a member of at least one of those groups.
+  const targetedGroupIds = Array.from(
+    new Set(
+      greenFriends.flatMap(f => (Array.isArray(f.visible_to) ? f.visible_to : []))
+    )
+  )
+
+  let senderGroupIds = new Set<string>()
+  if (targetedGroupIds.length > 0) {
+    const { data: memberships } = await supabase
+      .from('group_members')
+      .select('group_id')
+      .eq('user_id', sender.id)
+      .in('group_id', targetedGroupIds)
+    senderGroupIds = new Set((memberships ?? []).map(m => m.group_id))
+  }
+
+  const visible = greenFriends.filter(
+    f =>
+      f.visible_to === null ||
+      (Array.isArray(f.visible_to) &&
+        f.visible_to.some(gid => senderGroupIds.has(gid)))
   )
 
   return twimlResponse(composeReply(visible))
