@@ -21,9 +21,9 @@
 | 6 | Friend Tap → SMS Handoff (non-screen) | ✅ Approved · ✅ Coded |
 | 7 | ~~Friend Connection Confirmation~~ | ❌ Removed — web flow already covered by Screen 1 + feed toast |
 | 8 | Friends List | ✅ Approved · ✅ Coded |
-| 9 | Groups Management | ✅ Approved |
-| 10 | Settings / Profile Edit | ✅ Approved |
-| 11 | SMS Feed Check (non-screen, Twilio flow) | ✅ Approved |
+| 9 | Groups Management | ✅ Approved · ✅ Coded |
+| 10 | Settings / Profile Edit | ✅ Approved · ✅ Coded |
+| 11 | SMS Feed Check (non-screen, Twilio flow) | ✅ Approved · ✅ Coded (deferred — A2P registration pending) |
 | 12 | Invite Link Deep-Link Flow (non-screen, technical) | ✅ Approved · ✅ Coded |
 | — | Spec Amendments (A/B/C) | ✅ Approved — overrides noted above |
 | 13 | Canonical Data Model | ✅ Approved |
@@ -33,6 +33,7 @@
 | 17 | Supabase Setup (RLS, Storage, Realtime) | ✅ Approved |
 | 18 | Middleware | ✅ Approved |
 | 19 | Environment Variables | ✅ Approved |
+| — | Post-MVP Roadmap (Phases 8–14) | 🔮 Planned — needs spec + mockup per phase |
 
 ---
 
@@ -2851,5 +2852,60 @@ NEXT_PUBLIC_APP_URL=https://makemooves.app
 ```
 
 **Vercel setup:** All `NEXT_PUBLIC_` vars are exposed to the browser. All others are server-only. Add every variable to Vercel project settings for Production, Preview, and Development environments separately. `FIREBASE_ADMIN_PRIVATE_KEY` must have literal `\n` characters — paste as-is; Vercel preserves them.
+
+---
+
+## Post-MVP Roadmap (Phases 8–14)
+
+Screens 1–12 (the core loop) are built and deployed. This section captures the next wave of work, parsed from Jackson's collected feedback and a long-form idea dump (2026-07-14). Phases are sequenced by dependency and value, not locked scope — each still needs a spec pass (via `mooves-spec-writer`) and mockup before build. The design principles below are guardrails that gate every phase.
+
+### Design principles (guardrails)
+
+1. **Kill the micro-rejection.** Passive availability signaling exists so a first move isn't a text that can get denied. No feature should add a new place to be rejected.
+2. **Stay lightweight — never an event page or calendar app.** Time/plan details are outsourced to text/SMS. This is the line that separates Mooves from Partiful/Facebook Events.
+3. **No subscribing to individual people.** Group-level subscriptions only. Per-person "tell me when they're free" is out of bounds (creepy / Find-My-Friends).
+4. **Sponsored = "the good version of advertising."** Opt-in by interest; feels like a neighbor's run club, not a banner ad.
+
+### Phase 8 — Polish & Fixes *(small, ship-now)*
+- **Header icon** enlarged **and** cow face designed into the mark/header — treat as one design task (not just a size bump).
+- **People tab: flip sub-tab order** so Friends is default/left, Groups second (currently reversed). *(Note: Screen 9 spec's "People Tab Layout Update" documents the current order — update it when this ships.)*
+- **reCAPTCHA badge** stuck bottom-right and undismissable — suppress/reposition the Firebase badge (supported via the `badge` param + required attribution text elsewhere).
+- **"+" create-group button** made more prominent and intuitive.
+
+### Phase 9 — Deepen the core loop *(highest leverage — the next build after Phase 8)*
+- **⭐ Group-chat / text-blast button (anchor feature)** — "create a group chat now" pulling in the numbers of everyone on a move, or blast them all at once. The natural green → plan handoff, and Jackson's most-wanted item in this phase. Build this first.
+- **Presence on a move ("party-full" lite)** — see who else is in ("Jackson's going"). Social proof, not an RSVP page. Also attacks cold start.
+- **Smarter "go grey"** — nudge users to pull green down once a plan forms over text, or keep it up for "more the merrier." Addresses the awkward-social-dynamics failure mode.
+- **Lightweight "tonight" signaling** — enrich the vibe/status text so "free now" can also carry intent ("happy hour tonight") *without* a time picker. See open decision below.
+
+### Phase 10 — Cold start & growth flywheel
+- **First-mover incentive — OPEN DESIGN PROBLEM.** Jackson named this sharply ("who are the lone nuts? Who are the first movers?... you see no green, then it's useless. How do we incentivize people to go green themselves?") but did not land a mechanism. Solve when specing. Adjacent levers from the idea dump that *populate* the feed but don't directly incentivize being first: the leader flywheel, group-chat blast (Phase 9), group notifications (Phase 11), and party-full presence (Phase 9).
+- **Leader-led onboarding** — mechanisms so one person who drops Mooves in a group text pulls everyone in fast, "so people see the value quickly."
+- **Group-specific invite links** — joining adds you to the group and auto-friends its members (see backlog note; needs group-scoped variant of `lib/referral.ts` / `/api/invite/[code]`).
+
+> **Phases 11–14 are DIRECTIONAL ONLY.** They capture where Mooves is headed, not committed scope. Only Phases 8–10 are near-term commitments to spec. Revisit ordering and details before treating any of 11–14 as a plan of record.
+
+### Phase 11 — Groups as channels + notifications *(retention)*
+- **Subscribe to a group** (e.g. a pool group) → alert when someone goes green for / mentions that group.
+- **Push notifications** — currently removed from MVP (Amendment C); this is when they earn their way back (revisit with Expo).
+- Guardrail: **group-level only**, never per-person.
+
+### Phase 12 — Geolocation & discovery
+- Collect zip/address or opt-in location.
+- **"Moves in my area"** feed. Prerequisite for Phase 13.
+
+### Phase 13 — Sponsored moves *(monetization — "good ads")*
+- **Micro-sponsored moves**: run clubs, yard sales, bars post into relevant feeds at critical mass.
+- **Subscribe to sponsored-move *types*** (opt-in, not injected).
+- **SMS-back delivery**: Mooves texts the user event details + link from the Mooves number (sticky — lives in Messages) rather than opening an SMS to a person.
+- **Sponsor analytics**: impressions (feeds reached), clicks, "interested" counts.
+
+### Phase 14 — Scale & platform
+- **WhatsApp** support (beyond SMS / beyond USA).
+- **Tipping ("cow tipping")** — needs a non-Stripe solution; Stripe's sole-proprietor onboarding is the blocker.
+- **Landing page** for makemooves.app (see backlog note).
+
+### Open decisions
+- **Availability model (Phase 9):** Jackson leaned toward keeping the binary switch + lightweight vibe text ("happy hour tonight") and explicitly *not* building time-based scheduling — but this is **not yet locked.** Resolve when specing Phase 9.
 
 ---
