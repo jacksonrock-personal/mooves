@@ -33,7 +33,7 @@ export default function VisibilityChips({ groups, selected, onChange }: Visibili
         className={`shrink-0 px-3 py-1.5 rounded-full text-sm font-semibold border ${
           allSelected
             ? 'bg-mooves-purple text-white border-mooves-purple'
-            : 'bg-white text-text-secondary border-gray-200'
+            : 'bg-card-white text-text-secondary border-[#E8E4F5]'
         }`}
       >
         All friends

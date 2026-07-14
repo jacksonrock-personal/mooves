@@ -52,6 +52,19 @@ export async function POST(req: Request) {
 
   const supabase = createServiceClient()
 
+  // Every member must be a mutual friend of the caller.
+  const memberIds = Array.from(new Set(body.memberIds))
+  const { data: friendRows } = await supabase
+    .from('friendships')
+    .select('friend_id')
+    .eq('user_id', userId)
+    .in('friend_id', memberIds)
+
+  const friendSet = new Set((friendRows ?? []).map(f => f.friend_id))
+  if (memberIds.some(id => !friendSet.has(id))) {
+    return NextResponse.json({ error: 'Members must be your friends' }, { status: 400 })
+  }
+
   const { data: group, error: groupError } = await supabase
     .from('groups')
     .insert({ owner_id: userId, name, emoji: body.emoji })
@@ -62,7 +75,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Failed to create group' }, { status: 500 })
   }
 
-  const memberRows = body.memberIds.map(uid => ({ group_id: group.id, user_id: uid }))
+  const memberRows = memberIds.map(uid => ({ group_id: group.id, user_id: uid }))
   const { error: memberError } = await supabase.from('group_members').insert(memberRows)
 
   if (memberError) {
@@ -71,7 +84,7 @@ export async function POST(req: Request) {
   }
 
   return NextResponse.json(
-    { id: group.id, name, emoji: body.emoji, memberCount: body.memberIds.length, memberIds: body.memberIds },
+    { id: group.id, name, emoji: body.emoji, memberCount: memberIds.length, memberIds },
     { status: 201 }
   )
 }

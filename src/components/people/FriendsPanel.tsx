@@ -1,12 +1,11 @@
 'use client'
 
-// Screen 8: Friends List (People tab)
-// Mockup: mooves-screen8-friends-list.html
-// Read-only directory of all mutual friends: search, swipe-to-remove, invite.
+// Screen 8 content, embedded under the People tab's Friends sub-tab.
+// Search + friend list + swipe-to-remove + sticky invite button.
+// The People header, sub-tabs, and bottom nav live in PeopleScreen.
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { initPostHog, posthog } from '@/lib/posthog'
-import BottomNav from '@/components/ui/BottomNav'
 import CowIllustration from '@/components/ui/CowIllustration'
 import Toast from '@/components/ui/Toast'
 import FriendsList from './FriendsList'
@@ -17,7 +16,7 @@ interface Friend {
   avatarUrl: string | null
 }
 
-export default function FriendsScreen() {
+export default function FriendsPanel() {
   const [friends, setFriends] = useState<Friend[] | null>(null)
   const [referralCode, setReferralCode] = useState<string | null>(null)
   const [query, setQuery] = useState('')
@@ -122,20 +121,10 @@ export default function FriendsScreen() {
   const count = friends?.length ?? 0
 
   return (
-    <div className="min-h-screen flex flex-col bg-surface-bg">
-      {/* Header */}
-      <header className="bg-white px-5 pt-14 pb-3.5 border-b border-[#E8E4F5] shrink-0">
-        <h1 className="font-display font-extrabold text-[24px] text-text-primary tracking-tight">
-          Friends
-        </h1>
-        <p className="font-sans text-[13px] text-text-secondary mt-0.5">
-          {count} {count === 1 ? 'friend' : 'friends'}
-        </p>
-      </header>
-
+    <div className="flex-1 flex flex-col min-h-0">
       {/* Search — hidden until at least one friend exists */}
       {loaded && count > 0 && (
-        <div className="bg-white px-4 pt-2.5 pb-3 border-b border-[#E8E4F5] shrink-0">
+        <div className="bg-card-white px-4 pt-2.5 pb-3 border-b border-[#E8E4F5] shrink-0">
           <div className="relative flex items-center">
             <svg
               className="absolute left-[11px] text-text-secondary pointer-events-none"
@@ -183,7 +172,7 @@ export default function FriendsScreen() {
       </div>
 
       {/* Sticky invite button (above bottom nav) */}
-      <div className="fixed bottom-[72px] left-0 right-0 z-30 bg-white border-t border-[#E8E4F5] px-4 py-2.5">
+      <div className="fixed bottom-[72px] left-0 right-0 z-30 bg-card-white border-t border-[#E8E4F5] px-4 py-2.5">
         <button
           onClick={() => void handleInvite()}
           className="w-full py-3.5 rounded-2xl bg-mooves-purple text-white font-display font-bold text-[15px] tracking-tight flex items-center justify-center gap-2"
@@ -206,8 +195,6 @@ export default function FriendsScreen() {
         </button>
       </div>
 
-      <BottomNav />
-
       {/* Remove confirmation sheet */}
       {removeTarget && (
         <>
@@ -217,7 +204,7 @@ export default function FriendsScreen() {
             aria-hidden="true"
           />
           <div
-            className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl px-5 pt-4 pb-8 safe-area-pb"
+            className="fixed bottom-0 left-0 right-0 z-50 bg-card-white rounded-t-3xl px-5 pt-4 pb-8 safe-area-pb"
             role="dialog"
             aria-modal="true"
           >

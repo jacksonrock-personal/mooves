@@ -85,6 +85,21 @@ export async function DELETE(req: Request) {
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const supabase = createServiceClient()
+
+  // Best-effort: remove any avatar files under the user's Storage folder.
+  // Never block account deletion on a Storage hiccup.
+  try {
+    const { data: files } = await supabase.storage.from('Avatars').list(userId)
+    if (files && files.length > 0) {
+      await supabase.storage
+        .from('Avatars')
+        .remove(files.map(f => `${userId}/${f.name}`))
+    }
+  } catch {
+    // ignore — the user row deletion below is what matters
+  }
+
+  // Hard-delete the user; FK cascades remove friendships, groups, group_members.
   const { error } = await supabase.from('users').delete().eq('id', userId)
 
   if (error) {
@@ -92,5 +107,13 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ error: 'Deletion failed' }, { status: 500 })
   }
 
-  return new Response(null, { status: 204 })
+  // Clear the session cookie so the client lands unauthenticated.
+  const response = new Response(null, { status: 204 })
+  response.headers.set(
+    'Set-Cookie',
+    `mooves-token=; HttpOnly; ${
+      process.env.NODE_ENV === 'production' ? 'Secure; ' : ''
+    }SameSite=Lax; Path=/; Max-Age=0`,
+  )
+  return response
 }

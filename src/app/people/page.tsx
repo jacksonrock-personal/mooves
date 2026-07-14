@@ -1,9 +1,8 @@
-// Screen 8: Friends List (People tab)
-// Mockup: mooves-screen8-friends-list.html
-// Groups sub-tab (Screen 9) is out of scope — People = Friends list for now.
+// Screens 8 + 9: People tab (Friends | Groups sub-tabs)
+// Mockups: mooves-screen8-friends-list.html, mooves-screen9-groups.html
 
-import FriendsScreen from '@/components/people/FriendsScreen'
+import PeopleScreen from '@/components/people/PeopleScreen'
 
 export default function PeoplePage() {
-  return <FriendsScreen />
+  return <PeopleScreen />
 }
