@@ -68,6 +68,9 @@ function AuthContent() {
       router.push(inviteCode ? `/auth/otp?invite=${inviteCode}` : '/auth/otp')
     } catch (err: unknown) {
       const code = (err as { code?: string }).code ?? ''
+      // Surface the real failure so production auth errors are diagnosable
+      // instead of hidden behind the generic user-facing message below.
+      console.error('[auth] signInWithPhoneNumber failed:', code || '(no code)', err)
       setError(
         code === 'auth/too-many-requests'
           ? 'Too many attempts, try again in a few minutes.'
