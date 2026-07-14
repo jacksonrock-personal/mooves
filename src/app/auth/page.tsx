@@ -32,6 +32,10 @@ function AuthContent() {
   function initRecaptcha() {
     if (!recaptchaContainerRef.current) return
     recaptchaVerifierRef.current?.clear()
+    // clear() doesn't reliably remove the rendered widget from the container,
+    // so a subsequent verify() throws "reCAPTCHA has already been rendered in
+    // this element". Empty the node so each attempt renders into a clean element.
+    recaptchaContainerRef.current.innerHTML = ''
     recaptchaVerifierRef.current = new RecaptchaVerifier(
       firebaseAuth,
       recaptchaContainerRef.current,
