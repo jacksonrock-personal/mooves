@@ -21,9 +21,9 @@
 | 6 | Friend Tap → SMS Handoff (non-screen) | ✅ Approved · ✅ Coded |
 | 7 | ~~Friend Connection Confirmation~~ | ❌ Removed — web flow already covered by Screen 1 + feed toast |
 | 8 | Friends List | ✅ Approved · ✅ Coded |
-| 9 | Groups Management | ✅ Approved |
-| 10 | Settings / Profile Edit | ✅ Approved |
-| 11 | SMS Feed Check (non-screen, Twilio flow) | ✅ Approved |
+| 9 | Groups Management | ✅ Approved · ✅ Coded |
+| 10 | Settings / Profile Edit | ✅ Approved · ✅ Coded |
+| 11 | SMS Feed Check (non-screen, Twilio flow) | ✅ Approved · ✅ Coded (deferred — A2P registration pending) |
 | 12 | Invite Link Deep-Link Flow (non-screen, technical) | ✅ Approved · ✅ Coded |
 | — | Spec Amendments (A/B/C) | ✅ Approved — overrides noted above |
 | 13 | Canonical Data Model | ✅ Approved |
@@ -33,6 +33,7 @@
 | 17 | Supabase Setup (RLS, Storage, Realtime) | ✅ Approved |
 | 18 | Middleware | ✅ Approved |
 | 19 | Environment Variables | ✅ Approved |
+| — | Post-MVP Roadmap (Phases 8–15) | 🔮 Definitions finalized 2026-07-16 — needs spec + mockup per phase |
 
 ---
 
@@ -1220,7 +1221,7 @@ The People tab now has two sub-tabs at the top:
 - The Friends sub-tab shows the Screen 8 content exactly as approved (search bar + friend list + invite button)
 - The Groups sub-tab shows Screen 9 content
 
-A `+` icon button appears in the top-right corner of the header **only when the Groups sub-tab is active**. Tapping it navigates to the Create Group screen.
+A create-group control appears in the top-right corner of the header **only when the Groups sub-tab is active**. Tapping it navigates to the Create Group screen. *(Phase 8 §8.2 upgrades this from an unlabeled `+` icon to an always-visible **labeled** control.)*
 
 ---
 
@@ -2853,3 +2854,620 @@ NEXT_PUBLIC_APP_URL=https://makemooves.app
 **Vercel setup:** All `NEXT_PUBLIC_` vars are exposed to the browser. All others are server-only. Add every variable to Vercel project settings for Production, Preview, and Development environments separately. `FIREBASE_ADMIN_PRIVATE_KEY` must have literal `\n` characters — paste as-is; Vercel preserves them.
 
 ---
+
+## Post-MVP Roadmap (Phases 8–14)
+
+Screens 1–12 (the core loop) are built and deployed. This section captures the next wave of work, parsed from Jackson's collected feedback and a long-form idea dump (2026-07-14). Phases are sequenced by dependency and value, not locked scope — each still needs a spec pass (via `mooves-spec-writer`) and mockup before build. The design principles below are guardrails that gate every phase.
+
+### Design principles (guardrails)
+
+1. **Kill the micro-rejection.** Passive availability signaling exists so a first move isn't a text that can get denied. No feature should add a new place to be rejected.
+2. **Stay lightweight — never an event page or calendar app.** Time/plan details are outsourced to text/SMS. This is the line that separates Mooves from Partiful/Facebook Events.
+3. **No subscribing to individual people.** Group-level subscriptions only. Per-person "tell me when they're free" is out of bounds (creepy / Find-My-Friends).
+4. **Sponsored = "the good version of advertising."** Opt-in by interest; feels like a neighbor's run club, not a banner ad.
+
+### Design System v1 (adopted 2026-07-16)
+
+A design-critique → design-system pass (Claude Design) delivered a v1 system at `Make Mooves app/design_handoff_mooves_design_system/` (`tokens/`, `component-anatomy.md`, `accessibility-report.md`, `assets/`, `screens/`; editable original is an external `.dc.html`). **Decisions:**
+- **Tokens — adopt the scale naming and MIGRATE existing components** off the old semantic names (`mooves-purple`→`purple-500`, `status-green`→`green-500`, `surface-bg`→`purple-50`, `text-primary`→`ink-900`, etc.). Hex values are **identical** to the locked palette; the additions are `green-700` (#167A43 — AA-safe green that **fixes a real 2.1:1 white-on-green text-contrast failure**), `green-100`, `purple-700`, `grey-100`, `red`, and full type/radius/shadow scales. Route text-bearing greens to `green-700` (a real change, the a11y fix — not just a rename).
+- **Go-green = swipe-to-go-green** (adopted), replacing the old tap+sheet flow. Drops the old visibility chips — consistent with "green stays global" (Phase 11). Go-grey stays a lighter tap + confirm-sheet.
+- **Status legibility:** dot + label + color, **never color alone** (feed cards = solid `green-100` + white "Free" chip with `green-700` text).
+- **Empty feed:** an **ambient tier** (pulsing ring + aggregate social-proof copy + green CTA) — this directly implements Phase 10.
+- **Brand mark:** cow app icon corrected to the real `CowIllustration.tsx` geometry, legible 180→29px; wordmark's status-dot metaphor taught once via a legend.
+
+**The system covers the core loop + the four critique problems. It does NOT yet include these phase-specific components — draw them as EXTENSIONS on the same tokens when specing/mocking each phase:**
+- Phase 9: coarse **time chip** on go-green · **"I'm in" join** + 2+ gate · **"Start group text" blast button**
+- Phase 11: **group-tag affordance** in the go-green flow (card *display* of a tag already specced)
+- Phase 13: **sponsored-move card** (described in rationale, not drawn)
+- Phase 15: **"Add to Home Screen" install nudge**
+
+**Deferred:** dark-mode tokens (none yet); a certified colorblind pass (Stark / Sim Daltonism) before formally claiming "passes colorblind users."
+
+### Phase 8 — Polish & Fixes *(small, ship-now)* — **FINALIZED 2026-07-16** · **SPEC'D 2026-07-16 (see "## Phase 8 — Polish (Spec)" near end of file)**
+- **Header icon + cow face** — enlarge the header icon **and** work a cow face into the **existing** mark, as one focused design task. Scope = refine/integrate, **not a rebrand** (a full cow-forward brand-mark exploration is deliberately out of this phase). Cow-face visual direction is a mockup-time decision.
+- **People tab: flip sub-tab order** so Friends is default/left, Groups second. **⚠️ LIKELY ALREADY DONE (2026-07-16):** `PeopleScreen.tsx:19,51` already defaults to `friends` and renders `['friends','groups']` (Friends-first). The design critique caught this too. **Verify against live `makemooves.app`; if confirmed, DROP this item** and just update the stale Screen 9 spec "People Tab Layout Update" note (which still documents the old reversed order).
+- **reCAPTCHA badge** — **suppress** the floating Firebase badge via the `badge` param, and add Google's **required attribution text** ("protected by reCAPTCHA — Privacy / Terms") on the auth screen instead. (Not repositioned — hidden + compliant.)
+- **"+" create-group button** — a clear, **labeled control in the Groups sub-tab header** (always visible, obvious purpose). Not a FAB, not an empty-state-only CTA.
+
+All four items are independent and parallelizable.
+
+### Phase 9 — Deepen the core loop *(highest leverage — the next build after Phase 8)* — **FINALIZED 2026-07-16** · **SPEC'D 2026-07-16 (see "## Phase 9 — Deepen the Core Loop (Spec)" near end of file)**
+
+**Goal:** make the green → plan handoff frictionless and add light social proof — without adding any new surface to be rejected, and without becoming an event/calendar app.
+
+**The coherent loop:**
+1. You go green — optionally tag a **coarse time chip** (*now / tonight / this weekend*; no picker, no calendar).
+2. Friends see your green and tap **"I'm in"** → your join count ticks up. (Pure join signal — does *not* flip the joiner green.)
+3. At **2+ joins**, a **"Start group text"** button appears on *your* status card.
+4. Tap it → **native SMS deep-link** opens your own Messages app, pre-addressed to **exactly your joiners**, prefilled body. No Mooves number, no A2P.
+5. Right after sending → **"Plan's set — go grey, or keep green for more?"**
+
+**Sub-features & build order (this is a dependency chain, not the PRD's original "blast first"):**
+1. **Presence ("party-full" lite)** — "I'm in" tap + join count on green cards. *Built first — it gates the blast.* Social proof, not an RSVP page; also attacks cold start.
+2. **⭐ Group-chat / text-blast button (anchor feature)** — appears at 2+ joins, targets exactly the joiners via a native SMS deep-link (opens the user's own Messages app; no Mooves number, no A2P). The natural green → plan handoff and Jackson's most-wanted item.
+3. **Smarter "go grey"** — post-blast prompt to drop green or keep it up for "the more the merrier." Addresses the awkward-social-dynamics failure mode.
+4. **Coarse time chip** — optional intent tag on green (*now / tonight / this weekend*). Replaces the old "lightweight tonight signaling" sub-feature. *Independent — build in parallel anytime.*
+
+**Resolved decisions:** delivery = native SMS deep-link (no A2P) · recipients = exactly the joiners · availability = binary green + coarse time chip, **no time picker** · "I'm in" = pure join signal (doesn't flip joiner green) · blast **gated at 2+ joins** so you never blast into silence — this is design principle #1 (kill the micro-rejection) falling straight out of the interaction.
+
+**In scope:** presence count, "I'm in", gated blast button, native deep-link handoff, post-blast go-grey prompt, coarse time chip.
+**Explicitly out:** RSVP/attendee management, time pickers/calendars, Mooves-brokered SMS, per-person subscriptions, adding non-joiners to the blast.
+
+**Design-critique findings folded in (2026-07-16):**
+- **The SMS handoff is the productized version of a current gap.** Today `FriendCard.handleTap` fires `window.location.href = sms:…` with **no confirmation and a blank body**, and nothing on the feed/empty states teaches a new user that *tapping a green friend = text them*. The Phase 9 blast should fix both: (a) it **resolves the "prefilled body" open question — currently the message opens empty**, so the blast must supply real prefilled copy; (b) give the handoff a clear affordance/discoverability cue so the core interaction is learnable unaided.
+- **Fix the go-green entry-point weight while this phase touches the go-green flow (for the time chip).** The critique flagged two inconsistent entry points (`AvailRow`'s small off-state "Go free" chip vs. the on-state full-width CTA), with the *new-user* action under-weighted — resolve to one dominant, unmistakable go-green action per the design system.
+
+**Flagged for spec time (open questions to resolve in `mooves-spec-writer`):**
+- **iOS vs Android deep-link reality** — multi-recipient `sms:`/`smsto:` behavior differs by OS; iOS can be finicky about creating a *single group* thread. Real implementation risk to the "one group text" promise — needs a spec-time proof-of-concept.
+- **Prefilled body copy** — what the message actually says.
+- **Presence visibility** — do friends see *who* joined (names) or just a count? Does the count show feed-wide as social proof, or only to the mover?
+- **"0 joins" watch-item** — seeing no one join your move is passive, but confirm it doesn't read as a soft rejection.
+- **Coarse time chip** — exact preset values and whether/how it renders in the feed.
+
+### Phase 10 — Cold start & growth flywheel — **FINALIZED 2026-07-16** · **SPEC'D 2026-07-16 (see "## Phase 10 — Cold Start & Growth Flywheel (Spec)" near end of file)**
+
+**Goal:** fix the *cold-feed* problem (established users bouncing off a grey feed) intrinsically, and give *new* users a fast path to a populated feed via leader-shared group links. The first-mover "OPEN DESIGN PROBLEM" from the idea dump is now resolved: it's the **cold-feed** problem (you have friends but nobody's green *right now*), solved **intrinsically** — not with streaks/points/notifications.
+
+**Workstream A — First-mover incentive (cold feed), intrinsic.** Two signals, both **aggregate/anonymized**:
+1. **Ambient demand signal** — when the feed is grey, show recent + habitual availability ("5 friends were green this week," "your Thursday crew is usually up now"). Proves the network is alive and green will be seen.
+2. **"Friends active now" signal** — aggregate count of friends currently in-app / recently active ("4 friends around now"), so going green visibly lands on real eyes *before* you commit.
+- **Guardrail (dictated):** counts only, **never named individuals** — naming a friend who's active / was green but didn't reach out is a brand-new micro-rejection (#1) and drifts toward Find-My-Friends creep (#3).
+- **Boundary/dependency:** intrinsic work maximizes single-session value + builds the habit of opening at high-intent times. It **cannot reach dormant friends** — that's Phase 11 notifications. Phase 10 sets up; Phase 11 closes the loop.
+
+**Workstream B — Growth flywheel (cold graph): leader-led group invite links.** (Leader-onboarding + invite-links collapsed into one feature — the link *is* the leader's mechanism; "leader onboarding" is its packaging.)
+- One shareable **group invite link** per group; **any member can share** it (the leader is emergent, **no special role/tooling**).
+- Tapping it **joins the group AND auto-friends all current members** → instantly populated feed. Justified by the trusted group-text context (members aren't strangers). *Caveat: revisit if groups ever become large/public in Phase 12–13.*
+- Tech: group-scoped variant of `lib/referral.ts` / `/api/invite/[code]` (currently friend-scoped).
+
+**Sequencing:** invite links first (concrete, partly specced, low-risk, unblocks new-user density) → then the grey-state ambient/active-now signals (harder design). Parallelizable.
+
+**In scope:** aggregate ambient-demand signal, aggregate friends-active-now signal, grey-state feed rework, group invite links with auto-friend-all.
+**Explicitly out:** streaks/points/gamification, named "active now"/last-seen, first-mover push notifications (→ Phase 11), any special leader role/tooling, per-person incentives.
+
+**Design-critique findings folded in (2026-07-16):**
+- **Independent corroboration of this phase's thesis.** The design critique flagged the empty/grey feed as *"the single highest-leverage screen in the app and currently the least designed"* — unprompted. Treat the grey state as a **hero state**, designed for the aggregate ambient signals ("5 friends were green this week", "4 friends around now"), not an afterthought empty state.
+- **Feed-card status legibility (fix as part of the feed redesign).** `FriendCard` signals "free" by green tint alone (`bg-[#2ECC71]/[0.14]`) — no dot, no label — which fails colorblind/low-vision users and has borderline contrast for a *status* indicator. Add a non-color cue (status dot + "Free" label) and lock accessible contrast on the green hero color. (Design-system item; also see Phase 8's overall polish.)
+
+**Flagged for spec time (open questions to resolve in `mooves-spec-writer`):**
+- **Small-N de-anonymization (important):** with few friends, "1 friend active now" or "1 was green this week" trivially *identifies* the person — reintroducing the exact rejection/creepiness we designed out. Needs a suppression floor (hide counts below a threshold).
+- **"Active now" definition** — what counts (app foreground? last N minutes?) and its recency window.
+- **Ambient-signal thresholds/copy** — the "this week" window and habitual-pattern logic.
+- **Auto-friend-all consent surface** — does the joiner see "this will connect you with 12 people" before confirming?
+- **Invite-link hygiene** — expiry / revocation, abuse if a link spreads beyond the intended group.
+
+> **Phases 11–15 — definitions FINALIZED 2026-07-16** (not yet specced/mocked/coded). They now carry resolved in/out scope like 8–10, but remain further out, and some items stay deliberately trigger-gated/directional: **WhatsApp gated on non-US demand** and the **tipping concept still loose** (payments path decided). Note **Phase 15 (Push/PWA)** is late-numbered but strategically belongs right after Phase 11 — it completes the cold-start loop. Phases 8–10 remain the near-term build commitments; revisit 11–15 ordering before building.
+
+### Phase 11 — Groups as channels (in-app) — **FINALIZED 2026-07-16** · **SPEC'D 2026-07-16 (see "## Phase 11 — Groups as Channels, In-App (Spec)" near end of file)**
+
+**Scope cut 2026-07-16: push notifications DEFERRED out of this phase.** Phase 11 is now purely **in-app** group channels. Push — the transport that would reach *dormant* friends who aren't currently looking — is parked to its own future phase (see "Deferred: push" below). This means Phase 10's "reach dormant friends" gap **stays open** after Phase 11; only push closes it.
+
+**What it is:** green stays **global**; when going green you can optionally **tag a group** ("green — *for pool crew*"). Tagged-greens render in the **main feed with a group label**. You're **auto-subscribed** to your own groups (mutable).
+
+- **Group tag = label, NOT a visibility scope.** Tagging pool crew does *not* hide your green from other friends — green stays global (per the trigger decision); the tag adds group context/emphasis in the feed.
+- **"Subscribe to a group" collapses to a mute toggle.** Since everything surfaces in one feed and you're auto-subscribed to your own groups, subscription in practice = mute/unmute that group's tagged-greens in your feed.
+- Guardrail intact: **group-level only, never per-person.**
+
+**In scope:** optional group tag on go-green · main-feed group labels · auto-subscribe + per-group mute.
+**Explicitly out:** push notifications (deferred) · a separate group-channel destination/inbox · green visibility scoping.
+
+**Deferred: push notifications → now defined as Phase 15.** Push (the transport that reaches *dormant* friends) is split into its own phase: **Phase 15 — Push notifications & home-screen install (PWA)**. Path chosen = **Web Push via PWA** through the existing Firebase/FCM (no app store, no A2P; Android always, iOS requires Add-to-Home-Screen on 16.4+). Phase 15 is what finally closes Phase 10's dormant-reach gap, and reuses this phase's group channels as its notification triggers.
+
+**Flagged for spec time (open questions):**
+- Multi-group tagging — tag one group or several when going green?
+- What the group label looks like in the feed; how mute is surfaced.
+- Whether tagged-greens get any ordering/emphasis boost in the feed for that group's members.
+
+### Phase 12 — Geolocation & discovery — **FINALIZED 2026-07-16** · **SPEC'D 2026-07-16 (see "## Phase 12 — Geolocation & Discovery: Substrate (Spec)" near end of file)**
+
+**Resolved: the area feed surfaces PUBLIC/sponsored moves, never strangers' green.** This keeps the private friend-graph intact and dodges stranger-creep + a new rejection surface (guardrail #3). **Consequence:** Phase 12 is largely the **substrate for Phase 13** — "moves in my area" has little to show until sponsored/public moves exist, so **12 and 13 are tightly coupled** (build 12 just before / together with 13).
+
+- **Location: coarse, opt-in.** Zip / neighborhood level only — enough for area matching, no Find-My-Friends precision, minimal sensitive data held. **No live/precise GPS.**
+- **Opt-in when it unlocks value.** Prompt for location at the moment it pays off ("see moves near you"), ideally once there's Phase 13 content to show — not an upfront onboarding demand, not Settings-only.
+- **"Moves in my area" feed** = local public/sponsored moves filtered by the user's coarse area. Prerequisite for Phase 13.
+- Guardrails: large/public groups introduced here must **not** inherit Phase 10's auto-friend-all; any user-facing area counts honor Phase 10 **small-N suppression**.
+
+**In scope:** opt-in coarse-location capture, area-targeting infra, "moves in my area" feed of public/sponsored moves.
+**Explicitly out:** surfacing individual strangers' green, precise/live GPS, mandatory location, per-person location (guardrail #3).
+
+**Flagged for spec time (open questions):**
+- Value-exchange copy for the location opt-in; exactly where/when it fires.
+- How "area" is defined/matched (zip radius? city?) and how travel / changing location is handled.
+- Whether an *aggregate* friend-area vibe ("lots free near you") layers on top (reusing Phase 10 ambient signals).
+- Location data storage/retention & privacy.
+
+### Phase 13 — Sponsored moves *(monetization — "good ads")* — **FINALIZED 2026-07-16** · **SPEC'D 2026-07-16 (see "## Phase 13 — Sponsored Moves (Spec)" near end of file)**
+
+**Guardrail #4 holds:** sponsored moves are opt-in "good ads," never banner injection.
+
+- **Placement: area feed only, opt-in by interest type.** Sponsored moves appear ONLY in the Phase 12 "moves in my area" feed, filtered to interest-types the user opted into (running, nightlife, markets…). **Never in the friend feed** — the friend feed stays sacred.
+- **Creation: self-serve sponsor dashboard.** Sponsors sign up, post their own moves, and view analytics. **NOTE — the single heaviest build in the roadmap:** a whole second product surface (sponsor accounts/auth, move authoring, billing, moderation, analytics). Likely needs internal sub-phasing; a **curated/concierge pilot may still precede full self-serve** to validate demand (spec-time call). Carries a **payments dependency** shared with Phase 14 — **resolved:** use the Merchant-of-Record path decided in Phase 14 (Paddle/Lemon Squeezy; no LLC needed; money flows to Mooves, so no marketplace/KYC).
+- **Interest subscriptions** — users opt into sponsored-move *types*, never injected. Preset categories.
+- **Details delivery: in-app first.** "Interested" delivers move details + link **in-app immediately**. The sticky **SMS-back** from the Mooves number is a later enhancement **gated on A2P 10DLC registration** (the friction deferred in Phase 7 — unlike the Phase 9 blast, this is Mooves-brokered *outbound* SMS). Phase 13 ships without A2P.
+- **Sponsor analytics:** impressions (feeds reached), clicks, "interested" counts. Honor Phase 10 **small-N suppression** on anything user-facing; no auto-friend-all on public feeds.
+
+**In scope:** area-feed sponsored placement, interest-type opt-in, self-serve sponsor dashboard, in-app details delivery, sponsor analytics.
+**Explicitly out (of v1):** friend-feed ad injection, SMS-back delivery (A2P-gated enhancement), any non-opt-in / injected ads.
+
+**Flagged for spec time (open questions):**
+- Pricing/billing model (CPM? flat? per-"interested"?) + the payments-infra blocker shared with Phase 14.
+- Sponsor onboarding/verification & content moderation (trust/safety on a self-serve surface).
+- Interest-type taxonomy — the preset categories.
+- Whether a curated pilot precedes full self-serve.
+- "Interested" semantics — does it notify the sponsor or reveal anything about the user? (guardrail: no per-person exposure.)
+
+### Phase 14 — Scale & platform — **FINALIZED 2026-07-16** · **SPEC'D 2026-07-16 (see "## Phase 14 — Scale & Platform (Spec)" near end of file)**
+
+**Payments (cross-cutting — gates Phase 13 sponsor billing AND tipping).** Both money flows go **TO Mooves** (sponsor payments; tips support the app), so there's **no marketplace/payouts, no user KYC, no money-transmission** complexity — the simple case. **You do NOT need to form an LLC to start.** Recommended path = a **Merchant-of-Record (Paddle or Lemon Squeezy)**: onboards you as an individual, remits global sales tax/VAT, and covers both Phase 13 billing (subscriptions/one-offs) and tipping from one integration. Trade-off: ~5%+ fees vs. Stripe's ~2.9%+30¢ — the premium buys **zero tax/compliance overhead** (the point when you don't want to run a business). *Lower-fee alternative:* Stripe or Square as your own merchant (sole prop, SSN/EIN, **no LLC**) if you'll handle sales-tax registration/remittance yourself. *Revisit:* the earlier "Stripe sole-prop blocker" may have been a verification snag rather than a wall, since tips-to-app is simple. *(General guidance, ~early-2026 knowledge — verify current terms; confirm tax/entity choice with an accountant.)*
+
+- **Tipping ("cow tipping")** — tips flow **to Mooves**; rides on the shared payments infra above (lighter than sponsor billing). Concept still directional, but the payments path is now decided.
+- **WhatsApp / international** — **trigger-gated on real non-US demand.** Stays directional, not committed scope; the Phase 9 native SMS deep-link already covers the US. Build only when there's international traction.
+- **Landing page (makemooves.app)** — **PULLED FORWARD, decoupled from Phase 14.** No dependency on scale work; a standalone growth asset that can ship anytime (even alongside Phase 8/10). See future-ideas backlog.
+
+**Net:** the "someday scale bucket" mostly dissolves — payments is decided (MoR), the landing page moves earlier, WhatsApp stays demand-gated. What remains uniquely "Phase 14" is thin.
+
+**Flagged for spec time (open questions):**
+- Pick the specific MoR (Paddle vs Lemon Squeezy) & integration; confirm current individual-onboarding terms + fees.
+- Tipping UX/placement and whether it's pursued at all.
+- Landing-page scope (explainer + signup CTA; SEO) — spec separately when pulled forward.
+
+### Phase 15 — Push notifications & home-screen install (PWA) — **FINALIZED 2026-07-16** · **SPEC'D 2026-07-16 (see "## Phase 15 — Push Notifications & Home-Screen Install (Spec)" near end of file)**
+
+**This is the phase that closes the cold-start loop.** It delivers the *dormant reach* Phases 10–11 deliberately punted: reaching friends who aren't currently in-app. Done as a **PWA + Web Push**, no native app.
+
+**Sequencing note — number ≠ priority.** Despite sitting at 15, this **completes the Phase 10–11 cold-start loop** and should be **prioritized right after Phase 11, ahead of 12–14** (which are monetization/scale). It's late-numbered only because it was split out mid-planning.
+
+**Components:**
+1. **PWA foundations** — web manifest (name + **cow icons** + `display: standalone`), service worker, HTTPS (✅ already on Vercel). Consumes the cow mark from **Phase 8**.
+2. **Home-screen (app) icon fix** — proper **`apple-touch-icon` (180×180, opaque)** + manifest icons so the installed app shows the **cow, not the fallback "M"** iOS currently renders (root cause: no icon declared today). *Cheap and independent — can be pulled forward as a quick win once the Phase 8 cow asset exists, even before push.*
+3. **Web Push** — via the **existing Firebase / FCM** (no new vendor): permission UX, subscription storage, VAPID/FCM send. Triggers reuse **Phase 11 group channels** (notify a group's subscribers when a member goes green tagged to that group).
+4. **"Add to Home Screen" nudge/guide** — a lightweight, well-timed prompt that teaches **iOS** users to install (Share → Add to Home Screen), because **iOS push only works for installed PWAs**. Don't nag; fire at a high-value moment. Android/desktop get a normal permission prompt (install optional).
+
+**Platform reality (the ceiling to watch):**
+- **Android / desktop:** web push from a permission prompt; install optional.
+- **iOS 16.4+:** web push **only after Add-to-Home-Screen** — so iOS reach is capped by the **install rate**. That rate is the KPI for this phase; the install nudge exists to lift it.
+
+**Guardrails on notifications:** group-level only, never per-person; aggregate-friendly copy; frequency/quiet controls; must not create a new rejection surface.
+
+**In scope:** manifest + service worker, cow app icon (`apple-touch-icon` + manifest icons), FCM web push, permission + install-nudge UX, group-triggered notifications.
+**Explicitly out:** native app, SMS/email as the push channel, per-person notifications.
+
+**Dependencies:** Phase 8 (cow icon asset) · Phase 11 (group channels = trigger + subscription model) · Firebase/FCM already in the stack.
+
+**Flagged for spec time (open questions):**
+- Install-nudge timing/copy; detecting "iOS + not installed" to show the right guidance.
+- Notification trigger set + batching / quiet hours.
+- Icon spec: exact sizes, Android maskable icons, opaque-background requirement for iOS.
+
+### Open decisions
+- ~~**Availability model (Phase 9):**~~ **RESOLVED 2026-07-16** — binary green + optional coarse time chip (*now / tonight / this weekend*), no time picker, no calendar. See Phase 9 above.
+
+---
+
+## Phase 8 — Polish (Spec) — *spec'd 2026-07-16*
+
+*Cross-cutting polish, not a single screen. Touched elements adopt Design System v1 tokens as they're rebuilt (not a full re-skin). The original "flip sub-tab order" item is **dropped** — the app already ships Friends-first (code and the Screen 9 layout note both agree); the "reversed order" claim was the outdated part.*
+
+### 8.1 — Header cow mark
+
+**Purpose:** Make the in-app header carry the cow brand so the app matches its new home-screen icon.
+
+**Entry points:** The persistent header on top-level screens that render the wordmark (Feed, People).
+
+**States:** Single presentational element, no interaction.
+- **On gradient/purple headers:** cow mark + light wordmark variant.
+- **On white headers:** cow mark + dark wordmark variant.
+
+**Behavior:** A cow mark (matching the app-icon geometry) sits beside the enlarged M[dot][dot]VES wordmark. The wordmark stays; the cow is added alongside — **not** a wordmark redesign or rebrand.
+
+**Out of scope:** Redesigning the wordmark itself; animation; a full logo system.
+
+**Acceptance:**
+- [ ] Cow mark appears beside the wordmark in in-app headers, legible at header size on both light and dark backgrounds.
+- [ ] Cow is visually consistent with the home-screen app icon.
+- [ ] No overflow or layout shift at 375px width.
+
+### 8.2 — Create-group control
+
+**Purpose:** Make creating a group obvious and consistent from any state.
+
+**Entry points:** Groups sub-tab header (always visible when Groups tab active); Groups empty-state CTA (retained).
+
+**States:**
+- **Groups tab, has groups:** an always-visible **labeled** create control ("New group") in the header top-right → Create Group screen.
+- **Groups tab, empty:** the large empty-state "Create a group" CTA remains (primary for first-timers) **and** the labeled header control is also present.
+- **Friends tab active:** create control hidden (Groups-specific).
+
+**User flow:** Tap the labeled header control (or empty-state CTA) → Create Group screen.
+
+**Data:** No new data. Both entry points fire the existing `group_create_started` event.
+
+**Out of scope:** Redesigning the Create Group screen; changing creation logic.
+
+**Acceptance:**
+- [ ] Groups header shows an always-visible, clearly labeled create-group control when the Groups sub-tab is active.
+- [ ] Control uses the DS primary treatment (purple fill + label) and meets ≥44px tap target.
+- [ ] Empty-state "Create a group" CTA retained.
+- [ ] Both entry points navigate to Create Group and fire `group_create_started`.
+- [ ] Control hidden on the Friends sub-tab.
+
+### 8.3 — reCAPTCHA badge suppression + disclosure
+
+**Purpose:** Remove the intrusive floating reCAPTCHA badge while staying compliant with Google's attribution requirement.
+
+**Entry points:** Phone-number entry screen (where reCAPTCHA fires on send-code).
+
+**States:**
+- **Phone-entry screen:** footer shows the attribution disclosure with working **Privacy** and **Terms** links.
+- **Badge:** never visible, on any screen or state.
+
+**Behavior:** Suppress the floating Google badge everywhere; show the required "protected by reCAPTCHA" attribution (with Google Privacy Policy + Terms links) in the **phone-entry screen footer only**. Suppression is presentation-only — reCAPTCHA must still execute.
+
+**Copy:** Google's standard attribution (final wording at mockup, e.g. "This site is protected by reCAPTCHA and the Google Privacy Policy and Terms of Service apply.").
+
+**Out of scope:** Changing the auth flow, OTP screen, or verification behavior.
+
+**Acceptance:**
+- [ ] Floating reCAPTCHA badge no longer visible anywhere.
+- [ ] reCAPTCHA still executes — send-code and verify work with no regression.
+- [ ] Phone-entry footer shows compliant attribution with working Privacy + Terms links.
+- [ ] Disclosure appears only on the phone-entry screen.
+
+### Open questions
+None.
+
+---
+
+## Phase 9 — Deepen the Core Loop (Spec) — *spec'd 2026-07-16*
+
+*Core-loop deepening on the Feed (Screen 4) + the go-green flow. New components (time chip, "I'm in"/presence, blast, post-blast prompt) extend DS v1 on its existing tokens. Dependency chain: **presence → blast → go-grey**; the time chip is independent.*
+
+**Shared model:** "Your move" = your current active green session. Presence joins, the time chip, and the note **attach to it and are ephemeral** — cleared when you go grey. Joins update in **realtime** on your card and for every friend viewing it.
+
+### 9.1 — Coarse time chip (go-green intent)
+**Purpose:** let "I'm free" optionally carry coarse intent, no time picker.
+**Entry:** the go-green flow, alongside the existing optional note.
+**Behavior:** optionally pick one chip — **now / tonight / this weekend** (single-select, skippable). Attaches to your green, shows on your status card and friends' feed cards, and carries into the blast body if set.
+**Out of scope:** specific times/dates, calendars, multi-select, recurring.
+**Acceptance:**
+- [ ] Optional single-select chip (now / tonight / this weekend) offered when going green.
+- [ ] Selected chip shows on the mover's card and friends' feed cards.
+- [ ] Chip clears on go-grey. No picker/calendar anywhere.
+
+### 9.2 — Presence & "I'm in" (joins on a move)
+**Purpose:** social proof + gate the blast.
+**Entry:** any friend's green card in the feed.
+**Behavior:** a viewer taps **"I'm in"** to join (a **toggle** — tap again to leave). Joining does **not** flip the joiner green. Joins are **visible to everyone** viewing the card (names/avatars + count, e.g. "Jordan, Sam +1 in").
+**States (mover's own card):** 0 joins → green + chip/note, no blast button, no pressure copy · 1 join → shows joiner, still no button · **2+ → blast button appears (9.3)**.
+**Flow:** tap "I'm in" → added to joiners (realtime); tap again → removed.
+**Data:** a join record links a friend to another friend's active green session; created/removed on toggle; cleared on the mover's go-grey.
+**Out of scope:** RSVP yes/no/maybe, attendee management, per-person notifications, joining a grey friend.
+**Acceptance:**
+- [ ] Any friend viewing a green card can toggle "I'm in"; it doesn't change their own status.
+- [ ] Joiner names + count visible to everyone on the card, realtime.
+- [ ] No blast button / no pressure copy below 2 joins.
+- [ ] Joins clear when the mover goes grey.
+
+### 9.3 — Group-text blast (anchor)
+**Purpose:** convert a move into a plan — the green→plan handoff.
+**Entry:** the **"Start group text"** button on the mover's own card, visible only at **2+ joins**.
+**Behavior:** opens the device's **native SMS composer**, pre-addressed to **exactly the current joiners**, body prefilled with the mover's name + vibe/time if set (e.g. "Jackson's free this weekend — who's in?"). No Mooves number/link, no A2P. More can join while green; re-blast targets the current joiner set.
+**Flow:** at 2+ joins → tap → native composer opens addressed to joiners with prefilled body → mover sends in their SMS app (Mooves' role ends).
+**Data:** reads joiners' phone numbers for the deep link; writes only an analytics event.
+**Known risk (build POC):** multi-recipient `sms:`/`smsto:` group behavior differs by OS (iOS may split threads). Validate on iOS + Android during build.
+**Out of scope:** Mooves-brokered/outbound SMS, in-app chat, event pages, delivery tracking.
+**Acceptance:**
+- [ ] Button appears only at 2+ joins.
+- [ ] Opens native composer pre-addressed to exactly the current joiners.
+- [ ] Body prefilled with name + time/vibe if set; no Mooves link/number.
+- [ ] Re-blast works while green. Fires a blast analytics event.
+
+### 9.4 — Smarter go-grey (post-blast prompt)
+**Purpose:** nudge go-grey once a plan forms, without forcing it.
+**Entry:** immediately after returning from a blast.
+**Behavior:** prompt **"Plan's set — go grey, or keep green for more?"** Go-grey ends the move (clears joins + chip); keep-green leaves it open (more joins, re-blast).
+**Out of scope:** auto-expiry/timeout of green, reminders.
+**Acceptance:**
+- [ ] Post-blast go-grey / keep-green prompt appears.
+- [ ] Go-grey ends the move and clears joins + chip.
+- [ ] Keep-green leaves the move open. Prompt is non-blocking; never auto-changes status.
+
+### Open questions
+- Exact prefilled body wording (finalize at mockup).
+- iOS group-thread deep-link behavior — POC in build.
+
+---
+
+## Phase 10 — Cold Start & Growth Flywheel (Spec) — *spec'd 2026-07-16*
+
+*Two workstreams: intrinsic grey-feed signals (all aggregate, suppressed below 3) and group invite links. The grey-feed state uses the DS "ambient tier." Dormant-reach (notifications) is explicitly Phase 15, not here.*
+
+### 10.1 — Grey-feed ambient signals (cold-feed fix)
+**Purpose:** make the feed feel alive when a viewer has friends but none are green *right now*, so a first-mover believes they'll be seen.
+**Entry:** the Feed, "has friends but none currently green" state (distinct from the zero-friends cold-start).
+**Behavior:** show the DS ambient tier — two **aggregate, never-named** signals + a green CTA:
+- **Recent-activity:** "N friends were green this week" (rolling ~7-day green count).
+- **Friends-active-now:** "N friends around now" (friends who **foregrounded the app in the last ~15 min**).
+- **CTA:** "Be the first — go free" (green-700).
+Every signal is **suppressed when its count is < 3** → fall back to neutral encouragement copy with no number. Never any "nobody's free" negativity.
+**States:** has friends / none green / a signal ≥3 → ambient tier with qualifying signal(s) + CTA · all signals <3 → neutral encouraging state (no numbers) + CTA · **zero friends → existing cold-start (cow + invite), unchanged/out of scope**.
+**Data:** rolling recent-green count + last-~15-min app-open count, computed over the viewer's friends; both hidden if <3.
+**Out of scope:** named/per-person signals; the daypart "usually livens up around 6pm" pattern (**deferred** to a follow-up); notifications/dormant reach (Phase 15).
+**Acceptance:**
+- [ ] Grey feed (has friends, none green) shows the ambient tier: recent-green count + active-now count + green CTA.
+- [ ] All signals are aggregate counts, never names; any signal <3 is hidden (neutral fallback, no number).
+- [ ] Active-now = friends who opened the app in the last ~15 min (window tunable).
+- [ ] Recent-green = friends green in the last ~7 days (window tunable).
+- [ ] Zero-friends cold-start unchanged; no negative framing anywhere.
+
+### 10.2 — Group invite links (leader-led onboarding)
+**Purpose:** let one member pull a whole group in fast — joining adds you to the group and auto-friends its members, instantly populating your feed.
+**Entry:** one shareable link per group; any member can copy/share it (e.g. drop in a group text). Tapping opens a join landing.
+**Behavior:**
+- Each group has one **persistent** invite link; any member can share it, and any member can **revoke/regenerate** it (invalidating the old).
+- Tapping → join landing with a **consent confirmation**: "Joining [Group] will connect you with its N members" → **Join / Cancel**.
+- On Join: added to the group **and auto-friended with all current members**.
+- Logged-out users auth first, then reach the confirmation.
+**States:** valid link + logged in → consent landing · valid + logged out → auth then landing · already a member → "You're already in [Group]" · revoked/invalid → friendly "invite no longer active."
+**Flow (join):** tap link → (auth if needed) → consent landing → Join → added to group + auto-friended → land in app.
+**Data:** group-scoped invite code (variant of the existing friend-referral system); on join, create group membership + friendships with all current members; support revoke/regenerate.
+**Out of scope:** per-person invites (already exist), large/public groups (small trusted groups only — Phase 12–13 caveat), joiner approval/moderation.
+**Acceptance:**
+- [ ] Each group has one shareable, persistent invite link any member can share.
+- [ ] A member can revoke/regenerate the link; the old one stops working.
+- [ ] A valid link shows a consent confirmation (group name + member count) before joining.
+- [ ] Joining adds the user to the group AND auto-friends all current members.
+- [ ] Logged-out users auth first, then reach the confirmation.
+- [ ] Already-member and revoked/invalid states handled gracefully.
+
+### Open questions
+- Recent-green (~7d) and active-now (~15min) windows — final values tunable at build.
+- Daypart "usually livens up around [time]" pattern — deferred; revisit once base signals ship.
+
+---
+
+## Phase 11 — Groups as Channels, In-App (Spec) — *spec'd 2026-07-16*
+
+*In-app only (push = Phase 15). Green stays **global**; adds an optional **single** group tag shown as a **label** to that group's members in the main feed. No reordering. Auto-subscribed to your groups; **mute = hide the label**, never the green.*
+
+### 11.1 — Group tag on go-green
+**Purpose:** let a green optionally signal it's aimed at one of your groups, without scoping visibility.
+**Entry:** the go-green flow (alongside the Phase 9 time chip + note).
+**Behavior:** optionally tag **one** group you're a member of (single-select, skippable). Green stays **global** (all friends see it); the tag adds context for that group. Ephemeral — clears on go-grey.
+**Out of scope:** multiple tags, tagging groups you're not in, any visibility scoping.
+**Acceptance:**
+- [ ] Going green offers an optional single-select tag of one of your own groups.
+- [ ] Tagging does not restrict who sees the green (stays global).
+- [ ] Tag clears on go-grey.
+
+### 11.2 — Tagged-green label in the feed
+**Purpose:** surface the group context to that group's members.
+**Entry:** the main Feed.
+**Behavior:** a tagged-green shows the group-tag **label** (DS group-tag chip) **only to members of the tagged group**. Non-members see the same green with no label. **No feed reordering/emphasis** — label only.
+**States (viewer):** member (not muted) → green + label · member but muted → green, no label · non-member → green, no label.
+**Data:** the green's tagged group + the viewer's memberships + mute settings decide label visibility.
+**Out of scope:** separate channel screen/inbox, pinning/boosting, labels for non-members.
+**Acceptance:**
+- [ ] Tagged-green shows the group label only to members of that group.
+- [ ] Non-members and muted members see the green with no label; the green itself is always visible.
+- [ ] No feed reordering from tags.
+
+### 11.3 — Auto-subscribe + mute
+**Purpose:** let members quiet a group's tag labels.
+**Entry:** auto-subscribed to every group you're in; a per-group **mute** control on the group.
+**Behavior:** by default a member sees a group's tag labels. Muting = stop showing that group's labels to you (treated like a non-member for labels). Muting **cannot hide** the underlying global green. Reversible.
+**Data:** per-user, per-group mute flag.
+**Out of scope:** notifications (Phase 15), muting individual people, hiding greens.
+**Acceptance:**
+- [ ] Members auto-subscribed to their groups' tag labels by default.
+- [ ] A per-group mute control exists; muting hides that group's tag labels for the user.
+- [ ] Mute never hides the underlying green; unmute restores labels.
+
+### Open questions
+- Exact placement of the group-tag picker (in the go-green flow) and the mute control (on the group) — mockup.
+
+---
+
+## Phase 12 — Geolocation & Discovery: Substrate (Spec) — *spec'd 2026-07-16*
+
+*Pure substrate for Phase 13. Coarse location capture + storage + area-matching infra. **No visible "moves in my area" feed yet** — that, and its contextual "see moves near you" opt-in prompt, ship with Phase 13. Privacy: only coarse area is stored; precise coordinates are never persisted.*
+
+### 12.1 — Coarse location capture & storage
+**Purpose:** capture the user's coarse area to power future "moves in my area."
+**Entry:** Settings — a "Your area" control to set/change/remove it anytime. (The in-flow "see moves near you" prompt that triggers capture contextually is a **Phase 13** addition.)
+**Behavior:**
+- Capture via **one-time device geolocation, immediately reduced to zip/neighborhood with precise coordinates discarded**; **manual zip entry** as fallback (and for anyone who declines the permission).
+- Fully **opt-in** — nothing captured without explicit user action.
+- Stored as a **coarse area** on the profile; user can view, change, or remove it. **Precise coordinates never stored.**
+**States:** no area (default, dormant) · permission granted → coarse area derived + stored · denied/manual → user enters zip · removed → back to no-area.
+**Data:** coarse-area field on user profile; write on set/change, delete on remove; no precise coords.
+**Out of scope:** continuous/live location, precise GPS storage, background location, the visible area feed + contextual prompt (Phase 13).
+**Acceptance:**
+- [ ] User can set their area via one-time geolocation (coarsened, coords discarded) OR manual zip entry.
+- [ ] Nothing captured without explicit action; fully optional.
+- [ ] Coarse area stored on profile; viewable/changeable/removable in Settings.
+- [ ] Precise coordinates never persisted.
+
+### 12.2 — Area-matching infrastructure
+**Purpose:** define "my area" so Phase 13 can filter local moves.
+**Behavior:** matching uses the user's coarse zip **plus nearby zips within a tunable radius**. Any future user-facing area counts honor Phase 10 small-N suppression.
+**Data:** server-side matching over coarse zips (radius).
+**Out of scope:** the consumer feed itself (Phase 13); precise distance.
+**Acceptance:**
+- [ ] "My area" resolves to the user's zip + nearby zips within a configurable radius.
+- [ ] Matching relies only on coarse area (no precise coordinates).
+- [ ] Guardrail hooks ready: no auto-friend-all for large/public groups; small-N suppression on future area counts.
+
+### Open questions
+- Radius default (miles / # of adjacent zips) — tune at build.
+- Reverse-geocoding source for coarsening geolocation → zip — build decision.
+
+---
+
+## Phase 13 — Sponsored Moves (Spec) — *spec'd 2026-07-16*
+
+*Two surfaces: the **consumer** discover experience and the self-serve **sponsor** dashboard. Guardrail #4 holds — opt-in by interest, area-feed only, never the friend feed. Payments via **Merchant-of-Record** (money to Mooves). **No per-person exposure** to sponsors.*
+
+### — Consumer side —
+
+### 13.1 — Location + interest opt-in
+**Purpose:** unlock "moves in my area" by capturing area (Phase 12) + interests, exactly when the user opens discover.
+**Entry:** first open of the discover / "moves in my area" feed.
+**Behavior:** prompt to (a) set coarse area (Phase 12 capture) and (b) pick interest types from the **fixed curated set** (multi-select). Both skippable, editable later in Settings. Declining → gentle "set your area + interests to see moves near you" state.
+**Acceptance:**
+- [ ] First discover open prompts for area + interests (both skippable, editable in Settings).
+- [ ] Interests are a fixed curated multi-select set.
+- [ ] Declining shows a gentle setup prompt, not an error.
+
+### 13.2 — "Moves in my area" feed
+**Purpose:** surface local sponsored moves matching area + interests.
+**Entry:** the discover feed (distinct from the friend Feed).
+**Behavior:** shows **approved** sponsored moves filtered by coarse area (nearby-zip radius) **AND** opted-in interests. **Never** friend or stranger greens.
+**States:** matches → sponsored cards · no matches → "no moves near you yet" · no area/interests → setup prompt (13.1).
+**Data:** query approved live sponsored moves on area + interest; record aggregate impressions.
+**Acceptance:**
+- [ ] Discover shows only approved sponsored moves matching area + interests.
+- [ ] Never shows friend/stranger greens. Empty + setup states handled. Impressions recorded (aggregate).
+
+### 13.3 — Sponsored move card + "Interested"
+**Behavior:** DS feed-card shell with a subtle **"Sponsored"** label (not a banner — guardrail #4). Tapping **"Interested"** reveals full details (description, link, lightweight time/place text) in-app **and** increments the sponsor's **aggregate** interested count — sponsor never sees who. A link/CTA opens the sponsor URL (aggregate click counted). *(SMS-back delivery = later A2P-gated enhancement, out of scope.)*
+**Acceptance:**
+- [ ] Subtle "Sponsored" label on the DS shell.
+- [ ] "Interested" reveals details in-app + increments an aggregate count; no identity shared.
+- [ ] Link/CTA opens sponsor URL; click counted in aggregate.
+
+### — Sponsor side (self-serve dashboard) —
+
+### 13.4 — Sponsor accounts
+**Behavior:** a **distinct sponsor portal**, separate from the consumer phone-auth app; sponsors sign up / log in via a business (email) account with a basic profile.
+**Acceptance:**
+- [ ] Sponsors can create and log into a business account, separate from consumer accounts.
+
+### 13.5 — Move authoring + moderation
+**Behavior:** author a move — title, short description, **one** interest category, area target (zip + radius), external link, optional image, optional lightweight time/day **text** (no calendar). Submissions enter a **moderation queue**; Mooves approves/rejects before go-live. Only approved moves appear.
+**Acceptance:**
+- [ ] Sponsors author a move with those fields.
+- [ ] New/edited moves require Mooves approval before going live.
+- [ ] Rejections return a reason to the sponsor.
+
+### 13.6 — Billing (Merchant-of-Record)
+**Behavior:** publishing a placement requires payment via the **MoR** (Paddle/Lemon Squeezy) — handles tax/payout, no LLC, money to Mooves. A move goes live only after **both** payment and moderation approval. Pricing model TBD (open questions).
+**Acceptance:**
+- [ ] Publishing requires successful MoR payment; money flows to Mooves (no user KYC / payouts).
+- [ ] Move goes live only after payment + moderation approval.
+
+### 13.7 — Sponsor analytics
+**Behavior:** per move — impressions, clicks, "interested" counts, all **aggregate**, small-N suppressed; never individual identities.
+**Acceptance:**
+- [ ] Aggregate impressions / clicks / interested per move; no identities; small-N suppression applied.
+
+### Open questions
+- Pricing model (flat per-placement / per-window / CPM) — finalize with MoR setup.
+- Moderation policy specifics + turnaround; sponsor account verification (anti-spam/impersonation).
+- Exact interest-category list (lock at mockup); final sponsored-move field set (image? time-text limits).
+
+---
+
+## Phase 14 — Scale & Platform (Spec) — *spec'd 2026-07-16*
+
+*Most of Phase 14 dissolved into earlier decisions: payments = MoR (Phase 13 infra, reused here), WhatsApp stays trigger-gated/directional (not spec'd). This spec covers **tipping** and the **landing page**.*
+
+### 14.1 — Cow tipping
+**Purpose:** let fans support Mooves with a small tip, at a positive moment.
+**Entry:** a **tip jar at the very bottom of the home Feed**, rendered **only when the feed currently shows 3+ moves (greens)** — so it appears only when the feed is lively, never on a quiet/empty feed, and never pressures.
+**Behavior:**
+- Friendly "cow tip / support Mooves" prompt.
+- Offers **preset one-time amounts** (e.g. $1 / $3 / $5) + a **custom** amount.
+- Payment via the shared **Merchant-of-Record** (money to Mooves; same infra as Phase 13).
+- Success → a **simple warm thank-you** (playful cow moment); **no badges, leaderboard, or status**.
+**States:** feed <3 moves → hidden · feed ≥3 moves → visible at the bottom · tip flow: amount → MoR checkout → thank-you.
+**Data:** tip transactions via MoR; aggregate totals only (no public per-user status).
+**Out of scope:** recurring/membership tips, tipping other users (money → Mooves only), gamification/leaderboard/status, tip-gated features.
+**Acceptance:**
+- [ ] Tip jar appears at the bottom of the Feed only when 3+ moves are showing; hidden otherwise.
+- [ ] Preset one-time amounts + custom amount.
+- [ ] Payment via the MoR to Mooves.
+- [ ] Success shows a simple warm thank-you; no badges/leaderboard/status.
+
+### 14.2 — Landing page (makemooves.app)
+**Purpose:** explain Mooves to new visitors and drive them into the app.
+**Entry:** makemooves.app (marketing site), decoupled from the app — ships anytime.
+**Behavior:** a lightweight, mobile-first marketing page that explains the core loop (go green → friends see it → plan over text), uses the DS visual language + cow brand, and has a clear CTA into the app.
+**Data:** none (static/marketing); optional analytics.
+**Out of scope:** blog/docs, sponsor marketing (that's the Phase 13 portal), auth on the landing page.
+**Acceptance:**
+- [ ] Explains the core loop with a clear CTA into the app.
+- [ ] Uses the DS visual language + cow brand; mobile-first/responsive.
+- [ ] Decoupled — shippable independently of app releases.
+
+### Deferred / directional (not spec'd)
+- **WhatsApp / international** — trigger-gated on real non-US demand; remains directional, no committed scope.
+
+### Open questions
+- Exact preset tip amounts + copy (mockup).
+- Landing-page content/sections + routing (landing at `/` vs app routes) — build decision.
+- "3+ moves" tip-jar threshold — confirm/tune.
+
+---
+
+## Phase 15 — Push Notifications & Home-Screen Install (Spec) — *spec'd 2026-07-16*
+
+*Web Push via PWA through Firebase/FCM (no native app, no A2P). Foundations (manifest `display: standalone` + cow icons) already shipped in the design-system-foundation PR. **Platform reality:** Android/desktop push from a permission prompt (install optional); iOS 16.4+ push **only after Add-to-Home-Screen** — install rate is the KPI. **Consequence of the group-tagged-only trigger:** push reaches dormant friends only when a mover tags a group; untagged greens push no one — a deliberate group-level/no-per-person choice that only partially closes Phase 10's dormant-reach gap.*
+
+### 15.1 — PWA foundations (service worker)
+**Already shipped:** manifest (`display: standalone`) + cow app icons (foundation PR).
+**Behavior:** add + register a **service worker** (required for Web Push / offline shell). HTTPS already in place.
+**Acceptance:**
+- [ ] Service worker registered and active in supported browsers.
+- [ ] Manifest + icons confirmed; PWA is installable.
+
+### 15.2 — Web push pipeline (FCM)
+**Behavior:** on opt-in (15.4), request OS notification permission **contextually** (never on first load). On grant, obtain the FCM/VAPID token and store it per user; server sends pushes via FCM for qualifying triggers (15.3). Handle unsubscribe / token expiry / revocation.
+**States:** not-opted-in · opted-in+granted (receiving) · denied (graceful, no nagging) · revoked/expired (stop, allow re-opt-in).
+**Out of scope:** SMS/email channels; native push.
+**Acceptance:**
+- [ ] Permission requested only contextually on opt-in.
+- [ ] Push tokens stored per user; pushes sent via FCM.
+- [ ] Denied/revoked/expired handled gracefully (no repeat prompting).
+
+### 15.3 — Notification triggers
+**Behavior:** a push fires to a group's subscribed members when a member goes green **tagged to that group** (Phase 11). **Only** group-tagged greens trigger push — untagged greens push no one; **no per-person** "friend X is green." Respects Phase 11 **per-group mute**, plus **quiet hours** and **rate-limiting/batching**. Copy is aggregate-friendly; never a rejection surface.
+**Consequence (documented):** dormant friends reached only via group-tagged greens — the deliberate group-level choice.
+**Out of scope:** per-person notifications, any-friend-green push, aggregate friend digests (considered, not chosen).
+**Acceptance:**
+- [ ] Push fires to a group's subscribers when a member goes green tagged to that group.
+- [ ] Untagged greens trigger no push; no per-person notifications.
+- [ ] Respects Phase 11 per-group mute, quiet hours, and rate-limiting.
+
+### 15.4 — "Add to Home Screen" install nudge
+**Entry:** fires **after a value moment** (first join/blast, or when notifications would clearly help) — not on first load.
+**Behavior:** detect platform/install state — **iOS + not installed** → Share → Add-to-Home-Screen guidance (iOS push requires the installed PWA); Android/desktop → standard install/permission path. Framed as "add Mooves to get notified when friends are free." Dismissible, limited re-prompts. Accepting leads into the contextual permission ask (15.2).
+**Out of scope:** forcing install, blocking the app behind install.
+**Acceptance:**
+- [ ] Nudge fires after a value moment, not on first load.
+- [ ] iOS-not-installed users get correct Add-to-Home-Screen guidance; others get the standard path.
+- [ ] Dismissible with limited re-prompts; accepting leads to the contextual permission ask.
+
+### Open questions
+- Quiet-hours window + rate-limit thresholds (build).
+- Install-nudge exact trigger + copy; re-prompt cadence (mockup).
+- Whether to revisit an aggregate friend digest later if group-tagged-only under-delivers on dormant reach.
