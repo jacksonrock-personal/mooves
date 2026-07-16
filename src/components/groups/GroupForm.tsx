@@ -132,6 +132,13 @@ export default function GroupForm({
           </p>
         )}
 
+        {/* Inline reason the "Done" button is disabled (only once friends exist to pick) */}
+        {hasFriends && !canSave && !saving && (
+          <p className="font-sans text-[12px] text-text-secondary px-5 pt-3">
+            {name.trim().length === 0 ? 'Add a group name to finish.' : 'Pick at least one friend to finish.'}
+          </p>
+        )}
+
         {error && (
           <p className="font-sans text-[13px] text-[#E8405A] px-5 pt-4">{error}</p>
         )}

@@ -38,7 +38,7 @@ export default function PeopleScreen() {
             <button
               onClick={handleCreateGroup}
               aria-label="Create group"
-              className="w-[34px] h-[34px] rounded-full bg-purple-tint text-mooves-purple flex items-center justify-center"
+              className="w-11 h-11 rounded-full bg-purple-tint text-mooves-purple flex items-center justify-center"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                 <line x1="12" y1="5" x2="12" y2="19" />

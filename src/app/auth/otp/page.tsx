@@ -213,7 +213,7 @@ function OtpContent() {
                 onFocus={() => setFocusedIdx(i)}
                 disabled={isVerifying}
                 className={[
-                  'w-[42px] h-[52px] rounded-xl border-2 text-center font-sans text-[22px] font-bold outline-none transition-all caret-transparent',
+                  'w-[44px] h-[52px] rounded-xl border-2 text-center font-sans text-[22px] font-bold outline-none transition-all caret-transparent',
                   isErrFilled
                     ? 'bg-[#FEE8EC] border-[#E8405A] text-[#E8405A]'
                     : isFilled

@@ -15,6 +15,7 @@ import GoGreyConfirm from '@/components/go-green/GoGreyConfirm'
 import BottomNav from '@/components/ui/BottomNav'
 import CowIllustration from '@/components/ui/CowIllustration'
 import Toast from '@/components/ui/Toast'
+import Wordmark from '@/components/ui/Wordmark'
 
 interface Friend {
   id: string
@@ -249,14 +250,7 @@ export default function FeedScreen() {
   return (
     <div className="min-h-screen flex flex-col bg-surface-bg">
       <header className="bg-gradient-to-b from-mooves-purple via-[#9B7FE8] to-[#A98FF0] px-5 pt-14 pb-5 flex items-center justify-center shrink-0">
-        <span className="flex items-center font-display font-extrabold text-[20px] text-white tracking-tight">
-          M
-          <span className="inline-flex items-center gap-[1px] relative top-[0.5px] mx-[1px]">
-            <span className="w-[11px] h-[11px] rounded-full bg-status-green shadow-[0_0_6px_rgba(46,204,113,0.6)]" />
-            <span className="w-[11px] h-[11px] rounded-full bg-white/35" />
-          </span>
-          VES
-        </span>
+        <Wordmark variant="light" />
       </header>
 
       <div className="flex-1 flex flex-col px-4 pt-4 pb-24">
