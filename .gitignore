@@ -30,3 +30,7 @@ yarn-debug.log*
 yarn-error.log*
 firebase-debug.log*
 .claude/launch.json
+
+# Raw design handoff drop (vendored into docs/design/)
+Make Mooves app/
+Make Mooves app.zip
