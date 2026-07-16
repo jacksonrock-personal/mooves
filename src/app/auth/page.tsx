@@ -9,6 +9,7 @@ import { RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth'
 import { firebaseAuth } from '@/lib/firebase/client'
 import { storeConfirmationResult } from '@/lib/auth/otp-state'
 import { initPostHog, posthog } from '@/lib/posthog'
+import Wordmark from '@/components/ui/Wordmark'
 
 function formatPhone(digits: string): string {
   if (digits.length <= 3) return digits
@@ -100,7 +101,7 @@ function AuthContent() {
         >
           <span className="text-2xl leading-none">‹</span>
         </button>
-        <MoovesWordmark />
+        <Wordmark variant="dark" />
         <div className="w-6" />
       </div>
 
@@ -166,16 +167,6 @@ function AuthContent() {
   )
 }
 
-function MoovesWordmark() {
-  return (
-    <div className="font-display font-extrabold text-base text-text-primary tracking-tight flex items-center">
-      M
-      <span className="inline-block w-2.5 h-2.5 rounded-full bg-status-green relative top-px" />
-      <span className="inline-block w-2.5 h-2.5 rounded-full bg-status-grey mr-px relative top-px" />
-      VES
-    </div>
-  )
-}
 
 export default function AuthPage() {
   return (

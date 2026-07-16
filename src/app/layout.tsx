@@ -28,8 +28,11 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,     // prevent zoom on input focus on iOS
-  userScalable: false,
+  // NOTE: pinch-zoom is intentionally NOT disabled — `maximumScale: 1` / `userScalable: false`
+  // fail WCAG 1.4.4 (users must be able to zoom). The old lock also suppressed iOS's
+  // auto-zoom-on-focus; that will now return for any text input < 16px (several are 13–15px).
+  // Fix that during the redesign by bumping inputs to ≥16px (note: DS body-md is 15px — inputs
+  // should use ≥16px / body-lg to avoid the zoom).
   themeColor: '#7C5CDB',
 }
 
