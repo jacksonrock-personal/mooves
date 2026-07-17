@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mooves — Phase 9: Deepen the Core Loop</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --purple: #7C5CDB;
+    --purple-mid: #9B7FE8;
+    --purple-tint: #EDE9FF;
+    --green: #2ECC71;            /* decorative only (dots/tints) */
+    --green-700: #167A43;        /* text-bearing green + green CTAs (AA-safe) */
+    --green-card-bg: rgba(46,204,113,0.09);
+    --green-card-border: rgba(46,204,113,0.28);
+    --grey-status: #BDB5D4;
+    --bg: #F8F6FF;
+    --white: #FFFFFF;
+    --text: #1C1730;
+    --text-secondary: #6B628A;
+    --border: #E8E4F5;
+    --red: #E8405A;
+    --sys-bg: #F2F2F7;           /* native Messages chrome (state 6 only) */
+    --sys-bubble: #E9E9EB;
+    --sys-line: #D9D9DE;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #1C1730;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    gap: 26px;
+  }
+
+  .state-bar { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; max-width: 540px; }
+  .state-group-label {
+    font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 700;
+    letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.35);
+    align-self: center; margin: 0 2px;
+  }
+  .state-btn {
+    font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600;
+    padding: 7px 14px; border-radius: 100px;
+    border: 1.5px solid rgba(255,255,255,0.2); background: transparent;
+    color: rgba(255,255,255,0.5); cursor: pointer; transition: all 0.15s;
+  }
+  .state-btn.active { background: rgba(255,255,255,0.12); color: white; border-color: rgba(255,255,255,0.4); }
+
+  .phone {
+    width: 320px; height: 640px; border-radius: 44px;
+    border: 3px solid rgba(255,255,255,0.1); overflow: hidden;
+    background: var(--bg); display: flex; flex-direction: column;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.5); position: relative;
+  }
+  .screen { display: none; flex-direction: column; height: 100%; position: relative; }
+  .screen.visible { display: flex; }
+
+  /* ── Feed header ── */
+  .feed-header {
+    background: linear-gradient(160deg, #7C5CDB 0%, #9B7FE8 70%, #A98FF0 100%);
+    padding: 30px 20px 22px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .brand-lockup { display: flex; align-items: center; gap: 9px; }
+  .cow-tile { width: 34px; height: 34px; flex-shrink: 0; display: block; }
+  .wordmark {
+    font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 24px;
+    color: white; letter-spacing: -0.02em; display: flex; align-items: center;
+  }
+  .wordmark .oo { display: inline-flex; align-items: center; gap: 2px; position: relative; top: 0.5px; margin: 0 1px; }
+  .wordmark .dot-g { width: 13px; height: 13px; background: var(--green); border-radius: 50%; box-shadow: 0 0 6px rgba(46,204,113,0.6); }
+  .wordmark .dot-gr { width: 13px; height: 13px; background: rgba(255,255,255,0.35); border-radius: 50%; }
+
+  /* ── Feed body ── */
+  .feed-body { flex: 1; display: flex; flex-direction: column; padding: 16px 16px 8px; overflow-y: auto; }
+
+  /* ── Not-free status button (viewer who hasn't gone green) ── */
+  .status-btn {
+    width: 100%; padding: 14px 20px; border-radius: 16px; border: 1.5px solid var(--border);
+    background: var(--white); color: var(--text-secondary);
+    font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 16px;
+    display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 20px; cursor: pointer;
+  }
+  .status-btn .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--grey-status); }
+
+  .section-label {
+    font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; color: var(--text-secondary);
+    text-transform: uppercase; letter-spacing: 0.08em; padding: 0 4px 12px;
+  }
+
+  /* ── Your move card (mover's own active green) ── */
+  .move-card {
+    border-radius: 20px; border: 1.5px solid var(--green-card-border); background: var(--green-card-bg);
+    padding: 16px; margin-bottom: 20px;
+  }
+  .move-top { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .move-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--green); flex-shrink: 0; box-shadow: 0 0 0 4px rgba(46,204,113,0.16); }
+  .move-status { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 16px; color: var(--green-700); letter-spacing: -0.01em; }
+  .time-badge {
+    margin-left: auto; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600;
+    color: var(--purple); background: var(--purple-tint); padding: 4px 10px; border-radius: 100px;
+  }
+  .move-note { font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-secondary); margin-bottom: 2px; }
+
+  /* Joiners row */
+  .joiners { display: flex; align-items: center; gap: 8px; margin-top: 14px; }
+  .joiner-avs { display: flex; }
+  .joiner-av {
+    width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--green-card-bg);
+    display: flex; align-items: center; justify-content: center; margin-left: -7px;
+    font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 10px; color: white;
+  }
+  .joiner-av:first-child { margin-left: 0; }
+  .joiners-text { font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text); font-weight: 500; }
+  .joiners-text b { font-weight: 700; }
+
+  /* Blast button (2+ joins) */
+  .blast-btn {
+    width: 100%; margin-top: 14px; padding: 14px; border-radius: 14px; border: none;
+    background: var(--purple); color: white; font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 800; font-size: 15px; letter-spacing: -0.01em; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    box-shadow: 0 4px 16px rgba(124,92,219,0.3);
+  }
+  .move-divider { height: 1px; background: var(--green-card-border); margin: 14px 0 0; opacity: 0.6; }
+  .go-grey-link {
+    display: block; width: 100%; text-align: center; margin-top: 12px; background: none; border: none;
+    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500; color: var(--text-secondary); cursor: pointer;
+  }
+
+  /* ── Friend card (viewer perspective, with I'm in) ── */
+  .fcard {
+    border-radius: 18px; border: 1.5px solid var(--green-card-border); background: var(--green-card-bg);
+    padding: 13px 14px; margin-bottom: 8px;
+  }
+  .fcard-top { display: flex; align-items: center; gap: 12px; }
+  .fcard-av {
+    width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 15px; color: white; flex-shrink: 0;
+  }
+  .fcard-info { flex: 1; min-width: 0; }
+  .fcard-name { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 700; color: var(--text); }
+  .fcard-sub { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+  .fcard-note { font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fcard-time { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; color: var(--purple); background: var(--purple-tint); padding: 2px 7px; border-radius: 100px; flex-shrink: 0; }
+  .imin-btn {
+    flex-shrink: 0; padding: 9px 15px; border-radius: 100px; cursor: pointer;
+    font-family: 'Inter', sans-serif; font-weight: 700; font-size: 13px;
+    border: none; background: var(--purple); color: white;
+  }
+  .imin-btn.joined { background: var(--green-700); color: white; }
+  .fcard-joiners { display: flex; align-items: center; gap: 8px; margin-top: 11px; padding-top: 11px; border-top: 1px solid var(--green-card-border); }
+  .fcard-joiners .joiner-av { border-color: var(--green-card-bg); }
+
+  /* ── Bottom nav ── */
+  .bottom-nav { display: flex; align-items: center; background: var(--white); border-top: 1px solid var(--border); padding: 10px 0 26px; flex-shrink: 0; position: relative; z-index: 1; }
+  .nav-tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; padding: 4px 0; }
+  .nav-icon { width: 22px; height: 22px; }
+  .nav-label { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.02em; }
+  .nav-tab.active .nav-label { color: var(--purple); }
+  .nav-tab.active svg { stroke: var(--purple); }
+  .nav-tab:not(.active) .nav-label { color: var(--grey-status); }
+  .nav-tab:not(.active) svg { stroke: var(--grey-status); }
+
+  /* ── Dimmed feed bg + sheet (go green / prompts) ── */
+  .feed-bg { flex: 1; display: flex; flex-direction: column; }
+  .feed-bg .feed-header { padding: 30px 20px 22px; }
+  .feed-content-bg { flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+  .dimmed { opacity: 0.4; }
+  .dim { position: absolute; inset: 0; background: rgba(28,23,48,0.5); border-radius: 41px; z-index: 5; }
+
+  .sheet {
+    position: absolute; bottom: 0; left: 0; right: 0; background: var(--white);
+    border-radius: 28px 28px 0 0; padding: 12px 20px 40px; z-index: 10; display: flex; flex-direction: column;
+  }
+  .drag-handle { width: 36px; height: 4px; background: var(--border); border-radius: 100px; margin: 0 auto 22px; }
+  .sheet-label { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+  .note-input {
+    width: 100%; height: 52px; border-radius: 14px; border: 2px solid var(--purple);
+    background: var(--bg); padding: 0 16px; font-family: 'Inter', sans-serif; font-size: 16px;
+    color: var(--text); display: flex; align-items: center; margin-bottom: 22px;
+  }
+
+  /* Time chip row (9.1) */
+  .time-chip-row { display: flex; gap: 8px; margin-bottom: 24px; }
+  .time-chip {
+    flex: 1; display: flex; align-items: center; justify-content: center; text-align: center;
+    min-height: 48px; padding: 6px 8px; border-radius: 12px; cursor: pointer; line-height: 1.2;
+    font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600;
+    background: var(--purple-tint); color: var(--purple); border: 1.5px solid transparent;
+  }
+  .time-chip.selected { background: var(--purple); color: white; }
+
+  /* Visibility checklist (who can see you) */
+  .check-list {
+    display: flex; flex-direction: column; margin-bottom: 24px;
+    background: var(--bg); border-radius: 14px; overflow: hidden; border: 1.5px solid var(--border);
+  }
+  .check-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 13px 16px; cursor: pointer; border-bottom: 1px solid var(--border);
+  }
+  .check-row:last-child { border-bottom: none; }
+  .check-label { font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 500; color: var(--text); }
+  .check-box {
+    width: 22px; height: 22px; border-radius: 6px; border: 2px solid var(--border);
+    background: var(--white); display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .check-box.checked { background: var(--purple); border-color: var(--purple); }
+  .check-box.checked::after {
+    content: ''; display: block; width: 5px; height: 9px; border: 2px solid white;
+    border-top: none; border-left: none; transform: rotate(45deg) translate(-1px, -1px);
+  }
+
+  .sheet-cta {
+    width: 100%; padding: 16px; border-radius: 16px; border: none; background: var(--green-700);
+    color: white; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 17px;
+    letter-spacing: -0.01em; cursor: pointer; box-shadow: 0 4px 20px rgba(22,122,67,0.28);
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+
+  /* Swipe-to-go-green (final interaction) — slide the thumb to confirm */
+  .swipe-track {
+    position: relative; width: 100%; height: 58px; border-radius: 100px; overflow: hidden;
+    background: rgba(22,122,67,0.10); border: 1.5px solid rgba(22,122,67,0.22);
+    display: flex; align-items: center; cursor: grab; user-select: none;
+  }
+  .swipe-thumb {
+    position: absolute; left: 4px; top: 4px; width: 50px; height: 50px; border-radius: 50%;
+    background: var(--green-700); display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 8px rgba(22,122,67,0.35); z-index: 2;
+  }
+  .swipe-label {
+    width: 100%; text-align: center; padding-left: 46px;
+    font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 16px;
+    color: var(--green-700); letter-spacing: -0.01em;
+  }
+
+  /* Post-blast prompt (9.4) — action card */
+  .prompt-sheet { position: absolute; bottom: 0; left: 0; right: 0; z-index: 10; padding: 20px; }
+  .prompt-card { background: var(--white); border-radius: 24px; padding: 22px 20px 20px; box-shadow: 0 -8px 40px rgba(28,23,48,0.18); }
+  .prompt-emoji { font-size: 30px; text-align: center; margin-bottom: 10px; line-height: 1; }
+  .prompt-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 19px; color: var(--text); text-align: center; letter-spacing: -0.01em; margin-bottom: 6px; }
+  .prompt-sub { font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-secondary); text-align: center; line-height: 1.5; margin-bottom: 20px; }
+  .prompt-btn { width: 100%; padding: 15px; border-radius: 14px; border: none; font-family: 'Inter', sans-serif; font-weight: 700; font-size: 15px; cursor: pointer; margin-bottom: 8px; }
+  .prompt-btn.keep { background: var(--green-card-bg); color: var(--green-700); border: 1.5px solid var(--green-card-border); }
+  .prompt-btn.grey { background: var(--bg); color: var(--text-secondary); }
+
+  /* ── Native Messages composer (9.3, state 6) ── */
+  .native-note {
+    background: rgba(255,255,255,0.06); border: 1px dashed rgba(255,255,255,0.25); border-radius: 12px;
+    padding: 10px 12px; font-family: 'Inter', sans-serif; font-size: 11px; color: rgba(255,255,255,0.6);
+    text-align: center; line-height: 1.5; position: absolute; top: 10px; left: 12px; right: 12px; z-index: 20;
+  }
+  .sms { flex: 1; background: var(--sys-bg); display: flex; flex-direction: column; }
+  .sms-nav {
+    padding: 52px 14px 10px; border-bottom: 1px solid var(--sys-line); background: var(--white);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .sms-cancel { font-family: -apple-system, 'Inter', sans-serif; font-size: 15px; color: #8E8E93; }
+  .sms-title { font-family: -apple-system, 'Inter', sans-serif; font-size: 16px; font-weight: 600; color: #000; }
+  .sms-to { background: var(--white); padding: 12px 14px; border-bottom: 1px solid var(--sys-line); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .sms-to-label { font-family: -apple-system, 'Inter', sans-serif; font-size: 15px; color: #8E8E93; }
+  .sms-chip { font-family: -apple-system, 'Inter', sans-serif; font-size: 14px; font-weight: 500; color: #1C1730; background: #E5EAF5; padding: 4px 11px; border-radius: 100px; }
+  .sms-thread { flex: 1; padding: 18px 14px; display: flex; flex-direction: column; justify-content: flex-end; gap: 8px; }
+  .sms-hint { text-align: center; font-family: -apple-system, 'Inter', sans-serif; font-size: 11px; color: #A0A0A6; margin-bottom: 6px; }
+  .sms-bar { background: var(--white); border-top: 1px solid var(--sys-line); padding: 10px 14px 30px; display: flex; align-items: center; gap: 10px; }
+  .sms-field {
+    flex: 1; min-height: 38px; border: 1px solid var(--sys-line); border-radius: 100px; padding: 8px 14px;
+    font-family: -apple-system, 'Inter', sans-serif; font-size: 15px; color: #1C1730; background: var(--white); line-height: 1.35;
+  }
+  .sms-send { width: 34px; height: 34px; border-radius: 50%; background: var(--green-700); border: none; display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer; }
+
+  .screen-label { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.3); text-align: center; }
+  .caption { font-family: 'Inter', sans-serif; font-size: 11px; color: rgba(255,255,255,0.5); text-align: center; max-width: 340px; line-height: 1.55; }
+</style>
+</head>
+<body>
+
+<div class="state-bar">
+  <span class="state-group-label">9.1 time chip</span>
+  <button class="state-btn active" onclick="show('gogreen')">Go green</button>
+  <span class="state-group-label">9.2 joins</span>
+  <button class="state-btn" onclick="show('join')">Friend feed</button>
+  <button class="state-btn" onclick="show('yours0')">Your move · 0</button>
+  <button class="state-btn" onclick="show('yours1')">Your move · 1</button>
+  <button class="state-btn" onclick="show('yours2')">Your move · 2+</button>
+  <span class="state-group-label">9.3 blast</span>
+  <button class="state-btn" onclick="show('composer')">Group text</button>
+  <span class="state-group-label">9.4 go grey</span>
+  <button class="state-btn" onclick="show('plan')">Plan's set</button>
+</div>
+
+<div class="phone">
+
+  <!-- ══════════════════════════════════════ -->
+  <!-- 9.1 — Go green: note + time chip          -->
+  <!-- ══════════════════════════════════════ -->
+  <div class="screen visible" id="screen-gogreen">
+    <div class="feed-bg dimmed">
+      <div class="feed-header">
+        <div class="brand-lockup">
+          <span class="cow-tile" id="cow-a"></span>
+          <span class="wordmark">M<span class="oo"><span class="dot-g"></span><span class="dot-gr"></span></span>VES</span>
+        </div>
+      </div>
+      <div class="feed-content-bg">
+        <div class="swipe-track">
+          <div class="swipe-thumb"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="10 6 16 12 10 18"/></svg></div>
+          <span class="swipe-label">Slide to go free</span>
+        </div>
+      </div>
+    </div>
+    <div class="dim"></div>
+    <div class="sheet">
+      <div class="drag-handle"></div>
+      <div class="sheet-label">What's the vibe?</div>
+      <div class="note-input">drinks after 7?</div>
+      <div class="sheet-label">When?</div>
+      <div class="time-chip-row">
+        <div class="time-chip">Now</div>
+        <div class="time-chip selected">Tonight</div>
+        <div class="time-chip">This weekend</div>
+      </div>
+      <div class="sheet-label">Who can see you?</div>
+      <div class="check-list">
+        <div class="check-row"><span class="check-label">Everyone</span><div class="check-box checked"></div></div>
+        <div class="check-row"><span class="check-label">Work</span><div class="check-box"></div></div>
+        <div class="check-row"><span class="check-label">College</span><div class="check-box"></div></div>
+      </div>
+      <button class="sheet-cta">
+        <span style="width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,0.8);"></span>
+        I'm free
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════ -->
+  <!-- 9.2 — Friend feed: "I'm in" joins          -->
+  <!-- ══════════════════════════════════════ -->
+  <div class="screen" id="screen-join">
+    <div class="feed-header">
+      <div class="brand-lockup">
+        <span class="cow-tile" id="cow-b"></span>
+        <span class="wordmark">M<span class="oo"><span class="dot-g"></span><span class="dot-gr"></span></span>VES</span>
+      </div>
+    </div>
+    <div class="feed-body">
+      <div class="swipe-track" role="button" aria-label="Slide to go free" style="margin-bottom:20px;">
+        <div class="swipe-thumb">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 6 10 12 4 18" opacity="0.45"/><polyline points="10 6 16 12 10 18"/></svg>
+        </div>
+        <span class="swipe-label">Slide to go free</span>
+      </div>
+      <div class="section-label">Free right now</div>
+
+      <!-- Joined card -->
+      <div class="fcard">
+        <div class="fcard-top">
+          <div class="fcard-av" style="background:linear-gradient(135deg,#E8405A,#FF6B6B);">JM</div>
+          <div class="fcard-info">
+            <div class="fcard-name">Jake M.</div>
+            <div class="fcard-sub"><span class="fcard-time">Tonight</span><span class="fcard-note">drinks after 7?</span></div>
+          </div>
+          <button class="imin-btn joined">You're in ✓</button>
+        </div>
+        <div class="fcard-joiners">
+          <div class="joiner-avs">
+            <div class="joiner-av" style="background:linear-gradient(135deg,#43C6AC,#2E86AB);">MT</div>
+            <div class="joiner-av" style="background:var(--purple);">YOU</div>
+          </div>
+          <span class="joiners-text"><b>Mia, you</b> are in</span>
+        </div>
+      </div>
+
+      <!-- Not-yet-joined card -->
+      <div class="fcard">
+        <div class="fcard-top">
+          <div class="fcard-av" style="background:linear-gradient(135deg,#F5A623,#F76B1C);">SR</div>
+          <div class="fcard-info">
+            <div class="fcard-name">Sarah R.</div>
+            <div class="fcard-sub"><span class="fcard-note">coffee? drinks? idk</span></div>
+          </div>
+          <button class="imin-btn">I'm in</button>
+        </div>
+      </div>
+
+      <!-- Green, with 1 joiner, viewer not joined -->
+      <div class="fcard">
+        <div class="fcard-top">
+          <div class="fcard-av" style="background:linear-gradient(135deg,#7C5CDB,#9B7FE8);">AB</div>
+          <div class="fcard-info">
+            <div class="fcard-name">Alex B.</div>
+            <div class="fcard-sub"><span class="fcard-time">This weekend</span></div>
+          </div>
+          <button class="imin-btn">I'm in</button>
+        </div>
+        <div class="fcard-joiners">
+          <div class="joiner-avs">
+            <div class="joiner-av" style="background:linear-gradient(135deg,#F093FB,#C471ED);">SR</div>
+          </div>
+          <span class="joiners-text"><b>Sarah</b> is in</span>
+        </div>
+      </div>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-tab active">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span class="nav-label">Home</span>
+      </div>
+      <div class="nav-tab">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span class="nav-label">People</span>
+      </div>
+      <div class="nav-tab">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span class="nav-label">Settings</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════ -->
+  <!-- 9.2 — Your move · 0 joins                  -->
+  <!-- ══════════════════════════════════════ -->
+  <div class="screen" id="screen-yours0">
+    <div class="feed-header">
+      <div class="brand-lockup"><span class="cow-tile" id="cow-c"></span><span class="wordmark">M<span class="oo"><span class="dot-g"></span><span class="dot-gr"></span></span>VES</span></div>
+    </div>
+    <div class="feed-body">
+      <div class="move-card">
+        <div class="move-top">
+          <span class="move-dot"></span>
+          <span class="move-status">You're free</span>
+          <span class="time-badge">Tonight</span>
+        </div>
+        <div class="move-note">drinks after 7?</div>
+        <button class="go-grey-link">Tap to go grey</button>
+      </div>
+      <div class="section-label">Free right now</div>
+      <div class="fcard">
+        <div class="fcard-top">
+          <div class="fcard-av" style="background:linear-gradient(135deg,#F5A623,#F76B1C);">SR</div>
+          <div class="fcard-info"><div class="fcard-name">Sarah R.</div><div class="fcard-sub"><span class="fcard-note">coffee? drinks? idk</span></div></div>
+          <button class="imin-btn">I'm in</button>
+        </div>
+      </div>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-tab active"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="nav-label">Home</span></div>
+      <div class="nav-tab"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="nav-label">People</span></div>
+      <div class="nav-tab"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span class="nav-label">Settings</span></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════ -->
+  <!-- 9.2 — Your move · 1 join (no blast yet)    -->
+  <!-- ══════════════════════════════════════ -->
+  <div class="screen" id="screen-yours1">
+    <div class="feed-header">
+      <div class="brand-lockup"><span class="cow-tile" id="cow-d"></span><span class="wordmark">M<span class="oo"><span class="dot-g"></span><span class="dot-gr"></span></span>VES</span></div>
+    </div>
+    <div class="feed-body">
+      <div class="move-card">
+        <div class="move-top">
+          <span class="move-dot"></span>
+          <span class="move-status">You're free</span>
+          <span class="time-badge">Tonight</span>
+        </div>
+        <div class="move-note">drinks after 7?</div>
+        <div class="joiners">
+          <div class="joiner-avs">
+            <div class="joiner-av" style="background:linear-gradient(135deg,#43C6AC,#2E86AB);">MT</div>
+          </div>
+          <span class="joiners-text"><b>Mia</b> is in</span>
+        </div>
+        <button class="go-grey-link">Tap to go grey</button>
+      </div>
+      <div class="section-label">Free right now</div>
+      <div class="fcard">
+        <div class="fcard-top">
+          <div class="fcard-av" style="background:linear-gradient(135deg,#F5A623,#F76B1C);">SR</div>
+          <div class="fcard-info"><div class="fcard-name">Sarah R.</div><div class="fcard-sub"><span class="fcard-note">coffee? drinks? idk</span></div></div>
+          <button class="imin-btn">I'm in</button>
+        </div>
+      </div>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-tab active"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="nav-label">Home</span></div>
+      <div class="nav-tab"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="nav-label">People</span></div>
+      <div class="nav-tab"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span class="nav-label">Settings</span></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════ -->
+  <!-- 9.2 + 9.3 — Your move · 2+ joins (blast)   -->
+  <!-- ══════════════════════════════════════ -->
+  <div class="screen" id="screen-yours2">
+    <div class="feed-header">
+      <div class="brand-lockup"><span class="cow-tile" id="cow-e"></span><span class="wordmark">M<span class="oo"><span class="dot-g"></span><span class="dot-gr"></span></span>VES</span></div>
+    </div>
+    <div class="feed-body">
+      <div class="move-card">
+        <div class="move-top">
+          <span class="move-dot"></span>
+          <span class="move-status">You're free</span>
+          <span class="time-badge">Tonight</span>
+        </div>
+        <div class="move-note">drinks after 7?</div>
+        <div class="joiners">
+          <div class="joiner-avs">
+            <div class="joiner-av" style="background:linear-gradient(135deg,#43C6AC,#2E86AB);">MT</div>
+            <div class="joiner-av" style="background:linear-gradient(135deg,#E8405A,#FF6B6B);">JM</div>
+            <div class="joiner-av" style="background:linear-gradient(135deg,#F5A623,#F76B1C);">SR</div>
+          </div>
+          <span class="joiners-text"><b>Mia, Jake</b> +1 in</span>
+        </div>
+        <button class="blast-btn">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+          Start a group chat
+        </button>
+        <button class="go-grey-link">Tap to go grey</button>
+      </div>
+      <div class="section-label">Free right now</div>
+      <div class="fcard">
+        <div class="fcard-top">
+          <div class="fcard-av" style="background:linear-gradient(135deg,#7C5CDB,#9B7FE8);">AB</div>
+          <div class="fcard-info"><div class="fcard-name">Alex B.</div><div class="fcard-sub"><span class="fcard-time">This weekend</span></div></div>
+          <button class="imin-btn">I'm in</button>
+        </div>
+      </div>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-tab active"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="nav-label">Home</span></div>
+      <div class="nav-tab"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="nav-label">People</span></div>
+      <div class="nav-tab"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span class="nav-label">Settings</span></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════ -->
+  <!-- 9.3 — Native group text composer          -->
+  <!-- ══════════════════════════════════════ -->
+  <div class="screen" id="screen-composer">
+    <div class="native-note">Your phone's Messages app opens, pre-addressed to your joiners. No prefilled text, you write the message and send. Mooves' job is done.</div>
+    <div class="sms">
+      <div class="sms-nav">
+        <span class="sms-cancel">Cancel</span>
+        <span class="sms-title">New Message</span>
+        <span class="sms-cancel" style="opacity:0;">Cancel</span>
+      </div>
+      <div class="sms-to">
+        <span class="sms-to-label">To:</span>
+        <span class="sms-chip">Mia T.</span>
+        <span class="sms-chip">Jake M.</span>
+        <span class="sms-chip">Sarah R.</span>
+      </div>
+      <div class="sms-thread">
+        <div class="sms-hint">Text Message</div>
+      </div>
+      <div class="sms-bar">
+        <div class="sms-field" style="color:#A0A0A6;">Text Message</div>
+        <button class="sms-send">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════ -->
+  <!-- 9.4 — Post-blast: Plan's set prompt        -->
+  <!-- ══════════════════════════════════════ -->
+  <div class="screen" id="screen-plan">
+    <div class="feed-bg dimmed">
+      <div class="feed-header">
+        <div class="brand-lockup"><span class="cow-tile" id="cow-f"></span><span class="wordmark">M<span class="oo"><span class="dot-g"></span><span class="dot-gr"></span></span>VES</span></div>
+      </div>
+      <div class="feed-content-bg">
+        <div class="move-card" style="margin:0;">
+          <div class="move-top"><span class="move-dot"></span><span class="move-status">You're free</span><span class="time-badge">Tonight</span></div>
+          <div class="move-note">drinks after 7?</div>
+        </div>
+      </div>
+    </div>
+    <div class="dim"></div>
+    <div class="prompt-sheet">
+      <div class="prompt-card">
+        <div class="prompt-emoji">🎉</div>
+        <div class="prompt-title">Plan's set?</div>
+        <div class="prompt-sub">Go grey now, or keep green so more friends can jump in.</div>
+        <button class="prompt-btn keep">Keep green for more</button>
+        <button class="prompt-btn grey">Go grey</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="screen-label">Phase 9 — Deepen the Core Loop</div>
+<div class="caption" id="caption">9.1 Swipe to go free (on the home screen) opens this sheet: set a vibe note, a coarse time chip (now / tonight / this weekend), and visibility (everyone or specific groups), then tap I'm free.</div>
+
+<script>
+  // Transparent cow mark (app-icon geometry) reused in every header
+  const cowSVG = `<svg viewBox="0 0 120 120" width="34" height="34" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Mooves">
+    <ellipse cx="11" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(-28 11 33)"/>
+    <ellipse cx="109" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(28 109 33)"/>
+    <ellipse cx="11" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(-28 11 34)"/>
+    <ellipse cx="109" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(28 109 34)"/>
+    <ellipse cx="38" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(-14 38 19)"/>
+    <ellipse cx="82" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(14 82 19)"/>
+    <rect x="15" y="20" width="90" height="92" rx="30" fill="#F5F0ED"/>
+    <ellipse cx="41" cy="44" rx="19" ry="13" fill="#7A7282" transform="rotate(-10 41 44)"/>
+    <ellipse cx="79" cy="69" rx="14" ry="9" fill="#7A7282" transform="rotate(16 79 69)"/>
+    <circle cx="44" cy="57" r="6" fill="#2A1E38"/><circle cx="76" cy="57" r="6" fill="#2A1E38"/>
+    <circle cx="46.5" cy="54.5" r="2.2" fill="white"/><circle cx="78.5" cy="54.5" r="2.2" fill="white"/>
+    <ellipse cx="60" cy="90" rx="27" ry="20" fill="#F0AABB"/>
+    <circle cx="50" cy="91" r="9" fill="#2ECC71"/><circle cx="70" cy="91" r="9" fill="#BDB5D4"/>
+  </svg>`;
+  ['cow-a','cow-b','cow-c','cow-d','cow-e','cow-f'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = cowSVG;
+  });
+
+  const captions = {
+    'gogreen': "9.1 Swipe to go free (on the home screen) opens this sheet: set a vibe note, a coarse time chip (now / tonight / this weekend), and visibility (everyone or specific groups), then tap I'm free.",
+    'join': "9.2 Swipe to go free sits at the top of home. Each friend's green card has an “I'm in” toggle (purple, the action color); once you join it reads “You're in” (green). Joiner names + count show for everyone, in realtime.",
+    'yours0': "9.2 Your own move at 0 joins: green, time chip, note. No blast button, no pressure copy — nothing that reads as “nobody joined.”",
+    'yours1': "9.2 One join shows the joiner, but the blast button stays hidden until 2+ so you never blast into silence.",
+    'yours2': "9.2 + 9.3 At 2+ joins the “Start a group chat” button appears on your card, targeting exactly the current joiners.",
+    'composer': "9.3 Tapping it opens your phone's native Messages app, pre-addressed to the joiners, with no prefilled text — you write the message. No Mooves number, no A2P.",
+    'plan': "9.4 Back from the text, a non-blocking prompt: go grey now, or keep green so more can jump in. It never changes your status on its own."
+  };
+  function show(state) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('visible'));
+    document.querySelectorAll('.state-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('screen-' + state).classList.add('visible');
+    event.target.classList.add('active');
+    document.getElementById('caption').textContent = captions[state] || '';
+  }
+</script>
+
+</body>
+</html>
