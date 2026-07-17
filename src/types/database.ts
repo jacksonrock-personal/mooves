@@ -82,6 +82,7 @@ export type Database = {
           created_at: string
           emoji: string
           id: string
+          invite_code: string | null
           name: string
           owner_id: string
         }
@@ -89,6 +90,7 @@ export type Database = {
           created_at?: string
           emoji?: string
           id?: string
+          invite_code?: string | null
           name: string
           owner_id: string
         }
@@ -96,6 +98,7 @@ export type Database = {
           created_at?: string
           emoji?: string
           id?: string
+          invite_code?: string | null
           name?: string
           owner_id?: string
         }
@@ -116,6 +119,8 @@ export type Database = {
           display_name: string | null
           id: string
           is_available: boolean
+          last_active_at: string | null
+          last_green_at: string | null
           onboarding_complete: boolean
           phone: string
           referral_code: string
@@ -130,6 +135,8 @@ export type Database = {
           display_name?: string | null
           id: string
           is_available?: boolean
+          last_active_at?: string | null
+          last_green_at?: string | null
           onboarding_complete?: boolean
           phone: string
           referral_code?: string
@@ -144,6 +151,8 @@ export type Database = {
           display_name?: string | null
           id?: string
           is_available?: boolean
+          last_active_at?: string | null
+          last_green_at?: string | null
           onboarding_complete?: boolean
           phone?: string
           referral_code?: string

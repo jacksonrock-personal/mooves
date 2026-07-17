@@ -3,6 +3,7 @@ import { verifySessionToken } from '@/lib/auth/session'
 
 const PUBLIC_PREFIXES = [
   '/join/',
+  '/g/',
   '/auth',
   '/api/invite/',
   '/api/auth/verify',

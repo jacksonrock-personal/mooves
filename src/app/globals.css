@@ -30,12 +30,18 @@
   60% { opacity: 1; transform: translateY(0) scale(1.03); }
   100% { opacity: 1; transform: translateY(0) scale(1); }
 }
+/* Phase 10 — grey "activity" pulse on the ambient feed tier (not availability). */
+@keyframes ambient-pulse {
+  0% { transform: translate(-50%, -50%) scale(0.37); opacity: 0.65; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+}
 
 @layer utilities {
   .animate-pulse-dot { animation: pulse-dot 1.6s ease-in-out infinite; }
   .animate-glow-pulse { animation: glow-pulse 2.2s ease-in-out infinite; }
   .animate-card-in { animation: card-in 0.25s ease-out; }
   .animate-toast-pop { animation: toast-pop 0.35s ease-out; }
+  .animate-ambient-pulse { animation: ambient-pulse 2.6s ease-out infinite; }
 }
 
 /* Phase 8.3 — suppress the floating Firebase reCAPTCHA badge everywhere.

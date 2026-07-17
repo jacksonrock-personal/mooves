@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { posthog } from '@/lib/posthog'
 import GroupForm from '@/components/groups/GroupForm'
+import InviteLinkSheet from '@/components/groups/InviteLinkSheet'
 import Sheet from '@/components/ui/Sheet'
 
 interface Friend {
@@ -33,6 +34,7 @@ export default function EditGroupPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [inviteOpen, setInviteOpen] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -111,10 +113,23 @@ export default function EditGroupPage() {
         error={error}
         onSave={handleSave}
         onBack={() => router.push('/people')}
+        onShareInvite={() => {
+          posthog.capture('group_invite_opened')
+          setInviteOpen(true)
+        }}
         onDelete={() => {
           posthog.capture('group_delete_initiated')
           setDeleteOpen(true)
         }}
+      />
+
+      <InviteLinkSheet
+        open={inviteOpen}
+        onClose={() => setInviteOpen(false)}
+        groupId={groupId}
+        groupName={group.name}
+        groupEmoji={group.emoji}
+        memberCount={group.memberIds.length + 1}
       />
 
       <Sheet open={deleteOpen} onClose={() => setDeleteOpen(false)} className="px-5 pb-8">

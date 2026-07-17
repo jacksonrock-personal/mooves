@@ -33,6 +33,7 @@ export async function PATCH(req: Request) {
     visible_to: string[] | null
     status_time: StatusTime | null
     status_set_at: string
+    last_green_at?: string
   }
 
   let updates: StatusUpdate
@@ -46,12 +47,14 @@ export async function PATCH(req: Request) {
     }
   } else {
     const note = body.statusNote?.trim() ?? null
+    const now = new Date().toISOString()
     updates = {
       is_available: true,
       status_note: note && note.length > 0 ? note.slice(0, 60) : null,
       visible_to: body.visibleTo ?? null,
       status_time: normalizeTime(body.statusTime),
-      status_set_at: new Date().toISOString(),
+      status_set_at: now,
+      last_green_at: now, // recent-green signal (10.1); never cleared on go-grey
     }
   }
 
