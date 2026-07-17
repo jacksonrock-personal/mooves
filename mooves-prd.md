@@ -2883,7 +2883,7 @@ A design-critique → design-system pass (Claude Design) delivered a v1 system a
 
 **Deferred:** dark-mode tokens (none yet); a certified colorblind pass (Stark / Sim Daltonism) before formally claiming "passes colorblind users."
 
-### Phase 8 — Polish & Fixes *(small, ship-now)* — **FINALIZED 2026-07-16** · **SPEC'D 2026-07-16 (see "## Phase 8 — Polish (Spec)" near end of file)** · **MOCKUP APPROVED 2026-07-17 (`mooves-phase8-polish.html`)** · **✅ CODED 2026-07-17** (not yet committed/deployed)
+### Phase 8 — Polish & Fixes *(small, ship-now)* — **FINALIZED 2026-07-16** · **SPEC'D 2026-07-16 (see "## Phase 8 — Polish (Spec)" near end of file)** · **MOCKUP APPROVED 2026-07-17 (`mooves-phase8-polish.html`)** · **✅ CODED + MERGED + DEPLOYED 2026-07-17** (PR #6)
 - **Header icon + cow face** — enlarge the header icon **and** work a cow face into the **existing** mark, as one focused design task. Scope = refine/integrate, **not a rebrand** (a full cow-forward brand-mark exploration is deliberately out of this phase). Cow-face visual direction is a mockup-time decision.
 - **People tab: flip sub-tab order** so Friends is default/left, Groups second. **⚠️ LIKELY ALREADY DONE (2026-07-16):** `PeopleScreen.tsx:19,51` already defaults to `friends` and renders `['friends','groups']` (Friends-first). The design critique caught this too. **Verify against live `makemooves.app`; if confirmed, DROP this item** and just update the stale Screen 9 spec "People Tab Layout Update" note (which still documents the old reversed order).
 - **reCAPTCHA badge** — **suppress** the floating Firebase badge via the `badge` param, and add Google's **required attribution text** ("protected by reCAPTCHA — Privacy / Terms") on the auth screen instead. (Not repositioned — hidden + compliant.)
@@ -2891,7 +2891,7 @@ A design-critique → design-system pass (Claude Design) delivered a v1 system a
 
 All four items are independent and parallelizable.
 
-### Phase 9 — Deepen the core loop *(highest leverage — the next build after Phase 8)* — **FINALIZED 2026-07-16** · **SPEC'D 2026-07-16 (see "## Phase 9 — Deepen the Core Loop (Spec)" near end of file)**
+### Phase 9 — Deepen the core loop *(highest leverage — the next build after Phase 8)* — **FINALIZED 2026-07-16** · **SPEC'D 2026-07-16 (see "## Phase 9 — Deepen the Core Loop (Spec)" near end of file)** · **MOCKUP APPROVED 2026-07-17 (`mooves-phase9-coreloop.html`; +amendments A1–A4: swipe-to-go-green folded in, visibility retained, no blast prefill)** · **✅ CODED 2026-07-17** (needs DB migration — applied; two-account + `sms:` device testing pending)
 
 **Goal:** make the green → plan handoff frictionless and add light social proof — without adding any new surface to be rejected, and without becoming an event/calendar app.
 
@@ -3197,8 +3197,21 @@ None.
 - [ ] Keep-green leaves the move open. Prompt is non-blocking; never auto-changes status.
 
 ### Open questions
-- Exact prefilled body wording (finalize at mockup).
+- ~~Exact prefilled body wording (finalize at mockup).~~ **RESOLVED at mockup: no prefilled body — see amendment A4.**
 - iOS group-thread deep-link behavior — POC in build.
+
+### Mockup Status
+✅ **Mockup approved 2026-07-17** — `mooves-phase9-coreloop.html`. Cross-cutting (Feed Screen 4 + go-green flow), not a single numbered screen. States: go-green sheet (note + time chip + visibility), friend feed w/ "I'm in" joins, your-move at 0 / 1 / 2+ joins, native group-text composer, post-blast "Plan's set" prompt.
+
+### Code Status
+✅ **Coded 2026-07-17 (Jackson: "ship it")** — `tsc --noEmit` + `next build` clean; dev server boots clean. **DB migration applied by Jackson in Supabase:** `users.status_time` (now/tonight/weekend) + `move_joins` table (mover_id, joiner_id) + realtime publication + RLS select policy. New: `api/moves/join` (POST/DELETE toggle), `lib/blast.ts` (native `sms:` deep link, no body), `SwipeToGoGreen`, `MyMoveCard`, `Joiners`, `TimeChips`. Modified: `types/database.ts` (+move_joins/+status_time, fully typed), `api/status` (time + clears joins on grey), `api/feed` (per-friend joiners + `myJoiners`), `api/users/me`, `GoGreenSheet` (time chips), `FriendCard` (I'm in/You're in + joiners), `FeedScreen` (swipe + MyMoveCard + joins realtime + blast + prompt). `AvailRow.tsx` retired. Presence realtime = `move_joins`+`users` subscription → debounced `/api/feed` refetch. **Build-time verification only** — the two-account join/blast flow + the multi-recipient `sms:` POC (iOS single-thread) need on-device testing by Jackson. **Not yet committed at time of this note** (committed + pushed immediately after).
+
+### Amendments locked at mockup approval (2026-07-17) — override the spec above where noted
+- **A1 — Swipe-to-go-green folded into Phase 9.** (Was an adopted-but-unscheduled DS v1 decision.) The **home-feed top status control becomes a swipe-to-go-free** control. Swiping opens the existing go-green sheet; the sheet's CTA stays a **tap "I'm free" button** (no second slide). Go-grey stays tap + confirm. **Build must include an accessible fallback** — a tappable confirm for screen readers / reduced-motion, so the slide is never the only path.
+- **A2 — Visibility control RETAINED on go-green** (Everyone / scope to specific groups). This **reverses the DS v1 "green is global / drop visibility chips" assumption** — greens can be scoped. Matches the shipped `visible_to` model, so no data change.
+- **A3 — Blast button copy = "Start a group chat"** (not "Start group text"). "I'm in" = **purple** (action color); once joined the chip reads **"You're in ✓"** in **green** (green-700, AA-safe). Time chips single-select; the "Your move" card uses a green tint + green-700 label (a11y — no solid-green-on-white text).
+- **A4 — Group-chat blast carries NO prefilled/templatized text.** The native composer opens pre-addressed to exactly the current joiners with an **empty** message body; the user writes it. This **overrides 9.3's** "body prefilled with the mover's name + vibe/time."
+- **⚠️ Cross-phase flag:** A2 (visibility scoping stays) conflicts with **Phase 11**'s finalized decision that a group tag is "a **label**, NOT a visibility scope" — which assumed green is global. If greens can be scoped to a group here, Phase 11's model needs a revisit before it's built.
 
 ---
 

@@ -1,8 +1,15 @@
-// GET /api/feed — green friends visible to the current user (visibility-filtered)
-// Uses the feed query from Section 13 of the PRD.
+// GET /api/feed — green friends visible to the current user (visibility-filtered),
+// each with their presence (joiners), plus the viewer's own move joiners.
+// Uses the feed query from Section 13 of the PRD + Phase 9 presence (move_joins).
 
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
+
+interface JoinerLite {
+  id: string
+  displayName: string | null
+  avatarUrl: string | null
+}
 
 export async function GET(req: Request) {
   const userId = req.headers.get('x-user-id')
@@ -17,7 +24,7 @@ export async function GET(req: Request) {
     .eq('user_id', userId)
 
   if (!friendships || friendships.length === 0) {
-    return NextResponse.json({ friends: [] })
+    return NextResponse.json({ friends: [], myJoiners: [] })
   }
 
   const friendIds = friendships.map(f => f.friend_id)
@@ -25,37 +32,81 @@ export async function GET(req: Request) {
   // Get all green friends (visibility filtering happens next)
   const { data: greenFriends, error } = await supabase
     .from('users')
-    .select('id, display_name, avatar_url, status_note, phone, status_set_at, visible_to')
+    .select('id, display_name, avatar_url, status_note, status_time, phone, status_set_at, visible_to')
     .in('id', friendIds)
     .eq('is_available', true)
     .order('status_set_at', { ascending: false, nullsFirst: false })
 
   if (error) return NextResponse.json({ error: 'Query failed' }, { status: 500 })
-  if (!greenFriends || greenFriends.length === 0) return NextResponse.json({ friends: [] })
 
-  // For friends with visible_to set, check if current user is in any of those groups
-  // Get all groups where the current user is a member
+  // Visibility filter — only friends whose visible_to includes one of my groups (or is null).
   const { data: memberOf } = await supabase
     .from('group_members')
     .select('group_id')
     .eq('user_id', userId)
-
   const myGroupIds = new Set((memberOf ?? []).map(m => m.group_id))
 
-  const visible = greenFriends.filter(f => {
-    if (!f.visible_to) return true  // null = everyone
-    // visible_to is an array of group IDs owned by the green user
+  const visibleFriends = (greenFriends ?? []).filter(f => {
+    if (!f.visible_to) return true // null = everyone
     return (f.visible_to as string[]).some(gid => myGroupIds.has(gid))
   })
 
-  return NextResponse.json({
-    friends: visible.map(f => ({
-      id: f.id,
-      displayName: f.display_name,
-      avatarUrl: f.avatar_url,
-      statusNote: f.status_note,
-      phone: f.phone,
-      statusSetAt: f.status_set_at,
-    })),
-  })
+  // Presence (9.2): joins on the visible green friends' moves + on the viewer's own move.
+  const moverIds = [...visibleFriends.map(f => f.id), userId]
+  const { data: joins } = await supabase
+    .from('move_joins')
+    .select('mover_id, joiner_id')
+    .in('mover_id', moverIds)
+
+  const joinRows = joins ?? []
+
+  // Resolve joiner display info — joiners are visible to everyone, even non-friends of the viewer.
+  const joinerIds = [...new Set(joinRows.map(j => j.joiner_id))]
+  const joinerMap = new Map<
+    string,
+    { id: string; displayName: string | null; avatarUrl: string | null; phone: string }
+  >()
+  if (joinerIds.length > 0) {
+    const { data: joinerUsers } = await supabase
+      .from('users')
+      .select('id, display_name, avatar_url, phone')
+      .in('id', joinerIds)
+    for (const u of joinerUsers ?? []) {
+      joinerMap.set(u.id, { id: u.id, displayName: u.display_name, avatarUrl: u.avatar_url, phone: u.phone })
+    }
+  }
+
+  const joinersByMover = new Map<string, string[]>()
+  for (const j of joinRows) {
+    const arr = joinersByMover.get(j.mover_id) ?? []
+    arr.push(j.joiner_id)
+    joinersByMover.set(j.mover_id, arr)
+  }
+
+  function joinersFor(moverId: string): JoinerLite[] {
+    return (joinersByMover.get(moverId) ?? [])
+      .map(id => joinerMap.get(id))
+      .filter((u): u is NonNullable<typeof u> => !!u)
+      .map(u => ({ id: u.id, displayName: u.displayName, avatarUrl: u.avatarUrl }))
+  }
+
+  const friends = visibleFriends.map(f => ({
+    id: f.id,
+    displayName: f.display_name,
+    avatarUrl: f.avatar_url,
+    statusNote: f.status_note,
+    statusTime: f.status_time,
+    phone: f.phone,
+    statusSetAt: f.status_set_at,
+    joiners: joinersFor(f.id),
+    joinedByMe: (joinersByMover.get(f.id) ?? []).includes(userId),
+  }))
+
+  // The viewer's own move joiners — include phone for the group-chat blast (9.3).
+  const myJoiners = (joinersByMover.get(userId) ?? [])
+    .map(id => joinerMap.get(id))
+    .filter((u): u is NonNullable<typeof u> => !!u)
+    .map(u => ({ id: u.id, displayName: u.displayName, avatarUrl: u.avatarUrl, phone: u.phone }))
+
+  return NextResponse.json({ friends, myJoiners })
 }
