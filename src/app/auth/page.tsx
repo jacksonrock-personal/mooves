@@ -89,7 +89,7 @@ function AuthContent() {
   const canSubmit = rawDigits.length === 10 && !isLoading
 
   return (
-    <main className="min-h-screen bg-surface-bg flex flex-col">
+    <main className="min-h-screen bg-purple-50 flex flex-col">
       <div ref={recaptchaContainerRef} id="recaptcha-container" />
 
       {/* Nav */}
@@ -97,31 +97,31 @@ function AuthContent() {
         <button
           onClick={() => router.back()}
           aria-label="Go back"
-          className="text-mooves-purple"
+          className="text-purple-500"
         >
           <span className="text-2xl leading-none">‹</span>
         </button>
-        <Wordmark variant="dark" />
+        <Wordmark variant="dark" withCow />
         <div className="w-6" />
       </div>
 
       {/* Body */}
       <div className="flex-1 flex flex-col px-7 pt-10">
-        <h1 className="font-display font-extrabold text-[28px] text-text-primary tracking-tight leading-[1.15] mb-2.5">
+        <h1 className="font-display font-extrabold text-[28px] text-ink-900 tracking-tight leading-[1.15] mb-2.5">
           What's your<br />number?
         </h1>
-        <p className="font-sans text-[15px] text-text-secondary leading-relaxed mb-9">
+        <p className="font-sans text-[15px] text-ink-500 leading-relaxed mb-9">
           We'll text you a code to verify it's you.
         </p>
 
         <div
-          className={`flex items-center bg-card-white rounded-2xl px-4 h-[60px] gap-2.5 border-2 transition-colors ${
+          className={`flex items-center bg-white rounded-2xl px-4 h-[60px] gap-2.5 border-2 transition-colors ${
             isFocused
-              ? 'border-mooves-purple shadow-[0_0_0_4px_rgba(124,92,219,0.1)]'
+              ? 'border-purple-500 shadow-[0_0_0_4px_rgba(124,92,219,0.1)]'
               : 'border-[#E8E4F5]'
           }`}
         >
-          <span className="font-sans text-base font-medium text-text-secondary whitespace-nowrap flex-shrink-0">
+          <span className="font-sans text-base font-medium text-ink-500 whitespace-nowrap flex-shrink-0">
             🇺🇸 +1
           </span>
           <div className="w-px h-6 bg-[#E8E4F5] flex-shrink-0" />
@@ -138,30 +138,51 @@ function AuthContent() {
             onBlur={() => setIsFocused(false)}
             onKeyDown={e => { if (e.key === 'Enter' && canSubmit) void handleSubmit() }}
             placeholder="(555) 555-5555"
-            className="flex-1 bg-transparent border-none outline-none font-sans text-lg font-medium text-text-primary placeholder:text-status-grey placeholder:font-normal"
+            className="flex-1 bg-transparent border-none outline-none font-sans text-lg font-medium text-ink-900 placeholder:text-grey-300 placeholder:font-normal"
           />
         </div>
 
         {error && (
-          <p className="mt-2 font-sans text-[13px] text-[#E8405A]">{error}</p>
+          <p className="mt-2 font-sans text-[13px] text-red-500">{error}</p>
         )}
       </div>
 
       {/* ToS + CTA */}
-      <p className="font-sans text-[11px] text-text-secondary text-center leading-relaxed px-7 mb-5">
+      <p className="font-sans text-[11px] text-ink-500 text-center leading-relaxed px-7 mb-5">
         By continuing, you agree to our{' '}
-        <a href="#" className="text-mooves-purple font-medium">Terms</a>
+        <a href="#" className="text-purple-500 font-medium">Terms</a>
         {' '}and{' '}
-        <a href="#" className="text-mooves-purple font-medium">Privacy Policy</a>.
+        <a href="#" className="text-purple-500 font-medium">Privacy Policy</a>.
       </p>
       <div className="px-7 pb-11">
         <button
           onClick={() => void handleSubmit()}
           disabled={!canSubmit}
-          className="w-full py-[17px] rounded-2xl bg-mooves-purple text-white font-display font-extrabold text-[17px] tracking-tight disabled:opacity-[0.35] disabled:cursor-default transition-opacity"
+          className="w-full py-[17px] rounded-2xl bg-purple-500 text-white font-display font-extrabold text-[17px] tracking-tight disabled:opacity-[0.35] disabled:cursor-default transition-opacity"
         >
           {isLoading ? 'Sending…' : 'Send code'}
         </button>
+        <p className="mt-4 font-sans text-[10px] text-ink-500 text-center leading-relaxed">
+          This site is protected by reCAPTCHA and the Google{' '}
+          <a
+            href="https://policies.google.com/privacy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline"
+          >
+            Privacy Policy
+          </a>
+          {' '}and{' '}
+          <a
+            href="https://policies.google.com/terms"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline"
+          >
+            Terms of Service
+          </a>
+          {' '}apply.
+        </p>
       </div>
     </main>
   )

@@ -196,11 +196,11 @@ export default function SettingsScreen() {
   return (
     <div className="min-h-screen flex flex-col bg-surface-bg">
       {/* Header */}
-      <header className="bg-card-white px-5 pt-14 pb-3.5 border-b border-[#E8E4F5] shrink-0">
-        <div className="flex justify-center mb-2.5">
-          <Wordmark />
+      <header className="bg-white px-5 pt-14 pb-3.5 border-b border-[#E8E4F5] shrink-0">
+        <div className="flex justify-center mb-3">
+          <Wordmark withCow />
         </div>
-        <h1 className="font-display font-extrabold text-[24px] text-text-primary tracking-tight">
+        <h1 className="font-display font-extrabold text-[24px] text-ink-900 tracking-tight">
           Settings
         </h1>
       </header>

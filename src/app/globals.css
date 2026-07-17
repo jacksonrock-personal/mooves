@@ -37,3 +37,11 @@
   .animate-card-in { animation: card-in 0.25s ease-out; }
   .animate-toast-pop { animation: toast-pop 0.35s ease-out; }
 }
+
+/* Phase 8.3 — suppress the floating Firebase reCAPTCHA badge everywhere.
+   Google permits hiding the badge as long as the required reCAPTCHA
+   attribution is shown in the user flow (see the phone-entry footer in
+   src/app/auth/page.tsx). This is presentation-only — reCAPTCHA still runs. */
+.grecaptcha-badge {
+  visibility: hidden;
+}

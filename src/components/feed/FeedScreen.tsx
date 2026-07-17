@@ -249,8 +249,8 @@ export default function FeedScreen() {
 
   return (
     <div className="min-h-screen flex flex-col bg-surface-bg">
-      <header className="bg-gradient-to-b from-mooves-purple via-[#9B7FE8] to-[#A98FF0] px-5 pt-14 pb-5 flex items-center justify-center shrink-0">
-        <Wordmark variant="light" />
+      <header className="bg-gradient-to-b from-purple-500 via-[#9B7FE8] to-[#A98FF0] px-5 pt-7 pb-6 flex items-center justify-center shrink-0">
+        <Wordmark variant="light" withCow />
       </header>
 
       <div className="flex-1 flex flex-col px-4 pt-4 pb-24">
