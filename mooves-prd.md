@@ -2883,7 +2883,7 @@ A design-critique → design-system pass (Claude Design) delivered a v1 system a
 
 **Deferred:** dark-mode tokens (none yet); a certified colorblind pass (Stark / Sim Daltonism) before formally claiming "passes colorblind users."
 
-### Phase 8 — Polish & Fixes *(small, ship-now)* — **FINALIZED 2026-07-16** · **SPEC'D 2026-07-16 (see "## Phase 8 — Polish (Spec)" near end of file)**
+### Phase 8 — Polish & Fixes *(small, ship-now)* — **FINALIZED 2026-07-16** · **SPEC'D 2026-07-16 (see "## Phase 8 — Polish (Spec)" near end of file)** · **MOCKUP APPROVED 2026-07-17 (`mooves-phase8-polish.html`)** · **✅ CODED 2026-07-17** (not yet committed/deployed)
 - **Header icon + cow face** — enlarge the header icon **and** work a cow face into the **existing** mark, as one focused design task. Scope = refine/integrate, **not a rebrand** (a full cow-forward brand-mark exploration is deliberately out of this phase). Cow-face visual direction is a mockup-time decision.
 - **People tab: flip sub-tab order** so Friends is default/left, Groups second. **⚠️ LIKELY ALREADY DONE (2026-07-16):** `PeopleScreen.tsx:19,51` already defaults to `friends` and renders `['friends','groups']` (Friends-first). The design critique caught this too. **Verify against live `makemooves.app`; if confirmed, DROP this item** and just update the stale Screen 9 spec "People Tab Layout Update" note (which still documents the old reversed order).
 - **reCAPTCHA badge** — **suppress** the floating Firebase badge via the `badge` param, and add Google's **required attribution text** ("protected by reCAPTCHA — Privacy / Terms") on the auth screen instead. (Not repositioned — hidden + compliant.)
@@ -3134,6 +3134,11 @@ All four items are independent and parallelizable.
 
 ### Open questions
 None.
+
+### Mockup Status
+✅ Mockup approved 2026-07-17 · ✅ **Coded 2026-07-17 (Jackson: "ship it")** — `tsc --noEmit` + `next build` clean; auth screen verified live (cow mark, enlarged wordmark, reCAPTCHA attribution + badge suppression). Files: NEW `src/components/ui/CowMark.tsx`; `Wordmark.tsx` (`withCow` prop + enlarged lockup); `FeedScreen.tsx` / `PeopleScreen.tsx` / `SettingsScreen.tsx` / `auth/page.tsx` (headers opt into `withCow`); `PeopleScreen.tsx` labeled "New" pill (DS primary, 44px, hidden on Friends); `globals.css` `.grecaptcha-badge` hidden; `auth/page.tsx` footer attribution. Legacy tokens migrated → DS scale in all touched files. **Not yet committed/deployed** (awaiting Jackson's go on git). **Follow-ups noted:** (a) cream cow reads subtle on white headers — optional outline/shadow on the white-header variant; (b) Feed header top padding reduced to match centered mockup — consider `safe-area-inset` top pad if run as an installed PWA (Phase 15-adjacent).
+
+`mooves-phase8-polish.html` — approved 2026-07-17. Cross-cutting mockup (not a single screen); toggle states cover 8.1 Feed header (light cow mark) + People header (dark cow mark), 8.2 Groups / Groups-empty / Friends-tab create-group control, and 8.3 phone-entry reCAPTCHA disclosure. **Design decisions locked at approval:** cow mark is the app-icon geometry rendered *transparent* (no cream tile/box) beside the enlarged wordmark; wordmark enlarged (dark 16→22px, light 20→24px); create-group control label is **"New"** (not "New group") as a purple DS-primary pill with a "+" glyph; reCAPTCHA attribution uses Google's standard copy in the phone-entry footer only. **Build watch-item:** the transparent cream cow face reads bold on the purple Feed header but faint on white headers (People/Auth) — revisit contrast (subtle outline/shadow on white-header variant) if it reads washed-out in-app.
 
 ---
 

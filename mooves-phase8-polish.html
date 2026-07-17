@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mooves — Phase 8: Polish</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --purple: #7C5CDB;
+    --purple-light: #EDE9FF;
+    --green: #2ECC71;
+    --grey-status: #BDB5D4;
+    --bg: #F8F6FF;
+    --white: #FFFFFF;
+    --text: #1C1730;
+    --text-secondary: #6B628A;
+    --border: #E8E4F5;
+    --red: #E8405A;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #1C1730;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    gap: 28px;
+  }
+
+  .state-bar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 520px;
+  }
+  .state-group-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.35);
+    align-self: center;
+    margin: 0 2px;
+  }
+  .state-btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 7px 14px;
+    border-radius: 100px;
+    border: 1.5px solid rgba(255,255,255,0.2);
+    background: transparent;
+    color: rgba(255,255,255,0.5);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .state-btn.active {
+    background: rgba(255,255,255,0.12);
+    color: white;
+    border-color: rgba(255,255,255,0.4);
+  }
+
+  .phone {
+    width: 320px;
+    height: 640px;
+    border-radius: 44px;
+    border: 3px solid rgba(255,255,255,0.1);
+    overflow: hidden;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.5);
+    position: relative;
+  }
+
+  .screen { display: none; flex-direction: column; height: 100%; }
+  .screen.visible { display: flex; }
+
+  /* ─────────────────────────────────────── */
+  /* 8.1 — Brand lockup (cow tile + wordmark) */
+  /* ─────────────────────────────────────── */
+  .brand-lockup {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+  .cow-tile {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    display: block;
+  }
+  .cow-tile svg { display: block; width: 100%; height: 100%; }
+
+  .wordmark {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+  }
+  .wordmark .d {
+    display: inline-block;
+    border-radius: 50%;
+    position: relative;
+    top: 0.5px;
+  }
+  /* dark variant (white headers) — enlarged from 16 → 22px */
+  .wordmark.dark { font-size: 22px; color: var(--text); }
+  .wordmark.dark .d { width: 12px; height: 12px; }
+  .wordmark.dark .d-green { background: var(--green); }
+  .wordmark.dark .d-grey { background: var(--grey-status); margin-right: 1px; }
+  /* light variant (gradient header) — enlarged from 20 → 24px */
+  .wordmark.light { font-size: 24px; color: white; }
+  .wordmark.light .d { width: 13px; height: 13px; }
+  .wordmark.light .dots { display: inline-flex; align-items: center; gap: 2px; margin: 0 1px; }
+  .wordmark.light .d-green { background: var(--green); box-shadow: 0 0 6px rgba(46,204,113,0.6); }
+  .wordmark.light .d-grey { background: rgba(255,255,255,0.35); }
+
+  /* ── Feed header (gradient) ── */
+  .feed-header {
+    background: linear-gradient(180deg, #7C5CDB 0%, #9B7FE8 55%, #A98FF0 100%);
+    padding: 26px 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* ── People header (white) ── */
+  .people-header {
+    background: var(--white);
+    padding: 52px 20px 0;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .people-brand-row {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 14px;
+  }
+  .people-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 44px;
+    margin-bottom: 6px;
+  }
+  .people-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 800;
+    font-size: 24px;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+
+  /* 8.2 — labeled create-group control (DS primary) */
+  .new-group-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 40px;
+    padding: 0 15px 0 12px;
+    border-radius: 100px;
+    border: none;
+    background: var(--purple);
+    color: white;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: -0.01em;
+    cursor: pointer;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(124,92,219,0.3);
+  }
+  .new-group-btn svg { flex-shrink: 0; }
+
+  .sub-tabs { display: flex; }
+  .sub-tab {
+    flex: 1;
+    text-align: center;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 8px 0 10px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+  }
+  .sub-tab.active {
+    color: var(--purple);
+    border-bottom-color: var(--purple);
+  }
+
+  /* ── Feed body ── */
+  .feed-body { flex: 1; overflow-y: auto; padding: 16px 16px 24px; }
+  .avail-row {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    margin-bottom: 20px;
+  }
+  .avail-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--grey-status); flex-shrink: 0; }
+  .avail-text { flex: 1; }
+  .avail-title { font-family:'Inter',sans-serif; font-weight:600; font-size:15px; color:var(--text); }
+  .avail-sub { font-family:'Inter',sans-serif; font-size:13px; color:var(--text-secondary); margin-top:1px; }
+  .avail-chip {
+    font-family:'Plus Jakarta Sans',sans-serif; font-weight:700; font-size:13px;
+    color:white; background:#167A43; padding:8px 14px; border-radius:100px;
+  }
+  .section-label {
+    font-family:'Inter',sans-serif; font-size:11px; font-weight:600;
+    color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.08em;
+    padding:0 4px 12px;
+  }
+  .friend-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .friend-avatar {
+    width: 44px; height: 44px; border-radius: 50%;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Plus Jakarta Sans',sans-serif; font-weight:700; font-size:15px; color:white;
+    flex-shrink:0;
+  }
+  .friend-info { flex:1; min-width:0; }
+  .friend-name { font-family:'Inter',sans-serif; font-weight:600; font-size:15px; color:var(--text); }
+  .friend-status { display:flex; align-items:center; gap:6px; margin-top:2px; }
+  .friend-status-dot { width:8px; height:8px; border-radius:50%; background:var(--green); flex-shrink:0; }
+  .friend-status-label { font-family:'Inter',sans-serif; font-size:13px; color:var(--text-secondary); }
+
+  /* ── Groups list ── */
+  .group-list { flex: 1; overflow-y: auto; background: var(--white); }
+  .group-row {
+    display: flex; align-items: center; gap: 13px;
+    padding: 12px 20px; background: var(--white);
+    border-bottom: 1px solid var(--border); cursor: pointer;
+  }
+  .group-emoji-icon {
+    width: 42px; height: 42px; border-radius: 12px; background: var(--purple-light);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0; line-height: 1;
+  }
+  .group-info { flex: 1; min-width: 0; }
+  .group-name { font-family:'Inter',sans-serif; font-weight:600; font-size:15px; color:var(--text); }
+  .group-count { font-family:'Inter',sans-serif; font-size:13px; color:var(--text-secondary); margin-top:1px; }
+  .group-chevron { color: var(--border); font-size: 22px; font-weight: 300; flex-shrink: 0; }
+
+  /* ── Friends list ── */
+  .friends-list { flex:1; overflow-y:auto; background:var(--white); }
+  .friend-list-row {
+    display:flex; align-items:center; gap:13px;
+    padding:11px 20px; border-bottom:1px solid var(--border);
+  }
+  .friend-list-avatar {
+    width:40px; height:40px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Plus Jakarta Sans',sans-serif; font-weight:700; font-size:13px; color:white; flex-shrink:0;
+  }
+  .friend-list-name { flex:1; font-family:'Inter',sans-serif; font-weight:500; font-size:15px; color:var(--text); }
+  .friend-list-status { font-family:'Inter',sans-serif; font-size:12px; color:var(--text-secondary); }
+
+  /* ── Groups empty state ── */
+  .empty-state {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 24px 32px; text-align: center; background: var(--bg);
+  }
+  .empty-icon {
+    width: 52px; height: 52px; border-radius: 16px; background: var(--purple-light);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 16px; font-size: 26px; line-height: 1;
+  }
+  .empty-headline {
+    font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:18px;
+    color:var(--text); letter-spacing:-0.02em; margin-bottom:8px;
+  }
+  .empty-sub {
+    font-family:'Inter',sans-serif; font-size:14px; color:var(--text-secondary);
+    line-height:1.5; margin-bottom:28px;
+  }
+  .empty-cta {
+    width:100%; padding:14px; border-radius:16px; border:none; background:var(--purple);
+    color:white; font-family:'Plus Jakarta Sans',sans-serif; font-weight:700; font-size:15px;
+    letter-spacing:-0.01em; cursor:pointer;
+  }
+
+  /* ── Bottom nav ── */
+  .bottom-nav {
+    display: flex; align-items: center; background: var(--white);
+    border-top: 1px solid var(--border); padding: 10px 0 26px; flex-shrink: 0;
+  }
+  .nav-tab { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer; padding:4px 0; }
+  .nav-icon { width:22px; height:22px; }
+  .nav-label { font-family:'Inter',sans-serif; font-size:10px; font-weight:600; letter-spacing:0.02em; }
+  .nav-tab.active .nav-label { color: var(--purple); }
+  .nav-tab:not(.active) .nav-label { color: var(--grey-status); }
+  .nav-tab.active svg { stroke: var(--purple); }
+  .nav-tab:not(.active) svg { stroke: var(--grey-status); }
+
+  /* ── 8.3 Phone entry ── */
+  .auth-nav {
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 52px 24px 0;
+  }
+  .back-btn {
+    font-size:22px; line-height:1; color:var(--purple);
+    background:none; border:none; cursor:pointer; padding:0;
+  }
+  .auth-body { flex:1; display:flex; flex-direction:column; padding: 40px 28px 0; }
+  .auth-heading {
+    font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:28px;
+    color:var(--text); letter-spacing:-0.025em; line-height:1.15; margin-bottom:10px;
+  }
+  .auth-subtext {
+    font-family:'Inter',sans-serif; font-size:15px; color:var(--text-secondary);
+    line-height:1.5; margin-bottom:36px;
+  }
+  .phone-input-wrap {
+    display:flex; align-items:center; background:var(--white);
+    border:2px solid var(--purple); border-radius:16px; padding:0 16px; height:60px; gap:10px;
+    box-shadow:0 0 0 4px rgba(124,92,219,0.1);
+  }
+  .phone-prefix {
+    font-family:'Inter',sans-serif; font-size:16px; font-weight:500; color:var(--text-secondary);
+    white-space:nowrap; flex-shrink:0; display:flex; align-items:center; gap:6px;
+  }
+  .prefix-divider { width:1px; height:24px; background:var(--border); flex-shrink:0; }
+  .phone-number { font-family:'Inter',sans-serif; font-size:18px; font-weight:500; color:var(--text); flex:1; }
+
+  .auth-footer { padding: 0 28px 40px; margin-top: auto; }
+  .tos-line {
+    font-family:'Inter',sans-serif; font-size:11px; color:var(--text-secondary);
+    text-align:center; line-height:1.5; margin-bottom:14px;
+  }
+  .tos-line a { color:var(--purple); text-decoration:none; font-weight:500; }
+  .cta-btn {
+    width:100%; padding:17px; border-radius:16px; border:none; background:var(--purple);
+    color:white; font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:17px;
+    letter-spacing:-0.01em; cursor:pointer; margin-bottom:18px;
+  }
+  /* reCAPTCHA attribution — replaces the floating badge */
+  .recaptcha-attribution {
+    font-family:'Inter',sans-serif; font-size:10px; line-height:1.5;
+    color:#9A93AE; text-align:center;
+  }
+  .recaptcha-attribution a { color:#9A93AE; text-decoration:underline; }
+
+  .screen-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.1em;
+    text-transform: uppercase; color: rgba(255,255,255,0.3); text-align: center;
+  }
+  .caption {
+    font-family:'Inter',sans-serif; font-size:11px; color:rgba(255,255,255,0.45);
+    text-align:center; max-width:320px; line-height:1.5;
+  }
+</style>
+</head>
+<body>
+
+<div class="state-bar">
+  <span class="state-group-label">8.1 cow mark</span>
+  <button class="state-btn active" onclick="show('feed')">Feed header</button>
+  <button class="state-btn" onclick="show('groups')">People header</button>
+  <span class="state-group-label">8.2 create group</span>
+  <button class="state-btn" onclick="show('groups')">Groups</button>
+  <button class="state-btn" onclick="show('groups-empty')">Groups empty</button>
+  <button class="state-btn" onclick="show('friends')">Friends tab</button>
+  <span class="state-group-label">8.3 recaptcha</span>
+  <button class="state-btn" onclick="show('phone')">Phone entry</button>
+</div>
+
+<div class="phone">
+
+  <!-- ─────────────────────────────── -->
+  <!-- 8.1 — Feed header (light cow mark) -->
+  <!-- ─────────────────────────────── -->
+  <div class="screen visible" id="screen-feed">
+    <div class="feed-header">
+      <div class="brand-lockup">
+        <span class="cow-tile">
+          <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Mooves">
+            <ellipse cx="11" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(-28 11 33)"></ellipse>
+            <ellipse cx="109" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(28 109 33)"></ellipse>
+            <ellipse cx="11" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(-28 11 34)"></ellipse>
+            <ellipse cx="109" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(28 109 34)"></ellipse>
+            <ellipse cx="38" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(-14 38 19)"></ellipse>
+            <ellipse cx="82" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(14 82 19)"></ellipse>
+            <rect x="15" y="20" width="90" height="92" rx="30" fill="#F5F0ED"></rect>
+            <ellipse cx="41" cy="44" rx="19" ry="13" fill="#7A7282" transform="rotate(-10 41 44)"></ellipse>
+            <ellipse cx="79" cy="69" rx="14" ry="9" fill="#7A7282" transform="rotate(16 79 69)"></ellipse>
+            <circle cx="44" cy="57" r="6" fill="#2A1E38"></circle>
+            <circle cx="76" cy="57" r="6" fill="#2A1E38"></circle>
+            <circle cx="46.5" cy="54.5" r="2.2" fill="white"></circle>
+            <circle cx="78.5" cy="54.5" r="2.2" fill="white"></circle>
+            <ellipse cx="60" cy="90" rx="27" ry="20" fill="#F0AABB"></ellipse>
+            <circle cx="50" cy="91" r="9" fill="#2ECC71"></circle>
+            <circle cx="70" cy="91" r="9" fill="#BDB5D4"></circle>
+          </svg>
+        </span>
+        <span class="wordmark light">M<span class="dots"><span class="d d-green"></span><span class="d d-grey"></span></span>VES</span>
+      </div>
+    </div>
+    <div class="feed-body">
+      <div class="avail-row">
+        <span class="avail-dot"></span>
+        <div class="avail-text">
+          <div class="avail-title">You're not free</div>
+          <div class="avail-sub">Swipe to let friends know</div>
+        </div>
+        <span class="avail-chip">Go free</span>
+      </div>
+      <div class="section-label">Free right now</div>
+      <div class="friend-card">
+        <div class="friend-avatar" style="background:linear-gradient(135deg,#7C5CDB,#9B7FE8);">AB</div>
+        <div class="friend-info">
+          <div class="friend-name">Alex B.</div>
+          <div class="friend-status"><span class="friend-status-dot"></span><span class="friend-status-label">Free · coffee?</span></div>
+        </div>
+      </div>
+      <div class="friend-card">
+        <div class="friend-avatar" style="background:linear-gradient(135deg,#43C6AC,#2E86AB);">MT</div>
+        <div class="friend-info">
+          <div class="friend-name">Mia T.</div>
+          <div class="friend-status"><span class="friend-status-dot"></span><span class="friend-status-label">Free</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-tab active">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span class="nav-label">Home</span>
+      </div>
+      <div class="nav-tab">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span class="nav-label">People</span>
+      </div>
+      <div class="nav-tab">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span class="nav-label">Settings</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────────── -->
+  <!-- 8.1 dark cow mark + 8.2 New group (has groups) -->
+  <!-- ─────────────────────────────────────────── -->
+  <div class="screen" id="screen-groups">
+    <div class="people-header">
+      <div class="people-brand-row">
+        <div class="brand-lockup">
+          <span class="cow-tile">
+            <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Mooves">
+              <rect x="0" y="0" width="120" height="120" fill="#F5F0ED"></rect>
+              <ellipse cx="11" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(-28 11 33)"></ellipse>
+              <ellipse cx="109" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(28 109 33)"></ellipse>
+              <ellipse cx="11" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(-28 11 34)"></ellipse>
+              <ellipse cx="109" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(28 109 34)"></ellipse>
+              <ellipse cx="38" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(-14 38 19)"></ellipse>
+              <ellipse cx="82" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(14 82 19)"></ellipse>
+              <rect x="15" y="20" width="90" height="92" rx="30" fill="#F5F0ED"></rect>
+              <ellipse cx="41" cy="44" rx="19" ry="13" fill="#7A7282" transform="rotate(-10 41 44)"></ellipse>
+              <ellipse cx="79" cy="69" rx="14" ry="9" fill="#7A7282" transform="rotate(16 79 69)"></ellipse>
+              <circle cx="44" cy="57" r="6" fill="#2A1E38"></circle>
+              <circle cx="76" cy="57" r="6" fill="#2A1E38"></circle>
+              <circle cx="46.5" cy="54.5" r="2.2" fill="white"></circle>
+              <circle cx="78.5" cy="54.5" r="2.2" fill="white"></circle>
+              <ellipse cx="60" cy="90" rx="27" ry="20" fill="#F0AABB"></ellipse>
+              <circle cx="50" cy="91" r="9" fill="#2ECC71"></circle>
+              <circle cx="70" cy="91" r="9" fill="#BDB5D4"></circle>
+            </svg>
+          </span>
+          <span class="wordmark dark">M<span class="d d-green"></span><span class="d d-grey"></span>VES</span>
+        </div>
+      </div>
+      <div class="people-header-row">
+        <div class="people-title">People</div>
+        <button class="new-group-btn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New
+        </button>
+      </div>
+      <div class="sub-tabs">
+        <div class="sub-tab">Friends</div>
+        <div class="sub-tab active">Groups</div>
+      </div>
+    </div>
+    <div class="group-list">
+      <div class="group-row">
+        <div class="group-emoji-icon">🤝</div>
+        <div class="group-info"><div class="group-name">Close friends</div><div class="group-count">8 friends</div></div>
+        <div class="group-chevron">›</div>
+      </div>
+      <div class="group-row">
+        <div class="group-emoji-icon">🎓</div>
+        <div class="group-info"><div class="group-name">College</div><div class="group-count">12 friends</div></div>
+        <div class="group-chevron">›</div>
+      </div>
+      <div class="group-row">
+        <div class="group-emoji-icon">💼</div>
+        <div class="group-info"><div class="group-name">Work crew</div><div class="group-count">3 friends</div></div>
+        <div class="group-chevron">›</div>
+      </div>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-tab">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span class="nav-label">Home</span>
+      </div>
+      <div class="nav-tab active">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span class="nav-label">People</span>
+      </div>
+      <div class="nav-tab">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span class="nav-label">Settings</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────────── -->
+  <!-- 8.2 — Groups empty (header control + CTA)      -->
+  <!-- ─────────────────────────────────────────── -->
+  <div class="screen" id="screen-groups-empty">
+    <div class="people-header">
+      <div class="people-brand-row">
+        <div class="brand-lockup">
+          <span class="cow-tile">
+            <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Mooves">
+              <rect x="0" y="0" width="120" height="120" fill="#F5F0ED"></rect>
+              <ellipse cx="11" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(-28 11 33)"></ellipse>
+              <ellipse cx="109" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(28 109 33)"></ellipse>
+              <ellipse cx="11" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(-28 11 34)"></ellipse>
+              <ellipse cx="109" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(28 109 34)"></ellipse>
+              <ellipse cx="38" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(-14 38 19)"></ellipse>
+              <ellipse cx="82" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(14 82 19)"></ellipse>
+              <rect x="15" y="20" width="90" height="92" rx="30" fill="#F5F0ED"></rect>
+              <ellipse cx="41" cy="44" rx="19" ry="13" fill="#7A7282" transform="rotate(-10 41 44)"></ellipse>
+              <ellipse cx="79" cy="69" rx="14" ry="9" fill="#7A7282" transform="rotate(16 79 69)"></ellipse>
+              <circle cx="44" cy="57" r="6" fill="#2A1E38"></circle>
+              <circle cx="76" cy="57" r="6" fill="#2A1E38"></circle>
+              <circle cx="46.5" cy="54.5" r="2.2" fill="white"></circle>
+              <circle cx="78.5" cy="54.5" r="2.2" fill="white"></circle>
+              <ellipse cx="60" cy="90" rx="27" ry="20" fill="#F0AABB"></ellipse>
+              <circle cx="50" cy="91" r="9" fill="#2ECC71"></circle>
+              <circle cx="70" cy="91" r="9" fill="#BDB5D4"></circle>
+            </svg>
+          </span>
+          <span class="wordmark dark">M<span class="d d-green"></span><span class="d d-grey"></span>VES</span>
+        </div>
+      </div>
+      <div class="people-header-row">
+        <div class="people-title">People</div>
+        <button class="new-group-btn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New
+        </button>
+      </div>
+      <div class="sub-tabs">
+        <div class="sub-tab">Friends</div>
+        <div class="sub-tab active">Groups</div>
+      </div>
+    </div>
+    <div class="empty-state">
+      <div class="empty-icon">👥</div>
+      <div class="empty-headline">No groups yet.</div>
+      <div class="empty-sub">Groups let you choose who sees you when you go green.</div>
+      <button class="empty-cta">Create a group</button>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-tab">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span class="nav-label">Home</span>
+      </div>
+      <div class="nav-tab active">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span class="nav-label">People</span>
+      </div>
+      <div class="nav-tab">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span class="nav-label">Settings</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────────── -->
+  <!-- 8.2 — Friends tab (create control hidden)      -->
+  <!-- ─────────────────────────────────────────── -->
+  <div class="screen" id="screen-friends">
+    <div class="people-header">
+      <div class="people-brand-row">
+        <div class="brand-lockup">
+          <span class="cow-tile">
+            <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Mooves">
+              <rect x="0" y="0" width="120" height="120" fill="#F5F0ED"></rect>
+              <ellipse cx="11" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(-28 11 33)"></ellipse>
+              <ellipse cx="109" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(28 109 33)"></ellipse>
+              <ellipse cx="11" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(-28 11 34)"></ellipse>
+              <ellipse cx="109" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(28 109 34)"></ellipse>
+              <ellipse cx="38" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(-14 38 19)"></ellipse>
+              <ellipse cx="82" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(14 82 19)"></ellipse>
+              <rect x="15" y="20" width="90" height="92" rx="30" fill="#F5F0ED"></rect>
+              <ellipse cx="41" cy="44" rx="19" ry="13" fill="#7A7282" transform="rotate(-10 41 44)"></ellipse>
+              <ellipse cx="79" cy="69" rx="14" ry="9" fill="#7A7282" transform="rotate(16 79 69)"></ellipse>
+              <circle cx="44" cy="57" r="6" fill="#2A1E38"></circle>
+              <circle cx="76" cy="57" r="6" fill="#2A1E38"></circle>
+              <circle cx="46.5" cy="54.5" r="2.2" fill="white"></circle>
+              <circle cx="78.5" cy="54.5" r="2.2" fill="white"></circle>
+              <ellipse cx="60" cy="90" rx="27" ry="20" fill="#F0AABB"></ellipse>
+              <circle cx="50" cy="91" r="9" fill="#2ECC71"></circle>
+              <circle cx="70" cy="91" r="9" fill="#BDB5D4"></circle>
+            </svg>
+          </span>
+          <span class="wordmark dark">M<span class="d d-green"></span><span class="d d-grey"></span>VES</span>
+        </div>
+      </div>
+      <div class="people-header-row">
+        <div class="people-title">People</div>
+        <!-- create control hidden on Friends tab -->
+      </div>
+      <div class="sub-tabs">
+        <div class="sub-tab active">Friends</div>
+        <div class="sub-tab">Groups</div>
+      </div>
+    </div>
+    <div class="friends-list">
+      <div class="friend-list-row">
+        <div class="friend-list-avatar" style="background:linear-gradient(135deg,#7C5CDB,#9B7FE8);">AB</div>
+        <div class="friend-list-name">Alex B.</div>
+        <div class="friend-list-status">Free now</div>
+      </div>
+      <div class="friend-list-row">
+        <div class="friend-list-avatar" style="background:linear-gradient(135deg,#F5A623,#F76B1C);">CD</div>
+        <div class="friend-list-name">Casey D.</div>
+      </div>
+      <div class="friend-list-row">
+        <div class="friend-list-avatar" style="background:linear-gradient(135deg,#43C6AC,#2E86AB);">MT</div>
+        <div class="friend-list-name">Mia T.</div>
+      </div>
+      <div class="friend-list-row">
+        <div class="friend-list-avatar" style="background:linear-gradient(135deg,#F093FB,#C471ED);">SR</div>
+        <div class="friend-list-name">Sarah R.</div>
+      </div>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-tab">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span class="nav-label">Home</span>
+      </div>
+      <div class="nav-tab active">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span class="nav-label">People</span>
+      </div>
+      <div class="nav-tab">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span class="nav-label">Settings</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────────── -->
+  <!-- 8.3 — Phone entry (reCAPTCHA disclosure)       -->
+  <!-- ─────────────────────────────────────────── -->
+  <div class="screen" id="screen-phone">
+    <div class="auth-nav">
+      <button class="back-btn">‹</button>
+      <div class="brand-lockup">
+        <span class="cow-tile">
+          <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Mooves">
+            <ellipse cx="11" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(-28 11 33)"></ellipse>
+            <ellipse cx="109" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(28 109 33)"></ellipse>
+            <ellipse cx="11" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(-28 11 34)"></ellipse>
+            <ellipse cx="109" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(28 109 34)"></ellipse>
+            <ellipse cx="38" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(-14 38 19)"></ellipse>
+            <ellipse cx="82" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(14 82 19)"></ellipse>
+            <rect x="15" y="20" width="90" height="92" rx="30" fill="#F5F0ED"></rect>
+            <ellipse cx="41" cy="44" rx="19" ry="13" fill="#7A7282" transform="rotate(-10 41 44)"></ellipse>
+            <ellipse cx="79" cy="69" rx="14" ry="9" fill="#7A7282" transform="rotate(16 79 69)"></ellipse>
+            <circle cx="44" cy="57" r="6" fill="#2A1E38"></circle>
+            <circle cx="76" cy="57" r="6" fill="#2A1E38"></circle>
+            <circle cx="46.5" cy="54.5" r="2.2" fill="white"></circle>
+            <circle cx="78.5" cy="54.5" r="2.2" fill="white"></circle>
+            <ellipse cx="60" cy="90" rx="27" ry="20" fill="#F0AABB"></ellipse>
+            <circle cx="50" cy="91" r="9" fill="#2ECC71"></circle>
+            <circle cx="70" cy="91" r="9" fill="#BDB5D4"></circle>
+          </svg>
+        </span>
+        <span class="wordmark dark">M<span class="d d-green"></span><span class="d d-grey"></span>VES</span>
+      </div>
+      <div style="width:22px;"></div>
+    </div>
+    <div class="auth-body">
+      <div class="auth-heading">What's your<br>number?</div>
+      <div class="auth-subtext">We'll text you a code to verify it's you.</div>
+      <div class="phone-input-wrap">
+        <div class="phone-prefix">🇺🇸 +1</div>
+        <div class="prefix-divider"></div>
+        <div class="phone-number">(312) 555-12<span style="opacity:0.3;">|</span></div>
+      </div>
+    </div>
+    <div class="auth-footer">
+      <p class="tos-line">By continuing, you agree to our <a href="#">Terms</a> and <a href="#">Privacy Policy</a>.</p>
+      <button class="cta-btn">Send code</button>
+      <p class="recaptcha-attribution">This site is protected by reCAPTCHA and the Google
+        <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Privacy Policy</a> and
+        <a href="https://policies.google.com/terms" target="_blank" rel="noopener">Terms of Service</a> apply.</p>
+    </div>
+  </div>
+
+</div>
+
+<div class="screen-label">Phase 8 — Polish</div>
+<div class="caption" id="caption">8.1 The cow app-icon tile now sits beside the enlarged wordmark, light on the gradient Feed header.</div>
+
+<script>
+  const captions = {
+    'feed': "8.1 The cow app-icon tile sits beside the enlarged wordmark, light variant on the gradient Feed header.",
+    'groups': "8.1 dark cow mark on the white People header. 8.2 the always-visible labeled “New” control (purple pill) in the header.",
+    'groups-empty': "8.2 The empty-state “Create a group” CTA is retained AND the labeled “New” header control is present.",
+    'friends': "8.2 The create-group control is hidden on the Friends sub-tab (it's Groups-specific). Cow mark still in the header.",
+    'phone': "8.3 The floating reCAPTCHA badge is suppressed; the required attribution sits in the phone-entry footer with working Privacy + Terms links."
+  };
+  function show(state) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('visible'));
+    document.querySelectorAll('.state-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('screen-' + state).classList.add('visible');
+    event.target.classList.add('active');
+    document.getElementById('caption').textContent = captions[state] || '';
+  }
+</script>
+
+</body>
+</html>
