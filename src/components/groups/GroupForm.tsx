@@ -25,6 +25,7 @@ interface GroupFormProps {
   onSave: (name: string, emoji: string, memberIds: string[]) => void
   onBack: () => void
   onDelete?: () => void
+  onShareInvite?: () => void
 }
 
 export default function GroupForm({
@@ -38,6 +39,7 @@ export default function GroupForm({
   onSave,
   onBack,
   onDelete,
+  onShareInvite,
 }: GroupFormProps) {
   const [name, setName] = useState(initialName)
   const [emoji, setEmoji] = useState(initialEmoji)
@@ -141,6 +143,20 @@ export default function GroupForm({
 
         {error && (
           <p className="font-sans text-[13px] text-[#E8405A] px-5 pt-4">{error}</p>
+        )}
+
+        {/* Invite link (edit mode only) */}
+        {onShareInvite && (
+          <button
+            onClick={onShareInvite}
+            className="mx-5 mt-5 w-[calc(100%-40px)] py-3.5 rounded-2xl bg-purple-100 text-purple-700 font-sans font-semibold text-[15px] flex items-center justify-center gap-2"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+            </svg>
+            Invite link
+          </button>
         )}
 
         {/* Delete (edit mode only) */}

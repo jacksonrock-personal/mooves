@@ -2924,7 +2924,7 @@ All four items are independent and parallelizable.
 - **"0 joins" watch-item** — seeing no one join your move is passive, but confirm it doesn't read as a soft rejection.
 - **Coarse time chip** — exact preset values and whether/how it renders in the feed.
 
-### Phase 10 — Cold start & growth flywheel — **FINALIZED 2026-07-16** · **SPEC'D 2026-07-16 (see "## Phase 10 — Cold Start & Growth Flywheel (Spec)" near end of file)**
+### Phase 10 — Cold start & growth flywheel — **FINALIZED 2026-07-16** · **SPEC'D 2026-07-16 (see "## Phase 10 — Cold Start & Growth Flywheel (Spec)" near end of file)** · **MOCKUP APPROVED 2026-07-17 (`mooves-phase10-coldstart.html`; one signal at a time, grey ambient pulse)** · **✅ CODED 2026-07-17** (Option A owner-scoped invite links; needs 2-account testing)
 
 **Goal:** fix the *cold-feed* problem (established users bouncing off a grey feed) intrinsically, and give *new* users a fast path to a populated feed via leader-shared group links. The first-mover "OPEN DESIGN PROBLEM" from the idea dump is now resolved: it's the **cold-feed** problem (you have friends but nobody's green *right now*), solved **intrinsically** — not with streaks/points/notifications.
 
@@ -3260,6 +3260,19 @@ Every signal is **suppressed when its count is < 3** → fall back to neutral en
 ### Open questions
 - Recent-green (~7d) and active-now (~15min) windows — final values tunable at build.
 - Daypart "usually livens up around [time]" pattern — deferred; revisit once base signals ship.
+
+### Mockup Status
+✅ **Mockup approved 2026-07-17** — `mooves-phase10-coldstart.html`. Cross-cutting (Feed grey-state + group invite links), not a single numbered screen. States: grey-feed **around-now** + **this-week** ambient variants, neutral fallback; invite **share** sheet, join **consent**, **already-member**, **dead-link**.
+
+### Design decisions locked at mockup approval (2026-07-17)
+- **One signal at a time, not both.** The grey feed shows **either** "N friends around now" **or** "N friends were green this week" — never stacked. (Prefer active-now when ≥3, else recent-green ≥3, else neutral fallback.)
+- **Ambient pulse + signal dots are GREY, not green** — the visual signals *activity*, not availability (also honors the DS "green = availability only, never decorative" rule). Green stays reserved for the swipe-to-go-free control (the green-700 CTA), which sits at the top of the grey feed (reused from Phase 9).
+- **Copy locked:** ambient trailing line = "Go free to get in on the action."; neutral state headline = "People want to hang out." + "Be the first to go free and get in on the action." No "nobody's free" negativity; commas not em dashes.
+- **Zero-friends cold-start unchanged** (cow + invite), per spec out-of-scope.
+- **Invite links:** one persistent per-group link; "Reset link" revokes + regenerates; consent landing shows group + member count + avatar preview (aggregate, no per-person emphasis); logged-out routes through existing auth then to consent.
+
+### Code Status
+✅ **Coded 2026-07-17 (Jackson: "ship it")** — `tsc --noEmit` + `next build` clean; dev boots clean; `/g/[code]` dead-link landing verified live. **DB migration applied by Jackson:** `users.last_green_at`, `users.last_active_at`, `groups.invite_code` (unique). **10.2 built as Option A (owner-scoped)** — the invite link is owner-managed; joining adds you to the group + auto-friends the owner + all members. New: `api/presence`, `api/groups/[id]/invite` (get/reset), `api/group-invite/[code]` (public resolve), `api/group-invite/[code]/join` (join + auto-friend-all), `app/g/[code]` page + `GroupJoinLanding`, `InviteLinkSheet`, `feed/AmbientTier`. Modified: `api/status` (last_green_at), `api/feed` (ambient counts), `FeedScreen` (presence ping + ambient tier + group-invite resolve), `GroupForm`/EditGroupPage (invite affordance), `middleware` (`/g/` public), `types/database.ts` (+3 cols), `globals.css` (ambient-pulse keyframe). **Build-time verified only** — grey-feed ambient signals, the invite share/reset, and the two-account join→auto-friend flow need Jackson's on-device/multi-account test. **Deviation from mockup:** consent landing shows member *count* not avatar cluster (privacy). **⚠️ Still-open Phase 11 flag:** owner-scoped groups (Option A) + retained visibility scoping (Phase 9 A2) both need reconciling with Phase 11's "tag = label, symmetric groups" assumptions before Phase 11 is built.
 
 ---
 

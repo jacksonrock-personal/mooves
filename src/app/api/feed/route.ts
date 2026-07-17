@@ -24,10 +24,24 @@ export async function GET(req: Request) {
     .eq('user_id', userId)
 
   if (!friendships || friendships.length === 0) {
-    return NextResponse.json({ friends: [], myJoiners: [] })
+    return NextResponse.json({ friends: [], myJoiners: [], ambient: { activeNow: 0, recentGreen: 0 } })
   }
 
   const friendIds = friendships.map(f => f.friend_id)
+
+  // Ambient signals (10.1) — aggregate counts over the viewer's friends, never named.
+  // active-now = friends in-app in the last 15 min; recent-green = friends green in the last 7 days.
+  const nowMs = Date.now()
+  const activeCutoff = new Date(nowMs - 15 * 60 * 1000).toISOString()
+  const greenCutoff = new Date(nowMs - 7 * 24 * 60 * 60 * 1000).toISOString()
+  const { data: ambientRows } = await supabase
+    .from('users')
+    .select('last_active_at, last_green_at')
+    .in('id', friendIds)
+  const ambient = {
+    activeNow: (ambientRows ?? []).filter(u => u.last_active_at !== null && u.last_active_at > activeCutoff).length,
+    recentGreen: (ambientRows ?? []).filter(u => u.last_green_at !== null && u.last_green_at > greenCutoff).length,
+  }
 
   // Get all green friends (visibility filtering happens next)
   const { data: greenFriends, error } = await supabase
@@ -108,5 +122,5 @@ export async function GET(req: Request) {
     .filter((u): u is NonNullable<typeof u> => !!u)
     .map(u => ({ id: u.id, displayName: u.displayName, avatarUrl: u.avatarUrl, phone: u.phone }))
 
-  return NextResponse.json({ friends, myJoiners })
+  return NextResponse.json({ friends, myJoiners, ambient })
 }

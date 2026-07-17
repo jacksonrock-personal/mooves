@@ -15,6 +15,7 @@ import { buildBlastHref } from '@/lib/blast'
 import FriendCard from './FriendCard'
 import MyMoveCard from './MyMoveCard'
 import SwipeToGoGreen from './SwipeToGoGreen'
+import AmbientTier from './AmbientTier'
 import GoGreenSheet from '@/components/go-green/GoGreenSheet'
 import GoGreyConfirm from '@/components/go-green/GoGreyConfirm'
 import Sheet from '@/components/ui/Sheet'
@@ -65,6 +66,7 @@ export default function FeedScreen() {
   const [myStatusNote, setMyStatusNote] = useState<string | null>(null)
   const [myStatusTime, setMyStatusTime] = useState<string | null>(null)
   const [myJoiners, setMyJoiners] = useState<MyJoiner[]>([])
+  const [ambient, setAmbient] = useState<{ activeNow: number; recentGreen: number }>({ activeNow: 0, recentGreen: 0 })
   const [referralCode, setReferralCode] = useState<string | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
   const [greyOpen, setGreyOpen] = useState(false)
@@ -80,10 +82,12 @@ export default function FeedScreen() {
     const data = (await fetch('/api/feed').then(r => r.json())) as {
       friends: Friend[]
       myJoiners: MyJoiner[]
+      ambient?: { activeNow: number; recentGreen: number }
     }
     if (!mountedRef.current) return
     setFriends(data.friends ?? [])
     setMyJoiners(data.myJoiners ?? [])
+    if (data.ambient) setAmbient(data.ambient)
   }, [])
 
   const scheduleRefetch = useCallback(() => {
@@ -94,6 +98,16 @@ export default function FeedScreen() {
   useEffect(() => {
     mountedRef.current = true
     let channel: RealtimeChannel | null = null
+
+    // Presence heartbeat (10.1) — mark active on load + whenever the app foregrounds.
+    function pingPresence() {
+      void fetch('/api/presence', { method: 'POST' }).catch(() => {})
+    }
+    function handleVisibility() {
+      if (document.visibilityState === 'visible') pingPresence()
+    }
+    pingPresence()
+    document.addEventListener('visibilitychange', handleVisibility)
 
     // If arriving via an invite link, resolve the referral code into a friendship.
     async function resolveInvite() {
@@ -124,6 +138,32 @@ export default function FeedScreen() {
       }
     }
 
+    // Phase 10.2: complete a group-invite join (adds to group + auto-friends all members).
+    async function resolveGroupInvite() {
+      const code =
+        (typeof window !== 'undefined' ? sessionStorage.getItem('mooves_group_invite_code') : null) ||
+        searchParams.get('ginvite')
+      if (!code) return
+      try {
+        const res = await fetch(`/api/group-invite/${code}/join`, { method: 'POST' })
+        if (res.ok) {
+          const data = (await res.json()) as { status: string; name?: string; connectedCount?: number }
+          if (data.status === 'joined') {
+            posthog.capture('group_invite_join_completed', { connected: data.connectedCount })
+            const n = data.connectedCount ?? 0
+            setToastMessage(`You're in ${data.name}! Connected with ${n} ${n === 1 ? 'friend' : 'friends'}.`)
+          } else if (data.status === 'already_member') {
+            setToastMessage(`You're already in ${data.name}.`)
+          }
+        }
+        if (res.ok || res.status === 404) {
+          sessionStorage.removeItem('mooves_group_invite_code')
+        }
+      } catch {
+        // network error — leave the code to retry next visit
+      }
+    }
+
     async function init() {
       initPostHog()
       posthog.capture('feed_viewed')
@@ -151,11 +191,12 @@ export default function FeedScreen() {
       setReferralCode(meData.referralCode ?? null)
 
       await resolveInvite()
+      await resolveGroupInvite()
       if (!mountedRef.current) return
 
       const [friendsRes, feedRes, groupsRes] = await Promise.all([
         fetch('/api/friends').then(r => r.json()) as Promise<{ friends: { id: string }[] }>,
-        fetch('/api/feed').then(r => r.json()) as Promise<{ friends: Friend[]; myJoiners: MyJoiner[] }>,
+        fetch('/api/feed').then(r => r.json()) as Promise<{ friends: Friend[]; myJoiners: MyJoiner[]; ambient?: { activeNow: number; recentGreen: number } }>,
         fetch('/api/groups').then(r => r.json()) as Promise<{ groups: Group[] }>,
       ])
       if (!mountedRef.current) return
@@ -164,6 +205,7 @@ export default function FeedScreen() {
       setTotalFriendCount(friendIdsRef.current.size)
       setFriends(feedRes.friends ?? [])
       setMyJoiners(feedRes.myJoiners ?? [])
+      if (feedRes.ambient) setAmbient(feedRes.ambient)
       setGroups(groupsRes.groups ?? [])
 
       const tokenRes = (await fetch('/api/auth/supabase-token').then(r => r.json())) as {
@@ -199,6 +241,7 @@ export default function FeedScreen() {
 
     return () => {
       mountedRef.current = false
+      document.removeEventListener('visibilitychange', handleVisibility)
       if (refetchTimerRef.current) clearTimeout(refetchTimerRef.current)
       void channel?.unsubscribe()
     }
@@ -337,14 +380,7 @@ export default function FeedScreen() {
                 </button>
               </div>
             ) : friends.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center text-center px-8 pb-8">
-                <p className="font-display font-extrabold text-[20px] text-ink-900 tracking-tight mb-2">
-                  Nobody&apos;s free yet.
-                </p>
-                <p className="font-sans text-[15px] text-ink-500">
-                  When a friend goes green, they&apos;ll show up here.
-                </p>
-              </div>
+              <AmbientTier activeNow={ambient.activeNow} recentGreen={ambient.recentGreen} />
             ) : (
               <>
                 <p className="font-sans text-[11px] font-semibold text-ink-500 uppercase tracking-[0.08em] px-1 pb-3">
