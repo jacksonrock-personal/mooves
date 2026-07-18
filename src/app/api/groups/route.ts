@@ -46,23 +46,22 @@ export async function POST(req: Request) {
   if (!body.emoji) {
     return NextResponse.json({ error: 'emoji required' }, { status: 400 })
   }
-  if (!body.memberIds || body.memberIds.length === 0) {
-    return NextResponse.json({ error: 'At least one member required' }, { status: 400 })
-  }
 
   const supabase = createServiceClient()
 
-  // Every member must be a mutual friend of the caller.
-  const memberIds = Array.from(new Set(body.memberIds))
-  const { data: friendRows } = await supabase
-    .from('friendships')
-    .select('friend_id')
-    .eq('user_id', userId)
-    .in('friend_id', memberIds)
-
-  const friendSet = new Set((friendRows ?? []).map(f => f.friend_id))
-  if (memberIds.some(id => !friendSet.has(id))) {
-    return NextResponse.json({ error: 'Members must be your friends' }, { status: 400 })
+  // Members are OPTIONAL — a group can start empty and grow via its invite link
+  // (Phase 10). Any members you do add up front must be mutual friends.
+  const memberIds = Array.from(new Set(body.memberIds ?? []))
+  if (memberIds.length > 0) {
+    const { data: friendRows } = await supabase
+      .from('friendships')
+      .select('friend_id')
+      .eq('user_id', userId)
+      .in('friend_id', memberIds)
+    const friendSet = new Set((friendRows ?? []).map(f => f.friend_id))
+    if (memberIds.some(id => !friendSet.has(id))) {
+      return NextResponse.json({ error: 'Members must be your friends' }, { status: 400 })
+    }
   }
 
   const { data: group, error: groupError } = await supabase
@@ -75,12 +74,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Failed to create group' }, { status: 500 })
   }
 
-  const memberRows = memberIds.map(uid => ({ group_id: group.id, user_id: uid }))
-  const { error: memberError } = await supabase.from('group_members').insert(memberRows)
-
-  if (memberError) {
-    await supabase.from('groups').delete().eq('id', group.id)
-    return NextResponse.json({ error: 'Failed to add members' }, { status: 500 })
+  if (memberIds.length > 0) {
+    const memberRows = memberIds.map(uid => ({ group_id: group.id, user_id: uid }))
+    const { error: memberError } = await supabase.from('group_members').insert(memberRows)
+    if (memberError) {
+      await supabase.from('groups').delete().eq('id', group.id)
+      return NextResponse.json({ error: 'Failed to add members' }, { status: 500 })
+    }
   }
 
   return NextResponse.json(

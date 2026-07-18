@@ -54,6 +54,11 @@ export default function EditGroupPage() {
       setFriends(friendsRes.friends ?? [])
       setGroup(match)
       setLoaded(true)
+
+      // Arriving straight from group creation → open the invite link to share.
+      if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('share') === '1') {
+        setInviteOpen(true)
+      }
     }
 
     void load()

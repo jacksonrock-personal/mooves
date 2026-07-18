@@ -47,7 +47,9 @@ export default function GroupForm({
   const [pickerOpen, setPickerOpen] = useState(false)
 
   const hasFriends = friends.length > 0
-  const canSave = name.trim().length > 0 && selected.length > 0 && !saving
+  // Members are optional (Phase 10) — a group can start empty and grow via its invite link.
+  const canSave = name.trim().length > 0 && !saving
+  const isCreate = !onShareInvite
 
   return (
     <div className="min-h-screen flex flex-col bg-surface-bg">
@@ -118,7 +120,7 @@ export default function GroupForm({
           <div className="bg-card-white mt-2 border-t border-[#E8E4F5]">
             <div className="flex items-center justify-between px-5 pt-3 pb-2">
               <span className="font-sans text-[11px] font-semibold text-text-secondary uppercase tracking-[0.08em]">
-                Add friends
+                Add friends (optional)
               </span>
               {selected.length > 0 && (
                 <span className="font-sans text-[12px] font-semibold text-mooves-purple">
@@ -129,15 +131,22 @@ export default function GroupForm({
             <FriendChecklist friends={friends} selected={selected} onChange={setSelected} />
           </div>
         ) : (
-          <p className="font-sans text-[14px] text-text-secondary leading-relaxed px-6 py-8 text-center">
-            Add some friends first, then you can create a group.
+          <p className="font-sans text-[14px] text-text-secondary leading-relaxed px-6 py-7 text-center">
+            No friends to add yet. Name your group, then share its invite link to fill it up.
           </p>
         )}
 
-        {/* Inline reason the "Done" button is disabled (only once friends exist to pick) */}
-        {hasFriends && !canSave && !saving && (
+        {/* Invite-link hint (create only) */}
+        {isCreate && hasFriends && (
+          <p className="font-sans text-[12px] text-text-secondary px-6 pt-3 leading-relaxed">
+            Or skip this and share an invite link after creating.
+          </p>
+        )}
+
+        {/* Inline reason the button is disabled */}
+        {!canSave && !saving && (
           <p className="font-sans text-[12px] text-text-secondary px-5 pt-3">
-            {name.trim().length === 0 ? 'Add a group name to finish.' : 'Pick at least one friend to finish.'}
+            Add a group name to finish.
           </p>
         )}
 
