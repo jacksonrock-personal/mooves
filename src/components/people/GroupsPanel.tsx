@@ -15,6 +15,7 @@ interface Group {
   name: string
   emoji: string
   memberCount: number
+  isOwner: boolean
 }
 
 export default function GroupsPanel() {
@@ -115,12 +116,14 @@ export default function GroupsPanel() {
                 emoji={g.emoji}
                 memberCount={g.memberCount}
                 onTap={handleEdit}
-                onDelete={handleDeleteInitiated}
+                onDelete={g.isOwner ? handleDeleteInitiated : undefined}
               />
             ))}
-            <p className="font-sans text-[11px] text-text-secondary/70 text-center px-5 pt-2 pb-1 bg-card-white">
-              Swipe left on a group to delete it
-            </p>
+            {groups.some(g => g.isOwner) && (
+              <p className="font-sans text-[11px] text-text-secondary/70 text-center px-5 pt-2 pb-1 bg-card-white">
+                Swipe left on a group you own to delete it
+              </p>
+            )}
           </div>
         ))}
 

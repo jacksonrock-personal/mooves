@@ -15,10 +15,12 @@ interface GroupRowProps {
   emoji: string
   memberCount: number
   onTap: (id: string) => void
-  onDelete: (id: string, name: string) => void
+  // Omitted for groups you don't own — those rows aren't swipe-to-delete.
+  onDelete?: (id: string, name: string) => void
 }
 
 export default function GroupRow({ id, name, emoji, memberCount, onTap, onDelete }: GroupRowProps) {
+  const swipeable = !!onDelete
   const [offset, setOffset] = useState(0) // 0 (closed) .. -REVEAL_WIDTH (open)
   const [dragging, setDragging] = useState(false)
   const startX = useRef(0)
@@ -26,6 +28,7 @@ export default function GroupRow({ id, name, emoji, memberCount, onTap, onDelete
   const moved = useRef(false)
 
   function handlePointerDown(e: React.PointerEvent) {
+    if (!swipeable) return
     startX.current = e.clientX
     startOffset.current = offset
     moved.current = false
@@ -55,14 +58,16 @@ export default function GroupRow({ id, name, emoji, memberCount, onTap, onDelete
 
   return (
     <div className="relative overflow-hidden border-b border-[#E8E4F5]">
-      <button
-        onClick={() => onDelete(id, name)}
-        className="absolute right-0 top-0 h-full w-[72px] flex items-center justify-center bg-[#E8405A] font-sans text-[13px] font-semibold text-white"
-        aria-label={`Delete ${name}`}
-        tabIndex={offset <= -OPEN_THRESHOLD ? 0 : -1}
-      >
-        Delete
-      </button>
+      {onDelete && (
+        <button
+          onClick={() => onDelete(id, name)}
+          className="absolute right-0 top-0 h-full w-[72px] flex items-center justify-center bg-[#E8405A] font-sans text-[13px] font-semibold text-white"
+          aria-label={`Delete ${name}`}
+          tabIndex={offset <= -OPEN_THRESHOLD ? 0 : -1}
+        >
+          Delete
+        </button>
+      )}
       <div
         className="relative flex items-center gap-[13px] px-5 py-3 bg-card-white touch-pan-y cursor-pointer"
         style={{
