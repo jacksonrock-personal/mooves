@@ -38,8 +38,10 @@ export default function NewGroupPage() {
         body: JSON.stringify({ name, emoji, memberIds }),
       })
       if (!res.ok) throw new Error('save failed')
+      const data = (await res.json()) as { id: string }
       posthog.capture('group_create_completed')
-      router.push('/people')
+      // Land on the new group with its invite link ready to share.
+      router.push(`/people/groups/${data.id}?share=1`)
     } catch {
       setError("Couldn't save, try again.")
       setSaving(false)

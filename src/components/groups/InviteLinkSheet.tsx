@@ -91,8 +91,9 @@ export default function InviteLinkSheet({
         Invite to {groupName}
       </h2>
       <p className="font-sans text-[14px] text-ink-500 text-center leading-relaxed mb-5">
-        Anyone who taps this joins {groupName} and connects with all {memberCount}{' '}
-        {memberCount === 1 ? 'member' : 'members'}.
+        {memberCount <= 1
+          ? `Anyone who taps this joins ${groupName} and connects with you.`
+          : `Anyone who taps this joins ${groupName} and connects with all ${memberCount} members.`}
       </p>
 
       <div className="flex items-center gap-2.5 bg-purple-50 border-[1.5px] border-[#E8E4F5] rounded-[14px] px-4 py-3.5 mb-3.5">

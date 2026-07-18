@@ -42,15 +42,14 @@ export async function PATCH(req: Request, { params }: Params) {
     await supabase.from('groups').update(updates).eq('id', id)
   }
 
-  // Replace member list if provided
+  // Replace member list if provided (may be empty — groups can grow via the link)
   if (body.memberIds !== undefined) {
-    if (body.memberIds.length === 0) {
-      return NextResponse.json({ error: 'At least one member required' }, { status: 400 })
-    }
     await supabase.from('group_members').delete().eq('group_id', id)
-    await supabase.from('group_members').insert(
-      body.memberIds.map(uid => ({ group_id: id, user_id: uid }))
-    )
+    if (body.memberIds.length > 0) {
+      await supabase.from('group_members').insert(
+        body.memberIds.map(uid => ({ group_id: id, user_id: uid }))
+      )
+    }
   }
 
   const { data: updated } = await supabase
