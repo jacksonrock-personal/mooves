@@ -10,11 +10,23 @@ export async function GET(req: Request) {
 
   const supabase = createServiceClient()
 
-  const { data: groups, error } = await supabase
+  // Groups the user OWNS or is a MEMBER of — Phase 10 invite links make you a
+  // member of groups you didn't create, and those must show in your list too.
+  const { data: memberships } = await supabase
+    .from('group_members')
+    .select('group_id')
+    .eq('user_id', userId)
+  const memberGroupIds = (memberships ?? []).map(m => m.group_id)
+
+  const base = supabase
     .from('groups')
-    .select('id, name, emoji, created_at, group_members(user_id)')
-    .eq('owner_id', userId)
-    .order('created_at', { ascending: true })
+    .select('id, name, emoji, owner_id, created_at, group_members(user_id)')
+  const filtered =
+    memberGroupIds.length > 0
+      ? base.or(`owner_id.eq.${userId},id.in.(${memberGroupIds.join(',')})`)
+      : base.eq('owner_id', userId)
+
+  const { data: groups, error } = await filtered.order('created_at', { ascending: true })
 
   if (error) return NextResponse.json({ error: 'Query failed' }, { status: 500 })
 
@@ -23,6 +35,8 @@ export async function GET(req: Request) {
       id: g.id,
       name: g.name,
       emoji: g.emoji,
+      ownerId: g.owner_id,
+      isOwner: g.owner_id === userId,
       memberCount: g.group_members.length,
       memberIds: g.group_members.map((m: { user_id: string }) => m.user_id),
     })),
