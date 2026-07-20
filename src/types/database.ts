@@ -83,6 +83,7 @@ export type Database = {
           emoji: string
           id: string
           invite_code: string | null
+          last_notified_at: string | null
           name: string
           owner_id: string
         }
@@ -91,6 +92,7 @@ export type Database = {
           emoji?: string
           id?: string
           invite_code?: string | null
+          last_notified_at?: string | null
           name: string
           owner_id: string
         }
@@ -99,6 +101,7 @@ export type Database = {
           emoji?: string
           id?: string
           invite_code?: string | null
+          last_notified_at?: string | null
           name?: string
           owner_id?: string
         }
@@ -311,6 +314,74 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      push_subscriptions: {
+        Row: {
+          id: string
+          user_id: string
+          fcm_token: string
+          platform: string | null
+          created_at: string
+          last_seen_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          fcm_token: string
+          platform?: string | null
+          created_at?: string
+          last_seen_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          fcm_token?: string
+          platform?: string | null
+          created_at?: string
+          last_seen_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_notification_mutes: {
+        Row: {
+          user_id: string
+          group_id: string
+          created_at: string
+        }
+        Insert: {
+          user_id: string
+          group_id: string
+          created_at?: string
+        }
+        Update: {
+          user_id?: string
+          group_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_notification_mutes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_notification_mutes_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
             referencedColumns: ["id"]
           },
         ]

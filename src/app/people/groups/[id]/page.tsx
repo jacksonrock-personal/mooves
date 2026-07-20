@@ -159,6 +159,7 @@ export default function GroupDetailPage() {
 
     return (
       <GroupMemberView
+        groupId={groupId}
         name={group.name}
         emoji={group.emoji}
         members={members}

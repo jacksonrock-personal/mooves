@@ -1,5 +1,6 @@
 import { initializeApp, getApps, cert, App } from 'firebase-admin/app'
 import { getAuth } from 'firebase-admin/auth'
+import { getMessaging } from 'firebase-admin/messaging'
 
 function getAdminApp(): App {
   if (getApps().length) return getApps()[0]
@@ -16,3 +17,6 @@ function getAdminApp(): App {
 }
 
 export const firebaseAdmin = getAuth(getAdminApp())
+
+// Phase 15 Surface B — FCM sender (Web Push). Uses the same service account.
+export const firebaseMessaging = getMessaging(getAdminApp())

@@ -15,6 +15,7 @@ import Toast from '@/components/ui/Toast'
 import Wordmark from '@/components/ui/Wordmark'
 import ProfileCard from './ProfileCard'
 import AreaControl from './AreaControl'
+import NotificationSettings from './NotificationSettings'
 import InterestPicker from '@/components/discover/InterestPicker'
 import LogoutSheet from './LogoutSheet'
 import DeleteSheet from './DeleteSheet'
@@ -268,6 +269,10 @@ export default function SettingsScreen() {
               </div>
               <InterestPicker selected={me.interests} onChange={handleInterestsChange} />
             </div>
+
+            <div className="h-6" />
+
+            <NotificationSettings />
 
             <div className="h-6" />
 
