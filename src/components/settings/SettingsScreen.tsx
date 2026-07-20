@@ -14,6 +14,7 @@ import BottomNav from '@/components/ui/BottomNav'
 import Toast from '@/components/ui/Toast'
 import Wordmark from '@/components/ui/Wordmark'
 import ProfileCard from './ProfileCard'
+import AreaControl from './AreaControl'
 import LogoutSheet from './LogoutSheet'
 import DeleteSheet from './DeleteSheet'
 
@@ -21,6 +22,9 @@ interface Me {
   phone: string
   displayName: string | null
   avatarUrl: string | null
+  areaZip: string | null
+  areaCity: string | null
+  areaState: string | null
 }
 
 export default function SettingsScreen() {
@@ -51,6 +55,9 @@ export default function SettingsScreen() {
           phone: string
           displayName: string | null
           avatarUrl: string | null
+          areaZip: string | null
+          areaCity: string | null
+          areaState: string | null
         }>,
         fetch('/api/auth/supabase-token').then(r => r.json()) as Promise<{
           token: string | null
@@ -63,6 +70,9 @@ export default function SettingsScreen() {
         phone: profile.phone,
         displayName: profile.displayName,
         avatarUrl: profile.avatarUrl,
+        areaZip: profile.areaZip,
+        areaCity: profile.areaCity,
+        areaState: profile.areaState,
       })
       setSupabaseToken(token.token)
       setUserId(token.userId ?? null)
@@ -218,6 +228,21 @@ export default function SettingsScreen() {
             />
 
             <div className="h-6" />
+
+            <h2 className="font-sans text-[11px] font-bold uppercase tracking-[0.06em] text-ink-500 px-5 mb-2">
+              Discovery
+            </h2>
+            <AreaControl
+              initialZip={me.areaZip}
+              initialCity={me.areaCity}
+              initialState={me.areaState}
+            />
+
+            <div className="h-6" />
+
+            <h2 className="font-sans text-[11px] font-bold uppercase tracking-[0.06em] text-ink-500 px-5 mb-2">
+              Account
+            </h2>
 
             <div className="flex justify-center px-5 py-1.5">
               <button

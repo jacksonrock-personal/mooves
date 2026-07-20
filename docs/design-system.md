@@ -25,13 +25,13 @@ The DS scale is now the **canonical** vocabulary in `tailwind.config.ts` (`green
 - Colorblind check so far is a CSS-filter approximation; do a certified pass (Stark / Sim Daltonism) before claiming "passes colorblind."
 
 ## Key adopted decisions
-- **Go-green = swipe-to-go-green** (replaces the tap+sheet flow; drops the old visibility chips — green stays global). Go-grey stays a tap + confirm-sheet.
+- **Go-green = swipe-to-go-green** (replaces the tap+sheet flow). *Note: this pass proposed dropping the visibility chips ("green stays global"); that was **reversed by Phase 9 A2** — the `visible_to` group-scoping chips are retained.* Go-grey stays a tap + confirm-sheet.
 - **Empty feed = ambient tier** (pulsing ring + aggregate social-proof copy + green-700 CTA) — implements Phase 10.
 - **Brand mark** = cow app icon matching `CowIllustration.tsx` geometry, legible 180→29px.
 
 ## Still to DRAW as extensions (same tokens) when specing/mocking each phase
 - Phase 9: coarse **time chip** on go-green · **"I'm in" join** + 2+ gate · **"Start group text" blast button**
-- Phase 11: **group-tag affordance** in the go-green flow (card display already specced)
+- ~~Phase 11: group-tag affordance~~ — **CUT 2026-07-17** (Phase 11 scrapped; group-scoping already ships via the go-green `visible_to` chips)
 - Phase 13: **sponsored-move card** (described in rationale, not drawn)
 - Phase 15: **install nudge** + 192/512 maskable icons
 

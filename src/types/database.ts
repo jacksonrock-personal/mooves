@@ -114,6 +114,7 @@ export type Database = {
       }
       users: {
         Row: {
+          area_zip: string | null
           avatar_url: string | null
           created_at: string
           display_name: string | null
@@ -130,6 +131,7 @@ export type Database = {
           visible_to: string[] | null
         }
         Insert: {
+          area_zip?: string | null
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
@@ -146,6 +148,7 @@ export type Database = {
           visible_to?: string[] | null
         }
         Update: {
+          area_zip?: string | null
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null

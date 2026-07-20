@@ -2870,14 +2870,14 @@ Screens 1–12 (the core loop) are built and deployed. This section captures the
 
 A design-critique → design-system pass (Claude Design) delivered a v1 system at `Make Mooves app/design_handoff_mooves_design_system/` (`tokens/`, `component-anatomy.md`, `accessibility-report.md`, `assets/`, `screens/`; editable original is an external `.dc.html`). **Decisions:**
 - **Tokens — adopt the scale naming and MIGRATE existing components** off the old semantic names (`mooves-purple`→`purple-500`, `status-green`→`green-500`, `surface-bg`→`purple-50`, `text-primary`→`ink-900`, etc.). Hex values are **identical** to the locked palette; the additions are `green-700` (#167A43 — AA-safe green that **fixes a real 2.1:1 white-on-green text-contrast failure**), `green-100`, `purple-700`, `grey-100`, `red`, and full type/radius/shadow scales. Route text-bearing greens to `green-700` (a real change, the a11y fix — not just a rename).
-- **Go-green = swipe-to-go-green** (adopted), replacing the old tap+sheet flow. Drops the old visibility chips — consistent with "green stays global" (Phase 11). Go-grey stays a lighter tap + confirm-sheet.
+- **Go-green = swipe-to-go-green** (adopted), replacing the old tap+sheet flow. *(This DS pass proposed dropping the visibility chips for a "green stays global" model — later **reversed by Phase 9 amendment A2**, which retained the `visible_to` group-scoping chips. The Phase 11 that assumed global green was CUT 2026-07-17.)* Go-grey stays a lighter tap + confirm-sheet.
 - **Status legibility:** dot + label + color, **never color alone** (feed cards = solid `green-100` + white "Free" chip with `green-700` text).
 - **Empty feed:** an **ambient tier** (pulsing ring + aggregate social-proof copy + green CTA) — this directly implements Phase 10.
 - **Brand mark:** cow app icon corrected to the real `CowIllustration.tsx` geometry, legible 180→29px; wordmark's status-dot metaphor taught once via a legend.
 
 **The system covers the core loop + the four critique problems. It does NOT yet include these phase-specific components — draw them as EXTENSIONS on the same tokens when specing/mocking each phase:**
 - Phase 9: coarse **time chip** on go-green · **"I'm in" join** + 2+ gate · **"Start group text" blast button**
-- Phase 11: **group-tag affordance** in the go-green flow (card *display* of a tag already specced)
+- ~~Phase 11: group-tag affordance~~ — **CUT 2026-07-17** (Phase 11 scrapped; group-scoping already ships via the go-green `visible_to` chips)
 - Phase 13: **sponsored-move card** (described in rationale, not drawn)
 - Phase 15: **"Add to Home Screen" install nudge**
 
@@ -2932,7 +2932,7 @@ All four items are independent and parallelizable.
 1. **Ambient demand signal** — when the feed is grey, show recent + habitual availability ("5 friends were green this week," "your Thursday crew is usually up now"). Proves the network is alive and green will be seen.
 2. **"Friends active now" signal** — aggregate count of friends currently in-app / recently active ("4 friends around now"), so going green visibly lands on real eyes *before* you commit.
 - **Guardrail (dictated):** counts only, **never named individuals** — naming a friend who's active / was green but didn't reach out is a brand-new micro-rejection (#1) and drifts toward Find-My-Friends creep (#3).
-- **Boundary/dependency:** intrinsic work maximizes single-session value + builds the habit of opening at high-intent times. It **cannot reach dormant friends** — that's Phase 11 notifications. Phase 10 sets up; Phase 11 closes the loop.
+- **Boundary/dependency:** intrinsic work maximizes single-session value + builds the habit of opening at high-intent times. It **cannot reach dormant friends** — that's **Phase 15** push notifications. Phase 10 sets up; Phase 15 closes the loop.
 
 **Workstream B — Growth flywheel (cold graph): leader-led group invite links.** (Leader-onboarding + invite-links collapsed into one feature — the link *is* the leader's mechanism; "leader onboarding" is its packaging.)
 - One shareable **group invite link** per group; **any member can share** it (the leader is emergent, **no special role/tooling**).
@@ -2942,7 +2942,7 @@ All four items are independent and parallelizable.
 **Sequencing:** invite links first (concrete, partly specced, low-risk, unblocks new-user density) → then the grey-state ambient/active-now signals (harder design). Parallelizable.
 
 **In scope:** aggregate ambient-demand signal, aggregate friends-active-now signal, grey-state feed rework, group invite links with auto-friend-all.
-**Explicitly out:** streaks/points/gamification, named "active now"/last-seen, first-mover push notifications (→ Phase 11), any special leader role/tooling, per-person incentives.
+**Explicitly out:** streaks/points/gamification, named "active now"/last-seen, first-mover push notifications (→ Phase 15), any special leader role/tooling, per-person incentives.
 
 **Design-critique findings folded in (2026-07-16):**
 - **Independent corroboration of this phase's thesis.** The design critique flagged the empty/grey feed as *"the single highest-leverage screen in the app and currently the least designed"* — unprompted. Treat the grey state as a **hero state**, designed for the aggregate ambient signals ("5 friends were green this week", "4 friends around now"), not an afterthought empty state.
@@ -2957,27 +2957,13 @@ All four items are independent and parallelizable.
 
 > **Phases 11–15 — definitions FINALIZED 2026-07-16** (not yet specced/mocked/coded). They now carry resolved in/out scope like 8–10, but remain further out, and some items stay deliberately trigger-gated/directional: **WhatsApp gated on non-US demand** and the **tipping concept still loose** (payments path decided). Note **Phase 15 (Push/PWA)** is late-numbered but strategically belongs right after Phase 11 — it completes the cold-start loop. Phases 8–10 remain the near-term build commitments; revisit 11–15 ordering before building.
 
-### Phase 11 — Groups as channels (in-app) — **FINALIZED 2026-07-16** · **SPEC'D 2026-07-16 (see "## Phase 11 — Groups as Channels, In-App (Spec)" near end of file)**
+### Phase 11 — Groups as channels (in-app) — **❌ CUT 2026-07-17** (folded into shipped Phase 9 `visible_to`)
 
-**Scope cut 2026-07-16: push notifications DEFERRED out of this phase.** Phase 11 is now purely **in-app** group channels. Push — the transport that would reach *dormant* friends who aren't currently looking — is parked to its own future phase (see "Deferred: push" below). This means Phase 10's "reach dormant friends" gap **stays open** after Phase 11; only push closes it.
+> **❌ CUT 2026-07-17 (Jackson's call).** Phase 11 is scrapped. Once you apply the intuitive rule — **selecting a group when you go green means only that group sees the green** — Phase 11 has nothing distinct left: "a green scoped to a group" is exactly the **`visible_to` group-scoping already shipped in Phase 9 (amendment A2)**. The only thing that ever made Phase 11 a separate feature was the "green stays global, group is just a *label*" premise (an additive context chip on a global green), and that premise is dead: it conflicts with shipped scoping, and as a UX it's confusing and clutters both the go-green sheet and the feed. So: **no group tag, no feed labels, no per-group mute, no member-side group surface, no new data model.** Group-scoping a green ships today via the go-green visibility control. See the CUT note on the "## Phase 11 …" spec section near end of file. **Downstream:** Phase 15 push retriggers off group-scoped greens (`visible_to`), not a Phase 11 tag — see Phase 15 below.
 
-**What it is:** green stays **global**; when going green you can optionally **tag a group** ("green — *for pool crew*"). Tagged-greens render in the **main feed with a group label**. You're **auto-subscribed** to your own groups (mutable).
+Guardrail unchanged: **group-level only, never per-person.**
 
-- **Group tag = label, NOT a visibility scope.** Tagging pool crew does *not* hide your green from other friends — green stays global (per the trigger decision); the tag adds group context/emphasis in the feed.
-- **"Subscribe to a group" collapses to a mute toggle.** Since everything surfaces in one feed and you're auto-subscribed to your own groups, subscription in practice = mute/unmute that group's tagged-greens in your feed.
-- Guardrail intact: **group-level only, never per-person.**
-
-**In scope:** optional group tag on go-green · main-feed group labels · auto-subscribe + per-group mute.
-**Explicitly out:** push notifications (deferred) · a separate group-channel destination/inbox · green visibility scoping.
-
-**Deferred: push notifications → now defined as Phase 15.** Push (the transport that reaches *dormant* friends) is split into its own phase: **Phase 15 — Push notifications & home-screen install (PWA)**. Path chosen = **Web Push via PWA** through the existing Firebase/FCM (no app store, no A2P; Android always, iOS requires Add-to-Home-Screen on 16.4+). Phase 15 is what finally closes Phase 10's dormant-reach gap, and reuses this phase's group channels as its notification triggers.
-
-**Flagged for spec time (open questions):**
-- Multi-group tagging — tag one group or several when going green?
-- What the group label looks like in the feed; how mute is surfaced.
-- Whether tagged-greens get any ordering/emphasis boost in the feed for that group's members.
-
-### Phase 12 — Geolocation & discovery — **FINALIZED 2026-07-16** · **SPEC'D 2026-07-16 (see "## Phase 12 — Geolocation & Discovery: Substrate (Spec)" near end of file)**
+### Phase 12 — Geolocation & discovery — **FINALIZED 2026-07-16** · **SPEC'D 2026-07-16 (see "## Phase 12 — Geolocation & Discovery: Substrate (Spec)" near end of file)** · **MOCKUP APPROVED 2026-07-20 (`mooves-phase12-geo-substrate.html`)** · **✅ CODED 2026-07-20** (branch `feat/phase12-geo-substrate`)
 
 **Resolved: the area feed surfaces PUBLIC/sponsored moves, never strangers' green.** This keeps the private friend-graph intact and dodges stranger-creep + a new rejection surface (guardrail #3). **Consequence:** Phase 12 is largely the **substrate for Phase 13** — "moves in my area" has little to show until sponsored/public moves exist, so **12 and 13 are tightly coupled** (build 12 just before / together with 13).
 
@@ -3032,14 +3018,14 @@ All four items are independent and parallelizable.
 
 ### Phase 15 — Push notifications & home-screen install (PWA) — **FINALIZED 2026-07-16** · **SPEC'D 2026-07-16 (see "## Phase 15 — Push Notifications & Home-Screen Install (Spec)" near end of file)**
 
-**This is the phase that closes the cold-start loop.** It delivers the *dormant reach* Phases 10–11 deliberately punted: reaching friends who aren't currently in-app. Done as a **PWA + Web Push**, no native app.
+**This is the phase that closes the cold-start loop.** It delivers the *dormant reach* Phase 10 deliberately punted: reaching friends who aren't currently in-app. Done as a **PWA + Web Push**, no native app.
 
-**Sequencing note — number ≠ priority.** Despite sitting at 15, this **completes the Phase 10–11 cold-start loop** and should be **prioritized right after Phase 11, ahead of 12–14** (which are monetization/scale). It's late-numbered only because it was split out mid-planning.
+**Sequencing note — number ≠ priority.** Despite sitting at 15, this **completes the Phase 10 cold-start loop** and should be **prioritized next, ahead of 12–14** (which are monetization/scale). It's late-numbered only because it was split out mid-planning. *(Phase 11 was CUT 2026-07-17 — its "group channels" are just the shipped `visible_to` group-scoping, which this phase reuses as its notification trigger.)*
 
 **Components:**
 1. **PWA foundations** — web manifest (name + **cow icons** + `display: standalone`), service worker, HTTPS (✅ already on Vercel). Consumes the cow mark from **Phase 8**.
 2. **Home-screen (app) icon fix** — proper **`apple-touch-icon` (180×180, opaque)** + manifest icons so the installed app shows the **cow, not the fallback "M"** iOS currently renders (root cause: no icon declared today). *Cheap and independent — can be pulled forward as a quick win once the Phase 8 cow asset exists, even before push.*
-3. **Web Push** — via the **existing Firebase / FCM** (no new vendor): permission UX, subscription storage, VAPID/FCM send. Triggers reuse **Phase 11 group channels** (notify a group's subscribers when a member goes green tagged to that group).
+3. **Web Push** — via the **existing Firebase / FCM** (no new vendor): permission UX, subscription storage, VAPID/FCM send. Triggers reuse the shipped **`visible_to` group-scoping** (when a member goes green **scoped to a group**, notify that group's members).
 4. **"Add to Home Screen" nudge/guide** — a lightweight, well-timed prompt that teaches **iOS** users to install (Share → Add to Home Screen), because **iOS push only works for installed PWAs**. Don't nag; fire at a high-value moment. Android/desktop get a normal permission prompt (install optional).
 
 **Platform reality (the ceiling to watch):**
@@ -3051,7 +3037,7 @@ All four items are independent and parallelizable.
 **In scope:** manifest + service worker, cow app icon (`apple-touch-icon` + manifest icons), FCM web push, permission + install-nudge UX, group-triggered notifications.
 **Explicitly out:** native app, SMS/email as the push channel, per-person notifications.
 
-**Dependencies:** Phase 8 (cow icon asset) · Phase 11 (group channels = trigger + subscription model) · Firebase/FCM already in the stack.
+**Dependencies:** Phase 8 (cow icon asset) · shipped Phase 9 `visible_to` group-scoping (= the notification trigger; Phase 11 that would have formalized this was CUT) · `group_members` (who to notify) · Firebase/FCM already in the stack.
 
 **Flagged for spec time (open questions):**
 - Install-nudge timing/copy; detecting "iOS + not installed" to show the right guidance.
@@ -3211,7 +3197,7 @@ None.
 - **A2 — Visibility control RETAINED on go-green** (Everyone / scope to specific groups). This **reverses the DS v1 "green is global / drop visibility chips" assumption** — greens can be scoped. Matches the shipped `visible_to` model, so no data change.
 - **A3 — Blast button copy = "Start a group chat"** (not "Start group text"). "I'm in" = **purple** (action color); once joined the chip reads **"You're in ✓"** in **green** (green-700, AA-safe). Time chips single-select; the "Your move" card uses a green tint + green-700 label (a11y — no solid-green-on-white text).
 - **A4 — Group-chat blast carries NO prefilled/templatized text.** The native composer opens pre-addressed to exactly the current joiners with an **empty** message body; the user writes it. This **overrides 9.3's** "body prefilled with the mover's name + vibe/time."
-- **⚠️ Cross-phase flag:** A2 (visibility scoping stays) conflicts with **Phase 11**'s finalized decision that a group tag is "a **label**, NOT a visibility scope" — which assumed green is global. If greens can be scoped to a group here, Phase 11's model needs a revisit before it's built.
+- **✅ Cross-phase flag RESOLVED 2026-07-17:** A2 (visibility scoping stays) conflicted with Phase 11's "group tag = label, not scope" model. Resolution: **Phase 11 was CUT** — group-scoping a green already ships here via A2's `visible_to`, so there was no distinct Phase 11 feature left to build. Phase 15 push now triggers off this scoping.
 
 ---
 
@@ -3276,45 +3262,9 @@ Every signal is **suppressed when its count is < 3** → fall back to neutral en
 
 ---
 
-## Phase 11 — Groups as Channels, In-App (Spec) — *spec'd 2026-07-16*
+## Phase 11 — Groups as Channels, In-App (Spec) — **❌ CUT 2026-07-17**
 
-*In-app only (push = Phase 15). Green stays **global**; adds an optional **single** group tag shown as a **label** to that group's members in the main feed. No reordering. Auto-subscribed to your groups; **mute = hide the label**, never the green.*
-
-### 11.1 — Group tag on go-green
-**Purpose:** let a green optionally signal it's aimed at one of your groups, without scoping visibility.
-**Entry:** the go-green flow (alongside the Phase 9 time chip + note).
-**Behavior:** optionally tag **one** group you're a member of (single-select, skippable). Green stays **global** (all friends see it); the tag adds context for that group. Ephemeral — clears on go-grey.
-**Out of scope:** multiple tags, tagging groups you're not in, any visibility scoping.
-**Acceptance:**
-- [ ] Going green offers an optional single-select tag of one of your own groups.
-- [ ] Tagging does not restrict who sees the green (stays global).
-- [ ] Tag clears on go-grey.
-
-### 11.2 — Tagged-green label in the feed
-**Purpose:** surface the group context to that group's members.
-**Entry:** the main Feed.
-**Behavior:** a tagged-green shows the group-tag **label** (DS group-tag chip) **only to members of the tagged group**. Non-members see the same green with no label. **No feed reordering/emphasis** — label only.
-**States (viewer):** member (not muted) → green + label · member but muted → green, no label · non-member → green, no label.
-**Data:** the green's tagged group + the viewer's memberships + mute settings decide label visibility.
-**Out of scope:** separate channel screen/inbox, pinning/boosting, labels for non-members.
-**Acceptance:**
-- [ ] Tagged-green shows the group label only to members of that group.
-- [ ] Non-members and muted members see the green with no label; the green itself is always visible.
-- [ ] No feed reordering from tags.
-
-### 11.3 — Auto-subscribe + mute
-**Purpose:** let members quiet a group's tag labels.
-**Entry:** auto-subscribed to every group you're in; a per-group **mute** control on the group.
-**Behavior:** by default a member sees a group's tag labels. Muting = stop showing that group's labels to you (treated like a non-member for labels). Muting **cannot hide** the underlying global green. Reversible.
-**Data:** per-user, per-group mute flag.
-**Out of scope:** notifications (Phase 15), muting individual people, hiding greens.
-**Acceptance:**
-- [ ] Members auto-subscribed to their groups' tag labels by default.
-- [ ] A per-group mute control exists; muting hides that group's tag labels for the user.
-- [ ] Mute never hides the underlying green; unmute restores labels.
-
-### Open questions
-- Exact placement of the group-tag picker (in the go-green flow) and the mute control (on the group) — mockup.
+> **❌ CUT 2026-07-17 (Jackson's call).** This spec (and its 2026-07-17 reconciliation) is scrapped. The full rationale is in the roadmap block above ("### Phase 11 — Groups as channels … CUT"). Short version: applying the intuitive rule — **picking a group when you go green means only that group sees the green** — collapses Phase 11 into the **`visible_to` group-scoping already shipped in Phase 9 (A2)**. The only distinct idea was a "global green with an additive group *label*," which is confusing UX and clutters the go-green sheet + feed, so it's dropped. **Nothing to build:** no group tag, no feed labels, no per-group mute, no member-side group surface, no new columns/tables. Group-scoping a green already ships via the go-green visibility control. **Downstream:** Phase 15 push triggers off group-scoped greens (`visible_to`) — see Phase 15.
 
 ---
 
@@ -3322,20 +3272,27 @@ Every signal is **suppressed when its count is < 3** → fall back to neutral en
 
 *Pure substrate for Phase 13. Coarse location capture + storage + area-matching infra. **No visible "moves in my area" feed yet** — that, and its contextual "see moves near you" opt-in prompt, ship with Phase 13. Privacy: only coarse area is stored; precise coordinates are never persisted.*
 
+### Mockup Status — ✅ APPROVED 2026-07-20 (`mooves-phase12-geo-substrate.html`)
+Covers the Settings "Your area" control (no-area · method sheet · locating · area set · edit menu · manual zip) and the optional onboarding step (ask · enter zip · area added). Design decisions locked: control lives under a new Settings **"Discovery"** section; privacy line ("only your zip, never your exact location") foregrounded in every location-touching state; area-set uses a **top-right pencil → action sheet** (Change / Remove), not inline buttons; onboarding "Your area" is step 2 of 3 (after profile, before invite), skippable, never blocks signup.
+
+### Code Status — ✅ CODED 2026-07-20 (branch `feat/phase12-geo-substrate`; `tsc` + `next build` clean)
+**Migration applied:** `ALTER TABLE users ADD COLUMN area_zip TEXT;` (only coarse zip stored). **Dataset:** `zipcodes` npm package (MIT, bundled US zip centroids), server-only — no third-party geocoding API. New: `src/lib/geo/index.ts` (`coarsenToZip` nearest-centroid · `lookupZip` · `nearbyZips`/`resolveArea` = 12.2 radius match, `AREA_RADIUS_MILES=25` · Phase-13-ready), `src/lib/geo/client.ts`, `src/app/api/users/area/route.ts` (POST coords→coarsen→**discard**, or zip; DELETE), `src/components/settings/AreaControl.tsx`, `src/app/onboarding/area/page.tsx`, `src/types/zipcodes.d.ts`. Modified: `types/database.ts` (+`area_zip`), `api/users/me` GET (+`areaZip`/`areaCity`/`areaState`), `SettingsScreen` (Discovery section), `onboarding/page.tsx` + `onboarding/invite/page.tsx` (profile→area→invite, 3 step dots). **Privacy invariant enforced:** precise coords are used only in-memory for coarsening, never persisted or logged. **Build-time verified only** — geolocation grant/deny, the onboarding step, and the Settings edit/remove flow need Jackson's authenticated on-device test.
+
 ### 12.1 — Coarse location capture & storage
 **Purpose:** capture the user's coarse area to power future "moves in my area."
-**Entry:** Settings — a "Your area" control to set/change/remove it anytime. (The in-flow "see moves near you" prompt that triggers capture contextually is a **Phase 13** addition.)
+**Entry (two):** (1) **Settings** — a "Your area" control to set/change/remove it anytime; (2) **Onboarding** — an optional, **skippable** step in the signup flow (added after profile setup, before the invite step), since signup is the highest-intent moment to capture area. Both paths use the same capture (device geolocation → coarsen, or manual zip) and write the same coarse-area field. (The contextual in-flow "see moves near you" prompt is still a **Phase 13** addition.)
 **Behavior:**
 - Capture via **one-time device geolocation, immediately reduced to zip/neighborhood with precise coordinates discarded**; **manual zip entry** as fallback (and for anyone who declines the permission).
-- Fully **opt-in** — nothing captured without explicit user action.
+- Fully **opt-in** — nothing captured without explicit user action; the onboarding step is skippable and never blocks signup.
 - Stored as a **coarse area** on the profile; user can view, change, or remove it. **Precise coordinates never stored.**
-**States:** no area (default, dormant) · permission granted → coarse area derived + stored · denied/manual → user enters zip · removed → back to no-area.
+**States:** no area (default, dormant) · permission granted → coarse area derived + stored · denied/manual → user enters zip · removed → back to no-area · **onboarding: ask (opt-in / skip) → same capture → continue**.
 **Data:** coarse-area field on user profile; write on set/change, delete on remove; no precise coords.
 **Out of scope:** continuous/live location, precise GPS storage, background location, the visible area feed + contextual prompt (Phase 13).
 **Acceptance:**
 - [ ] User can set their area via one-time geolocation (coarsened, coords discarded) OR manual zip entry.
 - [ ] Nothing captured without explicit action; fully optional.
 - [ ] Coarse area stored on profile; viewable/changeable/removable in Settings.
+- [ ] Onboarding offers an optional "Your area" step (skippable, never blocks signup); uses the same capture + coarse-area field.
 - [ ] Precise coordinates never persisted.
 
 ### 12.2 — Area-matching infrastructure
@@ -3462,7 +3419,7 @@ Every signal is **suppressed when its count is < 3** → fall back to neutral en
 
 ## Phase 15 — Push Notifications & Home-Screen Install (Spec) — *spec'd 2026-07-16*
 
-*Web Push via PWA through Firebase/FCM (no native app, no A2P). Foundations (manifest `display: standalone` + cow icons) already shipped in the design-system-foundation PR. **Platform reality:** Android/desktop push from a permission prompt (install optional); iOS 16.4+ push **only after Add-to-Home-Screen** — install rate is the KPI. **Consequence of the group-tagged-only trigger:** push reaches dormant friends only when a mover tags a group; untagged greens push no one — a deliberate group-level/no-per-person choice that only partially closes Phase 10's dormant-reach gap.*
+*Web Push via PWA through Firebase/FCM (no native app, no A2P). Foundations (manifest `display: standalone` + cow icons) already shipped in the design-system-foundation PR. **Platform reality:** Android/desktop push from a permission prompt (install optional); iOS 16.4+ push **only after Add-to-Home-Screen** — install rate is the KPI. **Consequence of the group-scoped-only trigger:** push reaches dormant friends only when a mover **scopes their green to a group** (the shipped `visible_to` control); greens sent to everyone push no one — a deliberate group-level/no-per-person choice that only partially closes Phase 10's dormant-reach gap. (Phase 11, which would have formalized "group channels," was CUT 2026-07-17; this phase reuses the existing group-scoping directly.)*
 
 ### 15.1 — PWA foundations (service worker)
 **Already shipped:** manifest (`display: standalone`) + cow app icons (foundation PR).
@@ -3481,13 +3438,13 @@ Every signal is **suppressed when its count is < 3** → fall back to neutral en
 - [ ] Denied/revoked/expired handled gracefully (no repeat prompting).
 
 ### 15.3 — Notification triggers
-**Behavior:** a push fires to a group's subscribed members when a member goes green **tagged to that group** (Phase 11). **Only** group-tagged greens trigger push — untagged greens push no one; **no per-person** "friend X is green." Respects Phase 11 **per-group mute**, plus **quiet hours** and **rate-limiting/batching**. Copy is aggregate-friendly; never a rejection surface.
-**Consequence (documented):** dormant friends reached only via group-tagged greens — the deliberate group-level choice.
+**Behavior:** a push fires to a group's members (via `group_members`) when a member goes green **scoped to that group** (the shipped `visible_to` control). **Only** group-scoped greens trigger push — greens sent to everyone push no one; **no per-person** "friend X is green." Respects a **per-group notification mute** (defined in this phase), plus **quiet hours** and **rate-limiting/batching**. Copy is aggregate-friendly; never a rejection surface.
+**Consequence (documented):** dormant friends reached only via group-scoped greens — the deliberate group-level choice.
 **Out of scope:** per-person notifications, any-friend-green push, aggregate friend digests (considered, not chosen).
 **Acceptance:**
-- [ ] Push fires to a group's subscribers when a member goes green tagged to that group.
-- [ ] Untagged greens trigger no push; no per-person notifications.
-- [ ] Respects Phase 11 per-group mute, quiet hours, and rate-limiting.
+- [ ] Push fires to a group's members when a member goes green scoped to that group.
+- [ ] Greens sent to everyone (not group-scoped) trigger no push; no per-person notifications.
+- [ ] Respects a per-group notification mute, quiet hours, and rate-limiting.
 
 ### 15.4 — "Add to Home Screen" install nudge
 **Entry:** fires **after a value moment** (first join/blast, or when notifications would clearly help) — not on first load.
@@ -3501,4 +3458,4 @@ Every signal is **suppressed when its count is < 3** → fall back to neutral en
 ### Open questions
 - Quiet-hours window + rate-limit thresholds (build).
 - Install-nudge exact trigger + copy; re-prompt cadence (mockup).
-- Whether to revisit an aggregate friend digest later if group-tagged-only under-delivers on dormant reach.
+- Whether to revisit an aggregate friend digest later if group-scoped-only under-delivers on dormant reach.

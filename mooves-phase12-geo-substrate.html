@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mooves — Phase 12 · Your area</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg-around: #1C1730;
+    --app-bg: #F8F6FF;
+    --card: #FFFFFF;
+    --purple-500: #7C5CDB;
+    --purple-700: #5B3FB0;
+    --purple-tint: #EDE9FF;
+    --purple-50: #F4F1FF;
+    --green-500: #2ECC71;
+    --green-700: #167A43;
+    --grey-300: #BDB5D4;
+    --ink-900: #1C1730;
+    --ink-500: #6B628A;
+    --border: #E8E4F5;
+    --red-tint: #FFF0F2;
+    --red-500: #E8405A;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg-around);
+    font-family: 'Inter', sans-serif;
+    color: #fff;
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 30px 16px 56px;
+  }
+  h1.page-title {
+    font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800;
+    font-size: 19px; letter-spacing: -0.01em; margin-bottom: 4px;
+  }
+  p.page-sub {
+    font-size: 13px; color: #9B93B8; margin-bottom: 20px;
+    text-align: center; max-width: 360px; line-height: 1.5;
+  }
+
+  /* Toggle groups */
+  .toggle-group { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-bottom: 14px; }
+  .toggle-group .glabel { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #6E6690; }
+  .toggles { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 380px; }
+  .toggles button {
+    font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600;
+    color: #C9C1E4; background: #2A2340; border: 1px solid #3A3155;
+    border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all .15s ease;
+  }
+  .toggles button:hover { border-color: var(--purple-500); }
+  .toggles button.active { background: var(--purple-500); border-color: var(--purple-500); color: #fff; }
+
+  /* Phone frame */
+  .frame {
+    width: 320px; height: 680px; background: var(--app-bg);
+    border-radius: 44px; overflow: hidden; position: relative;
+    box-shadow: 0 24px 60px rgba(0,0,0,.45);
+    display: flex; flex-direction: column; margin-top: 10px;
+  }
+  .view { display: none; flex-direction: column; height: 100%; }
+  .view.show { display: flex; }
+
+  /* ---------- Settings view ---------- */
+  .app-header { background: #fff; padding: 40px 20px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .wordmark-row { display: flex; justify-content: center; align-items: center; gap: 7px; margin-bottom: 12px; }
+  .wordmark-row .cow { width: 22px; height: 22px; }
+  .wordmark-row .mark { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 20px; color: var(--ink-900); letter-spacing: -0.02em; }
+  .wordmark-row .mark .oo { color: var(--purple-500); }
+  .app-header h2 { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 24px; color: var(--ink-900); letter-spacing: -0.02em; }
+  .app-body { flex: 1; overflow-y: auto; padding: 16px 16px 28px; }
+  .app-body::-webkit-scrollbar { width: 0; }
+
+  .profile-row { display: flex; align-items: center; gap: 12px; background: #fff; border: 1px solid var(--border); border-radius: 20px; padding: 14px 16px; margin-bottom: 16px; }
+  .avatar { width: 46px; height: 46px; border-radius: 50%; background: linear-gradient(135deg, #9B7FE8, #7C5CDB); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 17px; flex-shrink: 0; }
+  .profile-row .name { font-weight: 700; font-size: 15px; color: var(--ink-900); }
+  .profile-row .phone { font-size: 13px; color: var(--ink-500); margin-top: 2px; }
+
+  .section-label { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-500); margin: 6px 4px 8px; }
+
+  .area-card { background: #fff; border: 1px solid var(--border); border-radius: 20px; padding: 18px 16px; margin-bottom: 22px; position: relative; }
+  .area-head { display: flex; align-items: center; gap: 11px; }
+  .pin { width: 40px; height: 40px; border-radius: 12px; background: var(--purple-50); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .pin.set { background: rgba(46,204,113,.12); }
+  .area-title { font-weight: 700; font-size: 15px; color: var(--ink-900); }
+  .area-status { font-size: 13px; color: var(--ink-500); margin-top: 1px; }
+  .area-status.on { color: var(--green-700); font-weight: 600; }
+
+  /* top-right edit affordance (replaces Change/Remove buttons) */
+  .edit-btn {
+    position: absolute; top: 14px; right: 14px;
+    width: 34px; height: 34px; border-radius: 999px;
+    background: var(--purple-50); border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .edit-btn:hover { background: var(--purple-tint); }
+
+  .area-blurb { font-size: 13px; line-height: 1.5; color: var(--ink-500); margin: 13px 2px 15px; }
+  .privacy-caption { font-size: 12px; line-height: 1.45; color: var(--ink-500); text-align: center; margin-top: 12px; padding: 0 6px; }
+
+  .btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; height: 48px; border-radius: 999px; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 15px; border: none; cursor: pointer; }
+  .btn-primary { background: var(--purple-500); color: #fff; }
+  .btn-ghost { background: var(--purple-tint); color: var(--purple-700); }
+  .btn-row { display: flex; gap: 10px; }
+  .btn-row .btn { flex: 1; }
+
+  .area-value { text-align: center; padding: 8px 0 2px; }
+  .area-value .zip { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 34px; color: var(--ink-900); letter-spacing: 0.01em; }
+  .area-value .place { font-size: 14px; color: var(--ink-500); margin-top: 2px; }
+
+  .zip-field { margin: 4px 2px 2px; }
+  .zip-field label { display: block; font-size: 12px; font-weight: 600; color: var(--ink-500); margin-bottom: 6px; }
+  .zip-input { width: 100%; height: 50px; border: 1.5px solid var(--purple-500); border-radius: 14px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 22px; letter-spacing: 0.14em; text-align: center; color: var(--ink-900); background: #fff; outline: none; }
+  .zip-input::placeholder { color: #C7BFDF; letter-spacing: 0.08em; font-weight: 700; }
+  .zip-hint { font-size: 12px; color: var(--ink-500); margin: 8px 2px 14px; text-align: center; }
+
+  .locating { display: flex; flex-direction: column; align-items: center; padding: 14px 0 6px; }
+  .spinner { width: 34px; height: 34px; border-radius: 50%; border: 3px solid var(--purple-tint); border-top-color: var(--purple-500); animation: spin 0.9s linear infinite; margin-bottom: 12px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .locating .lead { font-weight: 600; font-size: 14px; color: var(--ink-900); }
+  .locating .sub { font-size: 12px; color: var(--ink-500); margin-top: 3px; text-align:center; }
+
+  .footer-actions { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+  .pill-btn { padding: 11px 40px; border-radius: 999px; font-weight: 600; font-size: 14px; border: none; cursor: pointer; }
+  .pill-btn.logout { background: var(--purple-tint); color: var(--purple-700); }
+  .pill-btn.delete { background: var(--red-tint); color: var(--red-500); }
+
+  /* ---------- Onboarding view ---------- */
+  .ob { flex: 1; display: flex; flex-direction: column; padding: 0 26px; }
+  .ob-dots { display: flex; gap: 6px; justify-content: center; padding-top: 46px; }
+  .ob-dots span { width: 8px; height: 8px; border-radius: 999px; background: var(--border); }
+  .ob-dots span.on { background: var(--purple-500); }
+  .ob-state { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  .ob-main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+  .ob-ic { width: 80px; height: 80px; border-radius: 999px; background: var(--purple-tint); display: flex; align-items: center; justify-content: center; margin-bottom: 22px; }
+  .ob-ic.set { background: rgba(46,204,113,.14); }
+  .ob-h { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 26px; color: var(--ink-900); letter-spacing: -0.02em; line-height: 1.15; margin-bottom: 10px; }
+  .ob-p { font-size: 14px; color: var(--ink-500); line-height: 1.5; margin-bottom: 6px; max-width: 250px; }
+  .ob-value { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 26px; color: var(--ink-900); margin-top: 6px; }
+  .ob-value small { display:block; font-family:'Inter',sans-serif; font-weight:500; font-size: 13px; color: var(--ink-500); margin-top: 3px; }
+  .ob-zip { width: 100%; max-width: 260px; margin-top: 8px; }
+  .ob-foot { padding-bottom: 40px; display: flex; flex-direction: column; gap: 14px; align-items: center; }
+  .ob-link { background: none; border: none; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 14px; color: var(--purple-700); cursor: pointer; }
+  .ob-skip { background: none; border: none; font-family: 'Inter', sans-serif; font-weight: 500; font-size: 14px; color: var(--ink-500); cursor: pointer; }
+
+  /* ---------- Bottom sheets ---------- */
+  .sheet-wrap { position: absolute; inset: 0; z-index: 20; display: none; }
+  .sheet-wrap.show { display: block; }
+  .scrim { position: absolute; inset: 0; background: rgba(28,23,48,.5); }
+  .sheet { position: absolute; left: 0; right: 0; bottom: 0; background: #fff; border-radius: 28px 28px 44px 44px; padding: 20px 18px 30px; animation: rise .22s ease; }
+  @keyframes rise { from { transform: translateY(40px); opacity: .4; } to { transform: translateY(0); opacity: 1; } }
+  .sheet-grabber { width: 38px; height: 4px; border-radius: 2px; background: #DED8F0; margin: 0 auto 16px; }
+  .sheet-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 19px; color: var(--ink-900); text-align: center; }
+  .sheet-sub { font-size: 13px; color: var(--ink-500); text-align: center; margin-top: 6px; line-height: 1.45; padding: 0 6px; }
+
+  .method-list { margin-top: 18px; display: flex; flex-direction: column; gap: 10px; }
+  .method { display: flex; align-items: center; gap: 13px; border: 1px solid var(--border); border-radius: 16px; padding: 14px 15px; background: #fff; cursor: pointer; text-align: left; width: 100%; }
+  .method:hover { border-color: var(--purple-500); background: var(--purple-50); }
+  .method .m-ic { width: 40px; height: 40px; border-radius: 11px; flex-shrink: 0; background: var(--purple-tint); display: flex; align-items: center; justify-content: center; }
+  .method > span:last-child { display: flex; flex-direction: column; }
+  .method .m-title { display: block; font-weight: 700; font-size: 14px; color: var(--ink-900); }
+  .method .m-sub { display: block; font-size: 12px; color: var(--ink-500); margin-top: 2px; line-height: 1.35; }
+  .sheet-note { font-size: 12px; color: var(--ink-500); text-align: center; margin-top: 16px; line-height: 1.45; }
+  .sheet-cancel { width: 100%; height: 48px; margin-top: 14px; background: var(--app-bg); border: 1px solid var(--border); border-radius: 999px; font-weight: 700; font-size: 15px; color: var(--ink-900); cursor: pointer; }
+
+  /* iOS-style action list (edit menu) */
+  .action-group { border-radius: 18px; overflow: hidden; border: 1px solid var(--border); margin-top: 16px; }
+  .action-group button { width: 100%; padding: 16px; background: #fff; border: none; border-bottom: 1px solid var(--border); font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 600; cursor: pointer; }
+  .action-group button:last-child { border-bottom: none; }
+  .action-group button.change { color: var(--purple-700); }
+  .action-group button.remove { color: var(--red-500); }
+
+  .screen-label { margin-top: 22px; font-size: 13px; color: #8A82A8; font-weight: 500; text-align: center; max-width: 380px; }
+  .screen-label b { color: #C9C1E4; font-weight: 600; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+  <h1 class="page-title">Your area — coarse location capture</h1>
+  <p class="page-sub">Phase 12 substrate. Opt-in coarse area (zip only). Device geolocation is turned into a zip and discarded — your exact location is never stored.</p>
+
+  <div class="toggle-group">
+    <span class="glabel">Settings control</span>
+    <div class="toggles">
+      <button data-state="none" class="active">No area</button>
+      <button data-state="method">Set area (sheet)</button>
+      <button data-state="locating">Locating</button>
+      <button data-state="set">Area set</button>
+      <button data-state="edit">Edit menu</button>
+      <button data-state="manual">Manual zip</button>
+    </div>
+  </div>
+  <div class="toggle-group">
+    <span class="glabel">Onboarding step</span>
+    <div class="toggles">
+      <button data-state="ob-ask">Ask area</button>
+      <button data-state="ob-manual">Enter zip</button>
+      <button data-state="ob-set">Area added</button>
+    </div>
+  </div>
+
+  <div class="frame" id="frame">
+
+    <!-- =================== SETTINGS VIEW =================== -->
+    <div class="view" id="settingsView">
+      <div class="app-header">
+        <div class="wordmark-row">
+          <svg class="cow" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <ellipse cx="11" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(-28 11 33)"></ellipse>
+            <ellipse cx="109" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(28 109 33)"></ellipse>
+            <ellipse cx="11" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(-28 11 34)"></ellipse>
+            <ellipse cx="109" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(28 109 34)"></ellipse>
+            <ellipse cx="38" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(-14 38 19)"></ellipse>
+            <ellipse cx="82" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(14 82 19)"></ellipse>
+            <rect x="15" y="20" width="90" height="92" rx="30" fill="#F5F0ED"></rect>
+            <ellipse cx="41" cy="44" rx="19" ry="13" fill="#7A7282" transform="rotate(-10 41 44)"></ellipse>
+            <ellipse cx="79" cy="69" rx="14" ry="9" fill="#7A7282" transform="rotate(16 79 69)"></ellipse>
+            <circle cx="44" cy="57" r="6" fill="#2A1E38"></circle>
+            <circle cx="76" cy="57" r="6" fill="#2A1E38"></circle>
+            <circle cx="46.5" cy="54.5" r="2.2" fill="white"></circle>
+            <circle cx="78.5" cy="54.5" r="2.2" fill="white"></circle>
+            <ellipse cx="60" cy="90" rx="27" ry="20" fill="#F0AABB"></ellipse>
+            <circle cx="50" cy="91" r="9" fill="#2ECC71"></circle>
+            <circle cx="70" cy="91" r="9" fill="#BDB5D4"></circle>
+          </svg>
+          <span class="mark">M<span class="oo">oo</span>ves</span>
+        </div>
+        <h2>Settings</h2>
+      </div>
+
+      <div class="app-body">
+        <div class="profile-row">
+          <div class="avatar">J</div>
+          <div>
+            <div class="name">Jackson</div>
+            <div class="phone">(415) 555 0148</div>
+          </div>
+        </div>
+
+        <div class="section-label">Discovery</div>
+
+        <div class="area-card">
+          <button class="edit-btn" id="editBtn" onclick="go('edit')" title="Edit area" aria-label="Edit area">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 20h4L18.5 9.5a2.12 2.12 0 0 0-3-3L5 17v3Z" stroke="#5B3FB0" stroke-width="2" stroke-linejoin="round"/><path d="M13.5 6.5l4 4" stroke="#5B3FB0" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
+
+          <div class="area-head">
+            <div class="pin" id="pinBox">
+              <svg id="pinIcon" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z" stroke="#7C5CDB" stroke-width="2" stroke-linejoin="round"/>
+                <circle cx="12" cy="10" r="2.5" stroke="#7C5CDB" stroke-width="2"/>
+              </svg>
+            </div>
+            <div style="flex:1">
+              <div class="area-title">Your area</div>
+              <div class="area-status" id="areaStatus">Not set</div>
+            </div>
+          </div>
+
+          <!-- no area -->
+          <div class="state state-none">
+            <p class="area-blurb">Set a coarse area so you're ready for moves near you, coming soon. We only store your zip, never your exact location.</p>
+            <button class="btn btn-primary" onclick="go('method')">Set your area</button>
+          </div>
+
+          <!-- locating -->
+          <div class="state state-locating hidden">
+            <div class="locating">
+              <div class="spinner"></div>
+              <div class="lead">Finding your area</div>
+              <div class="sub">Turning your location into a zip, then forgetting it.</div>
+            </div>
+          </div>
+
+          <!-- area set -->
+          <div class="state state-set hidden">
+            <div class="area-value">
+              <div class="zip">94110</div>
+              <div class="place">San Francisco, CA</div>
+            </div>
+            <p class="privacy-caption">Only your zip is stored. Your exact location was never saved.</p>
+          </div>
+
+          <!-- manual zip -->
+          <div class="state state-manual hidden">
+            <p class="area-blurb" style="margin-bottom:12px;">Enter your zip code. That's all we keep.</p>
+            <div class="zip-field">
+              <label for="zipInput">ZIP code</label>
+              <input id="zipInput" class="zip-input" inputmode="numeric" maxlength="5" placeholder="94110" value="" />
+            </div>
+            <div class="zip-hint">US zip codes only, 5 digits.</div>
+            <div class="btn-row">
+              <button class="btn btn-ghost" onclick="go('none')">Cancel</button>
+              <button class="btn btn-primary" onclick="go('set')">Save</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-label">Account</div>
+        <div class="footer-actions">
+          <button class="pill-btn logout">Log out</button>
+          <button class="pill-btn delete">Delete account</button>
+        </div>
+      </div>
+
+      <!-- method sheet -->
+      <div class="sheet-wrap" id="methodSheet">
+        <div class="scrim" onclick="closeSheets()"></div>
+        <div class="sheet">
+          <div class="sheet-grabber"></div>
+          <div class="sheet-title">Set your area</div>
+          <div class="sheet-sub">We keep a coarse area (your zip) to get you ready for moves near you.</div>
+          <div class="method-list">
+            <button class="method" onclick="go('locating')">
+              <span class="m-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z" stroke="#7C5CDB" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.5" stroke="#7C5CDB" stroke-width="2"/></svg></span>
+              <span><span class="m-title">Use my location</span><span class="m-sub">We turn it into a zip and forget the rest.</span></span>
+            </button>
+            <button class="method" onclick="go('manual')">
+              <span class="m-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="4" y="6" width="16" height="12" rx="2" stroke="#7C5CDB" stroke-width="2"/><path d="M8 11h.01M12 11h.01M16 11h.01M8 14h5" stroke="#7C5CDB" stroke-width="2" stroke-linecap="round"/></svg></span>
+              <span><span class="m-title">Enter zip manually</span><span class="m-sub">No location permission needed.</span></span>
+            </button>
+          </div>
+          <p class="sheet-note">Your exact location is never stored, only your zip.</p>
+          <button class="sheet-cancel" onclick="closeSheets()">Cancel</button>
+        </div>
+      </div>
+
+      <!-- edit menu sheet -->
+      <div class="sheet-wrap" id="editSheet">
+        <div class="scrim" onclick="go('set')"></div>
+        <div class="sheet">
+          <div class="sheet-grabber"></div>
+          <div class="sheet-title">Your area</div>
+          <div class="sheet-sub">94110 · San Francisco, CA</div>
+          <div class="action-group">
+            <button class="change" onclick="go('method')">Change area</button>
+            <button class="remove" onclick="go('none')">Remove area</button>
+          </div>
+          <button class="sheet-cancel" onclick="go('set')">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- =================== ONBOARDING VIEW =================== -->
+    <div class="view" id="onboardingView">
+      <div class="ob">
+        <div class="ob-dots"><span class="on"></span><span class="on"></span><span></span></div>
+
+        <!-- ask -->
+        <div class="ob-state ob-ask">
+          <div class="ob-main">
+            <div class="ob-ic">
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="none"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z" stroke="#7C5CDB" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.5" stroke="#7C5CDB" stroke-width="2"/></svg>
+            </div>
+            <h1 class="ob-h">Where are you<br />based?</h1>
+            <p class="ob-p">We'll keep a coarse area, just your zip, to show you moves nearby later. Your exact location is never stored.</p>
+          </div>
+          <div class="ob-foot">
+            <button class="btn btn-primary" style="max-width:262px;" onclick="obLocate()">Use my location</button>
+            <button class="ob-link" onclick="go('ob-manual')">Enter zip instead</button>
+            <button class="ob-skip" onclick="alert('(mock) → continues to “Bring your friends”')">Skip for now</button>
+          </div>
+        </div>
+
+        <!-- manual -->
+        <div class="ob-state ob-manual hidden">
+          <div class="ob-main">
+            <div class="ob-ic">
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="none"><rect x="4" y="6" width="16" height="12" rx="2" stroke="#7C5CDB" stroke-width="2"/><path d="M8 11h.01M12 11h.01M16 11h.01M8 14h5" stroke="#7C5CDB" stroke-width="2" stroke-linecap="round"/></svg>
+            </div>
+            <h1 class="ob-h">What's your<br />zip?</h1>
+            <p class="ob-p">Just your zip, nothing more precise.</p>
+            <div class="ob-zip">
+              <input class="zip-input" inputmode="numeric" maxlength="5" placeholder="94110" />
+            </div>
+          </div>
+          <div class="ob-foot">
+            <button class="btn btn-primary" style="max-width:262px;" onclick="go('ob-set')">Continue</button>
+            <button class="ob-link" onclick="obLocate()">Use my location instead</button>
+            <button class="ob-skip" onclick="alert('(mock) → continues to “Bring your friends”')">Skip for now</button>
+          </div>
+        </div>
+
+        <!-- locating -->
+        <div class="ob-state ob-locating hidden">
+          <div class="ob-main">
+            <div class="spinner" style="width:40px;height:40px;margin-bottom:18px;"></div>
+            <h1 class="ob-h">Finding your<br />area</h1>
+            <p class="ob-p">Turning your location into a zip, then forgetting it.</p>
+          </div>
+          <div class="ob-foot"><div style="height:20px"></div></div>
+        </div>
+
+        <!-- set -->
+        <div class="ob-state ob-set hidden">
+          <div class="ob-main">
+            <div class="ob-ic set">
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="none"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z" stroke="#167A43" stroke-width="2" stroke-linejoin="round"/><path d="M9.3 10.2l1.8 1.8 3.6-3.6" stroke="#167A43" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <h1 class="ob-h">You're set.</h1>
+            <div class="ob-value">94110<small>San Francisco, CA</small></div>
+            <p class="ob-p" style="margin-top:14px;">You can change or remove this anytime in Settings.</p>
+          </div>
+          <div class="ob-foot">
+            <button class="btn btn-primary" style="max-width:262px;" onclick="alert('(mock) → continues to “Bring your friends”')">Continue</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="screen-label"><b>Phase 12 — Your area</b> · Settings control + optional onboarding step · coarse zip only, precise coords never stored</div>
+
+<script>
+  const frame = document.getElementById('frame');
+  const settingsView = document.getElementById('settingsView');
+  const onboardingView = document.getElementById('onboardingView');
+  const areaStatus = document.getElementById('areaStatus');
+  const pinBox = document.getElementById('pinBox');
+  const pinIcon = document.getElementById('pinIcon');
+  const editBtn = document.getElementById('editBtn');
+  const methodSheet = document.getElementById('methodSheet');
+  const editSheet = document.getElementById('editSheet');
+  const buttons = document.querySelectorAll('.toggles button');
+
+  const SETTINGS = {
+    none:     { card: 'none',     status: 'Not set',           on:false, sheet: null,        edit:false },
+    method:   { card: 'none',     status: 'Not set',           on:false, sheet: methodSheet,  edit:false },
+    locating: { card: 'locating', status: 'Finding your area', on:false, sheet: null,        edit:false },
+    set:      { card: 'set',      status: 'On',                on:true,  sheet: null,        edit:true  },
+    edit:     { card: 'set',      status: 'On',                on:true,  sheet: editSheet,    edit:true  },
+    manual:   { card: 'manual',   status: 'Enter your zip',    on:false, sheet: null,        edit:false },
+  };
+  const OB = { 'ob-ask':'ob-ask', 'ob-manual':'ob-manual', 'ob-locating':'ob-locating', 'ob-set':'ob-set' };
+
+  function closeSheets(){ go('none'); }
+
+  function go(state) {
+    buttons.forEach(b => b.classList.toggle('active', b.dataset.state === state));
+
+    if (state in SETTINGS) {
+      settingsView.classList.add('show');
+      onboardingView.classList.remove('show');
+      const cfg = SETTINGS[state];
+      ['none','locating','set','manual'].forEach(v => {
+        frame.querySelector('.state-' + v).classList.toggle('hidden', v !== cfg.card);
+      });
+      areaStatus.textContent = cfg.status;
+      areaStatus.classList.toggle('on', cfg.on);
+      pinBox.classList.toggle('set', cfg.on);
+      const stroke = cfg.on ? '#167A43' : '#7C5CDB';
+      pinIcon.querySelectorAll('path, circle').forEach(p => p.setAttribute('stroke', stroke));
+      editBtn.style.display = cfg.edit ? 'flex' : 'none';
+      methodSheet.classList.toggle('show', cfg.sheet === methodSheet);
+      editSheet.classList.toggle('show', cfg.sheet === editSheet);
+      if (state === 'locating') {
+        clearTimeout(window._loc);
+        window._loc = setTimeout(() => {
+          if (frame.querySelector('.state-locating').classList.contains('hidden')) return;
+          go('set');
+        }, 1600);
+      }
+    } else if (state in OB) {
+      onboardingView.classList.add('show');
+      settingsView.classList.remove('show');
+      ['ob-ask','ob-manual','ob-locating','ob-set'].forEach(v => {
+        frame.querySelector('.' + v).classList.toggle('hidden', v !== state);
+      });
+    }
+  }
+
+  function obLocate() {
+    go('ob-locating');
+    clearTimeout(window._obloc);
+    window._obloc = setTimeout(() => {
+      if (frame.querySelector('.ob-locating').classList.contains('hidden')) return;
+      go('ob-set');
+    }, 1500);
+  }
+
+  buttons.forEach(b => b.addEventListener('click', () => go(b.dataset.state)));
+  go('none');
+</script>
+</body>
+</html>
