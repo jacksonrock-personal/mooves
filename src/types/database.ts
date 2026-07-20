@@ -120,6 +120,7 @@ export type Database = {
           display_name: string | null
           id: string
           interests: string[] | null
+          is_admin: boolean
           is_available: boolean
           last_active_at: string | null
           last_green_at: string | null
@@ -139,6 +140,7 @@ export type Database = {
           display_name?: string | null
           id: string
           interests?: string[] | null
+          is_admin?: boolean
           is_available?: boolean
           last_active_at?: string | null
           last_green_at?: string | null
@@ -158,6 +160,7 @@ export type Database = {
           display_name?: string | null
           id?: string
           interests?: string[] | null
+          is_admin?: boolean
           is_available?: boolean
           last_active_at?: string | null
           last_green_at?: string | null
@@ -180,6 +183,33 @@ export type Database = {
           },
         ]
       }
+      sponsors: {
+        Row: {
+          business_name: string | null
+          created_at: string
+          default_payment_method_id: string | null
+          id: string
+          phone: string
+          stripe_customer_id: string | null
+        }
+        Insert: {
+          business_name?: string | null
+          created_at?: string
+          default_payment_method_id?: string | null
+          id?: string
+          phone: string
+          stripe_customer_id?: string | null
+        }
+        Update: {
+          business_name?: string | null
+          created_at?: string
+          default_payment_method_id?: string | null
+          id?: string
+          phone?: string
+          stripe_customer_id?: string | null
+        }
+        Relationships: []
+      }
       sponsored_moves: {
         Row: {
           area_zip: string
@@ -194,10 +224,13 @@ export type Database = {
           impressions: number
           interested_count: number
           link_url: string | null
+          paid_at: string | null
+          price_cents: number | null
           radius_miles: number
           reject_reason: string | null
           sponsor_id: string | null
           status: string
+          stripe_payment_intent_id: string | null
           time_text: string | null
           title: string
         }
@@ -214,10 +247,13 @@ export type Database = {
           impressions?: number
           interested_count?: number
           link_url?: string | null
+          paid_at?: string | null
+          price_cents?: number | null
           radius_miles?: number
           reject_reason?: string | null
           sponsor_id?: string | null
           status?: string
+          stripe_payment_intent_id?: string | null
           time_text?: string | null
           title: string
         }
@@ -234,10 +270,13 @@ export type Database = {
           impressions?: number
           interested_count?: number
           link_url?: string | null
+          paid_at?: string | null
+          price_cents?: number | null
           radius_miles?: number
           reject_reason?: string | null
           sponsor_id?: string | null
           status?: string
+          stripe_payment_intent_id?: string | null
           time_text?: string | null
           title?: string
         }

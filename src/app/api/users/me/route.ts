@@ -14,7 +14,7 @@ export async function GET(req: Request) {
   const supabase = createServiceClient()
   const { data, error } = await supabase
     .from('users')
-    .select('id, phone, display_name, avatar_url, referral_code, is_available, status_note, status_time, status_move_id, visible_to, onboarding_complete, area_zip, interests')
+    .select('id, phone, display_name, avatar_url, referral_code, is_available, is_admin, status_note, status_time, status_move_id, visible_to, onboarding_complete, area_zip, interests')
     .eq('id', userId)
     .single()
 
@@ -51,6 +51,7 @@ export async function GET(req: Request) {
     avatarUrl: data.avatar_url,
     referralCode: data.referral_code,
     isAvailable: data.is_available,
+    isAdmin: data.is_admin,
     statusNote: data.status_note,
     statusTime: data.status_time,
     statusMoveId: data.status_move_id,

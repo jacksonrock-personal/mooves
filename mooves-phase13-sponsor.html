@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mooves — Phase 13 · Sponsor Portal (surface 3)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg-around: #1C1730;
+    --app-bg: #F8F6FF;
+    --purple-500: #7C5CDB;
+    --purple-700: #5F3FC4;
+    --purple-100: #EDE9FF;
+    --purple-50: #F4F1FF;
+    --green-700: #167A43;
+    --green-100: #E3F9EC;
+    --red-500: #E8405A;
+    --red-tint: #FFF0F2;
+    --ink-900: #1C1730;
+    --ink-500: #6B628A;
+    --grey-300: #BDB5D4;
+    --border: #E8E4F5;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg-around); font-family: 'Inter', sans-serif; color: #fff; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 26px 16px 50px; }
+  h1.page-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 19px; margin-bottom: 4px; }
+  p.page-sub { font-size: 13px; color: #9B93B8; margin-bottom: 18px; text-align: center; max-width: 640px; line-height: 1.5; }
+  .toggles { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 640px; margin-bottom: 20px; }
+  .toggles button { font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; color: #C9C1E4; background: #2A2340; border: 1px solid #3A3155; border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all .15s ease; }
+  .toggles button:hover { border-color: var(--purple-500); }
+  .toggles button.active { background: var(--purple-500); border-color: var(--purple-500); color: #fff; }
+
+  .win { width: min(1040px, 96vw); height: 660px; border-radius: 16px; overflow: hidden; box-shadow: 0 24px 60px rgba(0,0,0,.5); position: relative; }
+
+  /* ===== Auth (gradient) ===== */
+  .auth { width: 100%; height: 100%; background: linear-gradient(160deg, #7C5CDB, #9B7FE8 55%, #A98FF0); display: none; align-items: center; justify-content: center; }
+  .auth.show { display: flex; }
+  .auth-card { width: 380px; background: #fff; border-radius: 22px; padding: 30px 28px; box-shadow: 0 20px 50px rgba(0,0,0,.25); }
+  .auth-brand { display: flex; align-items: center; gap: 8px; justify-content: center; margin-bottom: 6px; }
+  .auth-brand .n { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 20px; color: var(--ink-900); }
+  .auth-brand .n span { color: var(--purple-500); }
+  .auth-tag { text-align: center; font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--grey-300); margin-bottom: 22px; }
+  .auth h2 { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 21px; color: var(--ink-900); text-align: center; margin-bottom: 4px; }
+  .auth .lead { text-align: center; font-size: 13px; color: var(--ink-500); margin-bottom: 22px; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 12px; font-weight: 700; color: var(--ink-500); margin-bottom: 6px; }
+  .field input { width: 100%; border: 1.5px solid var(--border); border-radius: 10px; padding: 11px 12px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--ink-900); outline: none; }
+  .field input:focus { border-color: var(--purple-500); }
+  .auth .cta { width: 100%; background: var(--purple-500); color: #fff; border: none; border-radius: 12px; padding: 13px; font-family: 'Inter', sans-serif; font-weight: 700; font-size: 15px; cursor: pointer; margin-top: 6px; }
+  .auth .alt { text-align: center; font-size: 13px; color: var(--ink-500); margin-top: 16px; }
+  .auth .alt a { color: var(--purple-700); font-weight: 600; text-decoration: none; cursor: pointer; }
+  .auth .fine { text-align: center; font-size: 11px; color: var(--grey-300); margin-top: 14px; line-height: 1.5; }
+  .otp { display: flex; gap: 8px; justify-content: center; margin: 6px 0 4px; }
+  .otp input { width: 44px; height: 52px; text-align: center; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 22px; color: var(--ink-900); border: 1.5px solid var(--border); border-radius: 10px; outline: none; }
+  .otp input:focus { border-color: var(--purple-500); }
+
+  /* ===== App shell ===== */
+  .app { width: 100%; height: 100%; background: var(--app-bg); display: none; }
+  .app.show { display: flex; }
+  .side { width: 210px; background: #fff; border-right: 1px solid var(--border); flex-shrink: 0; padding: 18px 14px; display: flex; flex-direction: column; }
+  .brand { display: flex; align-items: center; gap: 8px; padding: 4px 8px 16px; }
+  .brand .n { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 16px; color: var(--ink-900); }
+  .brand .n span { color: var(--purple-500); }
+  .brand .tag { font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--grey-300); }
+  .nav { display: flex; flex-direction: column; gap: 3px; }
+  .nav button { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 10px 11px; border-radius: 10px; border: none; background: none; cursor: pointer; font-size: 13.5px; font-weight: 600; color: var(--ink-500); font-family: 'Inter', sans-serif; }
+  .nav button:hover { background: var(--purple-50); }
+  .nav button.on { background: var(--purple-100); color: var(--purple-700); }
+  .side-foot { margin-top: auto; display: flex; align-items: center; gap: 9px; padding: 10px 8px 2px; border-top: 1px solid var(--border); }
+  .side-foot .av { width: 30px; height: 30px; border-radius: 9px; background: linear-gradient(135deg,#F0A6C0,#E0789E); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 12px; }
+  .side-foot .who { font-size: 12px; font-weight: 600; color: var(--ink-900); line-height: 1.2; }
+  .side-foot .who small { display: block; font-weight: 500; color: var(--ink-500); font-size: 11px; }
+
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .topbar { padding: 20px 26px 16px; border-bottom: 1px solid var(--border); background: #fff; display: flex; align-items: center; justify-content: space-between; }
+  .topbar h2 { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 22px; color: var(--ink-900); }
+  .topbar .sub { font-size: 13px; color: var(--ink-500); margin-top: 2px; }
+  .content { flex: 1; overflow-y: auto; padding: 22px 26px; }
+  .content::-webkit-scrollbar { width: 8px; } .content::-webkit-scrollbar-thumb { background: #E0DAF0; border-radius: 4px; }
+
+  .btn { font-family: 'Inter', sans-serif; font-weight: 600; font-size: 13.5px; border: none; border-radius: 10px; padding: 9px 16px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; }
+  .btn-primary { background: var(--purple-500); color: #fff; }
+  .btn-light { background: #fff; border: 1px solid var(--border); color: var(--ink-900); }
+  .btn-pay { background: var(--green-700); color: #fff; }
+
+  .cat { display: inline-flex; align-items: center; background: var(--purple-100); color: var(--purple-700); border-radius: 999px; padding: 3px 10px; font-size: 11px; font-weight: 700; }
+  .badge { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; padding: 3px 9px; font-size: 11px; font-weight: 700; }
+  .badge.review { background: var(--purple-100); color: var(--purple-700); }
+  .badge.approved { background: #FBF0DC; color: #9A6800; }
+  .badge.live { background: var(--green-100); color: var(--green-700); }
+  .badge.rejected { background: var(--red-tint); color: var(--red-500); }
+  .dot { width: 6px; height: 6px; border-radius: 50%; }
+
+  /* Move cards */
+  .mcard { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; margin-bottom: 14px; }
+  .mtop { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .mtitle { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 16px; color: var(--ink-900); }
+  .msub { font-size: 12.5px; color: var(--ink-500); margin-top: 1px; }
+  .mstats { display: flex; gap: 22px; margin-top: 12px; }
+  .mstat .v { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 18px; color: var(--ink-900); }
+  .mstat .l { font-size: 11px; color: var(--ink-500); margin-top: 1px; }
+  .mactions { display: flex; gap: 8px; margin-top: 14px; align-items: center; }
+  .reject-note { background: var(--red-tint); color: var(--red-500); font-size: 12.5px; border-radius: 10px; padding: 9px 12px; margin-top: 10px; line-height: 1.45; }
+  .pay-note { background: #FBF0DC; color: #9A6800; font-size: 12.5px; border-radius: 10px; padding: 9px 12px; margin-top: 10px; line-height: 1.45; }
+  .linkbtn { background: none; border: none; color: var(--purple-700); font-weight: 600; font-size: 12.5px; cursor: pointer; }
+
+  /* Analytics */
+  .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+  .tile { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 16px; }
+  .tile .v { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 26px; color: var(--ink-900); }
+  .tile .l { font-size: 12px; color: var(--ink-500); margin-top: 2px; }
+  .tile.flywheel { background: var(--purple-50); border-color: #D8CEF5; }
+  .tile.flywheel .v { color: var(--purple-700); }
+  .panel { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 18px; }
+  .panel h4 { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 15px; color: var(--ink-900); margin-bottom: 10px; }
+  .kv { display: flex; justify-content: space-between; font-size: 13px; padding: 7px 0; border-bottom: 1px solid var(--border); }
+  .kv:last-child { border-bottom: none; }
+  .kv .k { color: var(--ink-500); } .kv .val { color: var(--ink-900); font-weight: 600; }
+
+  /* Form */
+  .form { max-width: 620px; }
+  .frow { margin-bottom: 16px; } .frow.two { display: flex; gap: 14px; } .frow.two > div { flex: 1; }
+  .form label { display: block; font-size: 12px; font-weight: 700; color: var(--ink-500); margin-bottom: 6px; }
+  .form input, .form textarea, .form select { width: 100%; border: 1.5px solid var(--border); border-radius: 10px; padding: 10px 12px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--ink-900); outline: none; background: #fff; }
+  .form input:focus, .form textarea:focus, .form select:focus { border-color: var(--purple-500); }
+  .form textarea { resize: none; min-height: 84px; line-height: 1.5; }
+  .hint { font-size: 11.5px; color: var(--grey-300); margin-top: 5px; }
+  .form-actions { display: flex; gap: 10px; margin-top: 22px; }
+
+  .empty { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 54px 20px; }
+  .empty h3 { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 19px; color: var(--ink-900); margin-bottom: 6px; }
+  .empty p { font-size: 13.5px; color: var(--ink-500); max-width: 320px; line-height: 1.5; margin-bottom: 18px; }
+  .empty .ic { width: 76px; height: 76px; border-radius: 20px; background: var(--purple-100); display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
+
+  .screen-label { margin-top: 20px; font-size: 13px; color: #8A82A8; font-weight: 500; text-align: center; }
+  .screen-label b { color: #C9C1E4; font-weight: 600; }
+</style>
+</head>
+<body>
+
+  <h1 class="page-title">Sponsor Portal — self-serve dashboard</h1>
+  <p class="page-sub">Phase 13 surface 3 (desktop). Businesses sign up (Supabase Auth), author moves that enter the moderation queue (surface 2), see statuses + reject reasons, and view aggregate analytics. No per-person data ever.</p>
+
+  <div class="toggles">
+    <button data-view="signin" class="active">Sign in</button>
+    <button data-view="signup">Sign up</button>
+    <button data-view="dash">Dashboard</button>
+    <button data-view="empty">Empty dashboard</button>
+    <button data-view="new">New move</button>
+    <button data-view="analytics">Move analytics</button>
+  </div>
+
+  <div class="win" id="win">
+
+    <!-- ===== SIGN IN ===== -->
+    <div class="auth auth-signin">
+      <div class="auth-card">
+        <div class="auth-brand"><span class="n">M<span>oo</span>ves</span></div>
+        <div class="auth-tag">for Business</div>
+        <div class="astep astep-phone">
+          <h2>Welcome back</h2>
+          <p class="lead">Sign in with your phone. We&apos;ll text you a code.</p>
+          <div class="field"><label>Phone number</label><input type="tel" placeholder="(312) 555 0148" /></div>
+          <button class="cta" onclick="sendCode('signin')">Send code</button>
+          <div class="alt">New to Mooves? <a onclick="go('signup')">Create a sponsor account</a></div>
+        </div>
+        <div class="astep astep-code" style="display:none">
+          <h2>Enter your code</h2>
+          <p class="lead">We texted a 6-digit code to your phone.</p>
+          <div class="otp"><input maxlength="1" value="4"/><input maxlength="1" value="1"/><input maxlength="1" value="9"/><input maxlength="1" value="2"/><input maxlength="1" /><input maxlength="1" /></div>
+          <button class="cta" onclick="go('dash')">Verify</button>
+          <div class="alt"><a onclick="resetAuth('signin')">Use a different number</a></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== SIGN UP ===== -->
+    <div class="auth auth-signup">
+      <div class="auth-card">
+        <div class="auth-brand"><span class="n">M<span>oo</span>ves</span></div>
+        <div class="auth-tag">for Business</div>
+        <div class="astep astep-phone">
+          <h2>Create a sponsor account</h2>
+          <p class="lead">Put your place in front of people nearby.</p>
+          <div class="field"><label>Business name</label><input type="text" placeholder="The Vista" /></div>
+          <div class="field"><label>Phone number</label><input type="tel" placeholder="(312) 555 0148" /></div>
+          <button class="cta" onclick="sendCode('signup')">Send code</button>
+          <div class="alt">Already have one? <a onclick="go('signin')">Sign in</a></div>
+          <div class="fine">By continuing you agree to the Sponsor Terms. Moves are reviewed by Mooves before they go live. No passwords, we text you a code each time.</div>
+        </div>
+        <div class="astep astep-code" style="display:none">
+          <h2>Enter your code</h2>
+          <p class="lead">We texted a 6-digit code to your phone.</p>
+          <div class="otp"><input maxlength="1" value="7"/><input maxlength="1" value="3"/><input maxlength="1" value="0"/><input maxlength="1" value="6"/><input maxlength="1" /><input maxlength="1" /></div>
+          <button class="cta" onclick="go('empty')">Verify &amp; continue</button>
+          <div class="alt"><a onclick="resetAuth('signup')">Use a different number</a></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== APP SHELL ===== -->
+    <div class="app" id="appShell">
+      <div class="side">
+        <div class="brand">
+          <div><div class="n">M<span>oo</span>ves</div><div class="tag">for Business</div></div>
+        </div>
+        <div class="nav">
+          <button class="navbtn" data-view="dash">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="9" rx="1.5" stroke="currentColor" stroke-width="2"/><rect x="14" y="3" width="7" height="5" rx="1.5" stroke="currentColor" stroke-width="2"/><rect x="14" y="12" width="7" height="9" rx="1.5" stroke="currentColor" stroke-width="2"/><rect x="3" y="16" width="7" height="5" rx="1.5" stroke="currentColor" stroke-width="2"/></svg>
+            My moves
+          </button>
+          <button class="navbtn" data-view="new">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            New move
+          </button>
+          <button class="navbtn" data-view="analytics">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            Analytics
+          </button>
+          <button class="navbtn">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="12" rx="2" stroke="currentColor" stroke-width="2"/><path d="M3 10h18" stroke="currentColor" stroke-width="2"/></svg>
+            Billing
+          </button>
+        </div>
+        <div class="side-foot">
+          <div class="av">V</div>
+          <div class="who">The Vista<small>you@thevista.com</small></div>
+        </div>
+      </div>
+
+      <div class="main">
+        <div class="topbar">
+          <div><h2 id="pageTitle">My moves</h2><div class="sub" id="pageSub">Your sponsored moves and how they're doing</div></div>
+          <div id="topAction"><button class="btn btn-primary" data-view="new">+ New move</button></div>
+        </div>
+        <div class="content">
+
+          <!-- DASHBOARD -->
+          <div class="view view-dash">
+            <!-- Live -->
+            <div class="mcard">
+              <div class="mtop"><span class="cat">Live music</span><span class="badge live"><span class="dot" style="background:var(--green-700)"></span>Live</span></div>
+              <div class="mtitle">Sunset rooftop set at The Vista</div>
+              <div class="msub">60647 · 25 mi · Fri 7pm · Mission</div>
+              <div class="mstats">
+                <div class="mstat"><div class="v">1,204</div><div class="l">Feeds reached</div></div>
+                <div class="mstat"><div class="v">86</div><div class="l">Interested</div></div>
+                <div class="mstat"><div class="v">31</div><div class="l">Clicks</div></div>
+                <div class="mstat"><div class="v">12</div><div class="l">Brought to feeds</div></div>
+              </div>
+              <div class="mactions"><button class="btn btn-light" onclick="go('analytics')">View analytics</button><button class="linkbtn">Edit</button></div>
+            </div>
+
+            <!-- Live (auto-billed on publish) -->
+            <div class="mcard">
+              <div class="mtop"><span class="cat">Food &amp; drink</span><span class="badge live"><span class="dot" style="background:var(--green-700)"></span>Live</span></div>
+              <div class="mtitle">Taco Tuesday on the patio</div>
+              <div class="msub">60647 · 25 mi · Tue 5pm · Logan Square</div>
+              <div class="mstats">
+                <div class="mstat"><div class="v">318</div><div class="l">Feeds reached</div></div>
+                <div class="mstat"><div class="v">22</div><div class="l">Interested</div></div>
+                <div class="mstat"><div class="v">9</div><div class="l">Clicks</div></div>
+                <div class="mstat"><div class="v">—</div><div class="l">Brought to feeds</div></div>
+              </div>
+              <div class="mactions"><button class="btn btn-light" onclick="go('analytics')">View analytics</button><button class="linkbtn">Edit</button></div>
+            </div>
+
+            <!-- In review -->
+            <div class="mcard">
+              <div class="mtop"><span class="cat">Markets &amp; pop-ups</span><span class="badge review"><span class="dot" style="background:var(--purple-700)"></span>In review</span></div>
+              <div class="mtitle">Saturday makers market</div>
+              <div class="msub">60647 · 25 mi · Sat 10am · Logan Blvd</div>
+              <div class="mactions"><span style="font-size:12.5px;color:var(--ink-500)">Mooves usually reviews within a day.</span><button class="linkbtn" style="margin-left:auto">Edit</button></div>
+            </div>
+
+            <!-- Rejected -->
+            <div class="mcard">
+              <div class="mtop"><span class="cat">Nightlife</span><span class="badge rejected"><span class="dot" style="background:var(--red-500)"></span>Rejected</span></div>
+              <div class="mtitle">Crypto meetup + free drinks</div>
+              <div class="msub">60614 · 25 mi · Thu 8pm</div>
+              <div class="reject-note">The link doesn't resolve, and the title reads like an ad. Add a real venue and a working URL, then resubmit.</div>
+              <div class="mactions"><button class="btn btn-primary" onclick="go('new')">Edit &amp; resubmit</button></div>
+            </div>
+          </div>
+
+          <!-- EMPTY -->
+          <div class="view view-empty">
+            <div class="empty">
+              <div class="ic"><svg width="34" height="34" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#7C5CDB" stroke-width="2"/><path d="M12 8v8M8 12h8" stroke="#7C5CDB" stroke-width="2" stroke-linecap="round"/></svg></div>
+              <h3>Post your first move</h3>
+              <p>Tell people nearby what's happening at your place. We'll review it, then it shows up in the area feed for folks who opted into your kind of thing.</p>
+              <button class="btn btn-primary" onclick="go('new')">+ New move</button>
+            </div>
+          </div>
+
+          <!-- NEW MOVE -->
+          <div class="view view-new">
+            <div class="form">
+              <div class="frow"><label>Title</label><input type="text" placeholder="e.g. Sunset rooftop set at The Vista" /></div>
+              <div class="frow"><label>Description</label><textarea placeholder="One or two warm sentences. What is it, why come."></textarea></div>
+              <div class="frow two">
+                <div><label>Category</label><select><option>Live music</option><option>Nightlife</option><option>Running &amp; fitness</option><option>Food &amp; drink</option><option>Markets &amp; pop-ups</option><option>Outdoors</option><option>Arts &amp; culture</option><option>Pickup sports</option><option>Wellness</option><option>Community</option></select></div>
+                <div><label>Venue name</label><input type="text" placeholder="The Vista" /></div>
+              </div>
+              <div class="frow two">
+                <div><label>Area ZIP</label><input type="text" placeholder="60647" maxlength="5" /></div>
+                <div><label>Radius (miles)</label><input type="text" placeholder="25" /></div>
+              </div>
+              <div class="frow two">
+                <div><label>Time text</label><input type="text" placeholder="Fri 7pm · Mission" /><div class="hint">Lightweight, no calendar.</div></div>
+                <div><label>Link URL</label><input type="text" placeholder="https://…" /></div>
+              </div>
+              <div class="frow"><label>Image URL (optional)</label><input type="text" placeholder="https://…" /></div>
+              <div class="form-actions">
+                <button class="btn btn-primary" onclick="go('dash')">Submit for review</button>
+                <button class="btn btn-light" data-view="dash">Cancel</button>
+              </div>
+              <div class="hint" style="margin-top:12px;">Submitting sends this to Mooves for review. Once approved, it goes live and your payment method on file is billed per your plan. You're not charged for anything under review or rejected.</div>
+            </div>
+          </div>
+
+          <!-- ANALYTICS -->
+          <div class="view view-analytics">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+              <span class="cat">Live music</span><span class="badge live"><span class="dot" style="background:var(--green-700)"></span>Live</span>
+              <span style="font-family:'Plus Jakarta Sans';font-weight:800;font-size:16px;color:var(--ink-900);margin-left:4px;">Sunset rooftop set at The Vista</span>
+            </div>
+            <div class="tiles">
+              <div class="tile"><div class="v">1,204</div><div class="l">Feeds reached</div></div>
+              <div class="tile"><div class="v">86</div><div class="l">Interested</div></div>
+              <div class="tile"><div class="v">31</div><div class="l">Link clicks</div></div>
+              <div class="tile flywheel"><div class="v">12</div><div class="l">Brought to friend feeds</div></div>
+            </div>
+            <div class="panel">
+              <h4>Details</h4>
+              <div class="kv"><span class="k">Area</span><span class="val">60647 + within 25 miles</span></div>
+              <div class="kv"><span class="k">Category</span><span class="val">Live music</span></div>
+              <div class="kv"><span class="k">Live since</span><span class="val">Jul 18, 2026</span></div>
+              <div class="kv"><span class="k">Link</span><span class="val">thevista.com/rooftop</span></div>
+            </div>
+            <div class="hint" style="margin-top:14px;">All counts are aggregate. Mooves never shares who saw, tapped, or brought your move. Counts under 5 are hidden to protect people.</div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="screen-label"><b>Phase 13 — Sponsor Portal</b> · self-serve desktop dashboard (auth · author · analytics) · surface 3 of 4</div>
+
+<script>
+  const win = document.getElementById('win');
+  const toggles = document.querySelectorAll('.toggles button');
+  const app = document.getElementById('appShell');
+  const pageTitle = document.getElementById('pageTitle');
+  const pageSub = document.getElementById('pageSub');
+  const topAction = document.getElementById('topAction');
+
+  const META = {
+    signin: { auth: 'auth-signin' },
+    signup: { auth: 'auth-signup' },
+    dash:   { app: 'view-dash',      title: 'My moves',  sub: "Your sponsored moves and how they're doing", top: true, nav: 'dash' },
+    empty:  { app: 'view-empty',     title: 'My moves',  sub: 'You have no moves yet', top: false, nav: 'dash' },
+    new:    { app: 'view-new',       title: 'New move',  sub: 'Tell people nearby what’s happening', top: false, nav: 'new' },
+    analytics:{ app: 'view-analytics', title: 'Analytics', sub: 'How your move is performing', top: false, nav: 'analytics' },
+  };
+
+  function go(view) {
+    const m = META[view];
+    toggles.forEach(b => b.classList.toggle('active', b.dataset.view === view));
+    win.querySelectorAll('.auth').forEach(a => a.classList.remove('show'));
+    app.classList.remove('show');
+    if (m.auth) {
+      const card = win.querySelector('.' + m.auth);
+      card.classList.add('show');
+      resetAuth(view); // always start at the phone step
+    } else {
+      app.classList.add('show');
+      ['view-dash','view-empty','view-new','view-analytics'].forEach(v => {
+        win.querySelector('.' + v).style.display = (v === m.app) ? 'block' : 'none';
+      });
+      document.querySelectorAll('.navbtn').forEach(b => b.classList.toggle('on', b.dataset.view === m.nav));
+      pageTitle.textContent = m.title; pageSub.textContent = m.sub;
+      topAction.style.visibility = m.top ? 'visible' : 'hidden';
+    }
+  }
+
+  function sendCode(which) {
+    const card = win.querySelector('.auth-' + which);
+    card.querySelector('.astep-phone').style.display = 'none';
+    card.querySelector('.astep-code').style.display = 'block';
+  }
+  function resetAuth(which) {
+    const card = win.querySelector('.auth-' + which);
+    if (!card) return;
+    card.querySelector('.astep-phone').style.display = 'block';
+    card.querySelector('.astep-code').style.display = 'none';
+  }
+
+  document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => { if (b.dataset.view) go(b.dataset.view); }));
+  toggles.forEach(b => b.addEventListener('click', () => go(b.dataset.view)));
+  go('signin');
+</script>
+</body>
+</html>

@@ -5,9 +5,13 @@ const PUBLIC_PREFIXES = [
   '/join/',
   '/g/',
   '/auth',
+  '/sponsor',       // sponsor portal has its own auth realm (mooves-sponsor-token)
+  '/api/sponsor/',  // each /api/sponsor route self-gates via requireSponsor
   '/api/invite/',
   '/api/auth/verify',
   '/api/sms/inbound',
+  '/api/stripe/webhook', // Stripe calls this unauthenticated; gated by signature
+
   '/_next/',
   '/favicon',
 ]
