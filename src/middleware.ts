@@ -19,7 +19,9 @@ const PUBLIC_PREFIXES = [
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
 
-  if (PUBLIC_PREFIXES.some(p => pathname.startsWith(p))) {
+  // `/` (exact) is the public marketing landing page; the root server component
+  // redirects authed visitors to /feed. Exact-match so it doesn't open every route.
+  if (pathname === '/' || PUBLIC_PREFIXES.some(p => pathname.startsWith(p))) {
     return NextResponse.next()
   }
 
