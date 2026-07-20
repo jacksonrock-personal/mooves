@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { requireAdmin } from '@/lib/admin'
 import { INTEREST_SLUGS } from '@/lib/interests'
+import { chargeForPlacement } from '@/lib/billing'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -91,5 +92,13 @@ export async function PATCH(req: Request, { params }: Params) {
     .single()
 
   if (error || !data) return NextResponse.json({ error: 'Update failed' }, { status: 500 })
-  return NextResponse.json({ id: data.id, status: data.status, rejectReason: data.reject_reason })
+
+  // On approval, attempt the placement charge. Sponsor-authored moves go live
+  // only once paid; if there's no card on file yet, the move waits (13.6b).
+  let billing: string | undefined
+  if (updates.status === 'approved') {
+    billing = await chargeForPlacement(id)
+  }
+
+  return NextResponse.json({ id: data.id, status: data.status, rejectReason: data.reject_reason, billing })
 }

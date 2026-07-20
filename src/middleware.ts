@@ -10,6 +10,8 @@ const PUBLIC_PREFIXES = [
   '/api/invite/',
   '/api/auth/verify',
   '/api/sms/inbound',
+  '/api/stripe/webhook', // Stripe calls this unauthenticated; gated by signature
+
   '/_next/',
   '/favicon',
 ]

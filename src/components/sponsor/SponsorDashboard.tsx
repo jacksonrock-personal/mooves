@@ -7,12 +7,15 @@
 import { useCallback, useEffect, useState } from 'react'
 import { interestLabel } from '@/lib/interests'
 import MoveForm, { type MoveFormValues } from '@/components/admin/MoveForm'
+import BillingSection from './BillingSection'
 
 interface Sponsor {
   id: string
   phone: string
   businessName: string | null
 }
+
+type BillingState = 'live' | 'failed' | 'awaiting' | null
 
 interface SponsorMove {
   id: string
@@ -26,6 +29,9 @@ interface SponsorMove {
   imageUrl: string | null
   timeText: string | null
   status: string
+  billing: BillingState
+  priceCents: number | null
+  paidAt: string | null
   rejectReason: string | null
   createdAt: string
   impressions: number | null
@@ -35,15 +41,25 @@ interface SponsorMove {
 }
 
 type View = 'moves' | 'new' | 'edit' | 'analytics' | 'billing'
+type DisplayState = 'review' | 'live' | 'awaiting' | 'failed' | 'rejected'
 
-const STATUS: Record<string, { cls: string; dot: string; label: string }> = {
-  pending: { cls: 'bg-purple-100 text-purple-700', dot: '#5F3FC4', label: 'In review' },
-  approved: { cls: 'bg-green-100 text-green-700', dot: '#167A43', label: 'Live' },
+// Moderation status + billing state → one display state.
+function displayState(m: SponsorMove): DisplayState {
+  if (m.status === 'pending') return 'review'
+  if (m.status === 'rejected') return 'rejected'
+  return m.billing ?? 'awaiting' // approved → live / awaiting / failed
+}
+
+const STATE: Record<DisplayState, { cls: string; dot: string; label: string }> = {
+  review: { cls: 'bg-purple-100 text-purple-700', dot: '#5F3FC4', label: 'In review' },
+  live: { cls: 'bg-green-100 text-green-700', dot: '#167A43', label: 'Live' },
+  awaiting: { cls: 'bg-[#FBF0DC] text-[#9A6800]', dot: '#9A6800', label: 'Approved' },
+  failed: { cls: 'bg-red-tint text-red-500', dot: '#E8405A', label: 'Payment failed' },
   rejected: { cls: 'bg-red-tint text-red-500', dot: '#E8405A', label: 'Rejected' },
 }
 
-function StatusBadge({ status }: { status: string }) {
-  const s = STATUS[status] ?? STATUS.pending
+function StatusBadge({ state }: { state: DisplayState }) {
+  const s = STATE[state]
   return (
     <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-bold ${s.cls}`}>
       <span className="w-1.5 h-1.5 rounded-full" style={{ background: s.dot }} />
@@ -54,6 +70,10 @@ function StatusBadge({ status }: { status: string }) {
 
 function fmt(n: number | null): string {
   return n === null ? '<5' : n.toLocaleString()
+}
+
+function priceLabel(cents: number | null): string {
+  return cents ? `$${(cents / 100).toFixed(2).replace(/\.00$/, '')}` : 'the placement fee'
 }
 
 export default function SponsorDashboard({ sponsor, onLogout }: { sponsor: Sponsor; onLogout: () => void }) {
@@ -179,16 +199,21 @@ export default function SponsorDashboard({ sponsor, onLogout }: { sponsor: Spons
                 <button onClick={() => setView('new')} className="bg-purple-500 text-white font-semibold text-[13.5px] rounded-[10px] px-4 py-2.5">+ New move</button>
               </div>
             ) : (
-              moves.map(m => (
+              moves.map(m => {
+                const ds = displayState(m)
+                return (
                 <div key={m.id} className="bg-white border border-[#E8E4F5] rounded-[14px] p-4 mb-3.5">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="bg-purple-100 text-purple-700 rounded-full px-2.5 py-0.5 text-[11px] font-bold">{interestLabel(m.category)}</span>
-                    <StatusBadge status={m.status} />
+                    <StatusBadge state={ds} />
                   </div>
                   <div className="font-display font-extrabold text-[16px] text-ink-900">{m.title}</div>
-                  <div className="text-[12.5px] text-ink-500 mt-0.5">{[m.areaZip, `${m.radiusMiles} mi`, m.timeText].filter(Boolean).join(' · ')}</div>
+                  <div className="text-[12.5px] text-ink-500 mt-0.5">
+                    {[m.areaZip, `${m.radiusMiles} mi`, m.timeText].filter(Boolean).join(' · ')}
+                    {ds === 'live' && m.priceCents ? ` · billed ${priceLabel(m.priceCents)}` : ''}
+                  </div>
 
-                  {m.status === 'approved' && (
+                  {ds === 'live' && (
                     <div className="flex gap-6 mt-3">
                       <div><div className="font-display font-extrabold text-[18px] text-ink-900">{fmt(m.impressions)}</div><div className="text-[11px] text-ink-500">Feeds reached</div></div>
                       <div><div className="font-display font-extrabold text-[18px] text-ink-900">{fmt(m.interested)}</div><div className="text-[11px] text-ink-500">Interested</div></div>
@@ -196,18 +221,27 @@ export default function SponsorDashboard({ sponsor, onLogout }: { sponsor: Spons
                       <div><div className="font-display font-extrabold text-[18px] text-ink-900">{fmt(m.broughtOver)}</div><div className="text-[11px] text-ink-500">Brought to feeds</div></div>
                     </div>
                   )}
-                  {m.status === 'pending' && <div className="text-[12.5px] text-ink-500 mt-2">Mooves usually reviews within a day.</div>}
-                  {m.status === 'rejected' && m.rejectReason && (
-                    <div className="bg-red-tint text-red-500 text-[12.5px] rounded-[10px] px-3 py-2.5 mt-2.5 leading-relaxed">{m.rejectReason}</div>
+                  {ds === 'awaiting' && (
+                    <div className="bg-[#FBF0DC] text-[#9A6800] text-[12.5px] rounded-[10px] px-3 py-2.5 mt-2.5 leading-relaxed">Approved by Mooves. Add a payment method and it goes live in the area feed ({priceLabel(m.priceCents)} placement fee).</div>
+                  )}
+                  {ds === 'failed' && (
+                    <div className="bg-red-tint text-red-500 text-[12.5px] rounded-[10px] px-3 py-2.5 mt-2.5 leading-relaxed">Your card was declined, so this isn&apos;t live yet. Update your card and we&apos;ll try the charge again.</div>
+                  )}
+                  {ds === 'review' && <div className="text-[12.5px] text-ink-500 mt-2">Mooves usually reviews within a day. You&apos;re not charged until it goes live.</div>}
+                  {ds === 'rejected' && m.rejectReason && (
+                    <div className="bg-red-tint text-red-500 text-[12.5px] rounded-[10px] px-3 py-2.5 mt-2.5 leading-relaxed">{m.rejectReason} You weren&apos;t charged.</div>
                   )}
 
                   <div className="flex gap-2 items-center mt-3.5">
-                    {m.status === 'approved' && <button onClick={() => { setViewingId(m.id); setView('analytics') }} className="bg-white border border-[#E8E4F5] text-ink-900 font-semibold text-[13px] rounded-[10px] px-4 py-2">View analytics</button>}
-                    {m.status === 'rejected' && <button onClick={() => { setEditing(m); setView('edit') }} className="bg-purple-500 text-white font-semibold text-[13px] rounded-[10px] px-4 py-2">Edit &amp; resubmit</button>}
-                    {m.status !== 'rejected' && <button onClick={() => { setEditing(m); setView('edit') }} className="text-purple-700 font-semibold text-[12.5px]">Edit</button>}
+                    {ds === 'live' && <button onClick={() => { setViewingId(m.id); setView('analytics') }} className="bg-white border border-[#E8E4F5] text-ink-900 font-semibold text-[13px] rounded-[10px] px-4 py-2">View analytics</button>}
+                    {ds === 'awaiting' && <button onClick={() => setView('billing')} className="bg-purple-500 text-white font-semibold text-[13px] rounded-[10px] px-4 py-2">Add payment to go live</button>}
+                    {ds === 'failed' && <button onClick={() => setView('billing')} className="bg-purple-500 text-white font-semibold text-[13px] rounded-[10px] px-4 py-2">Update card</button>}
+                    {ds === 'rejected' && <button onClick={() => { setEditing(m); setView('edit') }} className="bg-purple-500 text-white font-semibold text-[13px] rounded-[10px] px-4 py-2">Edit &amp; resubmit</button>}
+                    {ds !== 'rejected' && <button onClick={() => { setEditing(m); setView('edit') }} className="text-purple-700 font-semibold text-[12.5px]">Edit</button>}
                   </div>
                 </div>
-              ))
+                )
+              })
             )
           ) : view === 'new' ? (
             <MoveForm mode="edit" submitting={busy} submitLabel="Submit for review"
@@ -226,7 +260,7 @@ export default function SponsorDashboard({ sponsor, onLogout }: { sponsor: Spons
             <>
               <div className="flex items-center gap-2 mb-4">
                 <span className="bg-purple-100 text-purple-700 rounded-full px-2.5 py-0.5 text-[11px] font-bold">{interestLabel(viewingMove.category)}</span>
-                <StatusBadge status={viewingMove.status} />
+                <StatusBadge state={displayState(viewingMove)} />
                 <span className="font-display font-extrabold text-[16px] text-ink-900 ml-1">{viewingMove.title}</span>
               </div>
               <div className="grid grid-cols-4 gap-3.5 mb-5">
@@ -245,13 +279,7 @@ export default function SponsorDashboard({ sponsor, onLogout }: { sponsor: Spons
               <button onClick={() => setView('moves')} className="text-purple-700 font-semibold text-[13px] mt-4">‹ Back to my moves</button>
             </>
           ) : view === 'billing' ? (
-            <div className="max-w-[520px]">
-              <div className="bg-white border border-[#E8E4F5] rounded-[14px] p-5">
-                <h4 className="font-display font-extrabold text-[15px] text-ink-900 mb-1.5">Payment method</h4>
-                <p className="text-[13px] text-ink-500 leading-relaxed mb-3">Add a card once. When a move is approved and goes live, you&apos;re billed automatically per your plan. You&apos;re never charged for moves under review or rejected.</p>
-                <div className="text-[12.5px] text-grey-300">Billing setup is coming soon.</div>
-              </div>
-            </div>
+            <BillingSection />
           ) : null}
         </div>
       </div>

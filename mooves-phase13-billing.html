@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mooves — Phase 13 · Billing (surface 4)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg-around: #1C1730; --app-bg: #F8F6FF;
+    --purple-500: #7C5CDB; --purple-700: #5F3FC4; --purple-100: #EDE9FF; --purple-50: #F4F1FF;
+    --green-700: #167A43; --green-100: #E3F9EC; --red-500: #E8405A; --red-tint: #FFF0F2;
+    --amber-ink: #9A6800; --amber-bg: #FBF0DC;
+    --ink-900: #1C1730; --ink-500: #6B628A; --grey-300: #BDB5D4; --border: #E8E4F5;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg-around); font-family: 'Inter', sans-serif; color: #fff; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 26px 16px 50px; }
+  h1.page-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 19px; margin-bottom: 4px; }
+  p.page-sub { font-size: 13px; color: #9B93B8; margin-bottom: 18px; text-align: center; max-width: 640px; line-height: 1.5; }
+  .toggles { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 640px; margin-bottom: 20px; }
+  .toggles button { font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; color: #C9C1E4; background: #2A2340; border: 1px solid #3A3155; border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all .15s ease; }
+  .toggles button:hover { border-color: var(--purple-500); }
+  .toggles button.active { background: var(--purple-500); border-color: var(--purple-500); color: #fff; }
+
+  .win { width: min(1040px, 96vw); height: 660px; border-radius: 16px; overflow: hidden; box-shadow: 0 24px 60px rgba(0,0,0,.5); background: var(--app-bg); display: flex; }
+  .side { width: 210px; background: #fff; border-right: 1px solid var(--border); flex-shrink: 0; padding: 18px 14px; display: flex; flex-direction: column; }
+  .brand { padding: 4px 8px 16px; }
+  .brand .n { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 16px; color: var(--ink-900); }
+  .brand .n span { color: var(--purple-500); }
+  .brand .tag { font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--grey-300); }
+  .nav { display: flex; flex-direction: column; gap: 3px; }
+  .nav button { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 10px 11px; border-radius: 10px; border: none; background: none; cursor: pointer; font-size: 13.5px; font-weight: 600; color: var(--ink-500); font-family: 'Inter', sans-serif; }
+  .nav button:hover { background: var(--purple-50); }
+  .nav button.on { background: var(--purple-100); color: var(--purple-700); }
+  .side-foot { margin-top: auto; display: flex; align-items: center; gap: 9px; padding: 10px 8px 2px; border-top: 1px solid var(--border); }
+  .side-foot .av { width: 30px; height: 30px; border-radius: 9px; background: linear-gradient(135deg,#F0A6C0,#E0789E); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 12px; }
+  .side-foot .who { font-size: 12px; font-weight: 600; color: var(--ink-900); line-height: 1.2; }
+  .side-foot .who small { display: block; font-weight: 500; color: var(--ink-500); font-size: 11px; }
+
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .topbar { padding: 20px 26px 16px; border-bottom: 1px solid var(--border); background: #fff; }
+  .topbar h2 { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 22px; color: var(--ink-900); }
+  .topbar .sub { font-size: 13px; color: var(--ink-500); margin-top: 2px; }
+  .content { flex: 1; overflow-y: auto; padding: 22px 26px; }
+  .content::-webkit-scrollbar { width: 8px; } .content::-webkit-scrollbar-thumb { background: #E0DAF0; border-radius: 4px; }
+
+  .btn { font-family: 'Inter', sans-serif; font-weight: 600; font-size: 13.5px; border: none; border-radius: 10px; padding: 9px 16px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; }
+  .btn-primary { background: var(--purple-500); color: #fff; }
+  .btn-light { background: #fff; border: 1px solid var(--border); color: var(--ink-900); }
+  .btn-danger { background: #fff; border: 1px solid var(--red-500); color: var(--red-500); }
+  .cat { display: inline-flex; align-items: center; background: var(--purple-100); color: var(--purple-700); border-radius: 999px; padding: 3px 10px; font-size: 11px; font-weight: 700; }
+  .badge { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; padding: 3px 9px; font-size: 11px; font-weight: 700; }
+  .badge.review { background: var(--purple-100); color: var(--purple-700); }
+  .badge.awaiting { background: var(--amber-bg); color: var(--amber-ink); }
+  .badge.failed { background: var(--red-tint); color: var(--red-500); }
+  .badge.live { background: var(--green-100); color: var(--green-700); }
+  .badge.rejected { background: var(--red-tint); color: var(--red-500); }
+  .dot { width: 6px; height: 6px; border-radius: 50%; }
+
+  /* Billing */
+  .panel { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 20px; max-width: 520px; }
+  .panel h4 { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 15px; color: var(--ink-900); margin-bottom: 6px; }
+  .panel p { font-size: 13px; color: var(--ink-500); line-height: 1.5; margin-bottom: 16px; }
+  .price-line { background: var(--purple-50); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; font-size: 13px; color: var(--ink-900); margin-bottom: 18px; display: flex; align-items: center; gap: 9px; }
+  .price-line b { color: var(--purple-700); }
+
+  /* Stripe-elements-style card field */
+  .stripe-field { border: 1.5px solid var(--border); border-radius: 10px; padding: 12px 13px; display: flex; align-items: center; gap: 10px; background: #fff; }
+  .stripe-field:focus-within { border-color: var(--purple-500); }
+  .stripe-field .cardic { width: 26px; height: 18px; border-radius: 3px; background: linear-gradient(135deg,#7C5CDB,#9B7FE8); flex-shrink: 0; }
+  .stripe-field input { border: none; outline: none; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--ink-900); }
+  .stripe-field .num { flex: 1; } .stripe-field .exp { width: 62px; } .stripe-field .cvc { width: 46px; } .stripe-field .zip { width: 64px; }
+  .stripe-note { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--grey-300); margin-top: 10px; }
+
+  .card-on-file { display: flex; align-items: center; gap: 13px; border: 1px solid var(--border); border-radius: 12px; padding: 14px 15px; margin-bottom: 16px; }
+  .brandmark { width: 44px; height: 30px; border-radius: 5px; background: #1A1F71; color: #fff; font-weight: 800; font-size: 11px; font-style: italic; display: flex; align-items: center; justify-content: center; flex-shrink: 0; letter-spacing: .02em; }
+  .cof-txt .t { font-weight: 700; font-size: 14px; color: var(--ink-900); }
+  .cof-txt .s { font-size: 12px; color: var(--ink-500); margin-top: 1px; }
+
+  /* Move cards */
+  .mcard { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; margin-bottom: 14px; }
+  .mtop { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .mtitle { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 16px; color: var(--ink-900); }
+  .msub { font-size: 12.5px; color: var(--ink-500); margin-top: 1px; }
+  .note { font-size: 12.5px; border-radius: 10px; padding: 9px 12px; margin-top: 10px; line-height: 1.45; }
+  .note.amber { background: var(--amber-bg); color: var(--amber-ink); }
+  .note.red { background: var(--red-tint); color: var(--red-500); }
+  .mstats { display: flex; gap: 22px; margin-top: 12px; }
+  .mstat .v { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 18px; color: var(--ink-900); }
+  .mstat .l { font-size: 11px; color: var(--ink-500); margin-top: 1px; }
+  .mactions { display: flex; gap: 8px; align-items: center; margin-top: 13px; }
+  .linkbtn { background: none; border: none; color: var(--purple-700); font-weight: 600; font-size: 12.5px; cursor: pointer; }
+
+  .view { display: none; } .view.show { display: block; }
+  .screen-label { margin-top: 20px; font-size: 13px; color: #8A82A8; font-weight: 500; text-align: center; }
+  .screen-label b { color: #C9C1E4; font-weight: 600; }
+</style>
+</head>
+<body>
+
+  <h1 class="page-title">Billing — pay for placements (Stripe)</h1>
+  <p class="page-sub">Phase 13 surface 4. Sponsors add a card once (Stripe Elements, tokenized). When a move clears moderation it auto-charges the flat placement fee and goes live. Never charged for moves under review or rejected.</p>
+
+  <div class="toggles">
+    <button data-view="empty" class="active">Billing — no card</button>
+    <button data-view="addcard">Add card</button>
+    <button data-view="onfile">Card on file</button>
+    <button data-view="moves">My moves (billing states)</button>
+  </div>
+
+  <div class="win">
+    <div class="side">
+      <div class="brand"><div class="n">M<span>oo</span>ves</div><div class="tag">for Business</div></div>
+      <div class="nav">
+        <button class="navbtn" data-nav="moves" data-view="moves"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="9" rx="1.5" stroke="currentColor" stroke-width="2"/><rect x="14" y="3" width="7" height="5" rx="1.5" stroke="currentColor" stroke-width="2"/><rect x="14" y="12" width="7" height="9" rx="1.5" stroke="currentColor" stroke-width="2"/><rect x="3" y="16" width="7" height="5" rx="1.5" stroke="currentColor" stroke-width="2"/></svg>My moves</button>
+        <button class="navbtn"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>New move</button>
+        <button class="navbtn" data-nav="billing" data-view="empty"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="12" rx="2" stroke="currentColor" stroke-width="2"/><path d="M3 10h18" stroke="currentColor" stroke-width="2"/></svg>Billing</button>
+      </div>
+      <div class="side-foot"><div class="av">V</div><div class="who">The Vista<small>Sponsor</small></div></div>
+    </div>
+
+    <div class="main">
+      <div class="topbar"><h2 id="pageTitle">Billing</h2><div class="sub" id="pageSub">Set up how you pay for published moves</div></div>
+      <div class="content">
+
+        <!-- BILLING: no card -->
+        <div class="view view-empty">
+          <div class="panel">
+            <h4>Payment method</h4>
+            <p>Add a card once. When a move is approved and goes live, you're billed automatically. You're never charged for moves under review or rejected.</p>
+            <div class="price-line"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#5F3FC4" stroke-width="2"/><path d="M12 7v5l3 2" stroke="#5F3FC4" stroke-width="2" stroke-linecap="round"/></svg><span>Placement fee: <b>$25</b> per move, charged when it goes live.</span></div>
+            <button class="btn btn-primary" onclick="go('addcard')">+ Add a payment method</button>
+          </div>
+        </div>
+
+        <!-- BILLING: add card (Stripe Elements) -->
+        <div class="view view-addcard">
+          <div class="panel">
+            <h4>Add a payment method</h4>
+            <p>Your card is handled by Stripe. Card details never touch Mooves' servers.</p>
+            <label style="display:block;font-size:12px;font-weight:700;color:var(--ink-500);margin-bottom:6px;">Card</label>
+            <div class="stripe-field">
+              <span class="cardic"></span>
+              <input class="num" placeholder="1234 1234 1234 1234" />
+              <input class="exp" placeholder="MM / YY" />
+              <input class="cvc" placeholder="CVC" />
+              <input class="zip" placeholder="ZIP" />
+            </div>
+            <div class="stripe-note">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><rect x="4" y="10" width="16" height="10" rx="2" stroke="#BDB5D4" stroke-width="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="#BDB5D4" stroke-width="2"/></svg>
+              Secured by Stripe. We store a token, never your card number.
+            </div>
+            <div style="display:flex;gap:10px;margin-top:20px;">
+              <button class="btn btn-primary" onclick="go('onfile')">Save card</button>
+              <button class="btn btn-light" onclick="go('empty')">Cancel</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- BILLING: card on file -->
+        <div class="view view-onfile">
+          <div class="panel">
+            <h4>Payment method</h4>
+            <div class="card-on-file">
+              <div class="brandmark">VISA</div>
+              <div class="cof-txt" style="flex:1"><div class="t">Visa ending 4242</div><div class="s">Expires 12 / 27</div></div>
+            </div>
+            <div class="price-line"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#5F3FC4" stroke-width="2"/><path d="M12 7v5l3 2" stroke="#5F3FC4" stroke-width="2" stroke-linecap="round"/></svg><span>You're billed <b>$25</b> per placement, automatically when a move goes live.</span></div>
+            <div style="display:flex;gap:10px;">
+              <button class="btn btn-light" onclick="go('addcard')">Update card</button>
+              <button class="btn btn-danger" onclick="go('empty')">Remove</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- MY MOVES: billing-aware states -->
+        <div class="view view-moves">
+          <!-- Live -->
+          <div class="mcard">
+            <div class="mtop"><span class="cat">Live music</span><span class="badge live"><span class="dot" style="background:var(--green-700)"></span>Live</span></div>
+            <div class="mtitle">Sunset rooftop set at The Vista</div>
+            <div class="msub">60647 · 25 mi · Fri 7pm · Mission · billed $25 on Jul 18</div>
+            <div class="mstats">
+              <div class="mstat"><div class="v">1,204</div><div class="l">Feeds reached</div></div>
+              <div class="mstat"><div class="v">86</div><div class="l">Interested</div></div>
+              <div class="mstat"><div class="v">31</div><div class="l">Clicks</div></div>
+              <div class="mstat"><div class="v">12</div><div class="l">Brought to feeds</div></div>
+            </div>
+            <div class="mactions"><button class="btn btn-light">View analytics</button></div>
+          </div>
+
+          <!-- Approved, awaiting payment (no card) -->
+          <div class="mcard">
+            <div class="mtop"><span class="cat">Food &amp; drink</span><span class="badge awaiting"><span class="dot" style="background:var(--amber-ink)"></span>Approved</span></div>
+            <div class="mtitle">Taco Tuesday on the patio</div>
+            <div class="msub">60647 · 25 mi · Tue 5pm · Logan Square</div>
+            <div class="note amber">Approved by Mooves. Add a payment method and it goes live in the area feed ($25 placement fee).</div>
+            <div class="mactions"><button class="btn btn-primary" onclick="go('empty')">Add payment to go live</button><button class="linkbtn">Edit</button></div>
+          </div>
+
+          <!-- Payment failed -->
+          <div class="mcard">
+            <div class="mtop"><span class="cat">Markets &amp; pop-ups</span><span class="badge failed"><span class="dot" style="background:var(--red-500)"></span>Payment failed</span></div>
+            <div class="mtitle">Saturday makers market</div>
+            <div class="msub">60647 · 25 mi · Sat 10am · Logan Blvd</div>
+            <div class="note red">Your card was declined, so this isn't live yet. Update your card and we'll try the $25 charge again.</div>
+            <div class="mactions"><button class="btn btn-primary" onclick="go('addcard')">Update card</button><button class="linkbtn">Edit</button></div>
+          </div>
+
+          <!-- In review -->
+          <div class="mcard">
+            <div class="mtop"><span class="cat">Wellness</span><span class="badge review"><span class="dot" style="background:var(--purple-700)"></span>In review</span></div>
+            <div class="mtitle">Sunrise yoga in the park</div>
+            <div class="msub">60622 · 25 mi · Sat 7am · Humboldt Park</div>
+            <div class="mactions"><span style="font-size:12.5px;color:var(--ink-500)">Mooves usually reviews within a day. You're not charged until it goes live.</span><button class="linkbtn" style="margin-left:auto">Edit</button></div>
+          </div>
+
+          <!-- Rejected -->
+          <div class="mcard">
+            <div class="mtop"><span class="cat">Nightlife</span><span class="badge rejected"><span class="dot" style="background:var(--red-500)"></span>Rejected</span></div>
+            <div class="mtitle">Crypto meetup + free drinks</div>
+            <div class="msub">60614 · 25 mi · Thu 8pm</div>
+            <div class="note red">The link doesn't resolve, and the title reads like an ad. Add a real venue and a working URL, then resubmit. You weren't charged.</div>
+            <div class="mactions"><button class="btn btn-primary">Edit &amp; resubmit</button></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="screen-label"><b>Phase 13 — Billing</b> · Stripe card-on-file + auto-charge on publish · surface 4 of 4</div>
+
+<script>
+  const win = document.querySelector('.win');
+  const toggles = document.querySelectorAll('.toggles button');
+  const pageTitle = document.getElementById('pageTitle');
+  const pageSub = document.getElementById('pageSub');
+  const META = {
+    empty:   { view: 'empty',   title: 'Billing',  sub: 'Set up how you pay for published moves', nav: 'billing' },
+    addcard: { view: 'addcard', title: 'Billing',  sub: 'Add a payment method', nav: 'billing' },
+    onfile:  { view: 'onfile',  title: 'Billing',  sub: 'Your payment method', nav: 'billing' },
+    moves:   { view: 'moves',   title: 'My moves', sub: "Your sponsored moves and how they're doing", nav: 'moves' },
+  };
+  function go(v) {
+    const m = META[v];
+    toggles.forEach(b => b.classList.toggle('active', b.dataset.view === v));
+    ['empty','addcard','onfile','moves'].forEach(x => win.querySelector('.view-' + x).classList.toggle('show', x === m.view));
+    document.querySelectorAll('.navbtn').forEach(b => b.classList.toggle('on', b.dataset.nav === m.nav));
+    pageTitle.textContent = m.title; pageSub.textContent = m.sub;
+  }
+  document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => go(b.dataset.view)));
+  go('empty');
+</script>
+</body>
+</html>

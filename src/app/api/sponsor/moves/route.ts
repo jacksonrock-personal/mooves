@@ -15,8 +15,17 @@ function suppress(n: number): number | null {
   return n === 0 ? 0 : n < 5 ? null : n
 }
 
+// Billing state for an approved move: live (paid) · failed (charge attempted,
+// unpaid) · awaiting (no card yet). Null for pending/rejected.
+function billingState(m: MoveRow): 'live' | 'failed' | 'awaiting' | null {
+  if (m.status !== 'approved') return null
+  if (m.paid_at) return 'live'
+  return m.stripe_payment_intent_id ? 'failed' : 'awaiting'
+}
+
 function mapSponsorMove(m: MoveRow) {
-  const live = m.status === 'approved'
+  const billing = billingState(m)
+  const live = billing === 'live'
   return {
     id: m.id,
     title: m.title,
@@ -29,9 +38,12 @@ function mapSponsorMove(m: MoveRow) {
     imageUrl: m.image_url,
     timeText: m.time_text,
     status: m.status,
+    billing, // 'live' | 'failed' | 'awaiting' | null
+    priceCents: m.price_cents,
+    paidAt: m.paid_at,
     rejectReason: m.reject_reason,
     createdAt: m.created_at,
-    // Analytics only meaningful once live (approved); suppressed small-N.
+    // Analytics only meaningful once live (approved + paid); suppressed small-N.
     impressions: live ? suppress(m.impressions) : null,
     interested: live ? suppress(m.interested_count) : null,
     clicks: live ? suppress(m.clicks) : null,

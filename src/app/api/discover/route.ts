@@ -34,12 +34,15 @@ export async function GET(req: Request) {
   const match = resolveArea(areaZip)
   const zips = match ? match.nearbyZips : [areaZip]
 
+  // Live = moderation-approved AND (Mooves-authored OR paid). Sponsor-authored
+  // moves only appear once their placement charge has cleared (13.6b).
   const { data: rows, error } = await supabase
     .from('sponsored_moves')
     .select('id, title, description, category, brand, time_text, link_url, image_url, impressions')
     .eq('status', 'approved')
     .in('area_zip', zips)
     .in('category', interests)
+    .or('sponsor_id.is.null,paid_at.not.is.null')
     .order('created_at', { ascending: false })
 
   if (error) return NextResponse.json({ error: 'Query failed' }, { status: 500 })
