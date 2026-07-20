@@ -3473,12 +3473,45 @@ Billing UI on the sponsor-portal shell. States: Billing — no card (explains mo
 - [ ] Uses the DS visual language + cow brand; mobile-first/responsive.
 - [ ] Decoupled — shippable independently of app releases.
 
+#### 14.2a — Build detail (settled 2026-07-20, session kickoff)
+*Elaborates 14.2 into a build-ready spec. Landing-first (before tipping) on branch `feat/phase14-landing`.*
+
+**Routing — lives at `/` (the bare domain).** Today `src/app/page.tsx` is just `redirect('/auth')`, so a cold visitor to makemooves.app lands straight on the phone-entry screen — there's no marketing surface. Change:
+- Make `/` **public** in `src/middleware.ts`. `PUBLIC_PREFIXES` uses `startsWith`, which `'/'` would match for *everything* — so add an **exact-match** allowance (`pathname === '/'`) rather than a prefix entry.
+- The root **server component** reads the `mooves-token` cookie: **valid session → `redirect('/feed')`** (logged-in users never see marketing); **no/invalid token → render the landing page.** This keeps the "authed users skip the marketing page" behavior while exposing the page to logged-out visitors and search/share traffic.
+- **Primary CTA → `/auth`** (the existing phone-entry flow). No auth logic on the landing page itself (out of scope, per 14.2).
+
+**Layout convention — responsive full-width, NOT the 320px phone-frame.** Deliberate break from the mockup convention (same call as the Phase 13 admin/sponsor desktop mockups). The page is **mobile-first** (a centered single-column reading width, ~`max-w` ≈ 480–560px for content) that **widens gracefully on desktop** when a shared link is opened on a laptop. Never a locked phone frame.
+
+**Visual language — DS SSOT.** `docs/design-system.md` tokens/brand: `purple-50` page bg, white cards, `purple-500`/`purple-700` brand, `green-500` decorative + **`green-700` for any green fill carrying text/CTA** (AA), `ink-900`/`ink-500` text, `display-*`/`body-*` type scale. Cow brand via `public/brand/` assets + `CowMark`/`Wordmark` lockup (Phase 8). Status treatments follow **dot + label + color** if any green/grey status chip is depicted.
+
+**Content (single explainer page, top → bottom):**
+1. **Hero** — cow + wordmark lockup, one-line value prop, primary CTA into the app (`/auth`).
+2. **The core loop, 3 beats** — *go green → friends see it → plan over text.* Three simple steps (icon/illustration + short label each), the heart of the page.
+3. **Why it's different** — short reassurance beats (no feeds to scroll / no pressure / a green just means "I'm free"). Kept light; exact copy in the mockup.
+4. **Closing CTA** — repeat the CTA into the app; tiny footer (© / makemooves.app). **No** signup form, blog, docs, sponsor pitch, or auth on the page.
+
+**Analytics (optional):** PostHog `landing_view` on load + `landing_cta_click` on the primary CTA. Aggregate only.
+
+**Out of scope (reaffirmed):** no blog/docs, no sponsor marketing (that's the Phase 13 `/sponsor` portal), no auth/signup form on the page, no email capture.
+
+**Acceptance (build-detail additions):**
+- [ ] `/` renders the marketing page for logged-out visitors; a valid `mooves-token` redirects to `/feed`.
+- [ ] `/` is a public route (exact-match) in middleware; no other route's protection changes.
+- [ ] Primary CTA routes to `/auth`; no auth/signup logic on the page.
+- [ ] Responsive (mobile-first → widens on desktop); DS tokens + cow brand; green CTAs use `green-700`.
+
+### 14.2 Landing — ✅ CODED 2026-07-20 (`feat/phase14-landing`) · Mockup ✅ APPROVED (`mooves-phase14-landing.html`)
+**Build:** NEW `src/components/landing/LandingScreen.tsx` (approved mockup in Tailwind + DS tokens; `CowMark`; `md:` responsive breakpoints; PostHog `landing_view`/`landing_cta_click`; ↓ scroll-to-loop). MODIFIED `src/app/page.tsx` (async server component: valid `mooves-token`→`redirect('/feed')`, else render landing; marketing `metadata`) + `src/middleware.ts` (`/` exact-match public). `tsc` + `next build` clean; `/` compiles dynamic; live render verified, no console errors. **No DB/migration** (static page). CTAs → `/auth`. **Build-time + live-render verified; Jackson's device pass optional. NEXT: Phase 14 surface 2 = cow tipping.**
+
+Responsive marketing page (breaks the 320px phone-frame; Mobile/Desktop toggle in the mockup chrome). Sections: nav (cow+wordmark · "Open app") → hero (cow tile · "Green means you're free" eyebrow · headline "The easiest way to actually hang out." · sub ends "That's it." · **"Make Mooves"** CTA · round ↓ scroll button) → core loop 3 beats ("Three taps from bored to booked": Go green / Friends see it / Plan over text, each with a tiny visual) → why-it's-different dark band (No feed to scroll · No pressure · Just your people) → closing CTA ("Ready when you are" · "Make Mooves") → footer. **Primary CTA = purple-500** (green reserved for the availability metaphor); green text uses `green-700`. Both CTAs route to `/auth`. **Next: build via mooves-build-loop.**
+
 ### Deferred / directional (not spec'd)
 - **WhatsApp / international** — trigger-gated on real non-US demand; remains directional, no committed scope.
 
 ### Open questions
 - Exact preset tip amounts + copy (mockup).
-- Landing-page content/sections + routing (landing at `/` vs app routes) — build decision.
+- ~~Landing-page content/sections + routing (landing at `/` vs app routes)~~ — **RESOLVED 2026-07-20:** at `/` with authed→/feed redirect; responsive (not phone-frame); content plan in 14.2a.
 - "3+ moves" tip-jar threshold — confirm/tune.
 
 ---
