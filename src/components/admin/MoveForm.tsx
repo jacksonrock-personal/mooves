@@ -23,6 +23,10 @@ interface MoveFormProps {
   submitting: boolean
   onSubmit: (values: MoveFormValues, publish: boolean) => void
   onCancel: () => void
+  // Single-submit label (edit mode). Lets the sponsor portal reuse this form
+  // with "Submit for review" instead of "Save changes".
+  submitLabel?: string
+  footnote?: string
 }
 
 const EMPTY: MoveFormValues = {
@@ -30,7 +34,7 @@ const EMPTY: MoveFormValues = {
   areaZip: '', radiusMiles: '25', linkUrl: '', imageUrl: '', timeText: '',
 }
 
-export default function MoveForm({ initial, mode, submitting, onSubmit, onCancel }: MoveFormProps) {
+export default function MoveForm({ initial, mode, submitting, onSubmit, onCancel, submitLabel, footnote }: MoveFormProps) {
   const [v, setV] = useState<MoveFormValues>({ ...EMPTY, ...initial })
   const set = (k: keyof MoveFormValues) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setV(prev => ({ ...prev, [k]: e.target.value }))
@@ -109,7 +113,7 @@ export default function MoveForm({ initial, mode, submitting, onSubmit, onCancel
         ) : (
           <button disabled={!valid || submitting} onClick={() => onSubmit(v, false)}
             className="bg-purple-500 text-white font-semibold text-[13.5px] rounded-[10px] px-4 py-2.5 disabled:opacity-40">
-            {submitting ? 'Saving…' : 'Save changes'}
+            {submitting ? 'Saving…' : (submitLabel ?? 'Save changes')}
           </button>
         )}
         <button onClick={onCancel} className="bg-white border border-[#E8E4F5] text-ink-900 font-semibold text-[13.5px] rounded-[10px] px-4 py-2.5 ml-auto">
@@ -121,6 +125,7 @@ export default function MoveForm({ initial, mode, submitting, onSubmit, onCancel
           Mooves-authored moves publish straight to the feed (auto-approved). &ldquo;Save as pending&rdquo; holds it for a second review.
         </div>
       )}
+      {footnote && <div className="text-[11.5px] text-grey-300 mt-3 leading-relaxed">{footnote}</div>}
     </div>
   )
 }

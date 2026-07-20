@@ -183,6 +183,27 @@ export type Database = {
           },
         ]
       }
+      sponsors: {
+        Row: {
+          business_name: string | null
+          created_at: string
+          id: string
+          phone: string
+        }
+        Insert: {
+          business_name?: string | null
+          created_at?: string
+          id?: string
+          phone: string
+        }
+        Update: {
+          business_name?: string | null
+          created_at?: string
+          id?: string
+          phone?: string
+        }
+        Relationships: []
+      }
       sponsored_moves: {
         Row: {
           area_zip: string
