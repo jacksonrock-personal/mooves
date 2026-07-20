@@ -315,6 +315,38 @@ export type Database = {
           },
         ]
       }
+      tips: {
+        Row: {
+          id: string
+          user_id: string | null
+          amount_cents: number
+          stripe_payment_intent_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          amount_cents: number
+          stripe_payment_intent_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          amount_cents?: number
+          stripe_payment_intent_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tips_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       move_joins: {
         Row: {
           created_at: string

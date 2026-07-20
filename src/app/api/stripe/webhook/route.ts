@@ -1,7 +1,9 @@
-// POST /api/stripe/webhook — Stripe event receiver (Phase 13 surface 4).
+// POST /api/stripe/webhook — Stripe event receiver.
 // Public route (Stripe calls it unauthenticated); gated by signature
-// verification. Confirms placement charges: succeeded → move paid + live;
-// failed → record the attempt so the sponsor sees "payment failed".
+// verification. Handles two PaymentIntent kinds by metadata:
+//  - Phase 13 placements (metadata.move_id): succeeded → move paid + live;
+//    failed → record the attempt so the sponsor sees "payment failed".
+//  - Phase 14.1 tips (metadata.type='tip'): succeeded → insert a ledger row.
 
 import { NextResponse } from 'next/server'
 import type Stripe from 'stripe'
@@ -26,7 +28,19 @@ export async function POST(req: Request) {
   if (event.type === 'payment_intent.succeeded') {
     const pi = event.data.object as Stripe.PaymentIntent
     const moveId = pi.metadata?.move_id
-    if (moveId) {
+    if (pi.metadata?.type === 'tip') {
+      // Phase 14.1 tip. Insert a ledger row; the unique stripe_payment_intent_id
+      // keeps this idempotent across webhook retries (ignoreDuplicates = no-op on conflict).
+      const userId = pi.metadata?.user_id
+      await supabase.from('tips').upsert(
+        {
+          user_id: userId || null,
+          amount_cents: pi.amount,
+          stripe_payment_intent_id: pi.id,
+        },
+        { onConflict: 'stripe_payment_intent_id', ignoreDuplicates: true },
+      )
+    } else if (moveId) {
       // Filter on paid_at IS NULL keeps this idempotent across retries.
       await supabase
         .from('sponsored_moves')

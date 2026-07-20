@@ -15,6 +15,7 @@ import { buildBlastHref } from '@/lib/blast'
 import FriendCard from './FriendCard'
 import MyMoveCard from './MyMoveCard'
 import SwipeToGoGreen from './SwipeToGoGreen'
+import TipJar from './TipJar'
 import AmbientTier from './AmbientTier'
 import { type AnchoredMove } from './AnchoredMoveCard'
 import GoGreenSheet from '@/components/go-green/GoGreenSheet'
@@ -431,6 +432,9 @@ export default function FeedScreen() {
                     onToggleJoin={handleToggleJoin}
                   />
                 ))}
+                {/* Phase 14.1: tip jar at the very bottom, only when 3+ moves are live
+                    (friends' greens + the viewer's own green). Self-hides below 3. */}
+                <TipJar visible={friends.length + (isAvailable ? 1 : 0) >= 3} />
               </>
             )}
           </>
