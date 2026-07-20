@@ -16,6 +16,7 @@ import FriendCard from './FriendCard'
 import MyMoveCard from './MyMoveCard'
 import SwipeToGoGreen from './SwipeToGoGreen'
 import AmbientTier from './AmbientTier'
+import { type AnchoredMove } from './AnchoredMoveCard'
 import GoGreenSheet from '@/components/go-green/GoGreenSheet'
 import GoGreyConfirm from '@/components/go-green/GoGreyConfirm'
 import Sheet from '@/components/ui/Sheet'
@@ -42,6 +43,7 @@ interface Friend {
   statusSetAt: string | null
   joiners: Joiner[]
   joinedByMe: boolean
+  anchoredMove: AnchoredMove | null
 }
 interface Group {
   id: string
@@ -65,6 +67,8 @@ export default function FeedScreen() {
   const [isAvailable, setIsAvailable] = useState(false)
   const [myStatusNote, setMyStatusNote] = useState<string | null>(null)
   const [myStatusTime, setMyStatusTime] = useState<string | null>(null)
+  const [myAnchoredMove, setMyAnchoredMove] = useState<AnchoredMove | null>(null)
+  const [pendingAnchor, setPendingAnchor] = useState<AnchoredMove | null>(null)
   const [myJoiners, setMyJoiners] = useState<MyJoiner[]>([])
   const [ambient, setAmbient] = useState<{ activeNow: number; recentGreen: number }>({ activeNow: 0, recentGreen: 0 })
   const [referralCode, setReferralCode] = useState<string | null>(null)
@@ -176,6 +180,7 @@ export default function FeedScreen() {
         isAvailable?: boolean
         statusNote?: string | null
         statusTime?: string | null
+        anchoredMove?: AnchoredMove | null
         referralCode?: string
       }
       if (!mountedRef.current) return
@@ -188,6 +193,7 @@ export default function FeedScreen() {
       setIsAvailable(!!meData.isAvailable)
       setMyStatusNote(meData.statusNote ?? null)
       setMyStatusTime(meData.statusTime ?? null)
+      setMyAnchoredMove(meData.anchoredMove ?? null)
       setReferralCode(meData.referralCode ?? null)
 
       await resolveInvite()
@@ -207,6 +213,25 @@ export default function FeedScreen() {
       setMyJoiners(feedRes.myJoiners ?? [])
       if (feedRes.ambient) setAmbient(feedRes.ambient)
       setGroups(groupsRes.groups ?? [])
+
+      // Arriving from Discover "Go with friends" (13.8): pre-anchor the go-green sheet.
+      const anchorId = searchParams.get('anchor')
+      if (anchorId) {
+        try {
+          const move = (await fetch(`/api/discover/${anchorId}`).then(r =>
+            r.ok ? r.json() : null,
+          )) as AnchoredMove | null
+          if (move && mountedRef.current) {
+            setPendingAnchor(move)
+            setSheetOpen(true)
+            posthog.capture('go_green_sheet_opened', { anchored: true })
+            // Strip ?anchor= so a refresh/remount doesn't reopen the sheet.
+            if (typeof window !== 'undefined') window.history.replaceState({}, '', '/feed')
+          }
+        } catch {
+          // ignore — bad/expired anchor just opens the normal flow
+        }
+      }
 
       const tokenRes = (await fetch('/api/auth/supabase-token').then(r => r.json())) as {
         token: string | null
@@ -257,6 +282,8 @@ export default function FeedScreen() {
     setIsAvailable(true)
     setMyStatusNote(move.statusNote)
     setMyStatusTime(move.statusTime)
+    setMyAnchoredMove(pendingAnchor) // null for a normal go-green
+    setPendingAnchor(null)
     setMyJoiners([])
     setSheetOpen(false)
     setToastMessage("You're free! 🎉")
@@ -310,6 +337,7 @@ export default function FeedScreen() {
       setIsAvailable(false)
       setMyStatusNote(null)
       setMyStatusTime(null)
+      setMyAnchoredMove(null)
       setMyJoiners([])
       posthog.capture('go_grey_confirmed')
     }
@@ -356,6 +384,7 @@ export default function FeedScreen() {
               <MyMoveCard
                 statusNote={myStatusNote}
                 statusTime={myStatusTime}
+                anchoredMove={myAnchoredMove}
                 joiners={myJoiners}
                 meId={me.id}
                 onBlast={handleBlast}
@@ -394,6 +423,7 @@ export default function FeedScreen() {
                     avatarUrl={f.avatarUrl}
                     statusNote={f.statusNote}
                     statusTime={f.statusTime}
+                    anchoredMove={f.anchoredMove}
                     phone={f.phone}
                     joiners={f.joiners}
                     joinedByMe={f.joinedByMe}
@@ -411,8 +441,12 @@ export default function FeedScreen() {
 
       <GoGreenSheet
         open={sheetOpen}
-        onClose={() => setSheetOpen(false)}
+        onClose={() => {
+          setSheetOpen(false)
+          setPendingAnchor(null)
+        }}
         groups={groups}
+        anchoredMove={pendingAnchor}
         onSuccess={handleGoGreenSuccess}
       />
       <GoGreyConfirm

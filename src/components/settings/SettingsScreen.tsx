@@ -15,6 +15,7 @@ import Toast from '@/components/ui/Toast'
 import Wordmark from '@/components/ui/Wordmark'
 import ProfileCard from './ProfileCard'
 import AreaControl from './AreaControl'
+import InterestPicker from '@/components/discover/InterestPicker'
 import LogoutSheet from './LogoutSheet'
 import DeleteSheet from './DeleteSheet'
 
@@ -25,6 +26,7 @@ interface Me {
   areaZip: string | null
   areaCity: string | null
   areaState: string | null
+  interests: string[]
 }
 
 export default function SettingsScreen() {
@@ -58,6 +60,7 @@ export default function SettingsScreen() {
           areaZip: string | null
           areaCity: string | null
           areaState: string | null
+          interests: string[]
         }>,
         fetch('/api/auth/supabase-token').then(r => r.json()) as Promise<{
           token: string | null
@@ -73,6 +76,7 @@ export default function SettingsScreen() {
         areaZip: profile.areaZip,
         areaCity: profile.areaCity,
         areaState: profile.areaState,
+        interests: profile.interests ?? [],
       })
       setSupabaseToken(token.token)
       setUserId(token.userId ?? null)
@@ -98,6 +102,23 @@ export default function SettingsScreen() {
     } catch {
       setMe(previous)
       setToastMessage("Couldn't update name, try again.")
+    }
+  }
+
+  async function handleInterestsChange(next: string[]) {
+    const previous = me
+    setMe(prev => (prev ? { ...prev, interests: next } : prev))
+    try {
+      const res = await fetch('/api/users/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ interests: next }),
+      })
+      if (!res.ok) throw new Error('save failed')
+      posthog.capture('settings_interests_updated')
+    } catch {
+      setMe(previous)
+      setToastMessage("Couldn't update interests, try again.")
     }
   }
 
@@ -237,6 +258,16 @@ export default function SettingsScreen() {
               initialCity={me.areaCity}
               initialState={me.areaState}
             />
+
+            <div className="h-3.5" />
+
+            <div className="bg-white border border-[#E8E4F5] rounded-[20px] p-4 mx-4">
+              <div className="font-sans font-bold text-[15px] text-ink-900">Your interests</div>
+              <div className="font-sans text-[13px] text-ink-500 mt-0.5 mb-3">
+                Pick what you want to see in Discover.
+              </div>
+              <InterestPicker selected={me.interests} onChange={handleInterestsChange} />
+            </div>
 
             <div className="h-6" />
 

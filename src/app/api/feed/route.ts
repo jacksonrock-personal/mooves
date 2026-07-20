@@ -11,6 +11,16 @@ interface JoinerLite {
   avatarUrl: string | null
 }
 
+interface AnchoredMove {
+  id: string
+  title: string
+  description: string
+  brand: string | null
+  category: string
+  timeText: string | null
+  linkUrl: string | null
+}
+
 export async function GET(req: Request) {
   const userId = req.headers.get('x-user-id')
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -46,7 +56,7 @@ export async function GET(req: Request) {
   // Get all green friends (visibility filtering happens next)
   const { data: greenFriends, error } = await supabase
     .from('users')
-    .select('id, display_name, avatar_url, status_note, status_time, phone, status_set_at, visible_to')
+    .select('id, display_name, avatar_url, status_note, status_time, status_move_id, phone, status_set_at, visible_to')
     .in('id', friendIds)
     .eq('is_available', true)
     .order('status_set_at', { ascending: false, nullsFirst: false })
@@ -64,6 +74,29 @@ export async function GET(req: Request) {
     if (!f.visible_to) return true // null = everyone
     return (f.visible_to as string[]).some(gid => myGroupIds.has(gid))
   })
+
+  // Anchored sponsored moves (13.8) — resolve the move each green friend brought over.
+  const anchorIds = [
+    ...new Set(visibleFriends.map(f => f.status_move_id).filter((v): v is string => !!v)),
+  ]
+  const anchorMap = new Map<string, AnchoredMove>()
+  if (anchorIds.length > 0) {
+    const { data: anchorRows } = await supabase
+      .from('sponsored_moves')
+      .select('id, title, description, brand, category, time_text, link_url')
+      .in('id', anchorIds)
+    for (const m of anchorRows ?? []) {
+      anchorMap.set(m.id, {
+        id: m.id,
+        title: m.title,
+        description: m.description,
+        brand: m.brand,
+        category: m.category,
+        timeText: m.time_text,
+        linkUrl: m.link_url,
+      })
+    }
+  }
 
   // Presence (9.2): joins on the visible green friends' moves + on the viewer's own move.
   const moverIds = [...visibleFriends.map(f => f.id), userId]
@@ -114,6 +147,7 @@ export async function GET(req: Request) {
     statusSetAt: f.status_set_at,
     joiners: joinersFor(f.id),
     joinedByMe: (joinersByMover.get(f.id) ?? []).includes(userId),
+    anchoredMove: f.status_move_id ? anchorMap.get(f.status_move_id) ?? null : null,
   }))
 
   // The viewer's own move joiners — include phone for the group-chat blast (9.3).

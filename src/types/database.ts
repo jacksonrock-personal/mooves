@@ -119,12 +119,14 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          interests: string[] | null
           is_available: boolean
           last_active_at: string | null
           last_green_at: string | null
           onboarding_complete: boolean
           phone: string
           referral_code: string
+          status_move_id: string | null
           status_note: string | null
           status_set_at: string | null
           status_time: string | null
@@ -136,12 +138,14 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id: string
+          interests?: string[] | null
           is_available?: boolean
           last_active_at?: string | null
           last_green_at?: string | null
           onboarding_complete?: boolean
           phone: string
           referral_code?: string
+          status_move_id?: string | null
           status_note?: string | null
           status_set_at?: string | null
           status_time?: string | null
@@ -153,18 +157,124 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          interests?: string[] | null
           is_available?: boolean
           last_active_at?: string | null
           last_green_at?: string | null
           onboarding_complete?: boolean
           phone?: string
           referral_code?: string
+          status_move_id?: string | null
           status_note?: string | null
           status_set_at?: string | null
           status_time?: string | null
           visible_to?: string[] | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "users_status_move_id_fkey"
+            columns: ["status_move_id"]
+            isOneToOne: false
+            referencedRelation: "sponsored_moves"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sponsored_moves: {
+        Row: {
+          area_zip: string
+          brand: string | null
+          brought_over_count: number
+          category: string
+          clicks: number
+          created_at: string
+          description: string
+          id: string
+          image_url: string | null
+          impressions: number
+          interested_count: number
+          link_url: string | null
+          radius_miles: number
+          reject_reason: string | null
+          sponsor_id: string | null
+          status: string
+          time_text: string | null
+          title: string
+        }
+        Insert: {
+          area_zip: string
+          brand?: string | null
+          brought_over_count?: number
+          category: string
+          clicks?: number
+          created_at?: string
+          description: string
+          id?: string
+          image_url?: string | null
+          impressions?: number
+          interested_count?: number
+          link_url?: string | null
+          radius_miles?: number
+          reject_reason?: string | null
+          sponsor_id?: string | null
+          status?: string
+          time_text?: string | null
+          title: string
+        }
+        Update: {
+          area_zip?: string
+          brand?: string | null
+          brought_over_count?: number
+          category?: string
+          clicks?: number
+          created_at?: string
+          description?: string
+          id?: string
+          image_url?: string | null
+          impressions?: number
+          interested_count?: number
+          link_url?: string | null
+          radius_miles?: number
+          reject_reason?: string | null
+          sponsor_id?: string | null
+          status?: string
+          time_text?: string | null
+          title?: string
+        }
         Relationships: []
+      }
+      move_interested: {
+        Row: {
+          created_at: string
+          move_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          move_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          move_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "move_interested_move_id_fkey"
+            columns: ["move_id"]
+            isOneToOne: false
+            referencedRelation: "sponsored_moves"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "move_interested_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       move_joins: {
         Row: {

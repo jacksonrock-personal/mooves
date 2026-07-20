@@ -16,14 +16,22 @@ interface Group {
   emoji: string
 }
 
+interface AnchoredMove {
+  id: string
+  title: string
+  brand: string | null
+  timeText: string | null
+}
+
 interface GoGreenSheetProps {
   open: boolean
   onClose: () => void
   groups: Group[]
+  anchoredMove?: AnchoredMove | null
   onSuccess: (move: { statusNote: string | null; statusTime: string | null }) => void
 }
 
-export default function GoGreenSheet({ open, onClose, groups, onSuccess }: GoGreenSheetProps) {
+export default function GoGreenSheet({ open, onClose, groups, anchoredMove, onSuccess }: GoGreenSheetProps) {
   const [note, setNote] = useState('')
   const [time, setTime] = useState<StatusTime | null>(null)
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([])
@@ -56,6 +64,7 @@ export default function GoGreenSheet({ open, onClose, groups, onSuccess }: GoGre
           statusNote: trimmedNote || null,
           statusTime: time,
           visibleTo,
+          statusMoveId: anchoredMove?.id ?? null,
         }),
       })
       if (!res.ok) throw new Error('update failed')
@@ -65,6 +74,7 @@ export default function GoGreenSheet({ open, onClose, groups, onSuccess }: GoGre
       if (trimmedNote) posthog.capture('go_green_with_note')
       if (time) posthog.capture('go_green_with_time')
       if (visibleTo) posthog.capture('go_green_with_groups')
+      if (anchoredMove) posthog.capture('go_green_with_move', { move: anchoredMove.id })
 
       onSuccess({ statusNote: data.statusNote, statusTime: data.statusTime })
     } catch {
@@ -76,6 +86,19 @@ export default function GoGreenSheet({ open, onClose, groups, onSuccess }: GoGre
 
   return (
     <Sheet open={open} onClose={onClose} className="px-5 pb-6">
+      {anchoredMove && (
+        <div className="flex items-center gap-3 border border-[#E8E4F5] rounded-2xl p-3 bg-purple-50 mb-5">
+          <span className="w-9 h-9 rounded-[10px] bg-purple-100 flex items-center justify-center shrink-0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 18V5l12-2v13" stroke="#7C5CDB" strokeWidth="2" strokeLinejoin="round" /><circle cx="6" cy="18" r="3" stroke="#7C5CDB" strokeWidth="2" /><circle cx="18" cy="16" r="3" stroke="#7C5CDB" strokeWidth="2" /></svg>
+          </span>
+          <div className="min-w-0">
+            <div className="font-sans font-bold text-[13.5px] text-ink-900 leading-tight truncate">{anchoredMove.title}</div>
+            <div className="font-sans text-[11.5px] text-ink-500 mt-0.5 truncate">
+              {[anchoredMove.brand ? `Sponsored · ${anchoredMove.brand}` : 'Sponsored', anchoredMove.timeText].filter(Boolean).join(' · ')}
+            </div>
+          </div>
+        </div>
+      )}
       <p className="font-sans text-[11px] font-semibold text-ink-500 uppercase tracking-[0.08em] mb-2.5">
         What&apos;s the vibe?
       </p>

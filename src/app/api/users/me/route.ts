@@ -5,6 +5,7 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { lookupZip } from '@/lib/geo'
+import { INTEREST_SLUGS } from '@/lib/interests'
 
 export async function GET(req: Request) {
   const userId = req.headers.get('x-user-id')
@@ -13,7 +14,7 @@ export async function GET(req: Request) {
   const supabase = createServiceClient()
   const { data, error } = await supabase
     .from('users')
-    .select('id, phone, display_name, avatar_url, referral_code, is_available, status_note, status_time, visible_to, onboarding_complete, area_zip')
+    .select('id, phone, display_name, avatar_url, referral_code, is_available, status_note, status_time, status_move_id, visible_to, onboarding_complete, area_zip, interests')
     .eq('id', userId)
     .single()
 
@@ -21,6 +22,27 @@ export async function GET(req: Request) {
 
   // Derive the display label from the stored zip; nothing else is persisted.
   const area = data.area_zip ? lookupZip(data.area_zip) : null
+
+  // Resolve the viewer's own anchored sponsored move (13.8), for their move card.
+  let anchoredMove = null
+  if (data.status_move_id) {
+    const { data: m } = await supabase
+      .from('sponsored_moves')
+      .select('id, title, description, brand, category, time_text, link_url')
+      .eq('id', data.status_move_id)
+      .maybeSingle()
+    if (m) {
+      anchoredMove = {
+        id: m.id,
+        title: m.title,
+        description: m.description,
+        brand: m.brand,
+        category: m.category,
+        timeText: m.time_text,
+        linkUrl: m.link_url,
+      }
+    }
+  }
 
   return NextResponse.json({
     id: data.id,
@@ -31,11 +53,14 @@ export async function GET(req: Request) {
     isAvailable: data.is_available,
     statusNote: data.status_note,
     statusTime: data.status_time,
+    statusMoveId: data.status_move_id,
+    anchoredMove,
     visibleTo: data.visible_to,
     onboardingComplete: data.onboarding_complete,
     areaZip: data.area_zip,
     areaCity: area?.city ?? null,
     areaState: area?.state ?? null,
+    interests: (data.interests ?? []).filter(s => INTEREST_SLUGS.includes(s)),
   })
 }
 
@@ -47,12 +72,14 @@ export async function PATCH(req: Request) {
     displayName?: string
     avatarUrl?: string | null
     onboardingComplete?: boolean
+    interests?: string[]
   }
 
   type UserUpdate = {
     display_name?: string
     avatar_url?: string | null
     onboarding_complete?: boolean
+    interests?: string[]
   }
   const updates: UserUpdate = {}
 
@@ -64,6 +91,10 @@ export async function PATCH(req: Request) {
   }
   if (body.avatarUrl !== undefined) updates.avatar_url = body.avatarUrl
   if (body.onboardingComplete !== undefined) updates.onboarding_complete = body.onboardingComplete
+  if (body.interests !== undefined) {
+    // Keep only known curated slugs; de-dupe.
+    updates.interests = [...new Set(body.interests.filter(s => INTEREST_SLUGS.includes(s)))]
+  }
 
   const supabase = createServiceClient()
   const { data, error } = await supabase

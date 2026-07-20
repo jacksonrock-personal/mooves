@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mooves — Phase 13 · Discover (moves in my area)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg-around: #1C1730;
+    --app-bg: #F8F6FF;
+    --card: #FFFFFF;
+    --purple-500: #7C5CDB;
+    --purple-700: #5F3FC4;
+    --purple-tint: #EDE9FF;
+    --purple-50: #F4F1FF;
+    --green-500: #2ECC71;
+    --green-700: #167A43;
+    --green-100: #E3F9EC;
+    --grey-300: #BDB5D4;
+    --ink-900: #1C1730;
+    --ink-500: #6B628A;
+    --border: #E8E4F5;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg-around); font-family: 'Inter', sans-serif; color: #fff;
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    padding: 30px 16px 56px;
+  }
+  h1.page-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 19px; letter-spacing: -0.01em; margin-bottom: 4px; }
+  p.page-sub { font-size: 13px; color: #9B93B8; margin-bottom: 20px; text-align: center; max-width: 380px; line-height: 1.5; }
+
+  .toggles { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 380px; margin-bottom: 22px; }
+  .toggles button {
+    font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; color: #C9C1E4;
+    background: #2A2340; border: 1px solid #3A3155; border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all .15s ease;
+  }
+  .toggles button:hover { border-color: var(--purple-500); }
+  .toggles button.active { background: var(--purple-500); border-color: var(--purple-500); color: #fff; }
+
+  .frame {
+    width: 320px; height: 680px; background: var(--app-bg); border-radius: 44px; overflow: hidden;
+    position: relative; box-shadow: 0 24px 60px rgba(0,0,0,.45); display: flex; flex-direction: column;
+  }
+
+  /* Header */
+  .app-header { background: #fff; padding: 40px 20px 12px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .wordmark-row { display: flex; justify-content: center; align-items: center; gap: 7px; margin-bottom: 10px; }
+  .wordmark-row .cow { width: 22px; height: 22px; }
+  .wordmark-row .mark { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 20px; color: var(--ink-900); letter-spacing: -0.02em; }
+  .wordmark-row .mark .oo { color: var(--purple-500); }
+  .head-row { display: flex; align-items: center; justify-content: space-between; }
+  .app-header h2 { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 24px; color: var(--ink-900); letter-spacing: -0.02em; }
+  .loc-chip { display: inline-flex; align-items: center; gap: 5px; background: var(--purple-50); border: 1px solid var(--border); border-radius: 999px; padding: 6px 11px; font-size: 12px; font-weight: 600; color: var(--purple-700); cursor: pointer; }
+
+  .app-body { flex: 1; overflow-y: auto; padding: 16px 16px 90px; }
+  .app-body::-webkit-scrollbar { width: 0; }
+
+  /* Sponsored move card */
+  .move-card { background: #fff; border: 1px solid var(--border); border-radius: 20px; overflow: hidden; margin-bottom: 14px; }
+  .move-img { height: 96px; background: linear-gradient(135deg, #C9B8F5, #9B7FE8); display: flex; align-items: flex-end; }
+  .move-body { padding: 14px 15px 15px; }
+  .move-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 9px; }
+  .cat-chip { display: inline-flex; align-items: center; gap: 5px; background: var(--purple-tint); color: var(--purple-700); border-radius: 999px; padding: 4px 10px; font-size: 11px; font-weight: 700; }
+  .sponsored { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--grey-300); }
+  .move-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 17px; color: var(--ink-900); line-height: 1.2; letter-spacing: -0.01em; }
+  .move-when { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-500); margin-top: 7px; }
+  .move-desc { font-size: 13px; line-height: 1.55; color: var(--ink-500); margin-top: 11px; }
+  .move-actions { margin-top: 14px; }
+
+  .btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; height: 46px; border-radius: 999px; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 15px; border: none; cursor: pointer; }
+  .btn-primary { background: var(--purple-500); color: #fff; }
+  .btn-ghost { background: var(--purple-tint); color: var(--purple-700); }
+  .btn-done { background: var(--green-100); color: var(--green-700); }
+  .btn-outline { background: #fff; border: 1.5px solid var(--purple-500); color: var(--purple-700); }
+  .btn-row { display: flex; gap: 10px; }
+  .btn-row .btn { flex: 1; }
+
+  .reveal { border-top: 1px solid var(--border); margin-top: 14px; padding-top: 13px; }
+  .reveal .lbl { font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--grey-300); margin-bottom: 5px; }
+
+  /* Setup */
+  .setup-h { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 22px; color: var(--ink-900); letter-spacing: -0.01em; margin: 4px 2px 6px; }
+  .setup-p { font-size: 13.5px; line-height: 1.5; color: var(--ink-500); margin: 0 2px 18px; }
+  .field-label { font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-500); margin: 0 2px 9px; }
+  .area-row { display: flex; align-items: center; gap: 11px; background: #fff; border: 1px solid var(--border); border-radius: 16px; padding: 12px 14px; margin-bottom: 22px; }
+  .area-pin { width: 36px; height: 36px; border-radius: 10px; background: var(--purple-50); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .area-row.set .area-pin { background: var(--green-100); }
+  .area-txt { flex: 1; }
+  .area-txt .t { font-weight: 700; font-size: 14px; color: var(--ink-900); }
+  .area-txt .s { font-size: 12px; color: var(--ink-500); margin-top: 1px; }
+  .area-row.set .area-txt .s { color: var(--green-700); font-weight: 600; }
+  .area-set-btn { background: var(--purple-500); color: #fff; border: none; border-radius: 999px; padding: 8px 15px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .area-edit { background: var(--purple-50); border: none; width: 32px; height: 32px; border-radius: 999px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+  .chip { font-size: 13px; font-weight: 600; padding: 9px 14px; border-radius: 999px; border: 1.5px solid var(--border); background: #fff; color: var(--ink-500); cursor: pointer; user-select: none; }
+  .chip.on { background: var(--purple-500); border-color: var(--purple-500); color: #fff; }
+
+  /* Empty / needs-setup */
+  .empty { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 40px 20px 10px; }
+  .empty .cowwrap { width: 96px; height: 96px; margin-bottom: 18px; opacity: .92; }
+  .empty h3 { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 19px; color: var(--ink-900); margin-bottom: 8px; }
+  .empty p { font-size: 13.5px; line-height: 1.5; color: var(--ink-500); max-width: 240px; margin-bottom: 20px; }
+
+  .list-hint { font-size: 12px; color: var(--ink-500); margin: 2px 2px 14px; }
+
+  /* Bottom nav */
+  .bottom-nav { position: absolute; bottom: 0; left: 0; right: 0; height: 74px; background: #fff; border-top: 1px solid var(--border); display: flex; align-items: flex-start; padding-top: 11px; }
+  .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10.5px; font-weight: 600; color: var(--grey-300); }
+  .nav-item.active { color: var(--purple-500); }
+
+  /* Friend-feed anchored card (13.8 result — what friends see) */
+  .onfeed-note { display: flex; align-items: center; gap: 7px; background: var(--purple-50); border: 1px solid var(--border); border-radius: 12px; padding: 9px 12px; font-size: 12px; color: var(--ink-500); margin-bottom: 14px; line-height: 1.4; }
+  .ff-card { background: #fff; border: 1px solid var(--border); border-radius: 20px; padding: 15px 15px 14px; margin-bottom: 14px; }
+  .ff-head { display: flex; align-items: center; gap: 11px; }
+  .ff-av { width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg,#F0A6C0,#E0789E); display: flex; align-items: center; justify-content: center; color:#fff; font-weight: 700; font-size: 16px; flex-shrink: 0; }
+  .ff-name { font-weight: 700; font-size: 15px; color: var(--ink-900); }
+  .ff-free { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; color: var(--green-700); margin-top: 2px; }
+  .ff-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green-500); }
+  .anchor { margin-top: 13px; border: 1px solid var(--border); border-radius: 14px; padding: 11px 12px; background: var(--app-bg); }
+  .anchor-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .sp-tag { font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--grey-300); }
+  .anchor-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 14.5px; color: var(--ink-900); line-height: 1.25; }
+  .anchor-when { font-size: 12.5px; color: var(--ink-500); margin-top: 4px; }
+  .anchor-tap { font-size: 11.5px; color: var(--purple-700); font-weight: 600; margin-top: 8px; }
+  .ff-join { margin-top: 13px; }
+  .btn-sm { height: 42px; font-size: 14px; }
+
+  /* Go-green sheet (pre-anchored) */
+  .sheet-wrap { position: absolute; inset: 0; z-index: 30; display: none; }
+  .sheet-wrap.show { display: block; }
+  .scrim { position: absolute; inset: 0; background: rgba(28,23,48,.5); }
+  .gg-sheet { position: absolute; left: 0; right: 0; bottom: 0; background: #fff; border-radius: 28px 28px 44px 44px; padding: 18px 18px 26px; animation: rise .22s ease; }
+  @keyframes rise { from { transform: translateY(40px); opacity:.4 } to { transform: translateY(0); opacity:1 } }
+  .grab { width: 38px; height: 4px; border-radius: 2px; background: #DED8F0; margin: 0 auto 14px; }
+  .gg-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 19px; color: var(--ink-900); text-align: center; }
+  .gg-sub { font-size: 12.5px; color: var(--ink-500); text-align: center; margin-top: 4px; }
+  .gg-anchor { display: flex; align-items: center; gap: 10px; border: 1px solid var(--border); border-radius: 14px; padding: 11px 12px; margin-top: 14px; background: var(--app-bg); }
+  .gg-anchor .ic { width: 34px; height: 34px; border-radius: 9px; background: var(--purple-tint); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .gg-anchor .t { font-weight: 700; font-size: 13.5px; color: var(--ink-900); line-height:1.2; }
+  .gg-anchor .s { font-size: 11.5px; color: var(--ink-500); margin-top: 2px; }
+  .gg-field { margin-top: 15px; }
+  .gg-flabel { font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-500); margin-bottom: 8px; }
+  .seg { display: flex; gap: 7px; }
+  .seg button { flex:1; padding: 9px 0; border-radius: 999px; border: 1.5px solid var(--border); background:#fff; font-size: 13px; font-weight: 600; color: var(--ink-500); cursor: pointer; }
+  .seg button.on { background: var(--purple-500); border-color: var(--purple-500); color:#fff; }
+  .vis-row { display:flex; align-items:center; justify-content:space-between; border:1px solid var(--border); border-radius: 12px; padding: 11px 13px; font-size: 13px; color: var(--ink-900); font-weight:600; }
+  .vis-row .who { color: var(--ink-500); font-weight:500; display:flex; align-items:center; gap:6px; }
+  .gg-note { width:100%; border:1px solid var(--border); border-radius: 12px; padding: 11px 12px; font-family:'Inter',sans-serif; font-size: 13px; color: var(--ink-900); outline:none; resize:none; }
+  .gg-note::placeholder { color: var(--grey-300); }
+
+  .screen-label { margin-top: 22px; font-size: 13px; color: #8A82A8; font-weight: 500; text-align: center; max-width: 380px; }
+  .screen-label b { color: #C9C1E4; font-weight: 600; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+  <h1 class="page-title">Discover — moves in my area</h1>
+  <p class="page-sub">Phase 13 consumer surface. Local sponsored moves filtered by your coarse area + interests. Never friend or stranger greens. Opt-in, aggregate-only, no per-person exposure.</p>
+
+  <div class="toggles">
+    <button data-state="setup" class="active">Setup (opt-in)</button>
+    <button data-state="feed">Feed</button>
+    <button data-state="interested">Interested</button>
+    <button data-state="bringover">Go with friends</button>
+    <button data-state="onfeed">On friends' feed</button>
+    <button data-state="empty">No matches</button>
+    <button data-state="needs">Needs setup</button>
+  </div>
+
+  <div class="frame" id="frame">
+    <!-- Header -->
+    <div class="app-header">
+      <div class="wordmark-row">
+        <svg class="cow" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <ellipse cx="11" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(-28 11 33)"></ellipse>
+          <ellipse cx="109" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(28 109 33)"></ellipse>
+          <ellipse cx="11" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(-28 11 34)"></ellipse>
+          <ellipse cx="109" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(28 109 34)"></ellipse>
+          <ellipse cx="38" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(-14 38 19)"></ellipse>
+          <ellipse cx="82" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(14 82 19)"></ellipse>
+          <rect x="15" y="20" width="90" height="92" rx="30" fill="#F5F0ED"></rect>
+          <ellipse cx="41" cy="44" rx="19" ry="13" fill="#7A7282" transform="rotate(-10 41 44)"></ellipse>
+          <ellipse cx="79" cy="69" rx="14" ry="9" fill="#7A7282" transform="rotate(16 79 69)"></ellipse>
+          <circle cx="44" cy="57" r="6" fill="#2A1E38"></circle>
+          <circle cx="76" cy="57" r="6" fill="#2A1E38"></circle>
+          <circle cx="46.5" cy="54.5" r="2.2" fill="white"></circle>
+          <circle cx="78.5" cy="54.5" r="2.2" fill="white"></circle>
+          <ellipse cx="60" cy="90" rx="27" ry="20" fill="#F0AABB"></ellipse>
+          <circle cx="50" cy="91" r="9" fill="#2ECC71"></circle>
+          <circle cx="70" cy="91" r="9" fill="#BDB5D4"></circle>
+        </svg>
+        <span class="mark">M<span class="oo">oo</span>ves</span>
+      </div>
+      <div class="head-row">
+        <h2>Discover</h2>
+        <button class="loc-chip" id="locChip">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z" stroke="#5F3FC4" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.5" stroke="#5F3FC4" stroke-width="2"/></svg>
+          Near 94110
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="#5F3FC4" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="app-body" id="body">
+
+      <!-- ========== SETUP ========== -->
+      <div class="view view-setup">
+        <div class="setup-h">See moves near you</div>
+        <p class="setup-p">Set your area and pick a few interests. We&apos;ll show you local moves worth leaving the house for. You can change these anytime.</p>
+
+        <div class="field-label">Your area</div>
+        <div class="area-row" id="setupArea">
+          <div class="area-pin">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z" stroke="#7C5CDB" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.5" stroke="#7C5CDB" stroke-width="2"/></svg>
+          </div>
+          <div class="area-txt"><div class="t">Your area</div><div class="s">Not set</div></div>
+          <button class="area-set-btn" onclick="setSetupArea()">Set</button>
+        </div>
+
+        <div class="field-label">Your interests</div>
+        <div class="chips" id="chips"></div>
+
+        <button class="btn btn-primary" onclick="go('feed')">See moves near you</button>
+        <div style="height:12px"></div>
+        <button class="btn btn-ghost" onclick="go('needs')">Skip for now</button>
+      </div>
+
+      <!-- ========== FEED / INTERESTED ========== -->
+      <div class="view view-feed hidden">
+        <div class="list-hint" id="feedHint">3 moves match your area and interests.</div>
+
+        <!-- card 1 (image) -->
+        <div class="move-card">
+          <div class="move-img">
+            <span style="font-size:34px; padding:8px 12px;">🎧</span>
+          </div>
+          <div class="move-body">
+            <div class="move-top">
+              <span class="cat-chip">Live music</span>
+              <span class="sponsored">Sponsored</span>
+            </div>
+            <div class="move-title">Sunset rooftop set at The Vista</div>
+            <div class="move-when">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#6B628A" stroke-width="2"/><path d="M12 7v5l3 2" stroke="#6B628A" stroke-width="2" stroke-linecap="round"/></svg>
+              Fri 7pm · Mission
+            </div>
+            <div class="move-actions" id="card1actions">
+              <button class="btn btn-primary" onclick="expandCard()">I&apos;m interested</button>
+            </div>
+            <div class="reveal hidden" id="card1reveal">
+              <div class="lbl">✓ Interested</div>
+              <div class="move-desc" style="margin-top:0;">Golden-hour DJ set on the roof at The Vista. Small bar, big view, no cover before 8. Bring friends, tell them Mooves sent you.</div>
+              <button class="btn btn-primary" style="margin-top:14px;" onclick="openGoGreen()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="9" r="3.2" stroke="#fff" stroke-width="2"/><path d="M3.5 18a5.5 5.5 0 0 1 11 0" stroke="#fff" stroke-width="2" stroke-linecap="round"/><path d="M16 6.5a3 3 0 0 1 0 5.8M18.5 18a5.5 5.5 0 0 0-3-4.9" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+                Go with friends
+              </button>
+              <button class="btn btn-outline" style="margin-top:10px;">Get details ↗</button>
+              <p style="font-size:11.5px; color:var(--ink-500); text-align:center; margin-top:11px; line-height:1.4;">Go green with this move so friends can join you.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- card 2 -->
+        <div class="move-card">
+          <div class="move-body">
+            <div class="move-top">
+              <span class="cat-chip">Running &amp; fitness</span>
+              <span class="sponsored">Sponsored</span>
+            </div>
+            <div class="move-title">Saturday trail run + coffee</div>
+            <div class="move-when">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#6B628A" stroke-width="2"/><path d="M12 7v5l3 2" stroke="#6B628A" stroke-width="2" stroke-linecap="round"/></svg>
+              Sat 9am · Glen Canyon
+            </div>
+            <div class="move-actions">
+              <button class="btn btn-primary">I&apos;m interested</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- card 3 -->
+        <div class="move-card">
+          <div class="move-body">
+            <div class="move-top">
+              <span class="cat-chip">Markets &amp; pop-ups</span>
+              <span class="sponsored">Sponsored</span>
+            </div>
+            <div class="move-title">Vinyl &amp; makers market</div>
+            <div class="move-when">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#6B628A" stroke-width="2"/><path d="M12 7v5l3 2" stroke="#6B628A" stroke-width="2" stroke-linecap="round"/></svg>
+              Sun 11am · Dogpatch
+            </div>
+            <div class="move-actions">
+              <button class="btn btn-primary">I&apos;m interested</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========== EMPTY (no matches) ========== -->
+      <div class="view view-empty hidden">
+        <div class="empty">
+          <div class="cowwrap">
+            <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <ellipse cx="11" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(-28 11 33)"></ellipse>
+              <ellipse cx="109" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(28 109 33)"></ellipse>
+              <ellipse cx="11" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(-28 11 34)"></ellipse>
+              <ellipse cx="109" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(28 109 34)"></ellipse>
+              <ellipse cx="38" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(-14 38 19)"></ellipse>
+              <ellipse cx="82" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(14 82 19)"></ellipse>
+              <rect x="15" y="20" width="90" height="92" rx="30" fill="#F5F0ED"></rect>
+              <ellipse cx="41" cy="44" rx="19" ry="13" fill="#7A7282" transform="rotate(-10 41 44)"></ellipse>
+              <ellipse cx="79" cy="69" rx="14" ry="9" fill="#7A7282" transform="rotate(16 79 69)"></ellipse>
+              <circle cx="44" cy="57" r="6" fill="#2A1E38"></circle>
+              <circle cx="76" cy="57" r="6" fill="#2A1E38"></circle>
+              <circle cx="46.5" cy="54.5" r="2.2" fill="white"></circle>
+              <circle cx="78.5" cy="54.5" r="2.2" fill="white"></circle>
+              <ellipse cx="60" cy="90" rx="27" ry="20" fill="#F0AABB"></ellipse>
+              <circle cx="50" cy="91" r="9" fill="#BDB5D4"></circle>
+              <circle cx="70" cy="91" r="9" fill="#BDB5D4"></circle>
+            </svg>
+          </div>
+          <h3>No moves near you yet</h3>
+          <p>Nothing local matches your interests right now. Check back soon, new moves land here often.</p>
+          <button class="btn btn-ghost" style="max-width:220px;" onclick="go('setup')">Edit interests</button>
+        </div>
+      </div>
+
+      <!-- ========== NEEDS SETUP ========== -->
+      <div class="view view-needs hidden">
+        <div class="empty">
+          <div class="cowwrap">
+            <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <ellipse cx="11" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(-28 11 33)"></ellipse>
+              <ellipse cx="109" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(28 109 33)"></ellipse>
+              <ellipse cx="11" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(-28 11 34)"></ellipse>
+              <ellipse cx="109" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(28 109 34)"></ellipse>
+              <ellipse cx="38" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(-14 38 19)"></ellipse>
+              <ellipse cx="82" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(14 82 19)"></ellipse>
+              <rect x="15" y="20" width="90" height="92" rx="30" fill="#F5F0ED"></rect>
+              <ellipse cx="41" cy="44" rx="19" ry="13" fill="#7A7282" transform="rotate(-10 41 44)"></ellipse>
+              <ellipse cx="79" cy="69" rx="14" ry="9" fill="#7A7282" transform="rotate(16 79 69)"></ellipse>
+              <circle cx="44" cy="57" r="6" fill="#2A1E38"></circle>
+              <circle cx="76" cy="57" r="6" fill="#2A1E38"></circle>
+              <circle cx="46.5" cy="54.5" r="2.2" fill="white"></circle>
+              <circle cx="78.5" cy="54.5" r="2.2" fill="white"></circle>
+              <ellipse cx="60" cy="90" rx="27" ry="20" fill="#F0AABB"></ellipse>
+              <circle cx="50" cy="91" r="9" fill="#7C5CDB"></circle>
+              <circle cx="70" cy="91" r="9" fill="#BDB5D4"></circle>
+            </svg>
+          </div>
+          <h3>Set your area and interests</h3>
+          <p>Tell us where you are and what you&apos;re into, and we&apos;ll show you moves near you.</p>
+          <button class="btn btn-primary" style="max-width:220px;" onclick="go('setup')">Set them up</button>
+        </div>
+      </div>
+
+      <!-- ========== ON FRIENDS' FEED (13.8 result) ========== -->
+      <div class="view view-onfeed hidden">
+        <div class="onfeed-note">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style="flex-shrink:0"><circle cx="12" cy="12" r="9" stroke="#7C5CDB" stroke-width="2"/><path d="M12 8v4l2.5 1.5" stroke="#7C5CDB" stroke-width="2" stroke-linecap="round"/></svg>
+          <span>This is how the move looks on your friends&apos; feed once you go with it.</span>
+        </div>
+
+        <div class="ff-card">
+          <div class="ff-head">
+            <div class="ff-av">M</div>
+            <div style="flex:1">
+              <div class="ff-name">Maya</div>
+              <div class="ff-free"><span class="ff-dot"></span> Free tonight</div>
+            </div>
+          </div>
+          <div class="anchor">
+            <div class="anchor-top">
+              <span class="cat-chip">Live music</span>
+              <span class="sp-tag">Sponsored · The Vista</span>
+            </div>
+            <div class="anchor-title">Sunset rooftop set at The Vista</div>
+            <div class="anchor-when">Fri 7pm · Mission</div>
+            <div class="anchor-tap">Tap for details ›</div>
+          </div>
+          <div class="ff-join">
+            <button class="btn btn-primary btn-sm">I&apos;m in</button>
+          </div>
+        </div>
+
+        <div class="ff-card" style="opacity:.55">
+          <div class="ff-head">
+            <div class="ff-av" style="background:linear-gradient(135deg,#9B7FE8,#7C5CDB)">J</div>
+            <div style="flex:1">
+              <div class="ff-name">Jordan</div>
+              <div class="ff-free" style="color:var(--grey-300)"><span class="ff-dot" style="background:var(--grey-300)"></span> Not free</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Go-green sheet (pre-anchored to the sponsored move) -->
+    <div class="sheet-wrap" id="ggSheet">
+      <div class="scrim" onclick="go('interested')"></div>
+      <div class="gg-sheet">
+        <div class="grab"></div>
+        <div class="gg-title">Go with this move</div>
+        <div class="gg-sub">Go green so friends can join you.</div>
+
+        <div class="gg-anchor">
+          <span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 18V5l12-2v13" stroke="#7C5CDB" stroke-width="2" stroke-linejoin="round"/><circle cx="6" cy="18" r="3" stroke="#7C5CDB" stroke-width="2"/><circle cx="18" cy="16" r="3" stroke="#7C5CDB" stroke-width="2"/></svg></span>
+          <div style="flex:1">
+            <div class="t">Sunset rooftop set at The Vista</div>
+            <div class="s">Sponsored · The Vista · Fri 7pm</div>
+          </div>
+        </div>
+
+        <div class="gg-field">
+          <div class="gg-flabel">When</div>
+          <div class="seg">
+            <button>Now</button>
+            <button class="on">Tonight</button>
+            <button>This weekend</button>
+          </div>
+        </div>
+
+        <div class="gg-field">
+          <div class="gg-flabel">Who can see it</div>
+          <div class="vis-row">
+            <span>Everyone</span>
+            <span class="who">All friends
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="#6B628A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+          </div>
+        </div>
+
+        <div class="gg-field">
+          <textarea class="gg-note" rows="2" placeholder="Add a note, like who's coming (optional)"></textarea>
+        </div>
+
+        <button class="btn btn-primary" style="margin-top:16px;" onclick="go('onfeed')">Go green with this move</button>
+      </div>
+    </div>
+
+    <!-- Bottom nav -->
+    <div class="bottom-nav">
+      <div class="nav-item" id="navFeed">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 11l8-6 8 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 10v9h12v-9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Feed
+      </div>
+      <div class="nav-item active" id="navDiscover">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M15.5 8.5l-2 5-5 2 2-5 5-2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+        Discover
+      </div>
+      <div class="nav-item">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="9" r="3.2" stroke="currentColor" stroke-width="2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M16 6.5a3 3 0 0 1 0 5.8M18 19a5.5 5.5 0 0 0-3-4.9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        People
+      </div>
+      <div class="nav-item">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2-1.2L16.2 2h-4.4l-.4 2.5a7 7 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 5 12a7 7 0 0 0 .1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2 1.2l.4 2.7h4.4l.4-2.7a7 7 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5A7 7 0 0 0 19 12Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+        Settings
+      </div>
+    </div>
+  </div>
+
+  <div class="screen-label"><b>Phase 13 — Discover</b> · consumer "moves in my area" (sponsored, opt-in by area + interest) · surface 1 of 4</div>
+
+<script>
+  const INTERESTS = ['Running & fitness','Nightlife','Live music','Food & drink','Markets & pop-ups','Outdoors','Arts & culture','Pickup sports','Wellness','Community'];
+  const PRESELECT = new Set(['Live music','Running & fitness','Markets & pop-ups']);
+  const chipsEl = document.getElementById('chips');
+  INTERESTS.forEach(name => {
+    const b = document.createElement('button');
+    b.className = 'chip' + (PRESELECT.has(name) ? ' on' : '');
+    b.textContent = name;
+    b.onclick = () => b.classList.toggle('on');
+    chipsEl.appendChild(b);
+  });
+
+  const frame = document.getElementById('frame');
+  const buttons = document.querySelectorAll('.toggles button');
+  const ggSheet = document.getElementById('ggSheet');
+  const navFeed = document.getElementById('navFeed');
+  const navDiscover = document.getElementById('navDiscover');
+  const views = { setup:'view-setup', feed:'view-feed', interested:'view-feed', bringover:'view-feed', onfeed:'view-onfeed', empty:'view-empty', needs:'view-needs' };
+  const uniqueViews = ['view-setup','view-feed','view-onfeed','view-empty','view-needs'];
+
+  function go(state) {
+    buttons.forEach(b => b.classList.toggle('active', b.dataset.state === state));
+    uniqueViews.forEach(cls => {
+      const el = frame.querySelector('.' + cls);
+      if (el) el.classList.add('hidden');
+    });
+    frame.querySelector('.' + views[state]).classList.remove('hidden');
+
+    // interested / bringover = feed with card 1 expanded
+    const reveal = document.getElementById('card1reveal');
+    const actions = document.getElementById('card1actions');
+    const expanded = state === 'interested' || state === 'bringover';
+    reveal.classList.toggle('hidden', !expanded);
+    actions.classList.toggle('hidden', expanded);
+
+    // go-green sheet only on bringover
+    ggSheet.classList.toggle('show', state === 'bringover');
+
+    // nav: Feed tab active when viewing the friend-feed result
+    navFeed.classList.toggle('active', state === 'onfeed');
+    navDiscover.classList.toggle('active', state !== 'onfeed');
+
+    document.getElementById('body').scrollTop = 0;
+  }
+  function expandCard() { go('interested'); }
+  function openGoGreen() { go('bringover'); }
+  function setSetupArea() {
+    const row = document.getElementById('setupArea');
+    row.classList.add('set');
+    row.querySelector('.s').textContent = '94110 · San Francisco, CA';
+    row.querySelector('.area-set-btn').outerHTML = '<button class="area-edit" aria-label="Edit area"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 20h4L18.5 9.5a2.12 2.12 0 0 0-3-3L5 17v3Z" stroke="#5F3FC4" stroke-width="2" stroke-linejoin="round"/><path d="M13.5 6.5l4 4" stroke="#5F3FC4" stroke-width="2" stroke-linecap="round"/></svg></button>';
+    const pin = row.querySelector('.area-pin svg path, .area-pin svg circle');
+    row.querySelectorAll('.area-pin svg path, .area-pin svg circle').forEach(p => p.setAttribute('stroke', '#167A43'));
+  }
+
+  buttons.forEach(b => b.addEventListener('click', () => go(b.dataset.state)));
+  go('setup');
+</script>
+</body>
+</html>
