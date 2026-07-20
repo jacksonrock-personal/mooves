@@ -2981,7 +2981,7 @@ Guardrail unchanged: **group-level only, never per-person.**
 - Whether an *aggregate* friend-area vibe ("lots free near you") layers on top (reusing Phase 10 ambient signals).
 - Location data storage/retention & privacy.
 
-### Phase 13 — Sponsored moves *(monetization — "good ads")* — **FINALIZED 2026-07-16** · **SPEC'D 2026-07-16 (see "## Phase 13 — Sponsored Moves (Spec)" near end of file)**
+### Phase 13 — Sponsored moves *(monetization — "good ads")* — **FINALIZED 2026-07-16** · **SPEC'D 2026-07-16 (see "## Phase 13 — Sponsored Moves (Spec)" near end of file)** · **SURFACE 1 (consumer Discover + 13.8 flywheel) MOCKUP APPROVED + ✅ CODED 2026-07-20 (`mooves-phase13-discover.html`; branch `feat/phase13-sponsored-moves`)** · scope = build ALL of Phase 13 across 4 surfaces (consumer · admin/moderation · sponsor portal · MoR billing)
 
 **Guardrail #4 holds:** sponsored moves are opt-in "good ads," never banner injection.
 
@@ -3315,6 +3315,14 @@ Covers the Settings "Your area" control (no-area · method sheet · locating · 
 
 *Two surfaces: the **consumer** discover experience and the self-serve **sponsor** dashboard. Guardrail #4 holds — opt-in by interest, area-feed only, never the friend feed. Payments via **Merchant-of-Record** (money to Mooves). **No per-person exposure** to sponsors.*
 
+**Build scope (2026-07-20):** Jackson chose to build ALL of Phase 13, sequenced across **4 surfaces** with per-surface mockup/build gates: (1) consumer Discover + 13.8 flywheel [mobile], (2) internal admin/moderation console [desktop], (3) self-serve sponsor portal [desktop], (4) MoR billing (gated on Jackson onboarding Paddle/Lemon Squeezy). Sponsor auth = Supabase Auth (email/password), separate from consumer Firebase phone auth.
+
+### Surface 1 Mockup Status — ✅ APPROVED 2026-07-20 (`mooves-phase13-discover.html`)
+Consumer Discover (13.1 opt-in area+interests · 13.2 feed · 13.3 sponsored card + Interested) **+ 13.8 flywheel** (Go with friends → pre-anchored go-green sheet → anchored card on the friend feed). Design locked: **Discover = a 4th bottom-nav tab**; header location chip; subtle uppercase "Sponsored · brand" disclosure; **"I'm interested"** reveals details in-app then a link out; **"Go with friends"** reuses the Phase 9 go-green sheet pre-anchored (time defaults to the move, visibility + note retained); friend-feed anchored card is compact (name · title · time) with details on tap + normal "I'm in" join. Interest taxonomy locked: Running & fitness · Nightlife · Live music · Food & drink · Markets & pop-ups · Outdoors · Arts & culture · Pickup sports · Wellness · Community.
+
+### Surface 1 Code Status — ✅ CODED 2026-07-20 (branch `feat/phase13-sponsored-moves`; `tsc` + `next build` clean)
+**Migration applied by Jackson:** `sponsored_moves` + `move_interested` tables (RLS enabled, no policies — all access via service client), `users.interests TEXT[]`, `users.status_move_id UUID`. **Dataset/area matching** reuses Phase 12 `resolveArea` (nearby-zip radius). **Interest slugs:** `running_fitness · nightlife · live_music · food_drink · markets_popups · outdoors · arts_culture · pickup_sports · wellness · community` (see `src/lib/interests.ts`). New: `discover/page.tsx` + `DiscoverScreen`, `SponsoredCard`, `InterestPicker`, `feed/AnchoredMoveCard`, `api/discover` (GET feed + records impressions), `api/discover/[id]` (GET anchor), `.../interested` (POST/DELETE), `.../click` (POST). Modified: `api/status` (statusMoveId + `brought_over_count`; cleared on grey), `api/feed` (resolves each friend's anchored move), `api/users/me` (interests + own anchored move), `GoGreenSheet` (anchor block + statusMoveId), `FeedScreen` (`?anchor=<id>` → pre-anchored sheet + renders anchors), `FriendCard`/`MyMoveCard` (anchor), `BottomNav` (Discover tab, 4 tabs), `SettingsScreen` (interests editor). **Aggregate-only counters** (impressions/clicks/interested/brought_over), no per-person exposure; move_interested is the interested source of truth. **Interpretation note:** coarse When chip can't encode a date, so the move's `time_text` is surfaced in the anchor + card and the user picks their own coarse chip. **Build-time verified only** — Discover setup→feed→Interested→Go-with-friends→anchored feed card + interests editing need Jackson's authed on-device test (seed `sponsored_moves` rows to populate). **Aggregate impressions are best-effort fire-and-forget** (move to atomic RPC / events table at scale). **Next: surface 2 (admin/moderation console).**
+
 ### — Consumer side —
 
 ### 13.1 — Location + interest opt-in
@@ -3342,6 +3350,24 @@ Covers the Settings "Your area" control (no-area · method sheet · locating · 
 - [ ] Subtle "Sponsored" label on the DS shell.
 - [ ] "Interested" reveals details in-app + increments an aggregate count; no identity shared.
 - [ ] Link/CTA opens sponsor URL; click counted in aggregate.
+
+### 13.8 — Bring a sponsored move to your friends (the flywheel) — *added 2026-07-20*
+**Purpose:** let a user turn a sponsored move they're interested in into **their own green** on the friend feed, rallying friends around it. Gives the user a concrete plan and gives sponsors **organic amplification** — the flywheel connecting Discover → friend feed → joins → group text. *(Consumer-side; extends 13.3 and reuses the Phase 9 go-green flow.)*
+**Guardrail #4 resolution:** this **bends** "sponsored moves never appear in the friend feed," but it is **user-initiated, not injection** — a friend deliberately chose to make a plan around it, the way they'd share any event. The friend feed still never surfaces sponsored content on its own. **Disclosure is required:** the friend-facing card carries a **subtle "Sponsored" tag + brand** (honest "good ads," never deceptive).
+**Entry:** from an **Interested** sponsored card (13.3), a **"Go with friends"** action.
+**Behavior:**
+- "Go with friends" opens the **existing go-green sheet** (Phase 9 swipe→sheet), **pre-anchored** to the sponsored move: the coarse **time chip defaults to the move's time/day**, the **visibility control** (`visible_to`: everyone / specific groups) is available, plus an optional note. Going green **attaches the move** to the user's status.
+- The resulting green shows on friends' feeds **anchored to the move**: a **compact card** — "[Name] is free · [move title] · [time]" with a **subtle Sponsored tag + brand**; tapping reveals **full details + the sponsor link** (details on tap, not inline).
+- Friends **"I'm in" / join** and start the **group text** exactly as in Phase 9 (blast stays no-prefill per A4; the move details live on the card).
+- **Going grey clears** the anchored move, like any status.
+**Data:** a nullable reference from the user's status to the sponsored move (e.g. `users.status_move_id`, cleared on go-grey) so the friend feed can render the anchor. Aggregate **`brought_over` count** + downstream friend-feed impressions per sponsored move (aggregate, small-N suppressed, no identities) — the sponsor-visible flywheel metric.
+**Out of scope:** editing the sponsor's move content; anchoring more than one move at once; non-sponsored user "events" (this is sponsored-move-specific for now).
+**States:** interested card → "Go with friends" · go-green sheet pre-anchored (time/visibility/note) · friend-feed card (anchored, sponsored-tagged, details on tap) · go-grey clears.
+**Acceptance:**
+- [ ] From an interested sponsored move, "Go with friends" opens the go-green sheet pre-anchored (time defaults to the move; visibility + note available).
+- [ ] The green shows on friends' feeds anchored to the move: compact card (name · title · time) with a subtle Sponsored tag + brand; details + sponsor link on tap.
+- [ ] Friends can join ("I'm in") and start the group text as in Phase 9; going grey clears the anchor.
+- [ ] Aggregate `brought_over` + friend-feed impressions counted per move; no identities; small-N suppression.
 
 ### — Sponsor side (self-serve dashboard) —
 

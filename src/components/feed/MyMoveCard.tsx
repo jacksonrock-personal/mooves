@@ -6,10 +6,12 @@
 
 import { timeLabel } from '@/components/go-green/TimeChips'
 import Joiners, { type Joiner } from './Joiners'
+import AnchoredMoveCard, { type AnchoredMove } from './AnchoredMoveCard'
 
 interface MyMoveCardProps {
   statusNote: string | null
   statusTime: string | null
+  anchoredMove?: AnchoredMove | null
   joiners: Joiner[]
   meId: string
   onBlast: () => void
@@ -19,6 +21,7 @@ interface MyMoveCardProps {
 export default function MyMoveCard({
   statusNote,
   statusTime,
+  anchoredMove,
   joiners,
   meId,
   onBlast,
@@ -41,6 +44,8 @@ export default function MyMoveCard({
       </div>
 
       {statusNote && <p className="font-sans text-[14px] text-ink-500 mt-1">{statusNote}</p>}
+
+      {anchoredMove && <AnchoredMoveCard move={anchoredMove} />}
 
       {joiners.length > 0 && (
         <div className="mt-3.5">

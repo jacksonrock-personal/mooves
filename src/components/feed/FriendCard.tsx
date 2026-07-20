@@ -8,6 +8,7 @@ import Avatar from '@/components/ui/Avatar'
 import { posthog } from '@/lib/posthog'
 import { timeLabel } from '@/components/go-green/TimeChips'
 import Joiners, { type Joiner } from './Joiners'
+import AnchoredMoveCard, { type AnchoredMove } from './AnchoredMoveCard'
 
 interface FriendCardProps {
   id: string
@@ -15,6 +16,7 @@ interface FriendCardProps {
   avatarUrl?: string | null
   statusNote?: string | null
   statusTime?: string | null
+  anchoredMove?: AnchoredMove | null
   phone: string
   joiners: Joiner[]
   joinedByMe: boolean
@@ -28,6 +30,7 @@ export default function FriendCard({
   avatarUrl,
   statusNote,
   statusTime,
+  anchoredMove,
   phone,
   joiners,
   joinedByMe,
@@ -83,6 +86,8 @@ export default function FriendCard({
           {joinedByMe ? "You're in ✓" : "I'm in"}
         </button>
       </div>
+
+      {anchoredMove && <AnchoredMoveCard move={anchoredMove} />}
 
       {joiners.length > 0 && (
         <div className="mt-2.5 pt-2.5 border-t border-green-500/20">

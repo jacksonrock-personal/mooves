@@ -21,6 +21,24 @@ function HomeIcon() {
   )
 }
 
+function DiscoverIcon() {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M15.5 8.5l-2 5-5 2 2-5 5-2Z" />
+    </svg>
+  )
+}
+
 function PeopleIcon() {
   return (
     <svg
@@ -60,7 +78,8 @@ function SettingsIcon() {
 }
 
 const TABS = [
-  { href: '/feed', label: 'Home', Icon: HomeIcon },
+  { href: '/feed', label: 'Feed', Icon: HomeIcon },
+  { href: '/discover', label: 'Discover', Icon: DiscoverIcon },
   { href: '/people', label: 'People', Icon: PeopleIcon },
   { href: '/settings', label: 'Settings', Icon: SettingsIcon },
 ]

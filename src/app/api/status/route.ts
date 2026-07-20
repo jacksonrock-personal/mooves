@@ -21,6 +21,7 @@ export async function PATCH(req: Request) {
     statusNote?: string | null
     visibleTo?: string[] | null
     statusTime?: string | null
+    statusMoveId?: string | null
   }
 
   if (typeof body.isAvailable !== 'boolean') {
@@ -32,8 +33,24 @@ export async function PATCH(req: Request) {
     status_note: string | null
     visible_to: string[] | null
     status_time: StatusTime | null
+    status_move_id: string | null
     status_set_at: string
     last_green_at?: string
+  }
+
+  const supabase = createServiceClient()
+
+  // If going green anchored to a sponsored move (13.8 flywheel), validate it's a
+  // real approved move before attaching.
+  let anchoredMoveId: string | null = null
+  if (body.isAvailable && typeof body.statusMoveId === 'string') {
+    const { data: move } = await supabase
+      .from('sponsored_moves')
+      .select('id')
+      .eq('id', body.statusMoveId)
+      .eq('status', 'approved')
+      .maybeSingle()
+    if (move) anchoredMoveId = move.id
   }
 
   let updates: StatusUpdate
@@ -43,6 +60,7 @@ export async function PATCH(req: Request) {
       status_note: null,
       visible_to: null,
       status_time: null,
+      status_move_id: null,
       status_set_at: new Date().toISOString(),
     }
   } else {
@@ -53,12 +71,11 @@ export async function PATCH(req: Request) {
       status_note: note && note.length > 0 ? note.slice(0, 60) : null,
       visible_to: body.visibleTo ?? null,
       status_time: normalizeTime(body.statusTime),
+      status_move_id: anchoredMoveId,
       status_set_at: now,
       last_green_at: now, // recent-green signal (10.1); never cleared on go-grey
     }
   }
-
-  const supabase = createServiceClient()
 
   // Going grey ends the current move: clear any joins on it (9.2/9.4).
   if (!body.isAvailable) {
@@ -69,14 +86,30 @@ export async function PATCH(req: Request) {
     .from('users')
     .update(updates)
     .eq('id', userId)
-    .select('is_available, status_note, status_time')
+    .select('is_available, status_note, status_time, status_move_id')
     .single()
 
   if (error || !data) return NextResponse.json({ error: 'Update failed' }, { status: 500 })
+
+  // Aggregate flywheel metric (13.8): count each time a move is brought to the feed.
+  if (anchoredMoveId) {
+    const { data: move } = await supabase
+      .from('sponsored_moves')
+      .select('brought_over_count')
+      .eq('id', anchoredMoveId)
+      .single()
+    if (move) {
+      await supabase
+        .from('sponsored_moves')
+        .update({ brought_over_count: move.brought_over_count + 1 })
+        .eq('id', anchoredMoveId)
+    }
+  }
 
   return NextResponse.json({
     isAvailable: data.is_available,
     statusNote: data.status_note,
     statusTime: data.status_time,
+    statusMoveId: data.status_move_id,
   })
 }
