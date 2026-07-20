@@ -120,6 +120,7 @@ export type Database = {
           display_name: string | null
           id: string
           interests: string[] | null
+          is_admin: boolean
           is_available: boolean
           last_active_at: string | null
           last_green_at: string | null
@@ -139,6 +140,7 @@ export type Database = {
           display_name?: string | null
           id: string
           interests?: string[] | null
+          is_admin?: boolean
           is_available?: boolean
           last_active_at?: string | null
           last_green_at?: string | null
@@ -158,6 +160,7 @@ export type Database = {
           display_name?: string | null
           id?: string
           interests?: string[] | null
+          is_admin?: boolean
           is_available?: boolean
           last_active_at?: string | null
           last_green_at?: string | null

@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mooves — Phase 13 · Admin & Moderation (surface 2)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg-around: #1C1730;
+    --app-bg: #F8F6FF;
+    --card: #FFFFFF;
+    --purple-500: #7C5CDB;
+    --purple-700: #5F3FC4;
+    --purple-100: #EDE9FF;
+    --purple-50: #F4F1FF;
+    --green-700: #167A43;
+    --green-100: #E3F9EC;
+    --red-500: #E8405A;
+    --red-tint: #FFF0F2;
+    --ink-900: #1C1730;
+    --ink-500: #6B628A;
+    --grey-300: #BDB5D4;
+    --border: #E8E4F5;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg-around); font-family: 'Inter', sans-serif; color: #fff;
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    padding: 26px 16px 50px;
+  }
+  h1.page-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 19px; margin-bottom: 4px; }
+  p.page-sub { font-size: 13px; color: #9B93B8; margin-bottom: 18px; text-align: center; max-width: 640px; line-height: 1.5; }
+  .toggles { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 620px; margin-bottom: 20px; }
+  .toggles button { font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; color: #C9C1E4; background: #2A2340; border: 1px solid #3A3155; border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all .15s ease; }
+  .toggles button:hover { border-color: var(--purple-500); }
+  .toggles button.active { background: var(--purple-500); border-color: var(--purple-500); color: #fff; }
+
+  /* Desktop app window */
+  .win { width: min(1040px, 96vw); height: 660px; background: var(--app-bg); border-radius: 16px; overflow: hidden; box-shadow: 0 24px 60px rgba(0,0,0,.5); display: flex; position: relative; }
+
+  /* Sidebar */
+  .side { width: 210px; background: #fff; border-right: 1px solid var(--border); flex-shrink: 0; padding: 18px 14px; display: flex; flex-direction: column; }
+  .brand { display: flex; align-items: center; gap: 8px; padding: 4px 8px 16px; }
+  .brand .cow { width: 26px; height: 26px; }
+  .brand .n { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 16px; color: var(--ink-900); }
+  .brand .n span { color: var(--purple-500); }
+  .brand .tag { font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--grey-300); margin-left: 2px; }
+  .nav { display: flex; flex-direction: column; gap: 3px; margin-top: 4px; }
+  .nav button { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 10px 11px; border-radius: 10px; border: none; background: none; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 600; color: var(--ink-500); }
+  .nav button:hover { background: var(--purple-50); }
+  .nav button.on { background: var(--purple-100); color: var(--purple-700); }
+  .nav .count { margin-left: auto; background: var(--purple-500); color: #fff; font-size: 11px; font-weight: 700; border-radius: 999px; padding: 1px 8px; }
+  .nav button.on .count { background: var(--purple-700); }
+  .side-foot { margin-top: auto; display: flex; align-items: center; gap: 9px; padding: 10px 8px 2px; border-top: 1px solid var(--border); }
+  .side-foot .av { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg,#9B7FE8,#7C5CDB); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 12px; }
+  .side-foot .who { font-size: 12px; font-weight: 600; color: var(--ink-900); line-height: 1.2; }
+  .side-foot .who small { display: block; font-weight: 500; color: var(--ink-500); font-size: 11px; }
+
+  /* Main */
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .topbar { padding: 20px 26px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: #fff; }
+  .topbar h2 { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 22px; color: var(--ink-900); }
+  .topbar .sub { font-size: 13px; color: var(--ink-500); margin-top: 2px; }
+  .content { flex: 1; overflow-y: auto; padding: 22px 26px; }
+  .content::-webkit-scrollbar { width: 8px; } .content::-webkit-scrollbar-thumb { background: #E0DAF0; border-radius: 4px; }
+
+  .btn { font-family: 'Inter', sans-serif; font-weight: 600; font-size: 13.5px; border: none; border-radius: 10px; padding: 9px 16px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; }
+  .btn-primary { background: var(--purple-500); color: #fff; }
+  .btn-approve { background: var(--green-700); color: #fff; }
+  .btn-reject { background: #fff; border: 1.5px solid var(--red-500); color: var(--red-500); }
+  .btn-ghost { background: var(--purple-100); color: var(--purple-700); }
+  .btn-light { background: #fff; border: 1px solid var(--border); color: var(--ink-900); }
+
+  .cat { display: inline-flex; align-items: center; background: var(--purple-100); color: var(--purple-700); border-radius: 999px; padding: 3px 10px; font-size: 11px; font-weight: 700; }
+  .badge { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; padding: 3px 9px; font-size: 11px; font-weight: 700; }
+  .badge.pending { background: var(--purple-100); color: var(--purple-700); }
+  .badge.approved { background: var(--green-100); color: var(--green-700); }
+  .badge.rejected { background: var(--red-tint); color: var(--red-500); }
+  .dot { width: 6px; height: 6px; border-radius: 50%; }
+
+  /* Queue cards */
+  .qcard { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; margin-bottom: 14px; display: flex; gap: 16px; }
+  .qthumb { width: 76px; height: 76px; border-radius: 12px; background: linear-gradient(135deg,#C9B8F5,#9B7FE8); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 30px; }
+  .qbody { flex: 1; min-width: 0; }
+  .qmeta { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .qtitle { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 16px; color: var(--ink-900); }
+  .qsub { font-size: 12.5px; color: var(--ink-500); margin-top: 2px; }
+  .qdesc { font-size: 13px; color: var(--ink-500); line-height: 1.5; margin-top: 8px; }
+  .qactions { display: flex; flex-direction: column; gap: 8px; justify-content: center; flex-shrink: 0; }
+  .submitted { font-size: 11.5px; color: var(--grey-300); margin-top: 9px; }
+
+  /* Table */
+  table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  thead th { text-align: left; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-500); padding: 12px 14px; background: var(--purple-50); border-bottom: 1px solid var(--border); }
+  thead th.num, tbody td.num { text-align: right; }
+  tbody td { padding: 13px 14px; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--ink-900); vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--purple-50); }
+  .tt { font-weight: 700; }
+  .tsub { font-size: 11.5px; color: var(--ink-500); font-weight: 500; }
+  .linkbtn { background: none; border: none; color: var(--purple-700); font-weight: 600; font-size: 12.5px; cursor: pointer; }
+
+  /* Form */
+  .form { max-width: 620px; }
+  .frow { margin-bottom: 16px; }
+  .frow.two { display: flex; gap: 14px; } .frow.two > div { flex: 1; }
+  label { display: block; font-size: 12px; font-weight: 700; color: var(--ink-500); margin-bottom: 6px; }
+  input, textarea, select { width: 100%; border: 1.5px solid var(--border); border-radius: 10px; padding: 10px 12px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--ink-900); background: #fff; outline: none; }
+  input:focus, textarea:focus, select:focus { border-color: var(--purple-500); }
+  textarea { resize: none; min-height: 84px; line-height: 1.5; }
+  .hint { font-size: 11.5px; color: var(--grey-300); margin-top: 5px; }
+  .form-actions { display: flex; gap: 10px; margin-top: 22px; }
+
+  /* Empty */
+  .empty { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 60px 20px; }
+  .empty svg.cowbig { width: 96px; height: 96px; margin-bottom: 16px; opacity: .9; }
+  .empty h3 { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 19px; color: var(--ink-900); margin-bottom: 6px; }
+  .empty p { font-size: 13.5px; color: var(--ink-500); max-width: 300px; line-height: 1.5; }
+
+  /* Modal */
+  .modal-wrap { position: absolute; inset: 0; z-index: 30; display: none; align-items: center; justify-content: center; }
+  .modal-wrap.show { display: flex; }
+  .scrim { position: absolute; inset: 0; background: rgba(28,23,48,.5); }
+  .modal { position: relative; background: #fff; border-radius: 16px; padding: 24px; width: 420px; max-width: 90%; box-shadow: 0 20px 50px rgba(0,0,0,.3); }
+  .modal h3 { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 18px; color: var(--ink-900); margin-bottom: 4px; }
+  .modal p { font-size: 13px; color: var(--ink-500); margin-bottom: 16px; line-height: 1.5; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 18px; }
+  .modal-actions .btn { flex: 1; justify-content: center; }
+  .btn-reject-solid { background: var(--red-500); color: #fff; }
+
+  .view { display: none; } .view.show { display: block; }
+  .screen-label { margin-top: 20px; font-size: 13px; color: #8A82A8; font-weight: 500; text-align: center; }
+  .screen-label b { color: #C9C1E4; font-weight: 600; }
+</style>
+</head>
+<body>
+
+  <h1 class="page-title">Admin &amp; Moderation — internal console</h1>
+  <p class="page-sub">Phase 13 surface 2 (desktop, Mooves staff only). Author moves directly (concierge seeding) and moderate sponsor submissions. Only approved moves reach the consumer Discover feed.</p>
+
+  <div class="toggles">
+    <button data-view="queue" class="active">Moderation queue</button>
+    <button data-view="reject">Reject modal</button>
+    <button data-view="all">All moves</button>
+    <button data-view="new">New move</button>
+    <button data-view="empty">Empty queue</button>
+  </div>
+
+  <div class="win" id="win">
+    <!-- Sidebar -->
+    <div class="side">
+      <div class="brand">
+        <svg class="cow" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <ellipse cx="11" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(-28 11 33)"></ellipse>
+          <ellipse cx="109" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(28 109 33)"></ellipse>
+          <ellipse cx="11" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(-28 11 34)"></ellipse>
+          <ellipse cx="109" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(28 109 34)"></ellipse>
+          <ellipse cx="38" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(-14 38 19)"></ellipse>
+          <ellipse cx="82" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(14 82 19)"></ellipse>
+          <rect x="15" y="20" width="90" height="92" rx="30" fill="#F5F0ED"></rect>
+          <ellipse cx="41" cy="44" rx="19" ry="13" fill="#7A7282" transform="rotate(-10 41 44)"></ellipse>
+          <ellipse cx="79" cy="69" rx="14" ry="9" fill="#7A7282" transform="rotate(16 79 69)"></ellipse>
+          <circle cx="44" cy="57" r="6" fill="#2A1E38"></circle>
+          <circle cx="76" cy="57" r="6" fill="#2A1E38"></circle>
+          <circle cx="46.5" cy="54.5" r="2.2" fill="white"></circle>
+          <circle cx="78.5" cy="54.5" r="2.2" fill="white"></circle>
+          <ellipse cx="60" cy="90" rx="27" ry="20" fill="#F0AABB"></ellipse>
+          <circle cx="50" cy="91" r="9" fill="#2ECC71"></circle>
+          <circle cx="70" cy="91" r="9" fill="#BDB5D4"></circle>
+        </svg>
+        <div>
+          <div class="n">M<span>oo</span>ves</div>
+          <div class="tag">Admin</div>
+        </div>
+      </div>
+      <div class="nav">
+        <button data-view="queue" class="navbtn on">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M9 11l3 3L22 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Moderation<span class="count">3</span>
+        </button>
+        <button data-view="all" class="navbtn">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="4" rx="1" stroke="currentColor" stroke-width="2"/><rect x="3" y="10" width="18" height="4" rx="1" stroke="currentColor" stroke-width="2"/><rect x="3" y="16" width="18" height="4" rx="1" stroke="currentColor" stroke-width="2"/></svg>
+          All moves
+        </button>
+        <button data-view="new" class="navbtn">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          New move
+        </button>
+      </div>
+      <div class="side-foot">
+        <div class="av">O</div>
+        <div class="who">Ops<small>ops@makemooves.app</small></div>
+      </div>
+    </div>
+
+    <!-- Main -->
+    <div class="main">
+      <div class="topbar">
+        <div>
+          <h2 id="pageTitle">Moderation queue</h2>
+          <div class="sub" id="pageSub">3 moves waiting for review</div>
+        </div>
+        <div id="topAction"><button class="btn btn-primary" data-view="new">+ New move</button></div>
+      </div>
+
+      <div class="content">
+
+        <!-- ===== QUEUE ===== -->
+        <div class="view view-queue show">
+          <div class="qcard">
+            <div class="qthumb">🎧</div>
+            <div class="qbody">
+              <div class="qmeta"><span class="cat">Live music</span><span class="badge pending"><span class="dot" style="background:var(--purple-700)"></span>Pending</span></div>
+              <div class="qtitle">Vinyl night at Emporium</div>
+              <div class="qsub">Emporium Arcade Bar · 60647 · Thu 8pm · Logan Square</div>
+              <div class="qdesc">Records spinning all night, arcade in the back, no cover. Grab a booth and stay a while.</div>
+              <div class="submitted">Submitted by Emporium Arcade Bar · 2 hours ago · links to emporiumchicago.com</div>
+            </div>
+            <div class="qactions">
+              <button class="btn btn-approve">✓ Approve</button>
+              <button class="btn btn-reject" onclick="go('reject')">Reject</button>
+              <button class="linkbtn">Edit</button>
+            </div>
+          </div>
+
+          <div class="qcard">
+            <div class="qthumb">🧘</div>
+            <div class="qbody">
+              <div class="qmeta"><span class="cat">Wellness</span><span class="badge pending"><span class="dot" style="background:var(--purple-700)"></span>Pending</span></div>
+              <div class="qtitle">Sunrise yoga in the park</div>
+              <div class="qsub">Humboldt Yoga Co. · 60622 · Sat 7am · Humboldt Park</div>
+              <div class="qdesc">All-levels flow by the lagoon as the sun comes up. Mats provided, donation based.</div>
+              <div class="submitted">Submitted by Humboldt Yoga Co. · 5 hours ago · links to humboldtyoga.com</div>
+            </div>
+            <div class="qactions">
+              <button class="btn btn-approve">✓ Approve</button>
+              <button class="btn btn-reject" onclick="go('reject')">Reject</button>
+              <button class="linkbtn">Edit</button>
+            </div>
+          </div>
+
+          <div class="qcard">
+            <div class="qthumb">⚽</div>
+            <div class="qbody">
+              <div class="qmeta"><span class="cat">Pickup sports</span><span class="badge pending"><span class="dot" style="background:var(--purple-700)"></span>Pending</span></div>
+              <div class="qtitle">Wednesday pickup soccer</div>
+              <div class="qsub">Chi Rec League · 60647 · Wed 6pm · The Turf</div>
+              <div class="qdesc">Casual 6v6 on the turf, all skill levels. First game free, cleats recommended.</div>
+              <div class="submitted">Submitted by Chi Rec League · 1 day ago · links to chirec.com</div>
+            </div>
+            <div class="qactions">
+              <button class="btn btn-approve">✓ Approve</button>
+              <button class="btn btn-reject" onclick="go('reject')">Reject</button>
+              <button class="linkbtn">Edit</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== ALL MOVES ===== -->
+        <div class="view view-all">
+          <table>
+            <thead>
+              <tr><th>Move</th><th>Category</th><th>Area</th><th>Status</th><th class="num">Impr.</th><th class="num">Interested</th><th class="num">Clicks</th><th class="num">Brought over</th><th></th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><div class="tt">Sunset rooftop set at The Vista</div><div class="tsub">The Vista</div></td>
+                <td><span class="cat">Live music</span></td><td>60647<div class="tsub">25 mi</div></td>
+                <td><span class="badge approved"><span class="dot" style="background:var(--green-700)"></span>Approved</span></td>
+                <td class="num">1,204</td><td class="num">86</td><td class="num">31</td><td class="num">12</td>
+                <td><button class="linkbtn">Edit</button></td>
+              </tr>
+              <tr>
+                <td><div class="tt">Taco Tuesday at Parson's</div><div class="tsub">Parson's Chicken &amp; Fish</div></td>
+                <td><span class="cat">Food &amp; drink</span></td><td>60647<div class="tsub">25 mi</div></td>
+                <td><span class="badge approved"><span class="dot" style="background:var(--green-700)"></span>Approved</span></td>
+                <td class="num">842</td><td class="num">54</td><td class="num">22</td><td class="num">9</td>
+                <td><button class="linkbtn">Edit</button></td>
+              </tr>
+              <tr>
+                <td><div class="tt">Vinyl night at Emporium</div><div class="tsub">Emporium Arcade Bar</div></td>
+                <td><span class="cat">Live music</span></td><td>60647<div class="tsub">25 mi</div></td>
+                <td><span class="badge pending"><span class="dot" style="background:var(--purple-700)"></span>Pending</span></td>
+                <td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td>
+                <td><button class="linkbtn">Review</button></td>
+              </tr>
+              <tr>
+                <td><div class="tt">Crypto meetup + free drinks</div><div class="tsub">TokenBros LLC</div></td>
+                <td><span class="cat">Nightlife</span></td><td>60614<div class="tsub">25 mi</div></td>
+                <td><span class="badge rejected"><span class="dot" style="background:var(--red-500)"></span>Rejected</span></td>
+                <td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td>
+                <td><button class="linkbtn">View</button></td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="submitted" style="margin-top:12px;">Aggregate counts only, never tied to a person. Small-N suppressed on anything sponsor-facing.</div>
+        </div>
+
+        <!-- ===== NEW MOVE ===== -->
+        <div class="view view-new">
+          <div class="form">
+            <div class="frow">
+              <label>Title</label>
+              <input type="text" placeholder="e.g. Sunset rooftop set at The Vista" />
+            </div>
+            <div class="frow">
+              <label>Description</label>
+              <textarea placeholder="One or two warm sentences. What is it, why leave the house."></textarea>
+            </div>
+            <div class="frow two">
+              <div>
+                <label>Category</label>
+                <select>
+                  <option>Live music</option><option>Nightlife</option><option>Running &amp; fitness</option>
+                  <option>Food &amp; drink</option><option>Markets &amp; pop-ups</option><option>Outdoors</option>
+                  <option>Arts &amp; culture</option><option>Pickup sports</option><option>Wellness</option><option>Community</option>
+                </select>
+              </div>
+              <div>
+                <label>Brand / venue</label>
+                <input type="text" placeholder="The Vista" />
+              </div>
+            </div>
+            <div class="frow two">
+              <div>
+                <label>Area ZIP</label>
+                <input type="text" placeholder="60647" maxlength="5" />
+              </div>
+              <div>
+                <label>Radius (miles)</label>
+                <input type="text" placeholder="25" />
+              </div>
+            </div>
+            <div class="frow two">
+              <div>
+                <label>Time text</label>
+                <input type="text" placeholder="Fri 7pm · Mission" />
+                <div class="hint">Lightweight, no calendar.</div>
+              </div>
+              <div>
+                <label>Link URL</label>
+                <input type="text" placeholder="https://…" />
+              </div>
+            </div>
+            <div class="frow">
+              <label>Image URL (optional)</label>
+              <input type="text" placeholder="https://… (leave blank for none)" />
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-primary">Publish move</button>
+              <button class="btn btn-light">Save as pending</button>
+              <button class="btn btn-light" data-view="queue" style="margin-left:auto;">Cancel</button>
+            </div>
+            <div class="hint" style="margin-top:12px;">Mooves-authored moves publish straight to the feed (auto-approved). "Save as pending" holds it for a second review.</div>
+          </div>
+        </div>
+
+        <!-- ===== EMPTY QUEUE ===== -->
+        <div class="view view-empty">
+          <div class="empty">
+            <svg class="cowbig" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <ellipse cx="11" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(-28 11 33)"></ellipse>
+              <ellipse cx="109" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(28 109 33)"></ellipse>
+              <ellipse cx="11" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(-28 11 34)"></ellipse>
+              <ellipse cx="109" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(28 109 34)"></ellipse>
+              <ellipse cx="38" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(-14 38 19)"></ellipse>
+              <ellipse cx="82" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(14 82 19)"></ellipse>
+              <rect x="15" y="20" width="90" height="92" rx="30" fill="#F5F0ED"></rect>
+              <ellipse cx="41" cy="44" rx="19" ry="13" fill="#7A7282" transform="rotate(-10 41 44)"></ellipse>
+              <ellipse cx="79" cy="69" rx="14" ry="9" fill="#7A7282" transform="rotate(16 79 69)"></ellipse>
+              <circle cx="44" cy="57" r="6" fill="#2A1E38"></circle>
+              <circle cx="76" cy="57" r="6" fill="#2A1E38"></circle>
+              <circle cx="46.5" cy="54.5" r="2.2" fill="white"></circle>
+              <circle cx="78.5" cy="54.5" r="2.2" fill="white"></circle>
+              <ellipse cx="60" cy="90" rx="27" ry="20" fill="#F0AABB"></ellipse>
+              <circle cx="50" cy="91" r="9" fill="#2ECC71"></circle>
+              <circle cx="70" cy="91" r="9" fill="#2ECC71"></circle>
+            </svg>
+            <h3>You're all caught up</h3>
+            <p>No moves waiting for review. New submissions land here as sponsors send them.</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Reject modal -->
+    <div class="modal-wrap" id="rejectModal">
+      <div class="scrim" onclick="go('queue')"></div>
+      <div class="modal">
+        <h3>Reject this move?</h3>
+        <p>The sponsor gets this reason so they can fix and resubmit. Be specific and kind.</p>
+        <label>Reason</label>
+        <textarea placeholder="e.g. The link doesn't resolve, and the title reads like an ad. Add a real venue and a working URL."></textarea>
+        <div class="modal-actions">
+          <button class="btn btn-light" onclick="go('queue')" style="flex:0 0 auto;">Cancel</button>
+          <button class="btn btn-reject-solid" onclick="go('queue')">Send rejection</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="screen-label"><b>Phase 13 — Admin &amp; Moderation</b> · internal desktop console (author + moderate) · surface 2 of 4</div>
+
+<script>
+  const win = document.getElementById('win');
+  const toggles = document.querySelectorAll('.toggles button');
+  const navbtns = document.querySelectorAll('.navbtn, [data-view]');
+  const rejectModal = document.getElementById('rejectModal');
+  const pageTitle = document.getElementById('pageTitle');
+  const pageSub = document.getElementById('pageSub');
+  const topAction = document.getElementById('topAction');
+
+  const META = {
+    queue: { title: 'Moderation queue', sub: '3 moves waiting for review', top: true, base: 'queue' },
+    reject:{ title: 'Moderation queue', sub: '3 moves waiting for review', top: true, base: 'queue' },
+    all:   { title: 'All moves', sub: 'Every sponsored move and its status', top: true, base: 'all' },
+    new:   { title: 'New move', sub: 'Author a move directly (concierge seeding)', top: false, base: 'new' },
+    empty: { title: 'Moderation queue', sub: 'Nothing to review', top: true, base: 'empty' },
+  };
+
+  function go(view) {
+    const meta = META[view];
+    toggles.forEach(b => b.classList.toggle('active', b.dataset.view === view));
+    ['queue','all','new','empty'].forEach(v => {
+      win.querySelector('.view-' + v).classList.toggle('show', v === meta.base);
+    });
+    document.querySelectorAll('.navbtn').forEach(b => b.classList.toggle('on', b.dataset.view === meta.base || (meta.base === 'empty' && b.dataset.view === 'queue')));
+    rejectModal.classList.toggle('show', view === 'reject');
+    pageTitle.textContent = meta.title;
+    pageSub.textContent = meta.sub;
+    topAction.style.visibility = meta.top ? 'visible' : 'hidden';
+  }
+
+  navbtns.forEach(b => b.addEventListener('click', () => { if (b.dataset.view) go(b.dataset.view); }));
+  toggles.forEach(b => b.addEventListener('click', () => go(b.dataset.view)));
+  go('queue');
+</script>
+</body>
+</html>
