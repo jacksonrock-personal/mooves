@@ -3459,8 +3459,44 @@ Billing UI on the sponsor-portal shell. States: Billing — no card (explains mo
 **Acceptance:**
 - [ ] Tip jar appears at the bottom of the Feed only when 3+ moves are showing; hidden otherwise.
 - [ ] Preset one-time amounts + custom amount.
-- [ ] Payment via the MoR to Mooves.
+- [ ] Payment via the MoR to Mooves. *(⚠️ superseded — see 14.1a: **Stripe direct**, not MoR.)*
 - [ ] Success shows a simple warm thank-you; no badges/leaderboard/status.
+
+#### 14.1a — Build detail (Stripe, settled 2026-07-20)
+*Elaborates 14.1 into a build-ready spec. **PAYMENTS = STRIPE DIRECT, not a Merchant-of-Record** — the 14.1 "MoR" references above are superseded (same decision as Phase 13 surface 4; sole proprietor, no LLC). Reuses the shipped Phase 13 Stripe integration: `src/lib/stripe.ts` (server client), `src/lib/stripe-client.ts` (`loadStripe`), `@stripe/react-stripe-js` Elements, and the existing `/api/stripe/webhook`. Env already set (`STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`) — tips are variable-amount so **no placement-price env** is used. Built on branch `feat/phase14-tipping` off main (after landing merged).*
+
+**Payer + flow.** The payer is an **authed consumer** (`mooves-token`) making a **one-time tip with no saved card** — distinct from Phase 13's card-on-file off-session auto-charge. **WALLET-ONLY (Jackson's call at mockup approval 2026-07-20): Apple Pay / Google Pay ONLY — no manual card-entry path.** So use the Stripe **Express Checkout Element** (renders just the wallet buttons), **not** the Payment Element (which renders a card form). Stays in-app for the warm cow thank-you; no `customer`, no saved payment method. If a device shows no wallet (Express Checkout Element renders empty), show a graceful "Apple Pay or Google Pay isn't available on this device" fallback message and no card option.
+1. Feed shows **≥3 moves** → tip jar visible at the very bottom (see threshold below).
+2. Tap a **preset ($1 / $3 / $5)** or enter a **custom** amount → tap the tip CTA.
+3. `POST /api/tips/intent { amount_cents }` (protected route, reads `x-user-id`) → **server validates/clamps the amount** (integer; within `[TIP_MIN_CENTS, TIP_MAX_CENTS]`, e.g. 100–20000 = $1–$200 — never trust the client-displayed amount) → creates a PaymentIntent (`currency: 'usd'`, `automatic_payment_methods: { enabled: true }`, **`metadata: { type: 'tip', user_id }`**, **no `customer`**) → returns `client_secret`.
+4. Mount the **Express Checkout Element** (in the sheet) with the `client_secret`; on the element's confirm event, `stripe.confirmPayment` with the wallet result. No card fields anywhere.
+5. Success → **warm cow thank-you** in-app (no redirect, no totals, no badges/leaderboard/status). Failure → inline error + retry.
+
+**Webhook.** Extend `/api/stripe/webhook` to **branch on `metadata`**: placement PIs carry `move_id` (existing path → `sponsored_moves`, untouched); **tip PIs carry `type:'tip'`** → insert a ledger row on `payment_intent.succeeded` (idempotent). No collision (placements have no `type`, tips have no `move_id`).
+
+**Data model — NEW `tips` ledger table (Jackson applies the migration in Supabase):**
+`id uuid pk default gen_random_uuid()` · `user_id uuid null references users(id)` (who tipped — **internal only, never displayed**) · `amount_cents int not null` · `stripe_payment_intent_id text unique not null` (idempotency; webhook insert `on conflict do nothing`) · `created_at timestamptz not null default now()`. **RLS enabled, NO policies** (deny-all to anon/authenticated; service client bypasses — matches `sponsored_moves`/`move_interested`). It's an **internal ledger for Stripe reconciliation only** — the consumer never sees totals, and the tip-jar's ≥3-moves visibility reads the **feed's current move count** (already in `FeedScreen`), so there is **no client read path** for tip aggregates.
+
+**Threshold (confirm at mockup).** "3+ moves showing" = the count of green move cards currently rendered in the Feed (friends' greens; the viewer's own green, if shown, counts). Below 3 → tip jar hidden entirely.
+
+**Invariants (must hold):** money → **Mooves only** (no destination/transfer/Connect) · **one-time only** (no recurring, no SetupIntent, no saved card) · **aggregate/internal-only** (no per-user status anywhere) · **never tip-gates** any feature · **no gamification**.
+
+**Anticipated files (spec-level, not binding):** NEW `src/lib/tips.ts` (presets + `TIP_MIN_CENTS`/`TIP_MAX_CENTS` + server-side validation), `src/app/api/tips/intent/route.ts`, `src/components/feed/TipJar.tsx` (jar → amount select → Payment Element → thank-you/error states). MODIFY `src/app/api/stripe/webhook/route.ts` (tip branch), `src/components/feed/FeedScreen.tsx` (render `TipJar` at bottom when move count ≥3), `src/types/database.ts` (+`tips`).
+
+**PostHog (aggregate only):** `tip_jar_shown`, `tip_amount_selected` {amount_cents}, `tip_started` {amount_cents}, `tip_succeeded` {amount_cents}, `tip_failed`.
+
+**States for the mockup:** feed <3 moves → **hidden** · feed ≥3 → **visible jar** (collapsed prompt) · **amount select** (presets + custom) · **wallet payment** (Apple Pay / Google Pay, no card) · **thank-you** (cow) · **error** (payment failed → retry).
+
+**Acceptance (build-detail additions):**
+- [ ] Payment is a **one-time Stripe PaymentIntent** to Mooves (no MoR, no saved card, no recurring); amount validated server-side.
+- [ ] Payment is **wallet-only** (Apple Pay / Google Pay via Express Checkout Element) — **no card-entry fields**; graceful message if no wallet is available.
+- [ ] Webhook distinguishes tip PIs (`metadata.type='tip'`) from placement PIs; tips insert into the `tips` ledger idempotently.
+- [ ] No per-user status/totals surfaced anywhere; no gamification; tipping never gates a feature.
+
+### 14.1 Tipping — ✅ CODED 2026-07-20 (`feat/phase14-tipping`) · Mockup ✅ APPROVED (`mooves-phase14-tipping.html`)
+**Build:** NEW `src/lib/tips.ts` (presets [100,300,500], $1–$200 range, `isValidTipAmount`/`formatTip`), `src/app/api/tips/intent/route.ts` (server-validated one-time PaymentIntent, `metadata.type='tip'`, no customer), `src/components/feed/TipJar.tsx` (jar → amount sheet → **Express Checkout Element** wallet-only → thank-you/error; no-wallet fallback; PostHog tip_jar_shown/tip_amount_selected/tip_started/tip_succeeded/tip_failed). MODIFIED `src/app/api/stripe/webhook/route.ts` (tip branch → upsert into `tips`, idempotent on unique PI id; placement branch untouched), `src/components/feed/FeedScreen.tsx` (`<TipJar visible={friends.length + (isAvailable?1:0) >= 3} />` at feed bottom), `src/types/database.ts` (+`tips`). **Migration Jackson applies:** `tips` table (id, user_id nullable FK users, amount_cents, stripe_payment_intent_id UNIQUE, created_at; RLS on, no policies). `tsc` + `next build` clean. **Build-time verified only** — jar needs authed feed w/ 3+ live moves; wallets (Apple/Google Pay) need deployed makemooves.app + Stripe Apple Pay domain registration; needs Jackson's device test. Test keys → live keys + live webhook when taking real money. **PHASE 14 COMPLETE (14.2 landing shipped + 14.1 tipping coded).**
+
+Standard 320px phone-frame, **grounded in the real Feed** (gradient header + centered `Wordmark` cow lockup · "Slide to go free" control · "Free right now" green-tinted `FriendCard`s with "I'm in"/"You're in ✓" · real 4-tab line-icon `BottomNav`). States (toggle): (1) feed <3 → **jar hidden** · (2) feed ≥3 → **jar visible** at feed bottom (headline **"Cow Tipping"**, body "If it got you out today, consider tipping the cow.", round **$** purple button) · (3) **amount** sheet (presets $1/$3/$5, $3 default, + custom) · (4) **wallet payment** — **Apple Pay + Google Pay only, NO card entry** (Jackson's call) · (5) **thank-you** cow (no totals/badges) · (6) **error** retry. **Build via mooves-build-loop; use Stripe Express Checkout Element (wallet-only), the `tips` ledger migration, and the webhook `type:'tip'` branch.**
 
 ### 14.2 — Landing page (makemooves.app)
 **Purpose:** explain Mooves to new visitors and drive them into the app.
