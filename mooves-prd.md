@@ -3619,7 +3619,47 @@ Phone-frame over the real Feed. States (toggle): (1) **iOS not-installed** — t
 - [ ] Correct iOS (Share→Add-to-Home guidance) vs Android/desktop (native prompt) path.
 - [ ] Dismissible with a cooldown + capped re-prompts; no push-permission ask in Surface A.
 
+#### Surface B — Build detail (Web Push pipeline + triggers, settled 2026-07-20)
+*Elaborates 15.2 + 15.3 into a build-ready spec. Branch `feat/phase15-push` off main (after Surface A merged, PR #16). Web Push via **FCM through the existing Firebase project** (firebase-admin ^13 already a dep — no new vendor). Extends Surface A's `public/sw.js` (one SW, no separate `firebase-messaging-sw.js`).*
+
+**⚠️ Env dependency (Jackson).** The VAPID key alone isn't enough — the client Firebase config (`src/lib/firebase/client.ts`) has only apiKey/authDomain/projectId, but FCM `getToken()` also needs **`messagingSenderId`** (Console → Project Settings → Cloud Messaging → Sender ID) and **`appId`** (Project Settings → General → SDK config). Add `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` + `NEXT_PUBLIC_FIREBASE_APP_ID` (+ the already-set `NEXT_PUBLIC_FIREBASE_VAPID_KEY`) to `.env.local` + Vercel. **Server send needs nothing new** (firebase-admin uses the existing service account).
+
+**15.2 — Web push pipeline.**
+- **Permission = contextual opt-in only, never on load** (settled: **contextual card + Settings toggle**). A "Turn on notifications so you know when your group's free" card appears after a value moment / installed session (chained after the Surface A install nudge); the master control also lives in Settings → Notifications. Tapping enable → OS `Notification.requestPermission()` → on grant, a separate Firebase app + `getMessaging` + `getToken(messaging, { vapidKey, serviceWorkerRegistration })` (reuse Surface A's SW registration) → `POST /api/push/subscribe { fcmToken, platform }`.
+- **States:** not-opted-in · granted (receiving) · denied (graceful, no re-prompt nag) · revoked/expired (server drops the token on FCM send failure; user can re-opt-in).
+- **SW handlers (append to `public/sw.js`):** `push` → `self.registration.showNotification(title, { body, icon:/brand/icon-180.png, badge, data:{ url } })`; `notificationclick` → focus an open Mooves client or `clients.openWindow('/feed')`.
+
+**15.3 — Notification triggers.**
+- **Trigger point = `POST /api/status` go-green.** When `visible_to` is a **non-empty** array of group IDs (a group-scoped green), enqueue a push (fire-and-forget, like impressions — never block the status write). `visible_to = null` (everyone) → **no push**. No per-person "friend X is green."
+- **Recipients:** `group_members` of those groups, **minus** the mover, **minus** users with a `group_notification_mutes` row for that group, **minus** users with no push subscription, **minus** groups inside the rate-limit floor.
+- **Rate-limit:** a **60-minute per-group floor** via `groups.last_notified_at` — if a group was notified < 60 min ago, skip (prevents a burst of greens spamming the group). Update `last_notified_at` on send.
+- **Copy:** aggregate-friendly, never names a person as a rejection surface. e.g. title "Someone in {group} is free" / body "Open Mooves to jump in." (final copy in build; no per-person identity).
+- **Send:** `getMessaging(adminApp).sendEachForMulticast({ tokens, webpush: { notification, fcmOptions:{ link } } })`; on `messaging/registration-token-not-registered` errors, delete that `push_subscriptions` row (expiry/revocation cleanup).
+
+**Data model (migrations Jackson applies in Supabase):**
+- `push_subscriptions`: `id uuid pk default gen_random_uuid()` · `user_id uuid not null references users(id)` · `fcm_token text unique not null` · `platform text` · `created_at timestamptz default now()` · `last_seen_at timestamptz default now()`. RLS on, **no policies** (service client only).
+- `group_notification_mutes`: `user_id uuid references users(id)` · `group_id uuid references groups(id)` · `created_at timestamptz default now()` · PK `(user_id, group_id)`. RLS on, no policies. Row present = muted.
+- `groups`: `+ last_notified_at timestamptz` (rate-limit floor).
+
+**Mocked surfaces (Surface B):** (1) **contextual notification opt-in card** (post-value-moment / installed); (2) **Settings → Notifications section** (master toggle only — **quiet hours CUT**); (3) **per-group mute toggle** on the group view. The FCM pipeline + SW handlers are invisible plumbing (no mockup).
+
+**PostHog:** `push_optin_shown`, `push_optin_enabled`, `push_optin_denied`, `push_group_muted`/`push_group_unmuted`, `push_sent` (server, aggregate count only).
+
+**Anticipated files:** NEW `src/lib/firebase/messaging.ts` (client getToken helper), `src/lib/push.ts` (server send + recipient filtering), `src/app/api/push/subscribe/route.ts` (POST store token) + `.../unsubscribe` (DELETE), `src/app/api/push/mute/route.ts` (group mute toggle) or fold into group routes, `src/components/pwa/NotificationOptIn.tsx`, `src/components/settings/NotificationSettings.tsx`. MODIFY `public/sw.js` (+push/notificationclick), `src/lib/firebase/client.ts` (+messagingSenderId/appId in config), `src/app/api/status/route.ts` (fire push on group-scoped green), group view (mute toggle), `SettingsScreen`, `src/types/database.ts` (+3 tables/cols).
+
+**Surface B acceptance:**
+- [ ] Permission requested only on contextual opt-in (card or Settings), never on load; token stored per user.
+- [ ] Group-scoped green → push to that group's members (minus mover/muters/rate-limited); everyone-greens push no one; no per-person notifications.
+- [ ] Per-group mute + 60-min per-group rate-limit respected; expired/revoked tokens cleaned up.
+- [ ] SW shows the notification; tapping it opens the feed.
+
+**Surface B — ✅ CODED 2026-07-20 (`feat/phase15-push`)** · Mockup ✅ APPROVED (`mooves-phase15-push.html`)
+**Build:** NEW `src/lib/firebase/messaging.ts` (client enablePush → getToken), `src/lib/push.ts` (server sendGroupGreenPush: per-group recipients from group_members minus mover/muters, 60-min rate-limit via groups.last_notified_at, data-only FCM sendEachForMulticast, stale-token cleanup), `src/app/api/push/subscribe` (POST/DELETE token) + `api/push/mute` (GET/POST), `src/components/pwa/NotificationOptIn.tsx` (contextual card, value-moment gated, skips iOS-not-installed), `src/components/settings/NotificationSettings.tsx` (master toggle), `src/components/groups/GroupNotifyToggle.tsx` (per-group, member view), `src/components/ui/Toggle.tsx` (DS switch, 44px hit area). MODIFIED `public/sw.js` (+push/notificationclick, data-only → showNotification, click→focus/open /feed), `firebase/client.ts` (+messagingSenderId/appId, export firebaseApp), `firebase/admin.ts` (+firebaseMessaging), `api/status` (fire sendGroupGreenPush on group-scoped green, awaited in try/catch), `layout.tsx` (mount NotificationOptIn), `SettingsScreen` (Notifications section), `GroupMemberView`+group [id] page (toggle + groupId), `types/database.ts` (+push_subscriptions, +group_notification_mutes, +groups.last_notified_at). **Decisions:** mute on member view only (members=recipients, owners=senders since group_members excludes owners); data-only messages (SW builds notification, no dup); quiet hours CUT; push_sent server analytics deferred (no posthog-node). `tsc`+`next build` clean; SW push/notificationclick handlers verified live (active, no console errors). **Env Jackson adds: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID + NEXT_PUBLIC_FIREBASE_APP_ID (VAPID already set). Migrations Jackson applies: push_subscriptions, group_notification_mutes, groups.last_notified_at.** **Build-time + SW verified only** — full flow (token mint, push delivery, opt-in/mute) needs env vars + deployed HTTPS + Jackson's device test (iOS push only for installed PWA). **PHASE 15 COMPLETE (Surface A install + Surface B push).**
+
+**Surface B Mockup Status — ✅ APPROVED 2026-07-20 (`mooves-phase15-push.html`)**
+Phone-frame, 3 surfaces (toggle): (1) **notification opt-in card** over the Feed — "Know when your group's free / get a heads up when someone in your group goes free, even when Mooves is closed. Only your groups, no noise." + "Turn on notifications"/"Not now" (the pre-permission card; tap → OS prompt); (2) **Settings → Notifications** (real Settings styling: white header, uppercase label, white card) — a single **Notifications master toggle** (**quiet hours CUT**) + an explainer that you're only notified for groups you're in; (3) **Group view** — a **"Notify me for this group"** toggle (on by default; off = "Muted, you won't be notified for this group"). Group control framed as notify-on (not a double-negative "mute"). **Build via mooves-build-loop.**
+
 ### Open questions
-- Quiet-hours window + rate-limit thresholds (Surface B build).
+- ~~Quiet-hours window + rate-limit thresholds~~ — **RESOLVED 2026-07-20:** **quiet hours CUT entirely** (Jackson's call at mockup approval); 60-min per-group rate-limit floor kept.
 - ~~Install-nudge exact trigger + copy; re-prompt cadence~~ — **RESOLVED 2026-07-20:** after first join/blast · 7-day cooldown, cap 3 · copy in Surface A detail + mockup.
 - Whether to revisit an aggregate friend digest later if group-scoped-only under-delivers on dormant reach.

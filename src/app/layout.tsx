@@ -3,6 +3,7 @@ import { Inter, Plus_Jakarta_Sans } from 'next/font/google'
 import './globals.css'
 import ServiceWorkerRegister from '@/components/pwa/ServiceWorkerRegister'
 import InstallNudge from '@/components/pwa/InstallNudge'
+import NotificationOptIn from '@/components/pwa/NotificationOptIn'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -45,6 +46,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {children}
         <ServiceWorkerRegister />
         <InstallNudge />
+        <NotificationOptIn />
       </body>
     </html>
   )

@@ -7,12 +7,15 @@ const firebaseConfig = {
   apiKey:    process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN!,
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID!,
+  // Required for FCM Web Push (Phase 15 Surface B) — getMessaging/getToken.
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 }
 
 // Prevent re-initialization on hot reload
-const app = getApps().length ? getApp() : initializeApp(firebaseConfig)
+export const firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig)
 
-export const firebaseAuth = getAuth(app)
+export const firebaseAuth = getAuth(firebaseApp)
 
 // Local dev only — routes Phone Auth to the Firebase Auth Emulator instead of
 // real SMS, so it's unaffected by SMS region policy / reCAPTCHA Enterprise.

@@ -5,6 +5,7 @@
 // Editing / renaming / member management / the invite link stay owner-only.
 
 import Avatar from '@/components/ui/Avatar'
+import GroupNotifyToggle from './GroupNotifyToggle'
 
 export interface RosterMember {
   id: string
@@ -15,6 +16,7 @@ export interface RosterMember {
 }
 
 interface GroupMemberViewProps {
+  groupId: string
   name: string
   emoji: string
   members: RosterMember[]
@@ -24,6 +26,7 @@ interface GroupMemberViewProps {
 }
 
 export default function GroupMemberView({
+  groupId,
   name,
   emoji,
   members,
@@ -61,6 +64,11 @@ export default function GroupMemberView({
               {members.length} {members.length === 1 ? 'person' : 'people'}
             </p>
           </div>
+        </div>
+
+        {/* Notifications (per-group mute) — members are the push recipients */}
+        <div className="mt-2">
+          <GroupNotifyToggle groupId={groupId} />
         </div>
 
         {/* Members */}

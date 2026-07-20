@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mooves — Phase 15 Surface B · Notifications Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --green-100:#E3F9EC; --green-500:#2ECC71; --green-700:#167A43;
+    --purple-50:#F8F6FF; --purple-100:#EDE9FF; --purple-500:#7C5CDB; --purple-700:#5F3FC4;
+    --ink-900:#1C1730; --ink-500:#6B628A; --grey-100:#F1EEFA; --grey-300:#BDB5D4;
+    --cream:#F5F0ED; --nav-border:#E8E4F5;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Inter',sans-serif;background:#1C1730;color:var(--ink-900);min-height:100vh;padding:26px 16px 60px;-webkit-font-smoothing:antialiased}
+  h1.title{font-family:'Plus Jakarta Sans';font-weight:800;color:#fff;font-size:16px;text-align:center;margin-bottom:4px}
+  .sub{color:rgba(255,255,255,.45);font-size:12.5px;text-align:center;margin-bottom:20px}
+  .toggles{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;max-width:430px;margin:0 auto 24px}
+  .toggles button{font-family:'Inter';font-weight:600;font-size:12px;color:rgba(255,255,255,.7);background:rgba(255,255,255,.08);border:none;padding:8px 13px;border-radius:9999px;cursor:pointer;transition:.15s}
+  .toggles button.active{background:#fff;color:var(--ink-900)}
+
+  .frame{width:320px;margin:0 auto;background:var(--purple-50);border-radius:44px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.4);position:relative;height:672px}
+  .screen{position:absolute;inset:0;display:flex;flex-direction:column}
+
+  /* toggle switch */
+  .tgl{width:46px;height:28px;border-radius:9999px;background:var(--grey-300);position:relative;cursor:pointer;transition:.2s;flex-shrink:0}
+  .tgl.on{background:var(--purple-500)}
+  .tgl .knob{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(28,23,48,.3)}
+  .tgl.on .knob{transform:translateX(18px)}
+
+  /* shared: gradient feed header + nav */
+  .fhead{background:linear-gradient(to bottom,#7C5CDB,#9B7FE8,#A98FF0);padding:26px 20px 22px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .lock{display:flex;align-items:center;gap:9px}
+  .lock .word{font-family:'Plus Jakarta Sans';font-weight:800;font-size:24px;color:#fff;letter-spacing:-.02em;display:inline-flex;align-items:center}
+  .lock .word .dots{display:inline-flex;align-items:center;gap:1px;position:relative;top:.5px;margin:0 1px}
+  .lock .word .dots i{width:13px;height:13px;border-radius:50%;display:block}
+  .lock .word .dots .g{background:var(--green-500);box-shadow:0 0 6px rgba(46,204,113,.6)}
+  .lock .word .dots .w{background:rgba(255,255,255,.35)}
+  .nav{flex-shrink:0;background:#fff;border-top:1px solid var(--nav-border);display:flex;padding-bottom:6px}
+  .nav .item{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 0;font-size:10px;font-weight:600;letter-spacing:.02em;color:var(--grey-300)}
+  .nav .item.on{color:var(--purple-500)}
+  .nav .item svg{width:22px;height:22px}
+
+  .body{flex:1;display:flex;flex-direction:column;padding:16px 16px 0;overflow:hidden}
+  .cap-lbl{font-family:'Inter';font-size:11px;font-weight:600;color:var(--ink-500);text-transform:uppercase;letter-spacing:.08em;padding:0 4px 12px}
+  .fcard{border-radius:18px;border:1.5px solid rgba(46,204,113,.25);background:rgba(46,204,113,.09);padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px}
+  .fcard .av{width:44px;height:44px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Plus Jakarta Sans';font-weight:800;font-size:15px}
+  .fcard .nm{font-family:'Plus Jakarta Sans';font-weight:700;font-size:15px;color:var(--ink-900)}
+  .fcard .meta{display:flex;align-items:center;gap:6px;margin-top:2px}
+  .fcard .chip{font-size:11px;font-weight:600;color:var(--purple-700);background:var(--purple-100);padding:2px 7px;border-radius:9999px}
+  .fcard .info{flex:1}
+  .fcard .join{flex-shrink:0;padding:8px 14px;border-radius:9999px;font-weight:700;font-size:13px;color:#fff;background:var(--green-700)}
+
+  /* sheet */
+  .overlay{position:absolute;inset:0;background:rgba(28,23,48,.5);z-index:5}
+  .sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:28px 28px 0 0;padding:10px 22px 26px;z-index:6;box-shadow:0 -8px 40px rgba(28,23,48,.2)}
+  .grab{width:38px;height:4px;border-radius:9999px;background:var(--grey-300);margin:6px auto 14px;opacity:.6}
+  .sheet-cow{width:64px;height:64px;border-radius:19px;background:var(--cream);display:flex;align-items:center;justify-content:center;margin:2px auto 14px;overflow:hidden}
+  .sheet h2{font-family:'Plus Jakarta Sans';font-weight:800;font-size:20px;text-align:center;color:var(--ink-900);letter-spacing:-.01em;line-height:1.2}
+  .sheet .lead{text-align:center;font-size:13.5px;color:var(--ink-500);margin-top:8px;line-height:1.5;padding:0 4px}
+  .btn{width:100%;background:var(--purple-500);color:#fff;font-weight:700;font-size:16px;border:none;padding:16px;border-radius:9999px;cursor:pointer;text-align:center}
+  .btn.ghost{background:none;color:var(--ink-500);font-weight:600;font-size:14px;padding:12px;margin-top:2px}
+  .bell{display:inline-flex;align-items:center;gap:6px;background:var(--green-100);color:var(--green-700);font-size:12px;font-weight:600;padding:6px 12px;border-radius:9999px;margin:14px auto 0}
+
+  /* settings / group white header */
+  .whead{background:#fff;border-bottom:1px solid var(--nav-border);padding:52px 20px 14px;flex-shrink:0}
+  .whead .wm{display:flex;justify-content:center;margin-bottom:10px}
+  .whead .wm .word{font-family:'Plus Jakarta Sans';font-weight:800;font-size:16px;color:var(--ink-900);display:inline-flex;align-items:center;gap:7px}
+  .whead .wm .dots{display:inline-flex;gap:1px}
+  .whead .wm .dots i{width:9px;height:9px;border-radius:50%}
+  .whead h1{font-family:'Plus Jakarta Sans';font-weight:800;font-size:24px;color:var(--ink-900);letter-spacing:-.02em}
+  .whead .back{display:flex;align-items:center;gap:8px}
+  .whead .back svg{width:22px;height:22px;color:var(--purple-500)}
+  .whead .grp{font-family:'Plus Jakarta Sans';font-weight:800;font-size:22px;color:var(--ink-900);margin-top:10px}
+  .whead .grpsub{font-size:13px;color:var(--ink-500);margin-top:2px}
+
+  .scroll{flex:1;overflow-y:auto;padding-bottom:20px}
+  .seclbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-500);padding:22px 20px 8px}
+  .card{background:#fff;border:1px solid var(--nav-border);border-radius:20px;margin:0 16px;overflow:hidden}
+  .row{display:flex;align-items:center;gap:12px;padding:15px 16px}
+  .row + .row{border-top:1px solid var(--nav-border)}
+  .row .txt{flex:1;min-width:0}
+  .row .t{font-weight:700;font-size:15px;color:var(--ink-900)}
+  .row .d{font-size:12.5px;color:var(--ink-500);margin-top:2px;line-height:1.35}
+  .row.off .t,.row.off .d{opacity:.45}
+
+  .member{display:flex;align-items:center;gap:12px;padding:11px 16px}
+  .member + .member{border-top:1px solid var(--nav-border)}
+  .member .av{width:38px;height:38px;border-radius:50%;color:#fff;font-family:'Plus Jakarta Sans';font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .member .nm{font-weight:600;font-size:14px;color:var(--ink-900)}
+  .member .badge{margin-left:auto;font-size:11px;font-weight:600;color:var(--purple-700);background:var(--purple-100);padding:3px 9px;border-radius:9999px}
+
+  /* view switch */
+  .v{display:none;position:absolute;inset:0;flex-direction:column}
+  .frame[data-view="optin"] #v-optin{display:flex}
+  .frame[data-view="settings"] #v-settings{display:flex}
+  .frame[data-view="group"] #v-group{display:flex}
+
+  .label{text-align:center;color:rgba(255,255,255,.5);font-size:12px;font-weight:600;letter-spacing:.04em;margin-top:18px}
+</style>
+</head>
+<body>
+
+<h1 class="title">Mooves · Notifications (Surface B)</h1>
+<p class="sub">Opt-in card · Settings section · per-group mute · (the push pipeline itself is invisible)</p>
+
+<div class="toggles">
+  <button class="active" onclick="setView('optin',this)">1 · Turn on notifications</button>
+  <button onclick="setView('settings',this)">2 · Settings section</button>
+  <button onclick="setView('group',this)">3 · Group mute</button>
+</div>
+
+<div class="frame" id="frame" data-view="optin">
+
+  <!-- ========= 1 · OPT-IN CARD (over feed) ========= -->
+  <div class="v" id="v-optin">
+    <div class="screen">
+      <div class="fhead">
+        <div class="lock">
+          <svg width="34" height="34" viewBox="0 0 120 120"><ellipse cx="11" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(-28 11 33)"/><ellipse cx="109" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(28 109 33)"/><ellipse cx="38" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(-14 38 19)"/><ellipse cx="82" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(14 82 19)"/><rect x="15" y="20" width="90" height="92" rx="30" fill="#F5F0ED"/><ellipse cx="41" cy="44" rx="19" ry="13" fill="#7A7282" transform="rotate(-10 41 44)"/><ellipse cx="79" cy="69" rx="14" ry="9" fill="#7A7282" transform="rotate(16 79 69)"/><circle cx="44" cy="57" r="6" fill="#2A1E38"/><circle cx="76" cy="57" r="6" fill="#2A1E38"/><ellipse cx="60" cy="90" rx="27" ry="20" fill="#F0AABB"/><circle cx="50" cy="91" r="9" fill="#2ECC71"/><circle cx="70" cy="91" r="9" fill="#BDB5D4"/></svg>
+          <span class="word">M<span class="dots"><i class="g"></i><i class="w"></i></span>VES</span>
+        </div>
+      </div>
+      <div class="body">
+        <div class="cap-lbl">Free right now</div>
+        <div class="fcard"><div class="av" style="background:#7C5CDB">MJ</div><div class="info"><div class="nm">Maya</div><div class="meta"><span class="chip">Now</span></div></div><div class="join">You're in ✓</div></div>
+        <div class="fcard"><div class="av" style="background:#E8A0B4">JC</div><div class="info"><div class="nm">Jordan</div><div class="meta"><span class="chip">Tonight</span></div></div></div>
+      </div>
+      <div class="nav">
+        <div class="item on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Feed</div>
+        <div class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5 5-2Z"/></svg>Discover</div>
+        <div class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>People</div>
+        <div class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</div>
+      </div>
+      <div class="overlay"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="sheet-cow">
+          <svg width="44" height="44" viewBox="0 0 120 120"><ellipse cx="11" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(-28 11 33)"/><ellipse cx="109" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(28 109 33)"/><ellipse cx="38" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(-14 38 19)"/><ellipse cx="82" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(14 82 19)"/><rect x="15" y="20" width="90" height="92" rx="30" fill="#F5F0ED"/><ellipse cx="41" cy="44" rx="19" ry="13" fill="#7A7282" transform="rotate(-10 41 44)"/><ellipse cx="79" cy="69" rx="14" ry="9" fill="#7A7282" transform="rotate(16 79 69)"/><circle cx="44" cy="57" r="6" fill="#2A1E38"/><circle cx="76" cy="57" r="6" fill="#2A1E38"/><ellipse cx="60" cy="90" rx="27" ry="20" fill="#F0AABB"/><circle cx="50" cy="91" r="9" fill="#2ECC71"/><circle cx="70" cy="91" r="9" fill="#BDB5D4"/></svg>
+        </div>
+        <h2>Know when your<br>group's free</h2>
+        <p class="lead">Get a heads up when someone in your group goes free, even when Mooves is closed. Only your groups, no noise.</p>
+        <div style="margin-top:22px"></div>
+        <button class="btn">Turn on notifications</button>
+        <button class="btn ghost">Not now</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========= 2 · SETTINGS SECTION ========= -->
+  <div class="v" id="v-settings">
+    <div class="screen">
+      <div class="whead">
+        <div class="wm"><span class="word"><svg width="22" height="22" viewBox="0 0 120 120"><ellipse cx="11" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(-28 11 33)"/><ellipse cx="109" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(28 109 33)"/><ellipse cx="38" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(-14 38 19)"/><ellipse cx="82" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(14 82 19)"/><rect x="15" y="20" width="90" height="92" rx="30" fill="#F5F0ED"/><circle cx="44" cy="57" r="6" fill="#2A1E38"/><circle cx="76" cy="57" r="6" fill="#2A1E38"/><ellipse cx="60" cy="90" rx="27" ry="20" fill="#F0AABB"/><circle cx="50" cy="91" r="9" fill="#2ECC71"/><circle cx="70" cy="91" r="9" fill="#BDB5D4"/></svg>M<span class="dots"><i style="background:#2ECC71"></i><i style="background:#BDB5D4"></i></span>VES</span></div>
+        <h1>Settings</h1>
+      </div>
+      <div class="scroll">
+        <div class="seclbl">Notifications</div>
+        <div class="card">
+          <div class="row">
+            <div class="txt">
+              <div class="t">Notifications</div>
+              <div class="d">Know when someone in your group is free.</div>
+            </div>
+            <div class="tgl on" id="masterTgl" onclick="this.classList.toggle('on')"><div class="knob"></div></div>
+          </div>
+        </div>
+        <p style="font-size:12px;color:var(--ink-500);padding:12px 20px 0;line-height:1.45">You only get notified when a friend goes free for a group you're in. Turn any group off from its own page.</p>
+
+        <div class="seclbl">Account</div>
+        <div style="display:flex;justify-content:center;padding:2px 20px"><div style="background:var(--purple-100);color:var(--purple-500);font-weight:600;font-size:15px;padding:12px 40px;border-radius:9999px">Log out</div></div>
+      </div>
+      <div class="nav">
+        <div class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Feed</div>
+        <div class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5 5-2Z"/></svg>Discover</div>
+        <div class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>People</div>
+        <div class="item on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========= 3 · GROUP MUTE ========= -->
+  <div class="v" id="v-group">
+    <div class="screen">
+      <div class="whead">
+        <div class="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg><span style="font-weight:600;font-size:14px;color:var(--purple-500)">Groups</span></div>
+        <div class="grp">Weekend Crew</div>
+        <div class="grpsub">4 people</div>
+      </div>
+      <div class="scroll">
+        <div class="seclbl">Notifications</div>
+        <div class="card">
+          <div class="row" id="muteRow">
+            <div class="txt">
+              <div class="t" id="muteT">Notify me for this group</div>
+              <div class="d" id="muteD">You'll know when someone here goes free.</div>
+            </div>
+            <div class="tgl on" id="muteTgl" onclick="toggleMute()"><div class="knob"></div></div>
+          </div>
+        </div>
+
+        <div class="seclbl">Members</div>
+        <div class="card">
+          <div class="member"><div class="av" style="background:#7C5CDB">Y</div><div class="nm">You</div><div class="badge">Owner</div></div>
+          <div class="member"><div class="av" style="background:#E8A0B4">MJ</div><div class="nm">Maya</div></div>
+          <div class="member"><div class="av" style="background:#5FB0E8">JC</div><div class="nm">Jordan</div></div>
+          <div class="member"><div class="av" style="background:#5FBF8F">RP</div><div class="nm">Riley</div></div>
+        </div>
+      </div>
+      <div class="nav">
+        <div class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Feed</div>
+        <div class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5 5-2Z"/></svg>Discover</div>
+        <div class="item on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>People</div>
+        <div class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="label">Phase 15 Surface B — Notifications (opt-in · Settings · group mute)</div>
+
+<script>
+  const frame = document.getElementById('frame');
+  const btns = document.querySelectorAll('.toggles button');
+  const map = {optin:0,settings:1,group:2};
+  function setView(v, btn){ frame.dataset.view=v; btns.forEach((b,i)=>b.classList.toggle('active', i===map[v])); }
+
+  function toggleMute(){
+    const t = document.getElementById('muteTgl');
+    t.classList.toggle('on');
+    const on = t.classList.contains('on'); // on = notify me, off = muted
+    document.getElementById('muteT').textContent = on ? 'Notify me for this group' : 'Muted';
+    document.getElementById('muteD').textContent = on ? "You'll know when someone here goes free." : "You won't be notified for this group.";
+    document.getElementById('muteRow').classList.toggle('off', !on);
+  }
+</script>
+</body>
+</html>

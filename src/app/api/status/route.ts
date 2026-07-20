@@ -2,6 +2,7 @@
 
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
+import { sendGroupGreenPush } from '@/lib/push'
 
 const TIME_VALUES = ['now', 'tonight', 'weekend'] as const
 type StatusTime = (typeof TIME_VALUES)[number]
@@ -90,6 +91,16 @@ export async function PATCH(req: Request) {
     .single()
 
   if (error || !data) return NextResponse.json({ error: 'Update failed' }, { status: 500 })
+
+  // Phase 15.3: a green scoped to groups notifies those groups' members. Awaited
+  // but never allowed to fail the status write (group-level only, no per-person).
+  if (data.is_available && updates.visible_to && updates.visible_to.length > 0) {
+    try {
+      await sendGroupGreenPush(userId, updates.visible_to)
+    } catch {
+      // push is best-effort; the go-green already succeeded
+    }
+  }
 
   // Aggregate flywheel metric (13.8): count each time a move is brought to the feed.
   if (anchoredMoveId) {
