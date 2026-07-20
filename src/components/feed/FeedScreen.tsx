@@ -12,6 +12,7 @@ import type { RealtimeChannel } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { initPostHog, posthog } from '@/lib/posthog'
 import { buildBlastHref } from '@/lib/blast'
+import { markValueMoment } from '@/lib/pwa'
 import FriendCard from './FriendCard'
 import MyMoveCard from './MyMoveCard'
 import SwipeToGoGreen from './SwipeToGoGreen'
@@ -293,6 +294,7 @@ export default function FeedScreen() {
 
   function handleToggleJoin(moverId: string, joined: boolean) {
     const wantJoin = !joined
+    if (wantJoin) markValueMoment() // Phase 15.4: joining is a value moment → may nudge to install
     const meNow = me
     // Optimistic update; realtime refetch reconciles authoritative joiners.
     setFriends(prev =>
@@ -323,6 +325,7 @@ export default function FeedScreen() {
   function handleBlast() {
     const phones = myJoiners.map(j => j.phone).filter(Boolean)
     if (phones.length === 0) return
+    markValueMoment() // Phase 15.4: starting a group text is a value moment → may nudge to install
     posthog.capture('blast_started')
     window.location.href = buildBlastHref(phones)
     setPlanOpen(true)

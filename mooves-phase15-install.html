@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mooves — Phase 15 Surface A · Install Nudge Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --green-100:#E3F9EC; --green-500:#2ECC71; --green-700:#167A43;
+    --purple-50:#F8F6FF; --purple-100:#EDE9FF; --purple-500:#7C5CDB; --purple-700:#5F3FC4;
+    --ink-900:#1C1730; --ink-500:#6B628A; --grey-100:#F1EEFA; --grey-300:#BDB5D4;
+    --cream:#F5F0ED; --nav-border:#E8E4F5; --ios-blue:#0A84FF;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Inter',sans-serif;background:#1C1730;color:var(--ink-900);min-height:100vh;padding:26px 16px 60px;-webkit-font-smoothing:antialiased}
+
+  h1.title{font-family:'Plus Jakarta Sans';font-weight:800;color:#fff;font-size:16px;text-align:center;margin-bottom:4px}
+  .sub{color:rgba(255,255,255,.45);font-size:12.5px;text-align:center;margin-bottom:20px}
+  .toggles{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;max-width:430px;margin:0 auto 24px}
+  .toggles button{font-family:'Inter';font-weight:600;font-size:12px;color:rgba(255,255,255,.7);background:rgba(255,255,255,.08);border:none;padding:8px 13px;border-radius:9999px;cursor:pointer;transition:.15s}
+  .toggles button.active{background:#fff;color:var(--ink-900)}
+
+  .frame{width:320px;margin:0 auto;background:var(--purple-50);border-radius:44px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.4);position:relative;height:672px}
+  .screen{position:absolute;inset:0;display:flex;flex-direction:column}
+
+  .fhead{background:linear-gradient(to bottom,#7C5CDB,#9B7FE8,#A98FF0);padding:26px 20px 22px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .lock{display:flex;align-items:center;gap:9px}
+  .lock .word{font-family:'Plus Jakarta Sans';font-weight:800;font-size:24px;color:#fff;letter-spacing:-.02em;display:inline-flex;align-items:center}
+  .lock .word .dots{display:inline-flex;align-items:center;gap:1px;position:relative;top:.5px;margin:0 1px}
+  .lock .word .dots i{width:13px;height:13px;border-radius:50%;display:block}
+  .lock .word .dots .g{background:var(--green-500);box-shadow:0 0 6px rgba(46,204,113,.6)}
+  .lock .word .dots .w{background:rgba(255,255,255,.35)}
+
+  .body{flex:1;display:flex;flex-direction:column;padding:16px 16px 0;overflow:hidden}
+  .swipe{position:relative;width:100%;height:58px;border-radius:9999px;overflow:hidden;margin-bottom:18px;display:flex;align-items:center;background:rgba(22,122,67,.10);border:1.5px solid rgba(22,122,67,.20)}
+  .swipe .thumb{position:absolute;left:4px;top:4px;width:50px;height:50px;border-radius:50%;background:var(--green-700);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(22,122,67,.35)}
+  .swipe .cap{width:100%;text-align:center;padding-left:46px;font-family:'Plus Jakarta Sans';font-weight:800;font-size:16px;color:var(--green-700);letter-spacing:-.01em}
+  .cap-lbl{font-family:'Inter';font-size:11px;font-weight:600;color:var(--ink-500);text-transform:uppercase;letter-spacing:.08em;padding:0 4px 12px}
+
+  .fcard{border-radius:18px;border:1.5px solid rgba(46,204,113,.25);background:rgba(46,204,113,.09);padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px}
+  .fcard .av{width:44px;height:44px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Plus Jakarta Sans';font-weight:800;font-size:15px}
+  .fcard .info{flex:1;min-width:0}
+  .fcard .nm{font-family:'Plus Jakarta Sans';font-weight:700;font-size:15px;color:var(--ink-900)}
+  .fcard .meta{display:flex;align-items:center;gap:6px;margin-top:2px}
+  .fcard .chip{font-size:11px;font-weight:600;color:var(--purple-700);background:var(--purple-100);padding:2px 7px;border-radius:9999px;white-space:nowrap}
+  .fcard .note{font-size:13px;color:var(--ink-500)}
+  .fcard .join{flex-shrink:0;padding:8px 14px;border-radius:9999px;font-family:'Inter';font-weight:700;font-size:13px;color:#fff;background:var(--purple-500)}
+  .fcard .join.in{background:var(--green-700)}
+
+  .nav{flex-shrink:0;background:#fff;border-top:1px solid var(--nav-border);display:flex;padding-bottom:6px}
+  .nav .item{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 0;font-size:10px;font-weight:600;letter-spacing:.02em;color:var(--grey-300)}
+  .nav .item.on{color:var(--purple-500)}
+  .nav .item svg{width:22px;height:22px}
+
+  /* sheet */
+  .overlay{position:absolute;inset:0;background:rgba(28,23,48,.5);opacity:0;pointer-events:none;transition:.2s;z-index:5}
+  .sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:28px 28px 0 0;padding:10px 22px 26px;transform:translateY(100%);transition:.28s cubic-bezier(.4,0,.2,1);z-index:6;box-shadow:0 -8px 40px rgba(28,23,48,.2)}
+  .grab{width:38px;height:4px;border-radius:9999px;background:var(--grey-300);margin:6px auto 12px;opacity:.6}
+  .sheet-cow{width:64px;height:64px;border-radius:19px;background:var(--cream);display:flex;align-items:center;justify-content:center;margin:2px auto 14px;overflow:hidden}
+  .sheet h2{font-family:'Plus Jakarta Sans';font-weight:800;font-size:20px;text-align:center;color:var(--ink-900);letter-spacing:-.01em;line-height:1.2}
+  .sheet .lead{text-align:center;font-size:13.5px;color:var(--ink-500);margin-top:7px;line-height:1.45;padding:0 6px}
+
+  /* iOS steps */
+  .steps{margin:20px 0 8px;display:flex;flex-direction:column;gap:10px}
+  .step{display:flex;align-items:center;gap:13px;background:var(--purple-50);border:1px solid var(--nav-border);border-radius:14px;padding:13px 15px}
+  .step .n{width:22px;height:22px;border-radius:50%;background:var(--purple-500);color:#fff;font-family:'Plus Jakarta Sans';font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .step .tx{flex:1;font-size:13.5px;color:var(--ink-900);font-weight:500}
+  .step .tx b{font-weight:700}
+  .step .glyph{flex-shrink:0;display:flex;align-items:center;justify-content:center}
+  .step .glyph.blue svg{color:var(--ios-blue)}
+  .step .addbox{width:26px;height:26px;border-radius:7px;border:2px solid var(--ios-blue);color:var(--ios-blue);display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:400;flex-shrink:0}
+
+  .hint{display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;color:var(--ink-500);margin-top:14px}
+
+  .btn{width:100%;background:var(--purple-500);color:#fff;font-family:'Inter';font-weight:700;font-size:16px;border:none;padding:16px;border-radius:9999px;cursor:pointer;text-align:center;margin-top:4px}
+  .btn:active{background:var(--purple-700)}
+  .btn.ghost{background:none;color:var(--ink-500);font-weight:600;font-size:14px;padding:12px}
+
+  /* state control */
+  .frame[data-state="ios"] #overlay,.frame[data-state="android"] #overlay{opacity:1;pointer-events:auto}
+  .frame[data-state="ios"] #sheet,.frame[data-state="android"] #sheet{transform:translateY(0)}
+  .s-block{display:none}
+  .frame[data-state="ios"] #s-ios{display:block}
+  .frame[data-state="android"] #s-android{display:block}
+
+  .label{text-align:center;color:rgba(255,255,255,.5);font-size:12px;font-weight:600;letter-spacing:.04em;margin-top:18px}
+  .note{max-width:320px;margin:8px auto 0;text-align:center;color:rgba(255,255,255,.4);font-size:11.5px;line-height:1.5}
+</style>
+</head>
+<body>
+
+<h1 class="title">Mooves · Add to Home Screen nudge</h1>
+<p class="sub">Fires after your first join or blast · install only (push comes in Surface B)</p>
+
+<div class="toggles">
+  <button class="active" onclick="setState('ios',this)">1 · iOS (not installed)</button>
+  <button onclick="setState('android',this)">2 · Android / desktop</button>
+  <button onclick="setState('none',this)">3 · Installed (no nudge)</button>
+</div>
+
+<div class="frame" id="frame" data-state="ios">
+  <div class="screen">
+
+    <div class="fhead">
+      <div class="lock">
+        <svg width="34" height="34" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" aria-label="Mooves">
+          <ellipse cx="11" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(-28 11 33)"/><ellipse cx="109" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(28 109 33)"/><ellipse cx="11" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(-28 11 34)"/><ellipse cx="109" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(28 109 34)"/><ellipse cx="38" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(-14 38 19)"/><ellipse cx="82" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(14 82 19)"/><rect x="15" y="20" width="90" height="92" rx="30" fill="#F5F0ED"/><ellipse cx="41" cy="44" rx="19" ry="13" fill="#7A7282" transform="rotate(-10 41 44)"/><ellipse cx="79" cy="69" rx="14" ry="9" fill="#7A7282" transform="rotate(16 79 69)"/><circle cx="44" cy="57" r="6" fill="#2A1E38"/><circle cx="76" cy="57" r="6" fill="#2A1E38"/><circle cx="46.5" cy="54.5" r="2.2" fill="white"/><circle cx="78.5" cy="54.5" r="2.2" fill="white"/><ellipse cx="60" cy="90" rx="27" ry="20" fill="#F0AABB"/><circle cx="50" cy="91" r="9" fill="#2ECC71"/><circle cx="70" cy="91" r="9" fill="#BDB5D4"/>
+        </svg>
+        <span class="word">M<span class="dots"><i class="g"></i><i class="w"></i></span>VES</span>
+      </div>
+    </div>
+
+    <div class="body">
+      <div class="swipe">
+        <span class="thumb"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 6 10 12 4 18" opacity="0.45"/><polyline points="10 6 16 12 10 18"/></svg></span>
+        <span class="cap">Slide to go free</span>
+      </div>
+      <div class="cap-lbl">Free right now</div>
+
+      <div class="fcard">
+        <div class="av" style="background:#7C5CDB">MJ</div>
+        <div class="info"><div class="nm">Maya</div><div class="meta"><span class="chip">Now</span><span class="note">coffee run?</span></div></div>
+        <div class="join in">You're in ✓</div>
+      </div>
+      <div class="fcard">
+        <div class="av" style="background:#E8A0B4">JC</div>
+        <div class="info"><div class="nm">Jordan</div><div class="meta"><span class="chip">Tonight</span></div></div>
+        <div class="join">I'm in</div>
+      </div>
+      <div class="fcard">
+        <div class="av" style="background:#5FB0E8">RP</div>
+        <div class="info"><div class="nm">Riley</div><div class="meta"><span class="chip">Now</span><span class="note">at the park</span></div></div>
+        <div class="join">I'm in</div>
+      </div>
+    </div>
+
+    <div class="nav">
+      <div class="item on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Feed</div>
+      <div class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5 5-2Z"/></svg>Discover</div>
+      <div class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>People</div>
+      <div class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</div>
+    </div>
+
+    <!-- SHEET -->
+    <div class="overlay" id="overlay" onclick="setState('none')"></div>
+    <div class="sheet" id="sheet">
+      <div class="grab"></div>
+
+      <!-- iOS -->
+      <div class="s-block" id="s-ios">
+        <div class="sheet-cow">
+          <svg width="44" height="44" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" aria-label="Cow"><ellipse cx="11" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(-28 11 33)"/><ellipse cx="109" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(28 109 33)"/><ellipse cx="38" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(-14 38 19)"/><ellipse cx="82" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(14 82 19)"/><rect x="15" y="20" width="90" height="92" rx="30" fill="#F5F0ED"/><ellipse cx="41" cy="44" rx="19" ry="13" fill="#7A7282" transform="rotate(-10 41 44)"/><ellipse cx="79" cy="69" rx="14" ry="9" fill="#7A7282" transform="rotate(16 79 69)"/><circle cx="44" cy="57" r="6" fill="#2A1E38"/><circle cx="76" cy="57" r="6" fill="#2A1E38"/><ellipse cx="60" cy="90" rx="27" ry="20" fill="#F0AABB"/><circle cx="50" cy="91" r="9" fill="#2ECC71"/><circle cx="70" cy="91" r="9" fill="#BDB5D4"/></svg>
+        </div>
+        <h2>Keep Mooves on your<br>home screen</h2>
+        <p class="lead">So you know the moment friends are free. Two taps, then the cow lives on your home screen.</p>
+        <div class="steps">
+          <div class="step">
+            <div class="n">1</div>
+            <div class="tx">Tap the <b>Share</b> button in your browser bar</div>
+            <div class="glyph blue"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4"/><path d="M8 8l4-4 4 4"/><path d="M6 12v6a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-6"/></svg></div>
+          </div>
+          <div class="step">
+            <div class="n">2</div>
+            <div class="tx">Choose <b>Add to Home Screen</b></div>
+            <div class="addbox">+</div>
+          </div>
+        </div>
+        <div class="hint">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B628A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>
+          On iPhone, notifications need the app added first.
+        </div>
+        <button class="btn ghost" onclick="setState('none')">Maybe later</button>
+      </div>
+
+      <!-- Android / desktop -->
+      <div class="s-block" id="s-android">
+        <div class="sheet-cow">
+          <svg width="44" height="44" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" aria-label="Cow"><ellipse cx="11" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(-28 11 33)"/><ellipse cx="109" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(28 109 33)"/><ellipse cx="38" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(-14 38 19)"/><ellipse cx="82" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(14 82 19)"/><rect x="15" y="20" width="90" height="92" rx="30" fill="#F5F0ED"/><ellipse cx="41" cy="44" rx="19" ry="13" fill="#7A7282" transform="rotate(-10 41 44)"/><ellipse cx="79" cy="69" rx="14" ry="9" fill="#7A7282" transform="rotate(16 79 69)"/><circle cx="44" cy="57" r="6" fill="#2A1E38"/><circle cx="76" cy="57" r="6" fill="#2A1E38"/><ellipse cx="60" cy="90" rx="27" ry="20" fill="#F0AABB"/><circle cx="50" cy="91" r="9" fill="#2ECC71"/><circle cx="70" cy="91" r="9" fill="#BDB5D4"/></svg>
+        </div>
+        <h2>Add Mooves to your<br>home screen</h2>
+        <p class="lead">So you know the moment friends are free. It opens like an app, no store needed.</p>
+        <button class="btn" onclick="setState('none')" style="margin-top:22px">Add to home screen</button>
+        <button class="btn ghost" onclick="setState('none')">Not now</button>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<div class="label">Screen 4 — Home Feed · Install nudge (Phase 15 Surface A)</div>
+<p class="note">State 3 shows a normal feed with no nudge — the case when the app is already installed, or the nudge was dismissed / capped (7-day cooldown, max 3 shows).</p>
+
+<script>
+  const frame = document.getElementById('frame');
+  const btns = document.querySelectorAll('.toggles button');
+  const map = {ios:0,android:1,none:2};
+  function setState(s, btn){
+    frame.dataset.state = s;
+    btns.forEach((b,i)=>b.classList.toggle('active', i===map[s]));
+  }
+</script>
+</body>
+</html>

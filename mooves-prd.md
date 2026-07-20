@@ -3590,7 +3590,36 @@ Responsive marketing page (breaks the 320px phone-frame; Mobile/Desktop toggle i
 - [ ] iOS-not-installed users get correct Add-to-Home-Screen guidance; others get the standard path.
 - [ ] Dismissible with limited re-prompts; accepting leads to the contextual permission ask.
 
+#### Surface A — Build detail (PWA foundations + install nudge, settled 2026-07-20)
+*Phase 15 is split into two surfaces with per-surface mockup+build gates (like Phase 13). **Surface A = 15.1 (service worker) + 15.4 (install nudge). ZERO external deps — ships now.** Surface B = 15.2 + 15.3 (Web Push pipeline + triggers), gated on a Firebase **VAPID key**. Branch `feat/phase15-pwa-install` off main (after Phase 14 merged).*
+
+**15.1 — Service worker.** Add a minimal static **`public/sw.js`** (served at `/sw.js`, root scope): `install` → `skipWaiting()`, `activate` → `clients.claim()`, no offline caching for v1. It exists to make the app a registrable/installable PWA and to be the host that **Surface B extends** with `push` + `notificationclick` handlers (kept out of Surface A — inert without a subscription). Register it client-side via a small **`ServiceWorkerRegister`** component (guarded `'serviceWorker' in navigator`), mounted app-wide in the root layout. Manifest (`display: standalone`) + cow icons already ship, so SW + manifest = installable.
+
+**15.4 — Install nudge.**
+- **Trigger = after the first join or blast** (the value moment Jackson picked), never on first load. FeedScreen's join (`handleToggleJoin`) and blast (`handleBlast`) handlers call a `markValueMoment()` helper (sets a localStorage flag + dispatches an event); the nudge shows on the *next* eligible check.
+- **Platform detection (client):** already installed (`display-mode: standalone` or iOS `navigator.standalone`) → **never show.** **iOS Safari + not installed** → show **Share → Add to Home Screen** guidance (iOS has no `beforeinstallprompt`; teach the manual steps, show the iOS Share glyph). **Android/desktop Chromium** → capture `beforeinstallprompt` (preventDefault, stash it); nudge "Add" → call the stashed `prompt()` (native install).
+- **Framing:** "Add Mooves to your home screen so you know the moment friends are free." Installing now is the prerequisite for Surface B push (mandatory on iOS). Accepting on iOS = shows the steps; on Android = native prompt. (The contextual **push-permission** ask is Surface B — Surface A stops at install.)
+- **Dismissal / cadence:** dismissible; after a dismiss, suppress for a **7-day cooldown**; **cap at 3 total** shows, then only re-reachable from a future Settings entry (Surface B). Non-naggy.
+- **Mocked states:** (1) iOS-not-installed → Share/Add-to-Home guidance sheet · (2) Android/desktop-not-installed → install nudge (Add / Not now) · (3) already-installed or capped → no nudge. The service worker is invisible plumbing (no mockup).
+- **Data model:** none (install state is client-side: `display-mode` detection + localStorage flags `mooves_value_moment`, `mooves_install_nudge_dismissed_at`, `mooves_install_nudge_count`). **No migration.**
+- **PostHog:** `install_nudge_shown` {platform}, `install_nudge_accepted` {platform}, `install_nudge_dismissed`, `pwa_installed` (from the `appinstalled` event).
+- **Anticipated files:** NEW `src/lib/pwa.ts` (isStandalone/isIOS + value-moment & dismissal storage helpers), `public/sw.js`, `src/components/pwa/ServiceWorkerRegister.tsx`, `src/components/pwa/InstallNudge.tsx`. MODIFY root layout (mount both), `src/components/feed/FeedScreen.tsx` (call `markValueMoment()` in join/blast).
+
+**On Jackson's end for Surface A: nothing to configure.** After it ships, device-test install (iOS: Share → Add to Home Screen shows the cow icon, not a fallback "M"; Android: the install prompt appears). **Heads-up for Surface B (do anytime, not blocking A):** generate the Web Push VAPID key — Firebase Console → Project Settings → Cloud Messaging → "Web Push certificates" → **Generate key pair** → put the public key in `NEXT_PUBLIC_FIREBASE_VAPID_KEY` (`.env.local` + Vercel).
+
+**Surface A — ✅ CODED 2026-07-20 (`feat/phase15-pwa-install`)** · Mockup ✅ APPROVED (`mooves-phase15-install.html`)
+**Build:** NEW `public/sw.js` (minimal SW: skipWaiting + clients.claim; Surface B extends w/ push handlers), `src/lib/pwa.ts` (isStandalone/isIOS + value-moment & dismissal/cooldown/cap helpers, BeforeInstallPromptEvent type), `src/components/pwa/ServiceWorkerRegister.tsx`, `src/components/pwa/InstallNudge.tsx` (iOS guidance vs Android native-prompt sheet, eligibility gating, PostHog install_nudge_shown/accepted/dismissed + pwa_installed). MODIFIED `src/app/layout.tsx` (mounts both app-wide), `src/components/feed/FeedScreen.tsx` (markValueMoment on join + blast), **`src/middleware.ts` (BUG FIX: `/sw.js`, `/manifest.webmanifest`, `/brand/`, `/icon`, `/apple-icon` added to PUBLIC_PREFIXES — SW registration rejects a redirected script, and manifest/icons must resolve for logged-out visitors to install).** `tsc` + `next build` clean; SW registers+activates live (scope /, served direct), manifest/icons serve direct, no console errors. **No DB/migration** (client-side localStorage + display-mode detection). **Build-time + partial-live verified** — the nudge itself needs Jackson's device test (join/blast on deployed HTTPS: iOS Share→Add-to-Home guidance, Android native prompt) + install shows cow icon. **Follow-up (not blocking): add 192/512 maskable PNG icons to the manifest.** **NEXT: Surface B = Web Push pipeline + triggers, gated on the VAPID key.**
+
+**Surface A Mockup Status — ✅ APPROVED 2026-07-20 (`mooves-phase15-install.html`)**
+Phone-frame over the real Feed. States (toggle): (1) **iOS not-installed** — teaching sheet ("Keep Mooves on your home screen / so you know the moment friends are free") with two numbered steps + real iOS glyphs (Share button, ⊕ Add to Home Screen) + note "On iPhone, notifications need the app added first" + "Maybe later"; (2) **Android/desktop not-installed** — simpler sheet, primary "Add to home screen" button (native prompt) + "Not now"; (3) **installed/capped** — plain feed, no nudge. Install-only (no push-permission ask — that's Surface B). Framed around the coming-push benefit. **Build via mooves-build-loop.**
+
+**Surface A acceptance:**
+- [ ] Service worker registers + is active; PWA is installable (manifest + icons + SW).
+- [ ] Install nudge fires after the first join/blast, not on first load; never when already installed.
+- [ ] Correct iOS (Share→Add-to-Home guidance) vs Android/desktop (native prompt) path.
+- [ ] Dismissible with a cooldown + capped re-prompts; no push-permission ask in Surface A.
+
 ### Open questions
-- Quiet-hours window + rate-limit thresholds (build).
-- Install-nudge exact trigger + copy; re-prompt cadence (mockup).
+- Quiet-hours window + rate-limit thresholds (Surface B build).
+- ~~Install-nudge exact trigger + copy; re-prompt cadence~~ — **RESOLVED 2026-07-20:** after first join/blast · 7-day cooldown, cap 3 · copy in Surface A detail + mockup.
 - Whether to revisit an aggregate friend digest later if group-scoped-only under-delivers on dormant reach.
