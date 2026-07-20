@@ -33,8 +33,8 @@ function OnboardingContent() {
         if (data.displayName) {
           router.replace(
             inviteCode
-              ? `/onboarding/invite?invite=${inviteCode}`
-              : '/onboarding/invite',
+              ? `/onboarding/area?invite=${inviteCode}`
+              : '/onboarding/area',
           )
         }
       })
@@ -108,7 +108,7 @@ function OnboardingContent() {
     }
 
     router.push(
-      inviteCode ? `/onboarding/invite?invite=${inviteCode}` : '/onboarding/invite',
+      inviteCode ? `/onboarding/area?invite=${inviteCode}` : '/onboarding/area',
     )
   }
 
@@ -117,9 +117,10 @@ function OnboardingContent() {
 
   return (
     <main className="min-h-screen bg-surface-bg flex flex-col">
-      {/* Step dots */}
+      {/* Step dots — step 1 of 3 */}
       <div className="flex gap-1.5 justify-center pt-12">
         <div className="w-2 h-2 rounded-full bg-mooves-purple" />
+        <div className="w-2 h-2 rounded-full bg-[#E8E4F5]" />
         <div className="w-2 h-2 rounded-full bg-[#E8E4F5]" />
       </div>
 

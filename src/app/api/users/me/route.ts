@@ -4,6 +4,7 @@
 
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
+import { lookupZip } from '@/lib/geo'
 
 export async function GET(req: Request) {
   const userId = req.headers.get('x-user-id')
@@ -12,11 +13,14 @@ export async function GET(req: Request) {
   const supabase = createServiceClient()
   const { data, error } = await supabase
     .from('users')
-    .select('id, phone, display_name, avatar_url, referral_code, is_available, status_note, status_time, visible_to, onboarding_complete')
+    .select('id, phone, display_name, avatar_url, referral_code, is_available, status_note, status_time, visible_to, onboarding_complete, area_zip')
     .eq('id', userId)
     .single()
 
   if (error || !data) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+  // Derive the display label from the stored zip; nothing else is persisted.
+  const area = data.area_zip ? lookupZip(data.area_zip) : null
 
   return NextResponse.json({
     id: data.id,
@@ -29,6 +33,9 @@ export async function GET(req: Request) {
     statusTime: data.status_time,
     visibleTo: data.visible_to,
     onboardingComplete: data.onboarding_complete,
+    areaZip: data.area_zip,
+    areaCity: area?.city ?? null,
+    areaState: area?.state ?? null,
   })
 }
 

@@ -79,8 +79,9 @@ function InviteContent() {
 
   return (
     <main className="min-h-screen bg-surface-bg flex flex-col">
-      {/* Step dots */}
+      {/* Step dots — step 3 of 3 */}
       <div className="flex gap-1.5 justify-center pt-12">
+        <div className="w-2 h-2 rounded-full bg-mooves-purple" />
         <div className="w-2 h-2 rounded-full bg-mooves-purple" />
         <div className="w-2 h-2 rounded-full bg-mooves-purple" />
       </div>
