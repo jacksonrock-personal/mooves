@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mooves — Phase 16 Unit 4 (New Group)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #1C1730; --app-bg: #F8F6FF; --white: #FFFFFF;
+    --purple: #7C5CDB; --purple-100: #EDE9FF; --purple-700: #5B3FB0; --purple-tint: #EDE9FF;
+    --grey: #BDB5D4; --ink: #1C1730; --ink-2: #6B628A; --border: #E8E4F5; --red: #E8405A;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); font-family: 'Inter', sans-serif; color: #fff; min-height: 100vh; padding: 40px 20px 80px; -webkit-font-smoothing: antialiased; }
+  .page-title { text-align: center; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 22px; letter-spacing: -0.02em; margin-bottom: 4px; }
+  .page-sub { text-align: center; color: #8B82AE; font-size: 13px; margin-bottom: 26px; }
+  .toggles { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 720px; margin: 0 auto 32px; }
+  .toggle { background: #2A2340; color: #C9C1E4; border: 1px solid #3A3355; font-weight: 600; font-size: 13px; padding: 10px 16px; border-radius: 999px; cursor: pointer; transition: all .15s; }
+  .toggle:hover { border-color: var(--purple); }
+  .toggle.active { background: var(--purple); color: #fff; border-color: var(--purple); }
+  .state { display: none; }
+  .state.active { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+
+  .phone { width: 320px; height: 640px; border-radius: 44px; background: var(--app-bg); overflow: hidden; position: relative; box-shadow: 0 30px 70px rgba(0,0,0,.45); border: 1px solid #2E2748; display: flex; flex-direction: column; }
+  .caption { max-width: 340px; text-align: center; font-size: 12.5px; line-height: 1.5; color: #9990BC; }
+  .caption b { color: #C9C1E4; font-weight: 600; }
+  .screen-label { text-align: center; margin-top: 8px; color: #6E6690; font-size: 12px; letter-spacing: .04em; }
+  .note { max-width: 640px; margin: 6px auto 0; background: #241E3A; border: 1px solid #342D52; border-radius: 14px; padding: 14px 18px; font-size: 12.5px; color: #B3AAD2; line-height: 1.6; }
+  .note b { color: #E6DEFF; }
+  .tag { display:inline-block; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 6px; background:#3A2F5E; color:#C9B8FF; margin-right:6px; }
+
+  /* header */
+  .ghead { background: var(--white); border-bottom: 1px solid var(--border); padding: 44px 16px 12px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .ghead .back { min-width: 56px; display: flex; align-items: center; gap: 4px; font-size: 15px; font-weight: 500; color: var(--purple); }
+  .ghead .htitle { flex: 1; text-align: center; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 16px; color: var(--ink); letter-spacing: -.01em; }
+  .ghead .right { min-width: 56px; text-align: right; font-size: 15px; font-weight: 600; }
+  .ghead .done-on { color: var(--purple); }
+  .ghead .done-off { color: var(--grey); }
+
+  .gbody { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+  .name-row { background: var(--white); margin-top: 16px; padding: 16px 20px; display: flex; align-items: center; gap: 14px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  .emoji-tile { position: relative; width: 50px; height: 50px; border-radius: 16px; background: var(--purple-tint); display: flex; align-items: center; justify-content: center; font-size: 28px; flex-shrink: 0; }
+  .emoji-tile .edit { position: absolute; bottom: -4px; right: -4px; width: 18px; height: 18px; border-radius: 50%; background: var(--purple); border: 2px solid #fff; display: flex; align-items: center; justify-content: center; }
+  .name-field label { display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-2); margin-bottom: 3px; }
+  .name-field .val { font-size: 16px; font-weight: 500; color: var(--ink); }
+  .name-field .val.ph { color: var(--ink-2); font-weight: 400; }
+  .name-field .caret { display:inline-block; width:2px; height:18px; background:var(--purple); vertical-align:-3px; animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .empty-note { font-size: 14px; color: var(--ink-2); line-height: 1.5; padding: 28px 24px; text-align: center; }
+  .reason { font-size: 12px; color: var(--ink-2); padding: 12px 20px 0; }
+
+  /* friend checklist */
+  .fsec { background: var(--white); margin-top: 8px; border-top: 1px solid var(--border); }
+  .fsec .fhd { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px 8px; }
+  .fsec .fhd .lbl { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-2); }
+  .fsec .fhd .cnt { font-size: 12px; font-weight: 600; color: var(--purple); }
+  .frow { display: flex; align-items: center; gap: 12px; padding: 10px 20px; border-top: 1px solid #F1EEFA; }
+  .frow .av { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 15px; }
+  .frow .fn { flex: 1; font-weight: 600; font-size: 14px; color: var(--ink); }
+  .chk { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--border); flex-shrink: 0; }
+  .chk.on { background: var(--purple); border-color: var(--purple); display: flex; align-items: center; justify-content: center; }
+
+  /* prominent CTA (footer, in-flow) */
+  .cta-wrap { margin-top: auto; padding: 16px 20px calc(16px + env(safe-area-inset-bottom)); background: var(--app-bg); }
+  .cta { width: 100%; padding: 16px; border-radius: 16px; background: var(--purple); color: #fff; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 16px; letter-spacing: -.01em; border: none; cursor: pointer; box-shadow: 0 6px 18px rgba(124,92,219,.32); display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .cta:disabled, .cta.off { opacity: .4; box-shadow: none; }
+  .cta-help { font-size: 11.5px; color: var(--ink-2); text-align: center; margin-top: 10px; line-height: 1.35; }
+
+  .cmp-lbl { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  .before { color: #E8709A; } .after { color: #6FE0A0; }
+</style>
+</head>
+<body>
+  <div class="page-title">Phase 16 · Unit 4 — New Group</div>
+  <div class="page-sub">Make the create action obvious (was a quiet top-bar "Done").</div>
+
+  <div class="toggles">
+    <button class="toggle active" data-state="named">Named (ready)</button>
+    <button class="toggle" data-state="empty">Empty (disabled)</button>
+    <button class="toggle" data-state="friends">With friends</button>
+    <button class="toggle" data-state="before">Before</button>
+  </div>
+
+  <!-- ========== NAMED (CTA enabled) ========== -->
+  <div class="state active" data-state="named">
+    <div class="phone">
+      <div class="ghead">
+        <span class="back"><svg width="9" height="15" viewBox="0 0 9 15" fill="none"><path d="M8 1L1.5 7.5L8 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Back</span>
+        <span class="htitle">New group</span>
+        <span class="right"></span>
+      </div>
+      <div class="gbody">
+        <div class="name-row">
+          <span class="emoji-tile">🐶<span class="edit"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></span></span>
+          <span class="name-field"><label>Group name</label><span class="val">Testing group<span class="caret"></span></span></span>
+        </div>
+        <div class="empty-note">No friends to add yet. Name your group, then share its invite link to fill it up.</div>
+        <div class="cta-wrap">
+          <button class="cta">Create group</button>
+          <div class="cta-help">You'll get an invite link to share right after.</div>
+        </div>
+      </div>
+    </div>
+    <div class="caption">The create action is now a <b>prominent full-width button</b> at the bottom, not a quiet "Done" in the corner. Helper text sets the expectation that an invite link follows.</div>
+    <div class="screen-label">Screen 9 — New group (ready)</div>
+  </div>
+
+  <!-- ========== EMPTY (CTA disabled) ========== -->
+  <div class="state" data-state="empty">
+    <div class="phone">
+      <div class="ghead">
+        <span class="back"><svg width="9" height="15" viewBox="0 0 9 15" fill="none"><path d="M8 1L1.5 7.5L8 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Back</span>
+        <span class="htitle">New group</span>
+        <span class="right"></span>
+      </div>
+      <div class="gbody">
+        <div class="name-row">
+          <span class="emoji-tile">👥<span class="edit"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></span></span>
+          <span class="name-field"><label>Group name</label><span class="val ph">e.g. College friends</span></span>
+        </div>
+        <div class="empty-note">No friends to add yet. Name your group, then share its invite link to fill it up.</div>
+        <div class="reason">Add a group name to finish.</div>
+        <div class="cta-wrap">
+          <button class="cta off" disabled>Create group</button>
+        </div>
+      </div>
+    </div>
+    <div class="caption">Before a name is entered the button is clearly <b>disabled</b>, with the same "Add a group name to finish" reason it shows today.</div>
+    <div class="screen-label">Screen 9 — New group (disabled)</div>
+  </div>
+
+  <!-- ========== WITH FRIENDS ========== -->
+  <div class="state" data-state="friends">
+    <div class="phone">
+      <div class="ghead">
+        <span class="back"><svg width="9" height="15" viewBox="0 0 9 15" fill="none"><path d="M8 1L1.5 7.5L8 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Back</span>
+        <span class="htitle">New group</span>
+        <span class="right"></span>
+      </div>
+      <div class="gbody">
+        <div class="name-row">
+          <span class="emoji-tile">🌮<span class="edit"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></span></span>
+          <span class="name-field"><label>Group name</label><span class="val">Taco Tuesday</span></span>
+        </div>
+        <div class="fsec">
+          <div class="fhd"><span class="lbl">Add friends (optional)</span><span class="cnt">2 selected</span></div>
+          <div class="frow"><span class="av" style="background:#E8A0B4;">S</span><span class="fn">Sarah</span><span class="chk on"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></div>
+          <div class="frow"><span class="av" style="background:#7FA8E8;">M</span><span class="fn">Marcus</span><span class="chk on"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></div>
+          <div class="frow"><span class="av" style="background:#9B8FB0;">J</span><span class="fn">Jess</span><span class="chk"></span></div>
+        </div>
+        <div class="cta-wrap">
+          <button class="cta">Create group</button>
+          <div class="cta-help">You can also share an invite link after.</div>
+        </div>
+      </div>
+    </div>
+    <div class="caption">Same prominent button whether the group starts empty or with friends picked.</div>
+    <div class="screen-label">Screen 9 — New group (with friends)</div>
+  </div>
+
+  <!-- ========== BEFORE ========== -->
+  <div class="state" data-state="before">
+    <div class="phone">
+      <div class="ghead">
+        <span class="back"><svg width="9" height="15" viewBox="0 0 9 15" fill="none"><path d="M8 1L1.5 7.5L8 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Back</span>
+        <span class="htitle">New group</span>
+        <span class="right done-on">Done</span>
+      </div>
+      <div class="gbody">
+        <div class="name-row">
+          <span class="emoji-tile">🐶<span class="edit"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></span></span>
+          <span class="name-field"><label>Group name</label><span class="val">Testing group</span></span>
+        </div>
+        <div class="empty-note">No friends to add yet. Name your group, then share its invite link to fill it up.</div>
+      </div>
+    </div>
+    <div class="caption"><span class="cmp-lbl before">Before</span> — the only way to create is the small <b>Done</b> in the top corner, easy to miss, with nothing on the screen telling you that's the step.</div>
+    <div class="screen-label">Screen 9 — New group (today)</div>
+  </div>
+
+<script>
+  document.querySelectorAll('.toggle').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var s=btn.dataset.state;
+      document.querySelectorAll('.toggle').forEach(function(b){b.classList.toggle('active',b===btn);});
+      document.querySelectorAll('.state').forEach(function(st){st.classList.toggle('active',st.dataset.state===s);});
+    });
+  });
+</script>
+</body>
+</html>

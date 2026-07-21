@@ -67,19 +67,24 @@ export default function GroupForm({
         <h1 className="flex-1 text-center font-display font-bold text-[16px] text-text-primary tracking-tight truncate px-2">
           {title}
         </h1>
-        <button
-          onClick={() => canSave && onSave(name.trim(), emoji, selected)}
-          disabled={!canSave}
-          className={`min-w-[56px] text-right font-sans text-[15px] font-semibold ${
-            canSave ? 'text-mooves-purple' : 'text-status-grey'
-          }`}
-        >
-          {saving ? 'Saving…' : 'Done'}
-        </button>
+        {isCreate ? (
+          // #3 — create uses the prominent bottom button, not a corner action.
+          <div className="min-w-[56px]" aria-hidden="true" />
+        ) : (
+          <button
+            onClick={() => canSave && onSave(name.trim(), emoji, selected)}
+            disabled={!canSave}
+            className={`min-w-[56px] text-right font-sans text-[15px] font-semibold ${
+              canSave ? 'text-mooves-purple' : 'text-status-grey'
+            }`}
+          >
+            {saving ? 'Saving…' : 'Done'}
+          </button>
+        )}
       </header>
 
       {/* Body */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto flex flex-col">
         {/* Emoji + name row */}
         <div className="bg-card-white mt-4 px-5 py-4 flex items-center gap-3.5 border-y border-[#E8E4F5]">
           <button
@@ -136,13 +141,6 @@ export default function GroupForm({
           </p>
         )}
 
-        {/* Invite-link hint (create only) */}
-        {isCreate && hasFriends && (
-          <p className="font-sans text-[12px] text-text-secondary px-6 pt-3 leading-relaxed">
-            Or skip this and share an invite link after creating.
-          </p>
-        )}
-
         {/* Inline reason the button is disabled */}
         {!canSave && !saving && (
           <p className="font-sans text-[12px] text-text-secondary px-5 pt-3">
@@ -176,6 +174,23 @@ export default function GroupForm({
           >
             Delete group
           </button>
+        )}
+
+        {/* #3 — prominent create action (create mode only), pinned to the bottom.
+            Replaces the easy-to-miss corner "Done" as the primary create step. */}
+        {isCreate && (
+          <div className="mt-auto px-5 pt-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
+            <button
+              onClick={() => canSave && onSave(name.trim(), emoji, selected)}
+              disabled={!canSave}
+              className="w-full py-4 rounded-2xl bg-mooves-purple text-white font-display font-extrabold text-[16px] tracking-tight shadow-[0_6px_18px_rgba(124,92,219,0.32)] disabled:opacity-40 disabled:shadow-none"
+            >
+              {saving ? 'Creating…' : 'Create group'}
+            </button>
+            <p className="font-sans text-[11.5px] text-text-secondary text-center mt-2.5 leading-snug">
+              You&apos;ll get an invite link to share right after.
+            </p>
+          </div>
         )}
       </div>
 
