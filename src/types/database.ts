@@ -227,11 +227,13 @@ export type Database = {
           impressions: number
           interested_count: number
           link_url: string | null
+          location_text: string | null
           paid_at: string | null
           price_cents: number | null
           radius_miles: number
           reject_reason: string | null
           sponsor_id: string | null
+          start_at: string | null
           status: string
           stripe_payment_intent_id: string | null
           time_text: string | null
@@ -250,11 +252,13 @@ export type Database = {
           impressions?: number
           interested_count?: number
           link_url?: string | null
+          location_text?: string | null
           paid_at?: string | null
           price_cents?: number | null
           radius_miles?: number
           reject_reason?: string | null
           sponsor_id?: string | null
+          start_at?: string | null
           status?: string
           stripe_payment_intent_id?: string | null
           time_text?: string | null
@@ -273,11 +277,13 @@ export type Database = {
           impressions?: number
           interested_count?: number
           link_url?: string | null
+          location_text?: string | null
           paid_at?: string | null
           price_cents?: number | null
           radius_miles?: number
           reject_reason?: string | null
           sponsor_id?: string | null
+          start_at?: string | null
           status?: string
           stripe_payment_intent_id?: string | null
           time_text?: string | null

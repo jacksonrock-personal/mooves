@@ -19,6 +19,8 @@ type MoveUpdate = {
   link_url?: string | null
   image_url?: string | null
   time_text?: string | null
+  start_at?: string | null
+  location_text?: string | null
   status?: string
   reject_reason?: string | null
 }
@@ -48,6 +50,8 @@ export async function PATCH(req: Request, { params }: Params) {
     linkUrl?: string | null
     imageUrl?: string | null
     timeText?: string | null
+    startAt?: string | null
+    locationText?: string | null
   }
 
   const updates: MoveUpdate = {}
@@ -74,6 +78,8 @@ export async function PATCH(req: Request, { params }: Params) {
   if (body.linkUrl !== undefined) updates.link_url = body.linkUrl?.trim() || null
   if (body.imageUrl !== undefined) updates.image_url = body.imageUrl?.trim() || null
   if (body.timeText !== undefined) updates.time_text = body.timeText?.trim() || null
+  if (body.startAt !== undefined) updates.start_at = body.startAt
+  if (body.locationText !== undefined) updates.location_text = body.locationText?.trim() || null
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: 'Nothing to update' }, { status: 400 })

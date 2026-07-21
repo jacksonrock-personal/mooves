@@ -8,6 +8,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { interestLabel } from '@/lib/interests'
 import MoveForm, { type MoveFormValues } from '@/components/admin/MoveForm'
 import BillingSection from './BillingSection'
+import SubmitConfirmModal, { type SubmitBilling } from './SubmitConfirmModal'
+import { movePayloadFields, splitStartAt } from '@/lib/movetime'
 
 interface Sponsor {
   id: string
@@ -28,6 +30,8 @@ interface SponsorMove {
   linkUrl: string | null
   imageUrl: string | null
   timeText: string | null
+  startAt: string | null
+  locationText: string | null
   status: string
   billing: BillingState
   priceCents: number | null
@@ -84,6 +88,9 @@ export default function SponsorDashboard({ sponsor, onLogout }: { sponsor: Spons
   const [editing, setEditing] = useState<SponsorMove | null>(null)
   const [viewingId, setViewingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // #14 — pending submit + the billing state to disclose before it goes to review.
+  const [submitReq, setSubmitReq] = useState<{ mode: 'new' | 'edit'; values: MoveFormValues } | null>(null)
+  const [submitBilling, setSubmitBilling] = useState<SubmitBilling | null>(null)
 
   const load = useCallback(async () => {
     const data = (await fetch('/api/sponsor/moves').then(r => r.json())) as { moves: SponsorMove[] }
@@ -99,7 +106,7 @@ export default function SponsorDashboard({ sponsor, onLogout }: { sponsor: Spons
       const res = await fetch('/api/sponsor/moves', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...values, radiusMiles: Number(values.radiusMiles) || 25 }),
+        body: JSON.stringify({ ...values, radiusMiles: Number(values.radiusMiles) || 25, ...movePayloadFields(values) }),
       })
       if (!res.ok) throw new Error()
       await load()
@@ -114,13 +121,35 @@ export default function SponsorDashboard({ sponsor, onLogout }: { sponsor: Spons
       const res = await fetch(`/api/sponsor/moves/${editing.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...values, radiusMiles: Number(values.radiusMiles) || 25 }),
+        body: JSON.stringify({ ...values, radiusMiles: Number(values.radiusMiles) || 25, ...movePayloadFields(values) }),
       })
       if (!res.ok) throw new Error()
       await load()
       setEditing(null)
       setView('moves')
     } catch { setError('Could not save changes, try again.') } finally { setBusy(false) }
+  }
+
+  // #14 — before actually sending a move to review, check the card on file and
+  // surface the billing consequence (charged on approval + go-live) or prompt to add one.
+  async function requestSubmit(mode: 'new' | 'edit', values: MoveFormValues) {
+    setError(null)
+    let billing: SubmitBilling = { hasCard: false, placementPriceCents: 2500, brand: null, last4: null }
+    try {
+      billing = (await fetch('/api/sponsor/billing').then(r => r.json())) as SubmitBilling
+    } catch {
+      // fall back to the no-card prompt if billing can't be read
+    }
+    setSubmitBilling(billing)
+    setSubmitReq({ mode, values })
+  }
+
+  function confirmSubmit() {
+    if (!submitReq) return
+    const { mode, values } = submitReq
+    setSubmitReq(null)
+    if (mode === 'new') void createMove(values)
+    else void saveEdit(values)
   }
 
   const viewingMove = moves.find(m => m.id === viewingId) ?? null
@@ -246,16 +275,18 @@ export default function SponsorDashboard({ sponsor, onLogout }: { sponsor: Spons
           ) : view === 'new' ? (
             <MoveForm mode="edit" submitting={busy} submitLabel="Submit for review"
               footnote="Submitting sends this to Mooves for review. Once approved, it goes live and your payment method on file is billed per your plan. You're not charged for anything under review or rejected."
-              onSubmit={createMove} onCancel={() => setView('moves')} />
+              onSubmit={values => void requestSubmit('new', values)} onCancel={() => setView('moves')} />
           ) : view === 'edit' && editing ? (
             <MoveForm mode="edit" submitting={busy} submitLabel="Save & resubmit"
               footnote="Saving sends this back to Mooves for review."
               initial={{
                 title: editing.title, description: editing.description, category: editing.category,
                 brand: editing.brand ?? '', areaZip: editing.areaZip, radiusMiles: String(editing.radiusMiles),
-                linkUrl: editing.linkUrl ?? '', imageUrl: editing.imageUrl ?? '', timeText: editing.timeText ?? '',
+                linkUrl: editing.linkUrl ?? '', imageUrl: editing.imageUrl ?? '',
+                startDate: splitStartAt(editing.startAt).date, startTime: splitStartAt(editing.startAt).time,
+                locationText: editing.locationText ?? '',
               }}
-              onSubmit={saveEdit} onCancel={() => { setEditing(null); setView('moves') }} />
+              onSubmit={values => void requestSubmit('edit', values)} onCancel={() => { setEditing(null); setView('moves') }} />
           ) : view === 'analytics' && viewingMove ? (
             <>
               <div className="flex items-center gap-2 mb-4">
@@ -283,6 +314,15 @@ export default function SponsorDashboard({ sponsor, onLogout }: { sponsor: Spons
           ) : null}
         </div>
       </div>
+
+      {submitReq && submitBilling && (
+        <SubmitConfirmModal
+          billing={submitBilling}
+          onConfirm={confirmSubmit}
+          onAddCard={() => { setSubmitReq(null); setView('billing') }}
+          onCancel={() => setSubmitReq(null)}
+        />
+      )}
     </div>
   )
 }
