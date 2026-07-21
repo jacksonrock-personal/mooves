@@ -41,7 +41,18 @@ function WalletPay({
   return (
     <div>
       <ExpressCheckoutElement
-        options={{ buttonType: { applePay: 'buy', googlePay: 'buy' } }}
+        options={{
+          buttonType: { applePay: 'buy', googlePay: 'buy' },
+          // Wallet-only tip: keep Apple Pay / Google Pay, drop the BNPL / non-wallet
+          // methods (Amazon Pay, Klarna, PayPal) that were cluttering the sheet.
+          // NOTE: Apple Pay still only renders once makemooves.app is registered as a
+          // Stripe payment domain (test + live) and viewed in Safari; Google Pay needs Chrome.
+          paymentMethods: {
+            amazonPay: 'never',
+            klarna: 'never',
+            paypal: 'never',
+          },
+        }}
         onReady={event => {
           if (!event.availablePaymentMethods) setNoWallet(true)
         }}
@@ -145,22 +156,32 @@ export default function TipJar({ visible }: { visible: boolean }) {
 
   return (
     <>
-      {/* Jar card at the bottom of the feed */}
-      <button
-        onClick={openSheet}
-        className="w-full text-left flex items-center gap-3 rounded-[18px] border-[1.5px] border-purple-100 bg-white px-3.5 py-3.5 mt-1.5"
-      >
-        <CowTile size={34} className="w-[46px] h-[46px] rounded-[14px] shrink-0" />
-        <span className="flex-1 min-w-0">
-          <span className="block font-display font-extrabold text-[15px] text-ink-900">Cow Tipping</span>
-          <span className="block text-[12px] leading-snug text-ink-500 mt-0.5">
-            If it got you out today, consider tipping the cow.
+      {/* Tip section, set apart from the feed so it can't be mistaken for a move
+          or mis-tapped: a divider + a muted aside where only the round $ button is
+          the tap target (the surrounding row is not tappable). */}
+      <div className="mt-7">
+        <div className="flex items-center gap-2.5 px-1 mb-3.5">
+          <span className="flex-1 h-px bg-[#E8E4F5]" />
+          <span className="font-sans text-[10.5px] font-bold tracking-[0.1em] uppercase text-grey-300">from the cow</span>
+          <span className="flex-1 h-px bg-[#E8E4F5]" />
+        </div>
+        <div className="flex items-center gap-3 px-1.5 pb-1">
+          <CowTile size={30} className="w-10 h-10 rounded-[12px] shrink-0" />
+          <span className="flex-1 min-w-0">
+            <span className="block font-display font-extrabold text-[13.5px] text-ink-500">Cow tipping</span>
+            <span className="block text-[11.5px] leading-snug text-grey-300 mt-0.5">
+              If Mooves got you out today, you can tip the cow.
+            </span>
           </span>
-        </span>
-        <span className="shrink-0 w-10 h-10 rounded-full bg-purple-500 text-white font-display font-extrabold text-[19px] flex items-center justify-center">
-          $
-        </span>
-      </button>
+          <button
+            onClick={openSheet}
+            aria-label="Tip the cow"
+            className="shrink-0 w-10 h-10 rounded-full bg-purple-500 text-white font-display font-extrabold text-[18px] flex items-center justify-center"
+          >
+            $
+          </button>
+        </div>
+      </div>
 
       <Sheet open={open} onClose={() => setOpen(false)} className="px-5 pb-7">
         {step === 'amount' && (

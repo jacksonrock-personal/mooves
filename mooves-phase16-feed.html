@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mooves — Phase 16 Unit 2 (Feed)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #1C1730; --app-bg: #F8F6FF; --white: #FFFFFF;
+    --purple: #7C5CDB; --purple-2: #9B7FE8; --purple-3: #A98FF0;
+    --purple-tint: #EDE9FF; --purple-100: #EDE9FF; --purple-700: #5B3FB0;
+    --green: #2ECC71; --green-700: #167A43; --grey: #BDB5D4;
+    --ink: #1C1730; --ink-2: #6B628A; --border: #E8E4F5; --red: #E8405A;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); font-family: 'Inter', sans-serif; color: #fff; min-height: 100vh; padding: 40px 20px 80px; -webkit-font-smoothing: antialiased; }
+  .page-title { text-align: center; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 22px; letter-spacing: -0.02em; margin-bottom: 4px; }
+  .page-sub { text-align: center; color: #8B82AE; font-size: 13px; margin-bottom: 26px; }
+  .toggles { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 720px; margin: 0 auto 32px; }
+  .toggle { background: #2A2340; color: #C9C1E4; border: 1px solid #3A3355; font-weight: 600; font-size: 13px; padding: 10px 16px; border-radius: 999px; cursor: pointer; transition: all .15s; }
+  .toggle:hover { border-color: var(--purple); }
+  .toggle.active { background: var(--purple); color: #fff; border-color: var(--purple); }
+  .state { display: none; }
+  .state.active { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+
+  .phone { width: 320px; height: 660px; border-radius: 44px; background: var(--app-bg); overflow: hidden; position: relative; box-shadow: 0 30px 70px rgba(0,0,0,.45); border: 1px solid #2E2748; display: flex; flex-direction: column; }
+  .caption { max-width: 340px; text-align: center; font-size: 12.5px; line-height: 1.5; color: #9990BC; }
+  .caption b { color: #C9C1E4; font-weight: 600; }
+  .screen-label { text-align: center; margin-top: 8px; color: #6E6690; font-size: 12px; letter-spacing: .04em; }
+  .note { max-width: 640px; margin: 6px auto 0; background: #241E3A; border: 1px solid #342D52; border-radius: 14px; padding: 14px 18px; font-size: 12.5px; color: #B3AAD2; line-height: 1.6; }
+  .note b { color: #E6DEFF; }
+  .tag { display:inline-block; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 6px; background:#3A2F5E; color:#C9B8FF; margin-right:6px; }
+
+  /* Feed header */
+  .fhead { background: linear-gradient(to bottom, var(--purple) 0%, var(--purple-2) 55%, var(--purple-3) 100%); padding: 26px 20px 22px; display: flex; align-items: center; justify-content: center; gap: 8px; flex-shrink: 0; }
+  .wm { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 21px; letter-spacing: -.01em; color: #fff; display: inline-flex; align-items: center; }
+  .wm .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin: 0 1.5px; }
+  .wm .dg { background: var(--green); } .wm .dp { background: #fff; }
+
+  .fbody { flex: 1; overflow-y: auto; padding: 16px 16px 90px; }
+  .eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); padding: 0 4px 12px; }
+
+  /* Slide to go free */
+  .slide { position: relative; width: 100%; height: 58px; border-radius: 999px; margin-bottom: 20px; display: flex; align-items: center; background: rgba(22,122,67,.10); border: 1.5px solid rgba(22,122,67,.20); }
+  .slide .thumb { position: absolute; left: 4px; top: 4px; width: 50px; height: 50px; border-radius: 50%; background: var(--green-700); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(22,122,67,.35); }
+  .slide .lbl { width: 100%; text-align: center; padding-left: 46px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 16px; color: var(--green-700); letter-spacing: -.01em; }
+
+  /* Friend card */
+  .fc { border-radius: 18px; border: 1.5px solid rgba(46,204,113,.25); background: rgba(46,204,113,.09); padding: 12px 14px; margin-bottom: 8px; }
+  .fc-row { display: flex; align-items: center; gap: 12px; }
+  .fc-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* Vibe note on its own line under the name, so it's always readable (never clipped by the button). */
+  .fc-sub { margin-top: 8px; padding-left: 56px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .av { width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; font-size: 16px; }
+  .fc-name { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 15px; color: var(--ink); }
+  .fc-meta { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
+  .chip-time { font-size: 11px; font-weight: 600; color: var(--purple-700); background: var(--purple-100); padding: 2px 7px; border-radius: 999px; }
+  .fc-note { font-size: 13px; color: var(--ink-2); }
+  .btn-join { flex-shrink: 0; padding: 8px 14px; border-radius: 999px; font-weight: 700; font-size: 13px; border: none; cursor: pointer; }
+  .btn-in { background: var(--purple); color: #fff; }
+  .btn-youin { background: var(--green-700); color: #fff; }
+  .joiners { margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(46,204,113,.20); display:flex; align-items:center; gap:6px; font-size:12px; color: var(--ink-2); }
+  .joiners .stack { display:flex; }
+  .joiners .stack .av { width: 24px; height: 24px; font-size: 10px; margin-left: -6px; border: 2px solid #EAF7EF; }
+  .joiners .stack .av:first-child { margin-left: 0; }
+
+  /* #12 tip section — separated */
+  .tip-sep { display: flex; align-items: center; gap: 10px; margin: 26px 4px 14px; }
+  .tip-sep .line { flex: 1; height: 1px; background: var(--border); }
+  .tip-sep .lbl { font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--grey); }
+  .tip-aside { display: flex; align-items: center; gap: 12px; padding: 4px 6px 8px; }
+  .tip-cow { width: 40px; height: 40px; border-radius: 12px; background: #F5F0ED; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; }
+  .tip-txt { flex: 1; min-width: 0; }
+  .tip-txt b { display: block; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 13.5px; color: var(--ink-2); }
+  .tip-txt span { display: block; font-size: 11.5px; color: var(--grey); margin-top: 1px; line-height: 1.35; }
+  .tip-btn { flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; background: var(--purple); border: none; color: #fff; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+  /* old tip jar (before) */
+  .tip-old { width: 100%; display: flex; align-items: center; gap: 12px; border-radius: 18px; border: 1.5px solid var(--purple-100); background: #fff; padding: 14px; margin-top: 6px; cursor: pointer; }
+  .tip-old .rt { width: 40px; height: 40px; border-radius: 50%; background: var(--purple); color: #fff; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 19px; display: flex; align-items: center; justify-content: center; margin-left: auto; }
+
+  /* bottom nav */
+  .bnav { position: absolute; bottom: 0; left: 0; right: 0; display: flex; background: var(--white); border-top: 1px solid var(--border); }
+  .bnav a { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 10px 0; font-size: 10px; font-weight: 600; color: var(--grey); }
+  .bnav a.active { color: var(--purple); }
+
+  /* overlay + sheet */
+  .ovl { position: absolute; inset: 0; background: rgba(0,0,0,.4); z-index: 20; }
+  .sheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 30; background: #fff; border-radius: 18px 18px 0 0; padding: 0 20px 24px; }
+  .sheet .grip { display: flex; justify-content: center; padding: 12px 0 8px; }
+  .sheet .grip i { width: 36px; height: 4px; border-radius: 999px; background: #E4E0EE; display: block; }
+  .sheet h2 { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 20px; color: var(--ink); text-align: center; letter-spacing: -.01em; }
+  .sheet .sub { font-size: 13.5px; color: var(--ink-2); text-align: center; margin-top: 6px; line-height: 1.5; }
+
+  /* action-sheet confirm (#6) */
+  .asheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 30; padding: 8px 8px 34px; display: flex; flex-direction: column; gap: 8px; }
+  .asheet .grp { border-radius: 16px; overflow: hidden; border: 1px solid var(--border); background: rgba(248,246,255,.96); backdrop-filter: blur(12px); }
+  .asheet .msg { font-size: 12.5px; font-weight: 500; color: var(--ink-2); text-align: center; padding: 14px 16px 12px; border-bottom: 1px solid var(--border); line-height: 1.4; }
+  .asheet .msg b { color: var(--ink); font-weight: 700; }
+  .asheet .act { width: 100%; padding: 15px; font-size: 17px; font-weight: 600; background: none; border: none; cursor: pointer; }
+  .asheet .act.leave { color: var(--red); }
+  .asheet .cancel { width: 100%; padding: 15px; border-radius: 16px; border: 1px solid var(--border); background: rgba(248,246,255,.96); backdrop-filter: blur(12px); font-size: 17px; font-weight: 700; color: var(--ink); cursor: pointer; }
+
+  /* go green sheet (#9) */
+  .gg-body { padding-bottom: 8px; }
+  .gg-lbl { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); margin-bottom: 10px; }
+  .gg-input { width: 100%; height: 52px; border-radius: 16px; border: 2px solid var(--border); background: var(--app-bg); padding: 0 16px; font-size: 15px; color: var(--ink); margin-bottom: 18px; display: flex; align-items: center; }
+  .gg-input.focused { border-color: var(--purple); }
+  .gg-input .ph { color: var(--grey); }
+  .gg-input .caret { width: 2px; height: 22px; background: var(--purple); margin-left: 1px; animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .chips { display: flex; gap: 8px; margin-bottom: 18px; }
+  .chip { flex: 1; text-align: center; padding: 11px 0; border-radius: 14px; font-weight: 600; font-size: 13px; border: 1.5px solid var(--purple-100); background: #fff; color: var(--ink); }
+  .chip.sel { background: var(--purple); color: #fff; border-color: var(--purple); }
+  .vchip { display: inline-flex; align-items:center; gap:5px; padding: 9px 13px; border-radius: 999px; font-weight: 600; font-size: 13px; border: 1.5px solid var(--purple-100); background: #fff; color: var(--ink); margin-right: 8px; }
+  .gg-cta { width: 100%; padding: 16px; border-radius: 16px; background: var(--green-700); color: #fff; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 17px; letter-spacing: -.01em; box-shadow: 0 4px 20px rgba(22,122,67,.28); border: none; }
+  .gg-footer { position: sticky; bottom: 0; background: #fff; padding-top: 10px; }
+  .kbd { background: #D3D2DB; padding: 8px 6px 26px; display: grid; grid-template-columns: repeat(10, 1fr); gap: 5px; }
+  .kbd span { background: #fff; border-radius: 5px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #2A2733; box-shadow: 0 1px 0 rgba(0,0,0,.25); }
+  .kbd .wide { grid-column: span 10; }
+
+  /* wallets (#12 pay) */
+  .wallet { width: 100%; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 600; font-size: 16px; margin-bottom: 10px; border: none; cursor: pointer; }
+  .w-apple { background: #000; color: #fff; }
+  .w-gpay { background: #000; color: #fff; }
+  .w-apple .lg { font-size: 17px; }
+  .secured { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 11.5px; color: var(--grey); margin-top: 6px; }
+  .toast { position: absolute; left: 50%; transform: translateX(-50%); bottom: 78px; z-index: 40; background: #241E3A; color: #fff; font-size: 13px; font-weight: 600; padding: 11px 16px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,.4); display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+  .pulse-ring { position:absolute; border:2px solid var(--purple); border-radius:999px; animation: ring 1.4s ease-out infinite; }
+  @keyframes ring { 0%{transform:scale(1);opacity:.7} 100%{transform:scale(1.5);opacity:0} }
+</style>
+</head>
+<body>
+  <div class="page-title">Phase 16 · Unit 2 — Feed / core loop</div>
+  <div class="page-sub">Four items on the feed and the go-green / tip sheets.</div>
+
+  <div class="toggles">
+    <button class="toggle active" data-state="feed">Feed (base)</button>
+    <button class="toggle" data-state="in">#5 · I'm in → text</button>
+    <button class="toggle" data-state="leave">#6 · Leave a Moove</button>
+    <button class="toggle" data-state="gogreen">#9 · Go Green + keyboard</button>
+    <button class="toggle" data-state="tip">#12 · Tip the cow</button>
+  </div>
+
+  <!-- ========== FEED BASE ========== -->
+  <div class="state active" data-state="feed">
+    <div class="phone">
+      <div class="fhead"><span id="cow-feed"></span><span class="wm">M<span class="dot dg"></span><span class="dot dp"></span>VES</span></div>
+      <div class="fbody">
+        <div class="slide"><span class="thumb"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 6 10 12 4 18" opacity="0.45"/><polyline points="10 6 16 12 10 18"/></svg></span><span class="lbl">Slide to go free</span></div>
+        <div class="eyebrow">Free right now</div>
+
+        <div class="fc">
+          <div class="fc-row">
+            <span class="av" style="background:#E8A0B4;">S</span>
+            <span style="flex:1;min-width:0;"><span class="fc-name">Sarah</span></span>
+            <button class="btn-join btn-in">I'm in</button>
+          </div>
+          <div class="fc-sub"><span class="chip-time">Tonight</span><span class="fc-note">drinks?</span></div>
+        </div>
+
+        <div class="fc">
+          <div class="fc-row">
+            <span class="av" style="background:#7FA8E8;">M</span>
+            <span style="flex:1;min-width:0;"><span class="fc-name">Marcus</span></span>
+            <button class="btn-join btn-youin">You're in ✓</button>
+          </div>
+          <div class="fc-sub"><span class="chip-time">Now</span><span class="fc-note">at the park</span></div>
+          <div class="joiners"><span class="stack"><span class="av" style="background:#7C5CDB;">Y</span><span class="av" style="background:#E8A0B4;">S</span></span>You and Sarah are in</div>
+        </div>
+
+        <div class="fc">
+          <div class="fc-row">
+            <span class="av" style="background:#9B8FB0;">J</span>
+            <span style="flex:1;min-width:0;"><span class="fc-name">Jess</span></span>
+            <button class="btn-join btn-in">I'm in</button>
+          </div>
+          <div class="fc-sub"><span class="chip-time">This weekend</span></div>
+        </div>
+
+        <!-- #12 separated tip section -->
+        <div class="tip-sep"><span class="line"></span><span class="lbl">from the cow</span><span class="line"></span></div>
+        <div class="tip-aside">
+          <span class="tip-cow" id="cow-tipaside"></span>
+          <span class="tip-txt"><b>Cow tipping</b><span>If Mooves got you out today, you can tip the cow.</span></span>
+          <button class="tip-btn">$</button>
+        </div>
+      </div>
+      <div class="bnav">
+        <a class="active"><span id="ni-feed"></span>Feed</a><a><span id="ni-disc"></span>Discover</a><a><span id="ni-ppl"></span>People</a><a><span id="ni-set"></span>Settings</a>
+      </div>
+    </div>
+    <div class="caption">The real feed: green-tinted moves, <b>I'm in</b> / <b>You're in ✓</b> toggles, and the redesigned tip section (#12) set apart from the moves.</div>
+    <div class="screen-label">Screen 4 — Feed</div>
+  </div>
+
+  <!-- ========== #5 I'M IN → TEXT ========== -->
+  <div class="state" data-state="in">
+    <div class="phone">
+      <div class="fhead"><span id="cow-in"></span><span class="wm">M<span class="dot dg"></span><span class="dot dp"></span>VES</span></div>
+      <div class="fbody">
+        <div class="eyebrow">Free right now</div>
+        <div class="fc" style="box-shadow:0 0 0 2px rgba(124,92,219,.25);">
+          <div class="fc-row">
+            <span class="av" style="background:#E8A0B4;position:relative;">S</span>
+            <span style="flex:1;min-width:0;"><span class="fc-name">Sarah</span></span>
+            <button class="btn-join btn-youin">You're in ✓</button>
+          </div>
+          <div class="fc-sub"><span class="chip-time">Tonight</span><span class="fc-note">drinks?</span></div>
+        </div>
+        <div class="caption" style="color:#9990BC;margin:12px 4px 0;text-align:left;font-size:12px;">One tap did two things ↓</div>
+      </div>
+      <div class="toast"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7FE0A8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>You're in, opening Messages to Sarah…</div>
+      <div class="bnav">
+        <a class="active"><span id="ni-feed2"></span>Feed</a><a><span id="ni-disc2"></span>Discover</a><a><span id="ni-ppl2"></span>People</a><a><span id="ni-set2"></span>Settings</a>
+      </div>
+    </div>
+    <div class="caption"><b>One tap</b> on "I'm in" both flips the card to <b>You're in ✓</b> and opens the native 1:1 text to Sarah. No more tapping "I'm in", then hunting for a second tap on the card to actually message her.</div>
+    <div class="note"><span class="tag">behavior</span> Fires <b>on join only</b> (leaving doesn't open Messages). The card-body tap-to-text stays as a second path, and the group-blast 2+ gate is untouched.</div>
+    <div class="screen-label">Screen 4 — Feed · join → text</div>
+  </div>
+
+  <!-- ========== #6 LEAVE CONFIRM ========== -->
+  <div class="state" data-state="leave">
+    <div class="phone">
+      <div class="fhead"><span id="cow-lv"></span><span class="wm">M<span class="dot dg"></span><span class="dot dp"></span>VES</span></div>
+      <div class="fbody" style="filter:brightness(.97);">
+        <div class="eyebrow">Free right now</div>
+        <div class="fc">
+          <div class="fc-row">
+            <span class="av" style="background:#7FA8E8;">M</span>
+            <span style="flex:1;min-width:0;"><span class="fc-name">Marcus</span></span>
+            <button class="btn-join btn-youin">You're in ✓</button>
+          </div>
+          <div class="fc-sub"><span class="chip-time">Now</span><span class="fc-note">at the park</span></div>
+        </div>
+      </div>
+      <div class="ovl"></div>
+      <div class="asheet">
+        <div class="grp">
+          <div class="msg">Leave this Moove? You'll drop off <b>Marcus's</b> plan and stop showing as in.</div>
+          <button class="act leave">Leave</button>
+        </div>
+        <button class="cancel">Stay in</button>
+      </div>
+      <div class="bnav">
+        <a class="active"><span id="ni-feed3"></span>Feed</a><a><span id="ni-disc3"></span>Discover</a><a><span id="ni-ppl3"></span>People</a><a><span id="ni-set3"></span>Settings</a>
+      </div>
+    </div>
+    <div class="caption">Tapping <b>You're in ✓</b> now asks first, instead of silently dropping you. <b>Stay in</b> keeps the join. Mirrors the go-grey confirm you already use.</div>
+    <div class="screen-label">Screen 4 — Feed · leave confirm</div>
+  </div>
+
+  <!-- ========== #9 GO GREEN + KEYBOARD ========== -->
+  <div class="state" data-state="gogreen">
+    <div class="phone">
+      <div class="fhead"><span id="cow-gg"></span><span class="wm">M<span class="dot dg"></span><span class="dot dp"></span>VES</span></div>
+      <div class="fbody" style="filter:brightness(.9);"><div class="eyebrow">Free right now</div><div class="fc" style="opacity:.5;"><div class="fc-row"><span class="av" style="background:#E8A0B4;">S</span><span style="flex:1;"><span class="fc-name">Sarah</span></span></div></div></div>
+      <div class="ovl"></div>
+      <div class="sheet" style="padding-bottom:0;">
+        <div class="grip"><i></i></div>
+        <div class="gg-body">
+          <div class="gg-lbl">What's the vibe?</div>
+          <div class="gg-input focused"><span class="ph">up for anything, drinks?, etc.</span><span class="caret"></span></div>
+          <div class="gg-lbl">When?</div>
+          <div class="chips"><span class="chip">Now</span><span class="chip sel">Tonight</span><span class="chip">This weekend</span></div>
+          <div class="gg-lbl">Who can see you?</div>
+          <div style="margin-bottom:16px;"><span class="vchip">👥 All friends</span><span class="vchip">🌮 Taco crew</span></div>
+        </div>
+        <div class="gg-footer"><button class="gg-cta">I'm free</button><div style="height:10px;"></div></div>
+      </div>
+      <div class="kbd">
+        <span>Q</span><span>W</span><span>E</span><span>R</span><span>T</span><span>Y</span><span>U</span><span>I</span><span>O</span><span>P</span>
+        <span>A</span><span>S</span><span>D</span><span>F</span><span>G</span><span>H</span><span>J</span><span>K</span><span>L</span><span>⌫</span>
+        <span class="wide">space</span>
+      </div>
+    </div>
+    <div class="caption">With the keyboard up, the <b>When</b> chips, groups, and the <b>I'm free</b> button all stay reachable — the CTA is pinned in a footer <b>above</b> the keyboard and the body scrolls. On open the sheet no longer auto-focuses the field, so you see everything first.</div>
+    <div class="note"><span class="tag">before</span> the vibe field auto-focused on open, so the keyboard immediately covered When / Who / I'm free. <span class="tag">after</span> no auto-focus + pinned CTA footer + scrollable body.</div>
+    <div class="screen-label">Screen 5 — Go Green sheet (keyboard-aware)</div>
+  </div>
+
+  <!-- ========== #12 TIP + WALLETS ========== -->
+  <div class="state" data-state="tip">
+    <div class="phone">
+      <div class="fhead"><span id="cow-tp"></span><span class="wm">M<span class="dot dg"></span><span class="dot dp"></span>VES</span></div>
+      <div class="fbody" style="filter:brightness(.9);"><div class="eyebrow">Free right now</div></div>
+      <div class="ovl"></div>
+      <div class="sheet">
+        <div class="grip"><i></i></div>
+        <h2>You're tipping $3</h2>
+        <div class="sub">One time, goes straight to Mooves.</div>
+        <div style="margin-top:20px;">
+          <button class="wallet w-apple"><span class="lg"></span> Pay</button>
+          <button class="wallet w-gpay"><span style="font-weight:500;">G</span> Pay</button>
+        </div>
+        <div class="secured"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><rect x="4" y="10" width="16" height="10" rx="2" stroke="#BDB5D4" stroke-width="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="#BDB5D4" stroke-width="2"/></svg> Secured by Stripe · $3 to Mooves</div>
+        <button style="width:100%;padding:13px;margin-top:12px;background:none;border:none;color:var(--ink-2);font-weight:600;font-size:14px;">Cancel</button>
+      </div>
+      <div class="bnav">
+        <a class="active"><span id="ni-feed4"></span>Feed</a><a><span id="ni-disc4"></span>Discover</a><a><span id="ni-ppl4"></span>People</a><a><span id="ni-set4"></span>Settings</a>
+      </div>
+    </div>
+    <div class="caption">Pay step shows <b>Apple Pay</b> and <b>Google Pay</b> (the wallets that should appear). Today only Amazon Pay / Klarna / Link render, which is a Stripe wallet-config issue, not a design one.</div>
+    <div class="note"><span class="tag">config</span> Apple Pay needs the <b>makemooves.app</b> domain registered in Stripe (test + live) and Safari; Google Pay needs Chrome. I'll confirm the Express Checkout wallet set during the build. <span class="tag">design</span> the jar itself (see <b>Feed base</b>) is now a set-apart footer with a single <b>Tip $</b> button, not a full-width tappable card mistaken for a move.</div>
+    <div class="screen-label">Screen 4 — Tip sheet (wallets)</div>
+  </div>
+
+<script>
+  function cowSVG(size){return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">'
+    +'<ellipse cx="11" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(-28 11 33)"/><ellipse cx="109" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(28 109 33)"/>'
+    +'<ellipse cx="11" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(-28 11 34)"/><ellipse cx="109" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(28 109 34)"/>'
+    +'<ellipse cx="38" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(-14 38 19)"/><ellipse cx="82" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(14 82 19)"/>'
+    +'<rect x="15" y="20" width="90" height="92" rx="30" fill="#F5F0ED"/><ellipse cx="41" cy="44" rx="19" ry="13" fill="#7A7282" transform="rotate(-10 41 44)"/><ellipse cx="79" cy="69" rx="14" ry="9" fill="#7A7282" transform="rotate(16 79 69)"/>'
+    +'<circle cx="44" cy="57" r="6" fill="#2A1E38"/><circle cx="76" cy="57" r="6" fill="#2A1E38"/><circle cx="46.5" cy="54.5" r="2.2" fill="white"/><circle cx="78.5" cy="54.5" r="2.2" fill="white"/>'
+    +'<ellipse cx="60" cy="90" rx="27" ry="20" fill="#F0AABB"/><circle cx="50" cy="91" r="9" fill="#2ECC71"/><circle cx="70" cy="91" r="9" fill="#BDB5D4"/></svg>';}
+  function navIcon(n){var s='width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
+    if(n==='feed')return '<svg '+s+'><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>';
+    if(n==='disc')return '<svg '+s+'><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5 5-2Z"/></svg>';
+    if(n==='ppl')return '<svg '+s+'><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>';
+    return '<svg '+s+'><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';}
+  ['cow-feed','cow-in','cow-lv','cow-gg','cow-tp'].forEach(function(id){var e=document.getElementById(id);if(e)e.innerHTML=cowSVG(26);});
+  document.getElementById('cow-tipaside').innerHTML=cowSVG(30);
+  ['','2','3','4'].forEach(function(sfx){
+    ['feed','disc','ppl','set'].forEach(function(n){var e=document.getElementById('ni-'+n+sfx);if(e)e.innerHTML=navIcon(n);});
+  });
+  // apple logo glyph
+  document.querySelectorAll('.w-apple .lg').forEach(function(e){e.innerHTML='<svg width="16" height="18" viewBox="0 0 16 20" fill="#fff"><path d="M13.5 15.3c-.3.7-.5 1-.9 1.6-.6.8-1.4 1.9-2.4 1.9-.9 0-1.1-.6-2.3-.6s-1.5.6-2.3.6c-1 0-1.8-1-2.4-1.8C.5 15.1 0 12.4 1 10.6c.6-1.2 1.7-1.9 2.7-1.9 1 0 1.7.6 2.5.6.8 0 1.3-.6 2.5-.6.9 0 1.8.5 2.5 1.3-2.2 1.2-1.8 4.3.8 5.3zM9.7 5.5c.5-.6.8-1.5.7-2.4-.8.1-1.7.5-2.2 1.2-.5.5-.9 1.4-.8 2.3.9 0 1.7-.5 2.3-1.1z"/></svg>';});
+
+  document.querySelectorAll('.toggle').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var s=btn.dataset.state;
+      document.querySelectorAll('.toggle').forEach(function(b){b.classList.toggle('active',b===btn);});
+      document.querySelectorAll('.state').forEach(function(st){st.classList.toggle('active',st.dataset.state===s);});
+    });
+  });
+</script>
+</body>
+</html>

@@ -7,9 +7,14 @@ interface SheetProps {
   onClose: () => void
   children: ReactNode
   className?: string
+  // Lifts the sheet up by this many pixels from the bottom. Used to keep the
+  // sheet (and its CTA) above the on-screen keyboard — callers measure the
+  // keyboard via the VisualViewport API and pass its height. Defaults to 0
+  // (flush to the bottom) so every existing caller is unaffected.
+  bottomInset?: number
 }
 
-export default function Sheet({ open, onClose, children, className = '' }: SheetProps) {
+export default function Sheet({ open, onClose, children, className = '', bottomInset = 0 }: SheetProps) {
   if (!open) return null
 
   return (
@@ -23,6 +28,7 @@ export default function Sheet({ open, onClose, children, className = '' }: Sheet
       {/* Sheet */}
       <div
         className={`fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl safe-area-pb ${className}`}
+        style={bottomInset > 0 ? { bottom: bottomInset } : undefined}
         role="dialog"
         aria-modal="true"
       >

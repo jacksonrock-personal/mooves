@@ -3686,3 +3686,21 @@ Five fixes, one PR (`feat/phase16-hygiene`), no per-item mockup beyond the share
 - [ ] Push opt-in card never shows while logged out (incl. invite landing); still fires post-auth at a value moment.
 - [ ] Home-screen icon shows the cow on a purple tile; splash `background_color` is purple.
 - [ ] `tsc --noEmit` + `next build` clean.
+
+### Unit 2 — Feed / core loop — ✅ Mockup APPROVED + ✅ CODED 2026-07-20 (`mooves-phase16-feed.html`, branch `feat/phase16-feed`)
+`tsc --noEmit` clean; needs Jackson's authed device test. **Flag:** #12 Apple Pay requires registering `makemooves.app` as a Stripe payment domain (test + live) — dashboard action, not code.
+Four items on Screen 4 (Feed) + the go-green/tip sheets, one PR (`feat/phase16-feed`):
+
+- **#5 — "I'm in" opens the text in the same tap (`FriendCard.tsx`).** Today tapping "I'm in" only records the join; you must then tap the card body separately to open the 1:1 text. Change: tapping "I'm in" flips it to "You're in ✓" **and** immediately opens the native 1:1 SMS to that free friend (`sms:{phone}`), in one tap. Fires **on join only**, never on leave. The card-body tap-to-text stays; the group-blast 2+ gate is untouched (out of scope).
+- **#6 — Confirm before leaving a Moove (`FriendCard.tsx` + confirm sheet).** Tapping "You're in ✓" currently drops the join silently. Add a quick confirmation ("Leave this Moove? You'll drop off {name}'s plan." · **Leave** / **Stay in**) before removing it; Cancel keeps you in. Mirrors the existing go-grey action-sheet pattern (`GoGreyConfirm.tsx`).
+- **Card layout fix (mockup-approved, part of #5/#6 build):** move the FriendCard vibe note + time chip off the name row onto their **own full-width line below the name** (name + join button share the top row). Today the note shares the row with the button and gets clipped/unreadable when the button is present. New structure: top row = avatar · name · join button; sub-row (indented under the name) = time chip + vibe note, wraps if long.
+- **#9 — Keyboard-aware Go Green sheet (`GoGreenSheet.tsx`).** The vibe input `autoFocus`es, so the iOS keyboard immediately covers the When / Who-can-see-you chips and the "I'm free" CTA. Fix: drop the auto-focus so the sheet renders fully first, and lay it out so the CTA stays reachable above the keyboard (pinned footer / scrollable body) when the vibe field is focused.
+- **#12 — Tip jar separation + wallets (`TipJar.tsx`).** The jar is a full-width white card with a whole-card tap target, sitting flush under the last move — too easy to mistake for a move and mis-tap ("feels like a scam"). Fix: clearly separate it from the feed (divider + spacing, distinct non-move styling) and make the tap target an explicit button, not the whole card. Also **Apple Pay + Google Pay must render** in the pay step — today only Amazon Pay / Klarna / Link show. Uses Stripe Express Checkout Element; investigate config (Apple Pay domain registration for makemooves.app; Google Pay needs Chrome; wallet enablement in the Stripe payment-method set).
+
+**Acceptance:**
+- [ ] Tapping "I'm in" flips to "You're in ✓" and opens Messages to that friend in the same tap.
+- [ ] Tapping "You're in ✓" asks to confirm before leaving; Cancel keeps the join.
+- [ ] Go Green sheet: When / visibility / "I'm free" reachable with the keyboard open; no auto-keyboard cover on open.
+- [ ] Tip jar visually separated from moves; only an explicit button opens it.
+- [ ] Apple Pay + Google Pay appear in the tip pay step (device/browser-appropriate).
+- [ ] `tsc --noEmit` + `next build` clean.
