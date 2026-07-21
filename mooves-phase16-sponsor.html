@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mooves — Phase 16 Unit 5a (Sponsor portal)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #1C1730; --dash-bg: #F5F2FF; --white: #FFFFFF;
+    --purple: #7C5CDB; --purple-50: #F5F2FF; --purple-100: #EDE9FF; --purple-700: #5B3FB0;
+    --green-100: #DCF5E7; --green-700: #167A43; --grey: #BDB5D4;
+    --ink: #1C1730; --ink-2: #6B628A; --border: #E8E4F5; --red: #E8405A; --amber-bg:#FBF0DC; --amber:#9A6800;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); font-family: 'Inter', sans-serif; color: #fff; min-height: 100vh; padding: 36px 20px 80px; -webkit-font-smoothing: antialiased; }
+  .page-title { text-align: center; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 22px; letter-spacing: -0.02em; margin-bottom: 4px; }
+  .page-sub { text-align: center; color: #8B82AE; font-size: 13px; margin-bottom: 24px; }
+  .toggles { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 820px; margin: 0 auto 28px; }
+  .toggle { background: #2A2340; color: #C9C1E4; border: 1px solid #3A3355; font-weight: 600; font-size: 13px; padding: 10px 16px; border-radius: 999px; cursor: pointer; transition: all .15s; }
+  .toggle:hover { border-color: var(--purple); }
+  .toggle.active { background: var(--purple); color: #fff; border-color: var(--purple); }
+  .state { display: none; }
+  .state.active { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  .caption { max-width: 720px; text-align: center; font-size: 12.5px; line-height: 1.5; color: #9990BC; }
+  .caption b { color: #C9C1E4; font-weight: 600; }
+  .screen-label { text-align: center; margin-top: 6px; color: #6E6690; font-size: 12px; letter-spacing: .04em; }
+  .note { max-width: 760px; margin: 4px auto 0; background: #241E3A; border: 1px solid #342D52; border-radius: 14px; padding: 13px 18px; font-size: 12.5px; color: #B3AAD2; line-height: 1.6; }
+  .note b { color: #E6DEFF; }
+  .tag { display:inline-block; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 6px; background:#3A2F5E; color:#C9B8FF; margin-right:6px; }
+
+  /* desktop window */
+  .win { width: 940px; max-width: 100%; height: 600px; border-radius: 14px; overflow: hidden; background: var(--white); box-shadow: 0 40px 90px rgba(0,0,0,.5); border: 1px solid #2E2748; position: relative; }
+  .titlebar { height: 34px; background: #EFEDF5; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 14px; gap: 7px; }
+  .titlebar i { width: 11px; height: 11px; border-radius: 50%; display: block; }
+  .tb-r { background: #FF5F57; } .tb-y { background: #FEBC2E; } .tb-g { background: #28C840; }
+  .titlebar .url { margin-left: 14px; font-size: 11.5px; color: #8A85A0; font-weight: 500; }
+
+  .dash { display: flex; height: calc(100% - 34px); }
+  /* sidebar */
+  .side { width: 200px; background: var(--white); border-right: 1px solid var(--border); padding: 16px; display: flex; flex-direction: column; flex-shrink: 0; }
+  .brand { padding: 0 6px 16px; }
+  .brand .b1 { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 16px; color: var(--ink); }
+  .brand .b1 span { color: var(--purple); }
+  .brand .b2 { font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--grey); }
+  .nav { display: flex; flex-direction: column; gap: 4px; }
+  .nav a { display: flex; align-items: center; gap: 10px; padding: 9px 11px; border-radius: 10px; font-size: 13.5px; font-weight: 600; color: var(--ink-2); }
+  .nav a.on { background: var(--purple-100); color: var(--purple-700); }
+  .side-foot { margin-top: auto; padding-top: 12px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+  .side-foot .ava { width: 30px; height: 30px; border-radius: 9px; background: linear-gradient(135deg,#F0A6C0,#E0789E); color: #fff; font-weight: 700; font-size: 12px; display: flex; align-items: center; justify-content: center; }
+  .side-foot .sn { font-size: 12px; font-weight: 600; color: var(--ink); line-height: 1.2; }
+  .side-foot .sn span { display: block; font-weight: 500; color: var(--ink-2); font-size: 11px; }
+
+  /* main */
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; background: var(--dash-bg); }
+  .main-hd { padding: 18px 24px; border-bottom: 1px solid var(--border); background: var(--white); display: flex; align-items: center; justify-content: space-between; }
+  .main-hd h1 { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 21px; color: var(--ink); }
+  .main-hd .sub { font-size: 13px; color: var(--ink-2); margin-top: 2px; }
+  .main-body { flex: 1; overflow-y: auto; padding: 22px 24px; }
+
+  /* form */
+  .form { max-width: 600px; }
+  .fg { margin-bottom: 16px; }
+  .fg label { display: block; font-size: 12px; font-weight: 700; color: var(--ink-2); margin-bottom: 6px; }
+  .inp { width: 100%; border: 1.5px solid var(--border); border-radius: 10px; padding: 9px 12px; font-size: 14px; color: var(--ink); font-family: inherit; background: #fff; }
+  .inp:focus { outline: none; border-color: var(--purple); }
+  .row2 { display: flex; gap: 14px; }
+  .row2 .fg { flex: 1; }
+  .hint { font-size: 11.5px; color: var(--grey); margin-top: 6px; }
+
+  /* NEW when picker (#13) */
+  .when-box { border: 1.5px solid var(--purple); border-radius: 12px; padding: 14px; background: #FCFBFF; box-shadow: 0 0 0 4px rgba(124,92,219,.08); }
+  .when-box .wl { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--purple-700); margin-bottom: 10px; }
+  .picker-row { display: flex; gap: 12px; }
+  .pick { flex: 1; position: relative; }
+  .pick .field { display: flex; align-items: center; gap: 8px; border: 1.5px solid var(--border); border-radius: 10px; padding: 10px 12px; background: #fff; cursor: pointer; }
+  .pick .field.act { border-color: var(--purple); }
+  .pick .field svg { flex-shrink: 0; }
+  .pick .field .txt { font-size: 14px; color: var(--ink); font-weight: 500; }
+  .pick .plab { font-size: 11px; color: var(--ink-2); font-weight: 600; margin-bottom: 5px; }
+
+  /* calendar dropdown */
+  .cal { position: absolute; top: 100%; left: 0; margin-top: 6px; width: 250px; background: #fff; border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 16px 40px rgba(28,23,48,.18); padding: 12px; z-index: 5; }
+  .cal-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .cal-hd .m { font-weight: 700; font-size: 13px; color: var(--ink); }
+  .cal-hd button { border: none; background: none; color: var(--ink-2); cursor: pointer; padding: 4px; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+  .cal-grid .dow { font-size: 9.5px; font-weight: 700; color: var(--grey); text-align: center; padding: 3px 0; }
+  .cal-grid .d { text-align: center; font-size: 12px; color: var(--ink); padding: 6px 0; border-radius: 7px; cursor: pointer; }
+  .cal-grid .d:hover { background: var(--purple-50); }
+  .cal-grid .d.sel { background: var(--purple); color: #fff; font-weight: 700; }
+  .cal-grid .d.mut { color: #D3CEE0; }
+  .time-list { position: absolute; top: 100%; left: 0; margin-top: 6px; width: 120px; max-height: 160px; overflow-y: auto; background: #fff; border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 16px 40px rgba(28,23,48,.18); z-index: 5; }
+  .time-list .t { padding: 8px 12px; font-size: 13px; color: var(--ink); cursor: pointer; }
+  .time-list .t:hover { background: var(--purple-50); }
+  .time-list .t.sel { background: var(--purple-100); color: var(--purple-700); font-weight: 700; }
+
+  .btns { display: flex; gap: 10px; align-items: center; margin-top: 22px; }
+  .btn-p { background: var(--purple); color: #fff; font-weight: 600; font-size: 13.5px; border: none; border-radius: 10px; padding: 10px 16px; cursor: pointer; }
+  .btn-w { background: #fff; border: 1px solid var(--border); color: var(--ink); font-weight: 600; font-size: 13.5px; border-radius: 10px; padding: 10px 16px; cursor: pointer; }
+  .foot-note { font-size: 11.5px; color: var(--grey); margin-top: 14px; line-height: 1.5; max-width: 560px; }
+
+  /* modal (#14) */
+  .ovl { position: absolute; inset: 0; background: rgba(28,23,48,.5); display: flex; align-items: center; justify-content: center; z-index: 20; }
+  .modal { width: 430px; background: #fff; border-radius: 18px; padding: 24px; box-shadow: 0 30px 70px rgba(0,0,0,.35); }
+  .modal .mi { width: 48px; height: 48px; border-radius: 13px; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; }
+  .mi.purple { background: var(--purple-100); }
+  .mi.green { background: var(--green-100); }
+  .modal h3 { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 19px; color: var(--ink); letter-spacing: -.01em; }
+  .modal p { font-size: 13.5px; color: var(--ink-2); line-height: 1.55; margin-top: 8px; }
+  .modal p b { color: var(--ink); }
+  .card-chip { display: flex; align-items: center; gap: 11px; border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin: 16px 0; }
+  .card-chip .cc { width: 42px; height: 28px; border-radius: 5px; background: #1A1F71; color: #fff; font-weight: 800; font-style: italic; font-size: 10px; display: flex; align-items: center; justify-content: center; }
+  .card-chip .ct { font-size: 13.5px; font-weight: 700; color: var(--ink); } .card-chip .ce { font-size: 12px; color: var(--ink-2); }
+  .price-box { background: var(--purple-50); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; font-size: 13px; color: var(--ink); margin: 16px 0; }
+  .price-box b { color: var(--purple-700); }
+  .modal-btns { display: flex; gap: 10px; margin-top: 6px; }
+  .modal-btns .grow { flex: 1; }
+</style>
+</head>
+<body>
+  <div class="page-title">Phase 16 · Unit 5a — Sponsor portal (desktop)</div>
+  <div class="page-sub">Date/time picker (#13) and save-time billing disclosure (#14). Desktop, like the Phase 13 sponsor mockup.</div>
+
+  <div class="toggles">
+    <button class="toggle active" data-state="form">New move form (#13)</button>
+    <button class="toggle" data-state="dateopen">Date picker open</button>
+    <button class="toggle" data-state="nocard">Submit · no card (#14)</button>
+    <button class="toggle" data-state="hascard">Submit · card on file (#14)</button>
+  </div>
+
+  <!-- shared dashboard chrome rendered per-state via JS clone; simpler: inline each -->
+  <div class="state active" data-state="form"><div id="win-form"></div>
+    <div class="caption"><b>#13</b> — the free-text "Time text" field is replaced by a real <b>date picker + time picker</b> and a short <b>Location</b> field. This produces a structured <b>start_at</b> the Discover card can format properly.</div>
+    <div class="screen-label">Sponsor · New move</div>
+  </div>
+  <div class="state" data-state="dateopen"><div id="win-dateopen"></div>
+    <div class="caption">The date field opens a <b>calendar</b>; the time field opens a scrollable time list. No more guessing a free-text string.</div>
+    <div class="screen-label">Sponsor · New move · date picker</div>
+  </div>
+  <div class="state" data-state="nocard"><div id="win-nocard"></div>
+    <div class="note"><span class="tag">#14 · no card</span> On <b>Submit for review</b> with no card on file, this prompt appears first. <b>Add card</b> opens Billing; <b>Submit anyway</b> still sends it to review (it shows the existing "Approved, add a card to go live" state after approval).</div>
+    <div class="screen-label">Sponsor · Submit · no card</div>
+  </div>
+  <div class="state" data-state="hascard"><div id="win-hascard"></div>
+    <div class="note"><span class="tag">#14 · card on file</span> With a card saved, submitting shows this confirmation naming the <b>card + price</b>, so there's no surprise charge. Charging still happens only on Admin approval + go-live.</div>
+    <div class="screen-label">Sponsor · Submit · card on file</div>
+  </div>
+
+<script>
+  var CAL_ICON = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#7C5CDB" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg>';
+  var CLOCK_ICON = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#7C5CDB" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
+  function navIcon(n){var s='width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"';
+    if(n==='moves')return '<svg '+s+'><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>';
+    if(n==='new')return '<svg '+s+' stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>';
+    return '<svg '+s+'><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/></svg>';}
+
+  function sidebar(active){
+    return '<div class="side"><div class="brand"><div class="b1">M<span>oo</span>ves</div><div class="b2">for Business</div></div>'
+      +'<div class="nav">'
+      +'<a class="'+(active==='moves'?'on':'')+'">'+navIcon('moves')+'My moves</a>'
+      +'<a class="'+(active==='new'?'on':'')+'">'+navIcon('new')+'New move</a>'
+      +'<a class="'+(active==='billing'?'on':'')+'">'+navIcon('billing')+'Billing</a>'
+      +'</div>'
+      +'<div class="side-foot"><div class="ava">V</div><div class="sn">The Vista<span>Sponsor</span></div></div></div>';
+  }
+
+  function whenBox(opts){
+    opts = opts || {};
+    var dateField = '<div class="pick"><div class="plab">Date</div><div class="field'+(opts.dateAct?' act':'')+'">'+CAL_ICON+'<span class="txt">Sun, Aug 3, 2025</span></div>'+(opts.calOpen?calendar():'')+'</div>';
+    var timeField = '<div class="pick"><div class="plab">Start time</div><div class="field'+(opts.timeAct?' act':'')+'">'+CLOCK_ICON+'<span class="txt">10:00 AM</span></div>'+(opts.timeOpen?timeList():'')+'</div>';
+    var loc = '<div class="pick"><div class="plab">Location / place</div><div class="field"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#7C5CDB" stroke-width="2" stroke-linecap="round"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg><span class="txt">Logan Blvd</span></div></div>';
+    return '<div class="when-box"><div class="wl">When &amp; where</div><div class="picker-row">'+dateField+timeField+'</div><div style="margin-top:12px;">'+loc+'</div></div>';
+  }
+  function calendar(){
+    var days = '<div class="dow">S</div><div class="dow">M</div><div class="dow">T</div><div class="dow">W</div><div class="dow">T</div><div class="dow">F</div><div class="dow">S</div>';
+    // Aug 2025 starts Friday
+    for(var i=0;i<5;i++) days+='<div class="d mut"></div>';
+    for(var d=1;d<=31;d++){ days+='<div class="d'+(d===3?' sel':'')+'">'+d+'</div>'; }
+    return '<div class="cal"><div class="cal-hd"><button>‹</button><span class="m">August 2025</span><button>›</button></div><div class="cal-grid">'+days+'</div></div>';
+  }
+  function timeList(){
+    var times=['9:00 AM','9:30 AM','10:00 AM','10:30 AM','11:00 AM','11:30 AM','12:00 PM'];
+    var h=''; times.forEach(function(t){ h+='<div class="t'+(t==='10:00 AM'?' sel':'')+'">'+t+'</div>'; });
+    return '<div class="time-list">'+h+'</div>';
+  }
+
+  function moveForm(whenOpts, submitting){
+    return '<div class="form">'
+      +'<div class="fg"><label>Title</label><input class="inp" value="Sunset rooftop set at The Vista"></div>'
+      +'<div class="fg"><label>Description</label><input class="inp" value="Live DJ and small plates on the roof, Sunday golden hour. Come loosen up the weekend."></div>'
+      +'<div class="row2"><div class="fg"><label>Category</label><input class="inp" value="Music &amp; nightlife"></div><div class="fg"><label>Brand / venue</label><input class="inp" value="The Vista"></div></div>'
+      +'<div class="row2"><div class="fg"><label>Area ZIP</label><input class="inp" value="60647"></div><div class="fg"><label>Radius (miles)</label><input class="inp" value="25"></div></div>'
+      +'<div class="fg">'+whenBox(whenOpts)+'</div>'
+      +'<div class="fg"><label>Link URL</label><input class="inp" value="https://thevista.com/rooftop"></div>'
+      +'<div class="btns"><button class="btn-p">'+(submitting?'Submitting…':'Submit for review')+'</button><button class="btn-w" style="margin-left:auto;">Cancel</button></div>'
+      +'<div class="foot-note">Submitting sends this to Mooves for review. Once approved, it goes live and your card on file is billed the placement fee. You are not charged for anything under review or rejected.</div>'
+      +'</div>';
+  }
+
+  function win(active, bodyHtml, modalHtml){
+    return '<div class="win"><div class="titlebar"><i class="tb-r"></i><i class="tb-y"></i><i class="tb-g"></i><span class="url">makemooves.app/sponsor</span></div>'
+      +'<div class="dash">'+sidebar(active)
+      +'<div class="main"><div class="main-hd"><div><h1>New move</h1><div class="sub">Tell people nearby what is happening</div></div></div>'
+      +'<div class="main-body">'+bodyHtml+'</div></div></div>'
+      +(modalHtml||'')+'</div>';
+  }
+
+  function cardChip(){
+    return '<div class="card-chip"><div class="cc">VISA</div><div><div class="ct">Visa ending 4242</div><div class="ce">Expires 8 / 2027</div></div></div>';
+  }
+
+  // No-card modal
+  var noCardModal = '<div class="ovl"><div class="modal">'
+    +'<div class="mi purple"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7C5CDB" stroke-width="2" stroke-linecap="round"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18M7 15h4"/></svg></div>'
+    +'<h3>Add a payment method</h3>'
+    +'<p>You have no card on file. Your card is charged <b>$25</b> only when Mooves approves this move and it goes live. Nothing is charged while it is under review.</p>'
+    +'<div class="price-box">Placement fee <b>$25</b> per move, charged on go-live.</div>'
+    +'<div class="modal-btns"><button class="btn-p grow">Add a card</button><button class="btn-w grow">Submit anyway</button></div>'
+    +'</div></div>';
+
+  // Card-on-file modal
+  var hasCardModal = '<div class="ovl"><div class="modal">'
+    +'<div class="mi green"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#167A43" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>'
+    +'<h3>Submit this move?</h3>'
+    +'<p>When Mooves approves it and it goes live, this card is charged the placement fee. You are not charged for anything under review or rejected.</p>'
+    +cardChip()
+    +'<div class="price-box">You will be billed <b>$25</b> on go-live.</div>'
+    +'<div class="modal-btns"><button class="btn-p grow">Submit for review</button><button class="btn-w grow">Cancel</button></div>'
+    +'</div></div>';
+
+  document.getElementById('win-form').innerHTML = win('new', moveForm({dateAct:false}, false));
+  document.getElementById('win-dateopen').innerHTML = win('new', moveForm({dateAct:true, calOpen:true, timeOpen:true}, false));
+  document.getElementById('win-nocard').innerHTML = win('new', moveForm({}, true), noCardModal);
+  document.getElementById('win-hascard').innerHTML = win('new', moveForm({}, true), hasCardModal);
+
+  document.querySelectorAll('.toggle').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var s=btn.dataset.state;
+      document.querySelectorAll('.toggle').forEach(function(b){b.classList.toggle('active',b===btn);});
+      document.querySelectorAll('.state').forEach(function(st){st.classList.toggle('active',st.dataset.state===s);});
+    });
+  });
+</script>
+</body>
+</html>

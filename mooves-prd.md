@@ -3730,3 +3730,22 @@ One item on the create-group form (`GroupForm.tsx`, create mode only), one PR (`
 - [ ] On create you still land on the group with the invite-link sheet (Phase 10 behavior) — copy sets that expectation.
 - [ ] Edit mode unchanged (top Done + Invite link + Delete).
 - [ ] `tsc --noEmit` + `next build` clean.
+
+### Unit 5 (sponsor, DESKTOP) — SPLIT into 5a + 5b (A2P abandoned; #15 SMS→email)
+
+#### Unit 5a — datetime picker + billing prompt — ✅ Mockup APPROVED + ✅ CODED 2026-07-20 (`mooves-phase16-sponsor.html`, branch `feat/phase16-sponsor`)
+`tsc` clean. **Migration applied by Jackson:** `sponsored_moves.start_at TIMESTAMPTZ` + `location_text TEXT`. Denormalizes formatted display into `time_text` at write time so all read paths are unchanged. Needs Jackson's authed device test.
+Desktop, one PR (`feat/phase16-sponsor`). No new vendor. Two items:
+
+- **#13 — Date + time picker (`MoveForm.tsx`).** Replace the free-text "Time text" field with a real **date picker + time picker**, plus a short **Location / place** field (today's `time_text` combines datetime + place). Store a structured **`sponsored_moves.start_at TIMESTAMPTZ`** + **`location_text TEXT`**; keep legacy `time_text` as a render fallback for old rows. Discover `SponsoredCard` renders a formatted `start_at` (e.g. "Sun, Aug 3 · 10:00 AM") + location, falling back to `time_text` when `start_at` is null. Migration (Jackson applies): add `start_at`, `location_text`. Form validity requires a date.
+- **#14 — Save-time billing disclosure (`SponsorDashboard` submit).** On "Submit for review", first check the card on file (`GET /api/sponsor/billing`): **no card →** a prompt modal ("Add a payment method — your card is charged {price} when a move is approved and goes live") with **Add card** (→ billing) and **Submit anyway** (still allowed; lands pending, shows the existing "awaiting" state after approval until a card is added). **Card on file →** a confirm modal ("Your {brand} ending {last4} is charged {price} when Mooves approves this and it goes live. You're not charged for anything under review or rejected.") with **Submit for review** / **Cancel**. Only gates the submit; the approve→auto-charge flow is unchanged.
+
+**Acceptance (5a):**
+- [ ] MoveForm has a date + time picker and a location field instead of free-text time; produces a structured `start_at`.
+- [ ] Discover renders a formatted `start_at` (+ location), falling back to legacy `time_text`.
+- [ ] Submitting with no card → add-card prompt; with a card → charge disclosure naming the card brand + last4 + price.
+- [ ] Existing approve→auto-charge and awaiting/live/failed states unchanged.
+- [ ] `tsc --noEmit` + `next build` clean.
+
+#### Unit 5b — approval email (#15) — SPEC pending; gated on Jackson's Resend + DNS setup
+Sponsor gets a transactional **email** when their Moove is approved & live (A2P SMS abandoned). Needs `sponsors.email` (+ collect in `SponsorAuth`), **Resend** + `RESEND_API_KEY`, verified `makemooves.app` sending domain (DNS); send on admin-approve (+paid) in the `api/admin/moves/[id]` approve path. Build after 5a and after Jackson provisions Resend.

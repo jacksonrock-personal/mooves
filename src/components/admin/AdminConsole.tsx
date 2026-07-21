@@ -8,6 +8,7 @@ import { interestLabel } from '@/lib/interests'
 import CowIllustration from '@/components/ui/CowIllustration'
 import MoveForm, { type MoveFormValues } from './MoveForm'
 import RejectModal from './RejectModal'
+import { movePayloadFields, splitStartAt } from '@/lib/movetime'
 
 interface AdminMove {
   id: string
@@ -20,6 +21,8 @@ interface AdminMove {
   linkUrl: string | null
   imageUrl: string | null
   timeText: string | null
+  startAt: string | null
+  locationText: string | null
   status: string
   rejectReason: string | null
   sponsorId: string | null
@@ -120,7 +123,7 @@ export default function AdminConsole() {
           radiusMiles: Number(values.radiusMiles) || 25,
           linkUrl: values.linkUrl,
           imageUrl: values.imageUrl,
-          timeText: values.timeText,
+          ...movePayloadFields(values),
           publish,
         }),
       })
@@ -150,7 +153,7 @@ export default function AdminConsole() {
           radiusMiles: Number(values.radiusMiles) || 25,
           linkUrl: values.linkUrl,
           imageUrl: values.imageUrl,
-          timeText: values.timeText,
+          ...movePayloadFields(values),
         }),
       })
       if (!res.ok) throw new Error('save failed')
@@ -324,7 +327,9 @@ export default function AdminConsole() {
                     radiusMiles: String(editing.radiusMiles),
                     linkUrl: editing.linkUrl ?? '',
                     imageUrl: editing.imageUrl ?? '',
-                    timeText: editing.timeText ?? '',
+                    startDate: splitStartAt(editing.startAt).date,
+                    startTime: splitStartAt(editing.startAt).time,
+                    locationText: editing.locationText ?? '',
                   }}
                   onSubmit={saveEdit}
                   onCancel={() => { setEditing(null); setView(editing.status === 'pending' ? 'queue' : 'all') }}

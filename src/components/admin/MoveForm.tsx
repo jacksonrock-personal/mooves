@@ -14,7 +14,10 @@ export interface MoveFormValues {
   radiusMiles: string
   linkUrl: string
   imageUrl: string
-  timeText: string
+  // #13 — structured when/where (replaces the old free-text timeText).
+  startDate: string // YYYY-MM-DD
+  startTime: string // HH:MM (24h)
+  locationText: string
 }
 
 interface MoveFormProps {
@@ -31,7 +34,8 @@ interface MoveFormProps {
 
 const EMPTY: MoveFormValues = {
   title: '', description: '', category: INTERESTS[0].slug, brand: '',
-  areaZip: '', radiusMiles: '25', linkUrl: '', imageUrl: '', timeText: '',
+  areaZip: '', radiusMiles: '25', linkUrl: '', imageUrl: '',
+  startDate: '', startTime: '', locationText: '',
 }
 
 export default function MoveForm({ initial, mode, submitting, onSubmit, onCancel, submitLabel, footnote }: MoveFormProps) {
@@ -39,7 +43,7 @@ export default function MoveForm({ initial, mode, submitting, onSubmit, onCancel
   const set = (k: keyof MoveFormValues) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setV(prev => ({ ...prev, [k]: e.target.value }))
 
-  const valid = v.title.trim() && v.description.trim() && /^\d{5}$/.test(v.areaZip.trim())
+  const valid = v.title.trim() && v.description.trim() && /^\d{5}$/.test(v.areaZip.trim()) && !!v.startDate
 
   return (
     <div className="max-w-[620px]">
@@ -79,18 +83,22 @@ export default function MoveForm({ initial, mode, submitting, onSubmit, onCancel
             className="w-full border-[1.5px] border-[#E8E4F5] rounded-[10px] px-3 py-2.5 text-[14px] text-ink-900 outline-none focus:border-purple-500" />
         </div>
       </div>
-      <div className="flex gap-3.5 mb-4">
-        <div className="flex-1">
-          <label className="block text-[12px] font-bold text-ink-500 mb-1.5">Time text</label>
-          <input value={v.timeText} onChange={set('timeText')} placeholder="Fri 7pm · Mission"
-            className="w-full border-[1.5px] border-[#E8E4F5] rounded-[10px] px-3 py-2.5 text-[14px] text-ink-900 outline-none focus:border-purple-500" />
-          <div className="text-[11.5px] text-grey-300 mt-1.5">Lightweight, no calendar.</div>
+      <div className="mb-4">
+        <label className="block text-[12px] font-bold text-ink-500 mb-1.5">When &amp; where</label>
+        <div className="flex gap-3.5">
+          <input type="date" value={v.startDate} onChange={set('startDate')}
+            className="flex-1 border-[1.5px] border-[#E8E4F5] rounded-[10px] px-3 py-2.5 text-[14px] text-ink-900 outline-none focus:border-purple-500 bg-white" />
+          <input type="time" value={v.startTime} onChange={set('startTime')}
+            className="flex-1 border-[1.5px] border-[#E8E4F5] rounded-[10px] px-3 py-2.5 text-[14px] text-ink-900 outline-none focus:border-purple-500 bg-white" />
         </div>
-        <div className="flex-1">
-          <label className="block text-[12px] font-bold text-ink-500 mb-1.5">Link URL</label>
-          <input value={v.linkUrl} onChange={set('linkUrl')} placeholder="https://…"
-            className="w-full border-[1.5px] border-[#E8E4F5] rounded-[10px] px-3 py-2.5 text-[14px] text-ink-900 outline-none focus:border-purple-500" />
-        </div>
+        <input value={v.locationText} onChange={set('locationText')} placeholder="Location or venue, e.g. Logan Blvd"
+          className="w-full mt-3 border-[1.5px] border-[#E8E4F5] rounded-[10px] px-3 py-2.5 text-[14px] text-ink-900 outline-none focus:border-purple-500" />
+        <div className="text-[11.5px] text-grey-300 mt-1.5">Pick a date and start time. Location is the neighborhood or venue.</div>
+      </div>
+      <div className="mb-4">
+        <label className="block text-[12px] font-bold text-ink-500 mb-1.5">Link URL</label>
+        <input value={v.linkUrl} onChange={set('linkUrl')} placeholder="https://…"
+          className="w-full border-[1.5px] border-[#E8E4F5] rounded-[10px] px-3 py-2.5 text-[14px] text-ink-900 outline-none focus:border-purple-500" />
       </div>
       <div className="mb-4">
         <label className="block text-[12px] font-bold text-ink-500 mb-1.5">Image URL (optional)</label>

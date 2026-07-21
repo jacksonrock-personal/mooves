@@ -37,6 +37,8 @@ function mapSponsorMove(m: MoveRow) {
     linkUrl: m.link_url,
     imageUrl: m.image_url,
     timeText: m.time_text,
+    startAt: m.start_at,
+    locationText: m.location_text,
     status: m.status,
     billing, // 'live' | 'failed' | 'awaiting' | null
     priceCents: m.price_cents,
@@ -80,6 +82,8 @@ export async function POST(req: Request) {
     linkUrl?: string | null
     imageUrl?: string | null
     timeText?: string | null
+    startAt?: string | null
+    locationText?: string | null
   }
 
   const title = body.title?.trim() ?? ''
@@ -114,6 +118,8 @@ export async function POST(req: Request) {
       link_url: body.linkUrl?.trim() || null,
       image_url: body.imageUrl?.trim() || null,
       time_text: body.timeText?.trim() || null,
+      start_at: body.startAt ?? null,
+      location_text: body.locationText?.trim() || null,
       status: 'pending', // sponsors never self-publish
     })
     .select('*')
