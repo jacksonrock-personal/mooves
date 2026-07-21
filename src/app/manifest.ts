@@ -12,7 +12,7 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Signal you're free, see who's around, and make the plan over text.",
     start_url: '/',
     display: 'standalone',
-    background_color: '#F8F6FF',
+    background_color: '#7C5CDB',
     theme_color: '#7C5CDB',
     icons: [
       { src: '/brand/icon-180.png', sizes: '180x180', type: 'image/png' },

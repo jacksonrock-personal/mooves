@@ -16,7 +16,7 @@ type Tab = 'friends' | 'groups'
 
 export default function PeopleScreen() {
   const router = useRouter()
-  const [tab, setTab] = useState<Tab>('friends')
+  const [tab, setTab] = useState<Tab>('groups')
 
   function handleCreateGroup() {
     posthog.capture('group_create_started')
@@ -49,7 +49,7 @@ export default function PeopleScreen() {
           )}
         </div>
         <div className="flex">
-          {(['friends', 'groups'] as const).map(t => (
+          {(['groups', 'friends'] as const).map(t => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -66,7 +66,7 @@ export default function PeopleScreen() {
       </header>
 
       {/* Active panel */}
-      {tab === 'friends' ? <FriendsPanel /> : <GroupsPanel />}
+      {tab === 'groups' ? <GroupsPanel /> : <FriendsPanel />}
 
       <BottomNav />
     </div>

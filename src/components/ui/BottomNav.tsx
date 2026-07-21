@@ -88,7 +88,7 @@ export default function BottomNav() {
   const pathname = usePathname()
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#E8E4F5] flex safe-area-pb z-30">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#E8E4F5] flex pb-[env(safe-area-inset-bottom)] z-30">
       {TABS.map(({ href, label, Icon }) => {
         const active = pathname.startsWith(href)
         return (

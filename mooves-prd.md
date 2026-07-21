@@ -3663,3 +3663,26 @@ Phone-frame, 3 surfaces (toggle): (1) **notification opt-in card** over the Feed
 - ~~Quiet-hours window + rate-limit thresholds~~ — **RESOLVED 2026-07-20:** **quiet hours CUT entirely** (Jackson's call at mockup approval); 60-min per-group rate-limit floor kept.
 - ~~Install-nudge exact trigger + copy; re-prompt cadence~~ — **RESOLVED 2026-07-20:** after first join/blast · 7-day cooldown, cap 3 · copy in Surface A detail + mockup.
 - Whether to revisit an aggregate friend digest later if group-scoped-only under-delivers on dormant reach.
+
+---
+
+## Phase 16 — UX Feedback Round (polish on shipped screens)
+
+16 UX items from live-app testing, triaged 2026-07-20 into 5 area-grouped units + 1 bug track. Polish, not new features. Loop per unit: mockup → approved → build → "ship it" → `feat/phase16-<area>` off freshly-synced main → merge via GitHub UI.
+
+### Unit 1 — Hygiene batch — ✅ Mockup APPROVED + ✅ CODED 2026-07-20 (`mooves-phase16-hygiene.html`, branch `feat/phase16-hygiene`)
+Five fixes, one PR (`feat/phase16-hygiene`), no per-item mockup beyond the shared hygiene mockup. `tsc --noEmit` clean; autofill logic + purple icon verified; #2/#8/#10 need Jackson's authed device test. **Flag:** `safe-area-pb` is undefined repo-wide — 6 bottom-sheets also ignore the inset; only the nav (#8) fixed this pass, sheets deferred to a follow-up.
+
+- **#1 — iPhone autofill `+1` parsing (`auth`).** When iOS autofill/Contacts supplies a number that already includes the `+1` country code (or leading `1`), the national-number field must strip it so tap-to-fill lands a clean 10-digit value. Normalize on paste/autofill/change: drop a leading `+1`/`1` and non-digits before formatting. No visual change.
+- **#2 — Groups first + default tab (`PeopleScreen.tsx`).** Flip sub-tab order to **Groups | Friends** and default `useState` to `'groups'`. Reverses the Phase 8 Friends-first decision (Jackson's call 2026-07-20). The "New" create-group pill is already Groups-bound, so it now shows on first load. No other People changes.
+- **#8 — Bottom nav clearance (`BottomNav.tsx` / global).** Fixed bottom nav must stay above the iOS Safari toolbar via `env(safe-area-inset-bottom)` — always visible, never clipped, never floated so high it leaves dead space. Verify existing `safe-area-pb` util actually applies the inset; tune on-device.
+- **#10 — No pre-auth push card (`NotificationOptIn.tsx`).** The opt-in card is mounted app-wide and can render on the logged-out `/g/[code]` invite landing. Gate it so it never appears pre-auth (no authenticated session) — only after login, still value-moment gated. Copy/design of the card unchanged. Runs through the bug-fix flow.
+- **#16 — Purple app icon (`manifest.ts` + `public/brand/` icons).** Regenerate `apple-touch-icon` / `icon-180` (and 192/512 if added) on a brand-purple background (was off-white #F8F6FF cream tile); set manifest `background_color` to purple. Same cow geometry, purple tile behind it.
+
+**Acceptance:**
+- [ ] Autofilling a `+1…`-prefixed number leaves a clean 10-digit national value, no doubled country code.
+- [ ] People opens on Groups by default; tab order is Groups | Friends; New pill visible on load.
+- [ ] Bottom nav fully visible + tappable above iOS Safari chrome, no dead gap below.
+- [ ] Push opt-in card never shows while logged out (incl. invite landing); still fires post-auth at a value moment.
+- [ ] Home-screen icon shows the cow on a purple tile; splash `background_color` is purple.
+- [ ] `tsc --noEmit` + `next build` clean.
