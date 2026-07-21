@@ -31,17 +31,12 @@ function InviteContent() {
     ? `https://makemooves.app/join/${referralCode}`
     : null
 
-  async function completeOnboarding() {
+  function goToLoop() {
     setIsLoading(true)
-    await fetch('/api/users/me', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ onboardingComplete: true }),
-    })
-    posthog.capture('onboarding_completed')
-
-    // If arriving via invite link, navigate to feed — feed handles friendship creation
-    router.replace(inviteCode ? `/feed?invite=${inviteCode}` : '/feed')
+    // Onboarding completion now happens at the end of the Mooves Loop, not here.
+    // The invite code (if any) rides along to the feed; the friendship is resolved
+    // there from sessionStorage or the ?invite= param.
+    router.replace(inviteCode ? `/onboarding/loop?invite=${inviteCode}` : '/onboarding/loop')
   }
 
   async function handleShare() {
@@ -56,7 +51,7 @@ function InviteContent() {
           url: shareUrl,
         })
         posthog.capture('onboarding_invite_shared')
-        void completeOnboarding()
+        goToLoop()
       } catch {
         // User dismissed share sheet — stay on screen, no event
       }
@@ -74,13 +69,14 @@ function InviteContent() {
 
   function handleSkip() {
     posthog.capture('onboarding_invite_skipped')
-    void completeOnboarding()
+    goToLoop()
   }
 
   return (
     <main className="min-h-screen bg-surface-bg flex flex-col">
-      {/* Step dots — step 3 of 3 */}
+      {/* Step dots — step 4 of 4 */}
       <div className="flex gap-1.5 justify-center pt-12">
+        <div className="w-2 h-2 rounded-full bg-mooves-purple" />
         <div className="w-2 h-2 rounded-full bg-mooves-purple" />
         <div className="w-2 h-2 rounded-full bg-mooves-purple" />
         <div className="w-2 h-2 rounded-full bg-mooves-purple" />

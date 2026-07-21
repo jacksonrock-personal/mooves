@@ -8,14 +8,18 @@ export interface Interest {
 
 export const INTERESTS: Interest[] = [
   { slug: 'running_fitness', label: 'Running & fitness' },
+  { slug: 'pickup_sports', label: 'Pickup sports' },
+  { slug: 'outdoors', label: 'Outdoors & adventure' },
+  { slug: 'wellness', label: 'Wellness' },
   { slug: 'nightlife', label: 'Nightlife' },
   { slug: 'live_music', label: 'Live music' },
+  { slug: 'comedy_shows', label: 'Comedy & shows' },
+  { slug: 'games_trivia', label: 'Games & trivia' },
   { slug: 'food_drink', label: 'Food & drink' },
+  { slug: 'coffee_cafes', label: 'Coffee & cafés' },
   { slug: 'markets_popups', label: 'Markets & pop-ups' },
-  { slug: 'outdoors', label: 'Outdoors' },
   { slug: 'arts_culture', label: 'Arts & culture' },
-  { slug: 'pickup_sports', label: 'Pickup sports' },
-  { slug: 'wellness', label: 'Wellness' },
+  { slug: 'festivals', label: 'Festivals & seasonal' },
   { slug: 'community', label: 'Community' },
 ]
 

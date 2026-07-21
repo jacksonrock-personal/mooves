@@ -235,6 +235,16 @@ export default function FeedScreen() {
         }
       }
 
+      // Arriving from the onboarding launchpad "Go green" (Screen 3 loop):
+      // open the go-green sheet once, unless the user is already available.
+      if (searchParams.get('gogreen') === '1') {
+        if (!meData.isAvailable) {
+          setSheetOpen(true)
+          posthog.capture('go_green_sheet_opened', { source: 'launchpad' })
+        }
+        if (typeof window !== 'undefined') window.history.replaceState({}, '', '/feed')
+      }
+
       const tokenRes = (await fetch('/api/auth/supabase-token').then(r => r.json())) as {
         token: string | null
         userId?: string

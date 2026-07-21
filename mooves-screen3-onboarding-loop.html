@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mooves -- Screen 3: Onboarding (The Loop + Interests)</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --purple: #7C5CDB;
+    --purple-light: #EDE9FF;
+    --purple-mid: #9B7FE8;
+    --purple-deep: #A98FF0;
+    --green: #2ECC71;
+    --green-deep: #167A43;
+    --green-tint: #E6F8EE;
+    --grey-status: #BDB5D4;
+    --bg: #F8F6FF;
+    --white: #FFFFFF;
+    --text: #1C1730;
+    --text-secondary: #6B628A;
+    --border: #E8E4F5;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #1C1730;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    gap: 28px;
+  }
+
+  .state-bar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 520px;
+  }
+  .state-btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 7px 16px;
+    border-radius: 100px;
+    border: 1.5px solid rgba(255,255,255,0.2);
+    background: transparent;
+    color: rgba(255,255,255,0.5);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .state-btn.active {
+    background: rgba(255,255,255,0.12);
+    color: white;
+    border-color: rgba(255,255,255,0.4);
+  }
+
+  .phone {
+    width: 320px;
+    min-height: 640px;
+    border-radius: 44px;
+    border: 3px solid rgba(255,255,255,0.1);
+    overflow: hidden;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.5);
+  }
+
+  .screen { display: none; flex-direction: column; min-height: 640px; position: relative; }
+  .screen.visible { display: flex; }
+
+  /* ── Step dots ── */
+  .step-dots {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    padding: 52px 0 0;
+  }
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--border);
+    transition: background 0.2s;
+  }
+  .dot.filled { background: var(--purple); }
+
+  /* ── Generic screen body ── */
+  .screen-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 36px 28px 0;
+  }
+  .screen-heading {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 800;
+    font-size: 26px;
+    color: var(--text);
+    letter-spacing: -0.025em;
+    line-height: 1.15;
+    text-align: center;
+    margin-bottom: 8px;
+    width: 100%;
+  }
+  .screen-subtext {
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    text-align: center;
+    margin-bottom: 32px;
+    width: 100%;
+  }
+
+  /* ── Photo + name (3a) ── */
+  .photo-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 30px; }
+  .photo-circle {
+    width: 88px; height: 88px; border-radius: 50%;
+    background: var(--purple-light); border: 2px dashed var(--purple);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; position: relative;
+  }
+  .photo-circle.has-photo { border: 3px solid var(--purple); }
+  .photo-camera { color: var(--purple); opacity: 0.6; }
+  .photo-sim {
+    width: 100%; height: 100%; border-radius: 50%;
+    background: linear-gradient(135deg, #5B8AF5 0%, #7C5CDB 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 26px; color: white;
+  }
+  .photo-label { font-size: 13px; font-weight: 600; color: var(--purple); cursor: pointer; }
+  .photo-badge {
+    position: absolute; bottom: 2px; right: 2px; width: 24px; height: 24px;
+    border-radius: 50%; background: var(--purple); border: 2px solid var(--bg);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .input-wrap { width: 100%; }
+  .input-label {
+    font-size: 12px; font-weight: 600; color: var(--text-secondary);
+    letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 8px; display: block;
+  }
+  .text-input {
+    width: 100%; height: 56px; border-radius: 14px; border: 2px solid var(--border);
+    background: var(--white); padding: 0 16px; font-size: 17px; font-weight: 500;
+    color: var(--text); display: flex; align-items: center;
+  }
+  .text-input.has-value { border-color: var(--purple); }
+  .text-input.placeholder { color: var(--grey-status); font-weight: 400; font-size: 16px; }
+
+  /* ── CTA block ── */
+  .cta-block { padding: 24px 28px 40px; margin-top: auto; }
+  .cta-btn {
+    width: 100%; padding: 17px; border-radius: 16px; border: none;
+    background: var(--purple); color: white;
+    font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 17px;
+    letter-spacing: -0.01em; cursor: pointer; transition: opacity 0.15s;
+  }
+  .cta-btn:disabled { opacity: 0.3; cursor: default; }
+  .skip-link {
+    display: block; text-align: center; margin-top: 16px;
+    font-size: 14px; font-weight: 500; color: var(--text-secondary); cursor: pointer;
+  }
+
+  /* ── Area (3c) ── */
+  .round-icon {
+    width: 80px; height: 80px; border-radius: 50%; background: var(--purple-light);
+    display: flex; align-items: center; justify-content: center; margin-bottom: 24px;
+  }
+
+  /* ── Interests (new) ── */
+  .chip-wrap { display: flex; flex-wrap: wrap; gap: 7px; width: 100%; }
+  .chip {
+    font-size: 12.5px; font-weight: 600; padding: 8px 12px; border-radius: 100px;
+    border: 1.5px solid var(--border); background: var(--white); color: var(--text-secondary);
+    cursor: pointer; transition: all 0.12s; user-select: none;
+  }
+  .chip.on {
+    background: var(--purple); border-color: var(--purple); color: white;
+  }
+  .chip-count {
+    margin-top: 18px; font-size: 13px; font-weight: 500; color: var(--text-secondary);
+    min-height: 18px; text-align: center; width: 100%;
+  }
+
+  /* ── Invite (3b) ── */
+  .invite-body {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 20px 28px 0;
+  }
+  .invite-heading {
+    font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 28px;
+    color: var(--text); letter-spacing: -0.025em; text-align: center; margin-bottom: 10px;
+  }
+  .invite-subtext {
+    font-size: 15px; color: var(--text-secondary); text-align: center; line-height: 1.5; margin-bottom: 26px;
+  }
+  .link-pill {
+    background: var(--purple-light); border-radius: 100px; padding: 10px 18px;
+    font-size: 13px; font-weight: 600; color: var(--purple); letter-spacing: -0.01em;
+  }
+
+  /* ═══════════════ THE LOOP (carousel) ═══════════════ */
+  #screen-loop { padding: 0; }
+  .loop-top {
+    display: flex; align-items: center; justify-content: flex-end;
+    padding: 20px 22px 0; height: 52px;
+  }
+  .loop-skip { font-size: 14px; font-weight: 600; color: var(--text-secondary); cursor: pointer; }
+  .loop-viewport { flex: 1; overflow: hidden; }
+  .loop-track {
+    display: flex; height: 100%;
+    transition: transform 0.42s cubic-bezier(0.22, 0.61, 0.36, 1);
+    touch-action: pan-y;
+  }
+  .loop-panel {
+    min-width: 320px; width: 320px; height: 100%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 8px 30px 0; text-align: center;
+  }
+  .loop-stage {
+    width: 200px; height: 168px; border-radius: 28px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 30px; position: relative;
+  }
+  .loop-stage.green { background: var(--green-tint); }
+  .loop-stage.purple { background: var(--purple-light); }
+  .loop-eyebrow {
+    font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--purple); margin-bottom: 10px;
+  }
+  .loop-title {
+    font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 27px;
+    color: var(--text); letter-spacing: -0.025em; margin-bottom: 12px; line-height: 1.1;
+  }
+  .loop-copy { font-size: 15px; line-height: 1.55; color: var(--text-secondary); max-width: 250px; }
+
+  /* Beat 1 — green pill */
+  .free-pill {
+    display: inline-flex; align-items: center; gap: 9px;
+    background: var(--green); border-radius: 100px; padding: 13px 20px;
+    box-shadow: 0 8px 22px rgba(46,204,113,0.32);
+  }
+  .free-pill .fp-dot { width: 12px; height: 12px; border-radius: 50%; background: white; }
+  .free-pill .fp-text { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 16px; color: white; }
+
+  /* Beat 1 — slide to go free (matches SwipeToGoGreen) */
+  .slide-track {
+    position: relative; width: 176px; height: 56px; border-radius: 100px;
+    background: rgba(22,122,67,0.10); border: 1.5px solid rgba(22,122,67,0.22);
+    display: flex; align-items: center;
+  }
+  .slide-thumb {
+    position: absolute; left: 4px; top: 4px; width: 48px; height: 48px; border-radius: 50%;
+    background: var(--green-deep); display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 8px rgba(22,122,67,0.35);
+  }
+  .slide-label {
+    width: 100%; text-align: center; padding-left: 44px;
+    font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 15px;
+    color: var(--green-deep); letter-spacing: -0.01em;
+  }
+
+  /* corner skip (top-right) */
+  .corner-skip {
+    position: absolute; top: 20px; right: 22px; z-index: 3;
+    font-size: 13px; font-weight: 600; color: var(--text-secondary); cursor: pointer;
+  }
+
+  /* Beat 2 — avatar stack */
+  .ava-stack { display: flex; }
+  .ava {
+    width: 52px; height: 52px; border-radius: 50%; border: 3px solid var(--green-tint);
+    display: flex; align-items: center; justify-content: center; position: relative;
+    font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 19px; color: white;
+  }
+  .ava + .ava { margin-left: -14px; }
+  .ava .badge { position: absolute; bottom: -1px; right: -1px; width: 15px; height: 15px; border-radius: 50%; border: 2.5px solid var(--green-tint); }
+
+  /* Beat 3 — chat bubbles */
+  .chat { display: flex; flex-direction: column; gap: 8px; width: 168px; }
+  .bubble { max-width: 130px; padding: 10px 13px; font-size: 13px; font-weight: 500; line-height: 1.3; }
+  .bubble.out { align-self: flex-end; background: var(--purple); color: white; border-radius: 15px 15px 4px 15px; }
+  .bubble.in { align-self: flex-start; background: var(--white); color: var(--text); border-radius: 15px 15px 15px 4px; box-shadow: 0 1px 3px rgba(28,23,48,0.08); }
+
+  /* Beat 4 — launchpad */
+  .launch-panel {
+    min-width: 320px; width: 320px; height: 100%;
+    display: flex; flex-direction: column; padding: 14px 28px 0;
+  }
+  .launch-heading {
+    font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 25px;
+    color: var(--text); letter-spacing: -0.025em; text-align: center; margin-bottom: 6px; line-height: 1.14;
+  }
+  .launch-sub { font-size: 14px; color: var(--text-secondary); text-align: center; margin-bottom: 22px; }
+  .launch-rows { display: flex; flex-direction: column; gap: 11px; }
+  .launch-row {
+    display: flex; align-items: center; gap: 14px; background: var(--white);
+    border: 1.5px solid var(--border); border-radius: 18px; padding: 15px 15px;
+    cursor: pointer; transition: border-color 0.12s, transform 0.12s;
+  }
+  .launch-row:hover { border-color: var(--purple); transform: translateY(-1px); }
+  .launch-ic {
+    width: 44px; height: 44px; border-radius: 13px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .launch-ic.purple { background: var(--purple-light); }
+  .launch-ic.green { background: var(--green-tint); }
+  .launch-txt { flex: 1; text-align: left; }
+  .launch-t { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 15px; color: var(--text); letter-spacing: -0.01em; margin-bottom: 2px; }
+  .launch-d { font-size: 12.5px; color: var(--text-secondary); line-height: 1.35; }
+  .launch-chev { color: var(--grey-status); flex-shrink: 0; }
+
+  /* Loop bottom controls */
+  .loop-controls {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 22px 28px 40px;
+  }
+  .loop-pips { display: flex; gap: 7px; }
+  .pip { width: 8px; height: 8px; border-radius: 50%; background: var(--border); cursor: pointer; transition: all 0.2s; }
+  .pip.on { background: var(--purple); width: 22px; border-radius: 100px; }
+  .loop-next {
+    width: 54px; height: 54px; border-radius: 50%; border: none; background: var(--purple);
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    box-shadow: 0 8px 20px rgba(124,92,219,0.32); transition: opacity .15s;
+  }
+  .loop-next.final {
+    width: auto; border-radius: 100px; padding: 0 24px; height: 54px;
+    font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 16px; color: white;
+  }
+
+  .screen-label {
+    font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600;
+    letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.3); text-align: center;
+  }
+  .hint { color: rgba(255,255,255,0.35); font-size: 12px; text-align: center; max-width: 320px; line-height: 1.5; }
+</style>
+</head>
+<body>
+
+<div class="state-bar">
+  <button class="state-btn" onclick="show('profile')">Profile (1/4)</button>
+  <button class="state-btn active" onclick="show('loop')">The Mooves Loop ★</button>
+  <button class="state-btn" onclick="show('area')">Area (2/4)</button>
+  <button class="state-btn" onclick="show('interests-empty')">Interests — empty (3/4)</button>
+  <button class="state-btn" onclick="show('interests-picked')">Interests — picked (3/4)</button>
+  <button class="state-btn" onclick="show('invite')">Invite (4/4)</button>
+</div>
+
+<div class="phone">
+
+  <!-- ── Profile (3a) — now 4 dots ── -->
+  <div class="screen" id="screen-profile">
+    <div class="step-dots">
+      <div class="dot filled"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+    </div>
+    <div class="screen-body">
+      <div class="screen-heading">What should we<br>call you?</div>
+      <div class="screen-subtext">This is how your friends will see you.</div>
+      <div class="photo-wrap">
+        <div class="photo-circle has-photo">
+          <div class="photo-sim">J</div>
+          <div class="photo-badge">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="3"/></svg>
+          </div>
+        </div>
+        <span class="photo-label">Change photo</span>
+      </div>
+      <div class="input-wrap">
+        <span class="input-label">Your name</span>
+        <div class="text-input has-value">Jackson</div>
+      </div>
+    </div>
+    <div class="cta-block"><button class="cta-btn">Continue</button></div>
+  </div>
+
+  <!-- ── THE LOOP — carousel (un-numbered) ── -->
+  <div class="screen visible" id="screen-loop">
+    <div class="loop-top">
+      <span class="loop-skip" onclick="loopSkip()">Skip</span>
+    </div>
+    <div class="loop-viewport" id="loopViewport">
+      <div class="loop-track" id="loopTrack">
+
+        <!-- Beat 1 -->
+        <div class="loop-panel">
+          <div class="loop-stage green">
+            <div class="slide-track">
+              <span class="slide-thumb">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 6 10 12 4 18" opacity="0.45"/><polyline points="10 6 16 12 10 18"/></svg>
+              </span>
+              <span class="slide-label">Slide to go free</span>
+            </div>
+          </div>
+          <div class="loop-eyebrow">The Mooves Loop · 1</div>
+          <div class="loop-title">Go green</div>
+          <div class="loop-copy">Slide across when you're around. No status updates, no essays, just green.</div>
+        </div>
+
+        <!-- Beat 2 -->
+        <div class="loop-panel">
+          <div class="loop-stage green">
+            <div class="ava-stack">
+              <div class="ava" style="background:#7C5CDB;">M<span class="badge" style="background:var(--green);"></span></div>
+              <div class="ava" style="background:#E8A0B4;">J<span class="badge" style="background:var(--green);"></span></div>
+              <div class="ava" style="background:#5FB0E8;">R</div>
+            </div>
+          </div>
+          <div class="loop-eyebrow">The Mooves Loop · 2</div>
+          <div class="loop-title">Friends see it</div>
+          <div class="loop-copy">The friends you added see you're free. No public feed, no strangers, nobody else.</div>
+        </div>
+
+        <!-- Beat 3 -->
+        <div class="loop-panel">
+          <div class="loop-stage purple">
+            <div class="chat">
+              <div class="bubble out">wanna grab food?</div>
+              <div class="bubble in">yes omw</div>
+            </div>
+          </div>
+          <div class="loop-eyebrow">The Mooves Loop · 3</div>
+          <div class="loop-title">Plan over text</div>
+          <div class="loop-copy">Tap a free friend to text them. The plan happens where it always has, in your messages.</div>
+        </div>
+
+        <!-- Beat 4 — Launchpad -->
+        <div class="launch-panel">
+          <div style="height:14px;"></div>
+          <div class="launch-heading">You're ready<br>to make Mooves.</div>
+          <div class="launch-sub">A few good places to start.</div>
+          <div class="launch-rows">
+            <div class="launch-row">
+              <div class="launch-ic purple">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7C5CDB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </div>
+              <div class="launch-txt">
+                <div class="launch-t">Start a group</div>
+                <div class="launch-d">Invite your whole crew with one link.</div>
+              </div>
+              <svg class="launch-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+            <div class="launch-row">
+              <div class="launch-ic purple">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7C5CDB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+              </div>
+              <div class="launch-txt">
+                <div class="launch-t">Open Discover</div>
+                <div class="launch-d">Sponsored Mooves happening near you.</div>
+              </div>
+              <svg class="launch-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+            <div class="launch-row">
+              <div class="launch-ic green">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2ECC71" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="8.5 12.5 11 15 15.5 9.5"/></svg>
+              </div>
+              <div class="launch-txt">
+                <div class="launch-t">Go green</div>
+                <div class="launch-d">Tap when you're free, friends see it.</div>
+              </div>
+              <svg class="launch-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <div class="loop-controls">
+      <div class="loop-pips" id="loopPips">
+        <span class="pip on" onclick="loopGo(0)"></span>
+        <span class="pip" onclick="loopGo(1)"></span>
+        <span class="pip" onclick="loopGo(2)"></span>
+        <span class="pip" onclick="loopGo(3)"></span>
+      </div>
+      <button class="loop-next" id="loopNext" onclick="loopNext()">
+        <svg id="loopNextIcon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Area (3c) — 4 dots, dot 2 ── -->
+  <div class="screen" id="screen-area">
+    <div class="step-dots">
+      <div class="dot filled"></div><div class="dot filled"></div><div class="dot"></div><div class="dot"></div>
+    </div>
+    <div class="invite-body">
+      <div class="round-icon">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z" stroke="#7C5CDB" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.5" stroke="#7C5CDB" stroke-width="2"/></svg>
+      </div>
+      <div class="invite-heading">Where are you<br>based?</div>
+      <div class="invite-subtext" style="max-width:252px;">We'll keep a coarse area, just your zip, to show you Mooves nearby. Your exact location is never stored.</div>
+    </div>
+    <div class="cta-block">
+      <button class="cta-btn">Use my location</button>
+      <span class="skip-link" style="color:var(--purple);font-weight:600;">Enter zip instead</span>
+      <span class="skip-link" style="margin-top:26px;">Skip for now</span>
+    </div>
+  </div>
+
+  <!-- ── Interests — empty (new) — 4 dots, dot 3 ── -->
+  <div class="screen" id="screen-interests-empty">
+    <span class="corner-skip">Skip for now</span>
+    <div class="step-dots">
+      <div class="dot filled"></div><div class="dot filled"></div><div class="dot filled"></div><div class="dot"></div>
+    </div>
+    <div class="screen-body">
+      <div class="screen-heading">What are you<br>into?</div>
+      <div class="screen-subtext">We'll match you with Mooves nearby. Change these anytime.</div>
+      <div class="chip-wrap" id="chipsEmpty"></div>
+      <div class="chip-count">Pick a few, or skip for now.</div>
+    </div>
+    <div class="cta-block">
+      <button class="cta-btn">Continue</button>
+    </div>
+  </div>
+
+  <!-- ── Interests — picked (new) — 4 dots, dot 3 ── -->
+  <div class="screen" id="screen-interests-picked">
+    <span class="corner-skip">Skip for now</span>
+    <div class="step-dots">
+      <div class="dot filled"></div><div class="dot filled"></div><div class="dot filled"></div><div class="dot"></div>
+    </div>
+    <div class="screen-body">
+      <div class="screen-heading">What are you<br>into?</div>
+      <div class="screen-subtext">We'll match you with Mooves nearby. Change these anytime.</div>
+      <div class="chip-wrap" id="chipsPicked"></div>
+      <div class="chip-count" id="chipsPickedCount">4 selected</div>
+    </div>
+    <div class="cta-block">
+      <button class="cta-btn">Continue</button>
+    </div>
+  </div>
+
+  <!-- ── Invite (3b) — 4 dots, dot 4 ── -->
+  <div class="screen" id="screen-invite">
+    <div class="step-dots">
+      <div class="dot filled"></div><div class="dot filled"></div><div class="dot filled"></div><div class="dot filled"></div>
+    </div>
+    <div class="invite-body">
+      <div class="round-icon">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#7C5CDB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+      </div>
+      <div class="invite-heading">Bring your friends.</div>
+      <div class="invite-subtext">Mooves is only as good as<br>the people on it.</div>
+      <div class="link-pill">makemooves.app/join/A7K2MX9P</div>
+    </div>
+    <div class="cta-block">
+      <button class="cta-btn">Share your link</button>
+      <span class="skip-link">Skip for now</span>
+    </div>
+  </div>
+
+</div>
+
+<div class="screen-label">Screen 3 — Onboarding · The Mooves Loop + Interests</div>
+<div class="hint">The Mooves Loop card is live: swipe, tap the pips, or use the arrow. Card 4 is the launchpad. Interest chips toggle on the two Interests states.</div>
+
+<script>
+  function show(state) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('visible'));
+    document.querySelectorAll('.state-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('screen-' + state).classList.add('visible');
+    if (event && event.target) event.target.classList.add('active');
+  }
+
+  /* ── Loop carousel ── */
+  let loopIdx = 0;
+  const LOOP_MAX = 3;
+  const track = document.getElementById('loopTrack');
+  const pips = () => Array.from(document.querySelectorAll('#loopPips .pip'));
+  const nextBtn = document.getElementById('loopNext');
+
+  function renderLoop() {
+    track.style.transform = 'translateX(' + (-loopIdx * 320) + 'px)';
+    pips().forEach((p, i) => p.classList.toggle('on', i === loopIdx));
+    if (loopIdx === LOOP_MAX) {
+      nextBtn.classList.add('final');
+      nextBtn.innerHTML = "Let's go";
+    } else {
+      nextBtn.classList.remove('final');
+      nextBtn.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+    }
+  }
+  function loopGo(i) { loopIdx = Math.max(0, Math.min(LOOP_MAX, i)); renderLoop(); }
+  function loopNext() { if (loopIdx < LOOP_MAX) { loopIdx++; renderLoop(); } else { flash('→ Home Feed'); } }
+  function loopSkip() { flash('Skipped → continues setup'); }
+  function flash(msg) {
+    const el = document.createElement('div');
+    el.textContent = msg;
+    el.style.cssText = 'position:fixed;bottom:34px;left:50%;transform:translateX(-50%);background:#1C1730;color:#fff;padding:10px 18px;border-radius:100px;font-size:13px;font-weight:600;border:1px solid rgba(255,255,255,0.15);z-index:99;';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1400);
+  }
+
+  /* swipe */
+  let startX = null, dragging = false;
+  const vp = document.getElementById('loopViewport');
+  vp.addEventListener('pointerdown', e => { startX = e.clientX; dragging = true; });
+  window.addEventListener('pointerup', e => {
+    if (!dragging || startX === null) return;
+    const dx = e.clientX - startX;
+    if (dx < -40 && loopIdx < LOOP_MAX) loopIdx++;
+    else if (dx > 40 && loopIdx > 0) loopIdx--;
+    renderLoop();
+    dragging = false; startX = null;
+  });
+  document.addEventListener('keydown', e => {
+    if (!document.getElementById('screen-loop').classList.contains('visible')) return;
+    if (e.key === 'ArrowRight') loopNext();
+    if (e.key === 'ArrowLeft') loopGo(loopIdx - 1);
+  });
+
+  /* ── Interests chips ── */
+  const INTERESTS = [
+    'Running & fitness','Pickup sports','Outdoors & adventure','Wellness',
+    'Nightlife','Live music','Comedy & shows','Games & trivia',
+    'Food & drink','Coffee & cafés','Markets & pop-ups','Arts & culture',
+    'Festivals & seasonal','Community'
+  ];
+  const PRESELECTED = ['Running & fitness','Nightlife','Food & drink','Live music'];
+
+  function buildChips(containerId, selectedSet, onCount) {
+    const wrap = document.getElementById(containerId);
+    wrap.innerHTML = '';
+    INTERESTS.forEach(label => {
+      const c = document.createElement('div');
+      c.className = 'chip' + (selectedSet.has(label) ? ' on' : '');
+      c.textContent = label;
+      c.onclick = () => {
+        if (selectedSet.has(label)) selectedSet.delete(label); else selectedSet.add(label);
+        c.classList.toggle('on');
+        if (onCount) onCount(selectedSet.size);
+      };
+      wrap.appendChild(c);
+    });
+  }
+  buildChips('chipsEmpty', new Set(), null);
+  const pickedSet = new Set(PRESELECTED);
+  const pickedCountEl = document.getElementById('chipsPickedCount');
+  buildChips('chipsPicked', pickedSet, n => {
+    pickedCountEl.textContent = n === 0 ? 'Pick a few, or skip for now.' : n + ' selected';
+  });
+
+  renderLoop();
+</script>
+
+</body>
+</html>

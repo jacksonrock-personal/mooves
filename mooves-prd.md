@@ -15,7 +15,7 @@
 |---|---|---|
 | 1 | Invite Link Landing Page | ✅ Approved · ✅ Coded |
 | 2 | Auth -- Phone + OTP | ✅ Approved · ✅ Coded |
-| 3 | Onboarding | ✅ Approved · ✅ Coded |
+| 3 | Onboarding | ✅ Approved · ✅ Coded · 🔄 Revision (The Mooves Loop + interests): ✅ Spec · ✅ Mockup `mooves-screen3-onboarding-loop.html` · ✅ Code |
 | 4 | Home Feed | ✅ Approved — see Amendment A for status control UI · ✅ Coded |
 | 5 | Go Green Sheet | ✅ Approved — see Amendment B for group selector UI · ✅ Coded |
 | 6 | Friend Tap → SMS Handoff (non-screen) | ✅ Approved · ✅ Coded |
@@ -570,6 +570,78 @@ Both sub-screens show a 2-dot step indicator at the top (dot 1 = 3a, dot 2 = 3b)
 ### Mockup Status
 
 ✅ `mooves-screen3-onboarding.html` -- approved
+
+---
+
+## Screen 3 — Onboarding (Revision: The Mooves Loop + Interests Step) 🔄
+
+*Approved 2026-07-21. Extends the shipped 3-step onboarding (profile → area → invite). Supersedes the sub-screen count and step-dot notes in the original Screen 3 spec above. Mockup approved: `mooves-screen3-onboarding-loop.html`.*
+
+### Purpose
+
+Extend onboarding so every new user — especially invite-link users who bypass the marketing landing page — learns the core loop before reaching the feed, and opts into interest categories during setup instead of waiting until first Discover open.
+
+### Entry points
+
+Unchanged: fires once per user after OTP verification (Screen 2) when `onboarding_complete = false`. Resume logic routes a user who dropped mid-onboarding back to the correct step.
+
+### Revised step sequence
+
+Profile → Area → **Interests (new)** → Invite → **The Mooves Loop (new, un-numbered finale)**.
+
+- Numbered step dots now show **4**: Profile · Area · Interests · Invite.
+- The Mooves Loop runs as the **un-numbered finale** after Invite, immediately before the feed — the setup dots are hidden while it's on screen. It teaches the loop **and** hands off with live "go here first" actions, so those actions are real (the user is fully set up by this point). On its completion, `onboarding_complete = TRUE` and the user lands on the feed.
+
+### States
+
+**The Mooves Loop (4 swipeable cards):**
+- Cards 1–3 teach the loop, reusing the landing page's core-loop beats: **1) Go green** — a **slide-to-go-free** control (matching the shipped `SwipeToGoGreen`), copy "Slide across when you're around." · **2) Friends see it** — avatar stack, "The friends you added see you're free." · **3) Plan over text** — text-bubble exchange, "Tap a free friend to text them."
+- **Card 4 — Launchpad:** heading "You're ready to make Mooves," subtitle "A few good places to start," then three tappable action rows that **deep-link into the app**: **Start a group** (→ Groups create/invite), **Open Discover** (→ Discover), **Go green** (→ feed with the go-green sheet). The final card's CTA is **"Let's go"** → feed.
+- Swipe, tap the progress pips, or the arrow to advance. A **4-card progress indicator** (distinct from the 4 setup dots) and a persistent **Skip** (top-right) are visible throughout. Skip → feed.
+- Shown once (onboarding only runs once); re-openable later from Settings via a row labelled **"The Mooves Loop"**.
+
+**Interests step:**
+- **Default:** heading + subtext + the 14-category multi-select picker (the locked interest taxonomy). `Continue` + `Skip for now`.
+- **Has selections:** `Continue` persists the chosen slugs and advances to Invite.
+- **Skipped / none selected:** advances to Invite; `users.interests` stays empty. (`Continue` with zero selected behaves as Skip.)
+
+### User flows
+
+1. **Setup:** Profile → Area → Interests (select 0+, Continue/Skip) → Invite (share/skip).
+2. **The Mooves Loop (finale):** after Invite → Card 1 → (swipe/pip/arrow) Card 2 → Card 3 → Card 4 launchpad → "Let's go" → feed. Skip at any point → feed. On reaching the feed, `onboarding_complete = TRUE`. Launchpad rows deep-link to Groups / Discover / feed-go-green.
+
+### Data
+
+- **The Mooves Loop:** no reads or writes of its own. "Shown once" needs no persistence — onboarding itself is one-time. `onboarding_complete = TRUE` is written when the loop finishes (or is skipped) and the user lands on the feed. Card 4's rows are client-side navigations (Groups / Discover / feed-go-green).
+- **Interests:** reuses `PATCH /api/users/me` with `{ interests: string[] }` (already validates against the curated slugs and de-dupes). `GET /api/users/me` already returns `interests`. No new API, no schema change.
+- **Discover overlap (amends spec 13.1):** first Discover open prompts for interests **only when `users.interests` is empty**. If onboarding captured ≥1, the Discover interest prompt is skipped; Discover's area prompt is unchanged.
+
+### Out of scope
+
+- No content changes to Profile, Area, or Invite beyond re-sequencing and the dot count.
+- No new interest categories (locked at 14).
+- No changes to Discover's area capture.
+- Mooves Loop cards 1–3 are static teaching content — no video/animation beyond the swipe. Card 4's rows navigate into existing screens; no new destination screens are built here.
+
+### Open questions
+
+None. (Settings re-access confirmed: a **"The Mooves Loop"** row reopens the cards. Placement confirmed: **finale**, after Invite.)
+
+### Acceptance criteria
+
+- [ ] Setup dots show 4 steps: Profile · Area · Interests · Invite.
+- [ ] After Area, the Interests step shows the 14-category multi-select picker.
+- [ ] Interests step is skippable; selecting ≥1 and continuing persists to `users.interests` via `PATCH /api/users/me`.
+- [ ] Skipping (or continuing with none) leaves `users.interests` empty and proceeds to Invite.
+- [ ] First Discover open prompts for interests only when `users.interests` is empty.
+- [ ] After Invite, The Mooves Loop runs as an un-numbered finale (not part of the setup dots).
+- [ ] Cards 1–3 teach the loop; card 1 uses the slide-to-go-free control matching `SwipeToGoGreen`.
+- [ ] The loop is swipeable, has a 4-card progress indicator, and a persistent top-right Skip; Skip → feed.
+- [ ] Card 4 launchpad shows Start a group / Open Discover / Go green, each deep-linking into the app; final CTA "Let's go" → feed.
+- [ ] `onboarding_complete = TRUE` is written when the loop completes or is skipped, on landing at the feed.
+- [ ] Resume logic accounts for the new steps.
+- [ ] A **"The Mooves Loop"** entry in Settings reopens the cards.
+- [ ] New PostHog events fire: `onboarding_loop_viewed`, `onboarding_loop_skipped`, `onboarding_loop_completed`, `onboarding_launchpad_tapped` (with destination), `onboarding_interests_set` (with count), `onboarding_interests_skipped`.
 
 ---
 
