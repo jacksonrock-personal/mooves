@@ -3717,3 +3717,16 @@ Two items on the Discover sponsored-move card (`SponsoredCard.tsx`), one PR (`fe
 - [ ] Description blurb is visible before tapping "I'm interested".
 - [ ] Interested state still shows ✓ Interested + Go with friends + Get details (minus the now-redundant description).
 - [ ] `tsc --noEmit` + `next build` clean.
+
+### Unit 4 — People / New Group — ✅ Mockup APPROVED + ✅ CODED 2026-07-20 (`mooves-phase16-people.html`, branch `feat/phase16-people`)
+`tsc --noEmit` clean; needs Jackson's authed device test (People → Groups → New).
+One item on the create-group form (`GroupForm.tsx`, create mode only), one PR (`feat/phase16-people`):
+
+- **#3 — Prominent create CTA.** The create action is the quiet top-bar "Done" link, so it's unclear you must tap it to create the group and get its invite link. In **create mode** (`isCreate = !onShareInvite`), add a prominent **full-width primary "Create group" button** at the bottom of the form (disabled until a name is entered, keeping the existing "Add a group name to finish" reason), plus a short helper that you'll get an invite link to share. Drop the redundant top-right "Done" in create mode (leave the header's Back + title). **Edit mode is unchanged** (keeps the top-bar Done + Invite link + Delete buttons).
+
+**Acceptance:**
+- [ ] Create-group screen shows a prominent full-width primary Create button; creating no longer relies on the top-bar link.
+- [ ] Button disabled until a name is entered, with the reason shown; enables once named.
+- [ ] On create you still land on the group with the invite-link sheet (Phase 10 behavior) — copy sets that expectation.
+- [ ] Edit mode unchanged (top Done + Invite link + Delete).
+- [ ] `tsc --noEmit` + `next build` clean.
