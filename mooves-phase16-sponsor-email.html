@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mooves — Phase 16 Unit 5b (Approval email)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #1C1730; --white: #FFFFFF;
+    --purple: #7C5CDB; --purple-2: #9B7FE8; --purple-3: #A98FF0; --purple-50: #F5F2FF; --purple-100: #EDE9FF; --purple-700: #5B3FB0;
+    --green: #2ECC71; --green-100: #DCF5E7; --green-700: #167A43; --grey: #BDB5D4;
+    --ink: #1C1730; --ink-2: #6B628A; --border: #E8E4F5;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); font-family: 'Inter', sans-serif; color: #fff; min-height: 100vh; padding: 36px 20px 80px; -webkit-font-smoothing: antialiased; }
+  .page-title { text-align: center; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 22px; letter-spacing: -0.02em; margin-bottom: 4px; }
+  .page-sub { text-align: center; color: #8B82AE; font-size: 13px; margin-bottom: 26px; }
+  .toggles { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 0 auto 30px; }
+  .toggle { background: #2A2340; color: #C9C1E4; border: 1px solid #3A3355; font-weight: 600; font-size: 13px; padding: 10px 16px; border-radius: 999px; cursor: pointer; transition: all .15s; }
+  .toggle:hover { border-color: var(--purple); }
+  .toggle.active { background: var(--purple); color: #fff; border-color: var(--purple); }
+  .state { display: none; }
+  .state.active { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .caption { max-width: 620px; text-align: center; font-size: 12.5px; line-height: 1.5; color: #9990BC; }
+  .caption b { color: #C9C1E4; font-weight: 600; }
+  .screen-label { text-align: center; margin-top: 6px; color: #6E6690; font-size: 12px; letter-spacing: .04em; }
+  .note { max-width: 640px; margin: 4px auto 0; background: #241E3A; border: 1px solid #342D52; border-radius: 14px; padding: 13px 18px; font-size: 12.5px; color: #B3AAD2; line-height: 1.6; }
+  .note b { color: #E6DEFF; }
+
+  /* Signup card (auth gradient) */
+  .authwrap { width: 420px; max-width: 100%; border-radius: 22px; padding: 40px 22px; background: linear-gradient(160deg, #7C5CDB, #9B7FE8 55%, #A98FF0); display: flex; justify-content: center; }
+  .authcard { width: 340px; max-width: 100%; background: #fff; border-radius: 20px; padding: 30px 26px; box-shadow: 0 20px 50px rgba(0,0,0,.25); }
+  .authcard .logo { text-align: center; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 20px; color: var(--ink); }
+  .authcard .logo span { color: var(--purple); }
+  .authcard .biz { text-align: center; font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--grey); margin-bottom: 22px; }
+  .authcard h2 { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 21px; color: var(--ink); text-align: center; }
+  .authcard .sub { font-size: 13px; color: var(--ink-2); text-align: center; margin: 4px 0 20px; }
+  .fg { margin-bottom: 14px; }
+  .fg label { display: block; font-size: 12px; font-weight: 700; color: var(--ink-2); margin-bottom: 6px; }
+  .inp { width: 100%; border: 1.5px solid var(--border); border-radius: 10px; padding: 10px 12px; font-size: 14px; color: var(--ink); font-family: inherit; }
+  .fg.new label { color: var(--purple-700); }
+  .fg.new .inp { border-color: var(--purple); box-shadow: 0 0 0 4px rgba(124,92,219,.08); }
+  .phone-row { display: flex; align-items: center; gap: 8px; }
+  .phone-row .cc { font-size: 14px; color: var(--ink-2); }
+  .cta { width: 100%; background: var(--purple); color: #fff; border: none; border-radius: 12px; padding: 12px; font-weight: 700; font-size: 15px; margin-top: 4px; cursor: pointer; }
+  .swap { text-align: center; font-size: 13px; color: var(--ink-2); margin-top: 16px; }
+  .swap b { color: var(--purple-700); font-weight: 600; }
+  .fine { text-align: center; font-size: 11px; color: var(--grey); margin-top: 16px; line-height: 1.5; }
+
+  /* Email client frame */
+  .mailwin { width: 640px; max-width: 100%; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 40px 90px rgba(0,0,0,.5); border: 1px solid #2E2748; }
+  .mail-hd { padding: 16px 22px; border-bottom: 1px solid var(--border); background: #FbFAFF; }
+  .mail-subj { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 17px; color: var(--ink); letter-spacing: -.01em; }
+  .mail-meta { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+  .mail-ava { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg,#8E6EE6,#6B49CC); display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
+  .mail-from { font-size: 13px; color: var(--ink); font-weight: 600; }
+  .mail-from span { color: var(--ink-2); font-weight: 400; }
+  .mail-to { font-size: 11.5px; color: var(--ink-2); margin-top: 1px; }
+
+  /* Email body (600px template) */
+  .email { background: #F4F1FB; padding: 24px; }
+  .etpl { max-width: 560px; margin: 0 auto; background: #fff; border-radius: 16px; overflow: hidden; border: 1px solid var(--border); }
+  .etpl-hd { background: linear-gradient(to bottom, #7C5CDB, #9B7FE8 60%, #A98FF0); padding: 26px; display: flex; align-items: center; justify-content: center; gap: 9px; }
+  .etpl-hd .wm { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 20px; color: #fff; display: inline-flex; align-items: center; }
+  .etpl-hd .wm .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin: 0 1.5px; }
+  .etpl-hd .dg { background: var(--green); } .etpl-hd .dp { background: #fff; }
+  .etpl-body { padding: 28px 30px 30px; }
+  .live-badge { display: inline-flex; align-items: center; gap: 6px; background: var(--green-100); color: var(--green-700); font-size: 11.5px; font-weight: 700; padding: 5px 11px; border-radius: 999px; text-transform: uppercase; letter-spacing: .04em; }
+  .etpl h1 { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 24px; color: var(--ink); letter-spacing: -.02em; margin: 14px 0 0; line-height: 1.2; }
+  .etpl p { font-size: 14px; color: var(--ink-2); line-height: 1.6; margin-top: 12px; }
+  .etpl p b { color: var(--ink); }
+  .move-card { border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin: 20px 0; background: #FCFBFF; }
+  .move-card .cat { display: inline-block; background: var(--purple-100); color: var(--purple-700); font-size: 11px; font-weight: 700; border-radius: 999px; padding: 3px 10px; margin-bottom: 8px; }
+  .move-card .mt { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 16px; color: var(--ink); }
+  .move-card .mw { font-size: 13px; color: var(--ink-2); margin-top: 5px; display: flex; align-items: center; gap: 6px; }
+  .ecta { display: inline-block; background: var(--purple); color: #fff; font-weight: 700; font-size: 15px; text-decoration: none; padding: 13px 26px; border-radius: 999px; margin-top: 4px; }
+  .etpl-foot { text-align: center; font-size: 11.5px; color: var(--grey); padding: 20px 30px 26px; line-height: 1.6; border-top: 1px solid var(--border); margin-top: 24px; }
+  .etpl-foot a { color: var(--purple-700); }
+</style>
+</head>
+<body>
+  <div class="page-title">Phase 16 · Unit 5b — Sponsor approval email</div>
+  <div class="page-sub">Collect the sponsor's email, then email them when their Moove goes live.</div>
+
+  <div class="toggles">
+    <button class="toggle active" data-state="email">The email</button>
+    <button class="toggle" data-state="signup">Signup + email field</button>
+  </div>
+
+  <!-- ========== THE EMAIL ========== -->
+  <div class="state active" data-state="email">
+    <div class="mailwin">
+      <div class="mail-hd">
+        <div class="mail-subj">Your Moove is live on Mooves</div>
+        <div class="mail-meta">
+          <span class="mail-ava" id="mail-cow"></span>
+          <div>
+            <div class="mail-from">Mooves <span>&lt;moves@makemooves.app&gt;</span></div>
+            <div class="mail-to">to you · The Vista</div>
+          </div>
+        </div>
+      </div>
+      <div class="email">
+        <div class="etpl">
+          <div class="etpl-hd"><span id="etpl-cow"></span><span class="wm">M<span class="dot dg"></span><span class="dot dp"></span>VES</span></div>
+          <div class="etpl-body">
+            <span class="live-badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#167A43" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Approved &amp; live</span>
+            <h1>Your Moove is live</h1>
+            <p>Hi The Vista, good news. Mooves approved your move and it's now showing to people nearby who are into music and nightlife.</p>
+            <div class="move-card">
+              <span class="cat">Music &amp; nightlife</span>
+              <div class="mt">Sunset rooftop set at The Vista</div>
+              <div class="mw"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#6B628A" stroke-width="2"/><path d="M12 7v5l3 2" stroke="#6B628A" stroke-width="2" stroke-linecap="round"/></svg>Sun, Aug 3 · 10:00 AM · Logan Blvd</div>
+            </div>
+            <p>You'll see how it's doing in your dashboard, feeds reached, interest, and clicks. All aggregate, never tied to a person.</p>
+            <div style="margin-top:18px;"><a href="#" class="ecta">View your dashboard</a></div>
+          </div>
+          <div class="etpl-foot">
+            You're getting this because you run a sponsored move on Mooves.<br>
+            Mooves · Chicago, IL · <a href="#">makemooves.app</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="caption">Sent from <b>Mooves &lt;moves@makemooves.app&gt;</b> the moment a move is approved and its placement charge clears. Shows the move title, formatted when/where, and category, with a button back to the dashboard.</div>
+    <div class="note"><b>Trigger:</b> fires once from the billing charge-success path (covers admin-approve and add-a-card-later). Skipped if the sponsor has no email on file; a mail failure never breaks the approval or charge.</div>
+    <div class="screen-label">Transactional email — move approved &amp; live</div>
+  </div>
+
+  <!-- ========== SIGNUP + EMAIL FIELD ========== -->
+  <div class="state" data-state="signup">
+    <div class="authwrap">
+      <div class="authcard">
+        <div class="logo">M<span>oo</span>ves</div>
+        <div class="biz">for Business</div>
+        <h2>Create a sponsor account</h2>
+        <div class="sub">Put your place in front of people nearby.</div>
+        <div class="fg"><label>Business name</label><input class="inp" value="The Vista"></div>
+        <div class="fg new"><label>Email</label><input class="inp" value="events@thevista.com" placeholder="you@yourplace.com"></div>
+        <div class="fg"><label>Phone number</label><div class="phone-row"><span class="cc">🇺🇸 +1</span><input class="inp" value="(312) 555 0148"></div></div>
+        <button class="cta">Send code</button>
+        <div class="swap">Already have one? <b>Sign in</b></div>
+        <div class="fine">No passwords, we text you a code each time. We'll email you when a move goes live. Moves are reviewed before they go live.</div>
+      </div>
+    </div>
+    <div class="caption">One new field on <b>signup</b>: Email (highlighted). That's the address the approval email goes to. Sign-in is unchanged (phone only).</div>
+    <div class="screen-label">Sponsor signup — email field</div>
+  </div>
+
+<script>
+  function cowSVG(size){return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">'
+    +'<ellipse cx="11" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(-28 11 33)"/><ellipse cx="109" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(28 109 33)"/>'
+    +'<ellipse cx="11" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(-28 11 34)"/><ellipse cx="109" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(28 109 34)"/>'
+    +'<ellipse cx="38" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(-14 38 19)"/><ellipse cx="82" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(14 82 19)"/>'
+    +'<rect x="15" y="20" width="90" height="92" rx="30" fill="#F5F0ED"/><ellipse cx="41" cy="44" rx="19" ry="13" fill="#7A7282" transform="rotate(-10 41 44)"/><ellipse cx="79" cy="69" rx="14" ry="9" fill="#7A7282" transform="rotate(16 79 69)"/>'
+    +'<circle cx="44" cy="57" r="6" fill="#2A1E38"/><circle cx="76" cy="57" r="6" fill="#2A1E38"/><circle cx="46.5" cy="54.5" r="2.2" fill="white"/><circle cx="78.5" cy="54.5" r="2.2" fill="white"/>'
+    +'<ellipse cx="60" cy="90" rx="27" ry="20" fill="#F0AABB"/><circle cx="50" cy="91" r="9" fill="#2ECC71"/><circle cx="70" cy="91" r="9" fill="#BDB5D4"/></svg>';}
+  document.getElementById('etpl-cow').innerHTML = cowSVG(24);
+  document.getElementById('mail-cow').innerHTML = cowSVG(30);
+  document.querySelectorAll('.toggle').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var s=btn.dataset.state;
+      document.querySelectorAll('.toggle').forEach(function(b){b.classList.toggle('active',b===btn);});
+      document.querySelectorAll('.state').forEach(function(st){st.classList.toggle('active',st.dataset.state===s);});
+    });
+  });
+</script>
+</body>
+</html>

@@ -3747,5 +3747,16 @@ Desktop, one PR (`feat/phase16-sponsor`). No new vendor. Two items:
 - [ ] Existing approve→auto-charge and awaiting/live/failed states unchanged.
 - [ ] `tsc --noEmit` + `next build` clean.
 
-#### Unit 5b — approval email (#15) — SPEC pending; gated on Jackson's Resend + DNS setup
-Sponsor gets a transactional **email** when their Moove is approved & live (A2P SMS abandoned). Needs `sponsors.email` (+ collect in `SponsorAuth`), **Resend** + `RESEND_API_KEY`, verified `makemooves.app` sending domain (DNS); send on admin-approve (+paid) in the `api/admin/moves/[id]` approve path. Build after 5a and after Jackson provisions Resend.
+#### Unit 5b — approval email (#15) — ✅ Mockup APPROVED + ✅ CODED 2026-07-20 (`mooves-phase16-sponsor-email.html`, branch `feat/phase16-sponsor-email`, STACKED on 5a)
+`tsc` clean. **Migration applied by Jackson:** `sponsors.email TEXT`. `resend` dep added; `RESEND_API_KEY` in Vercel; domain verified. **Merge 5a first, then 5b.** Full email path needs Jackson's live test.
+Desktop, one PR (`feat/phase16-sponsor-email`). Sponsor gets a transactional **email** when their Moove is approved AND live (charged). A2P SMS abandoned; Resend domain verified by Jackson, `RESEND_API_KEY` in Vercel.
+
+- **Collect sponsor email (`SponsorAuth`).** Add an **Email** field to the signup card (below Business name); pass to `POST /api/sponsor/auth/verify`; store `sponsors.email`. Migration (Jackson applies): `sponsors.email TEXT`. Only collected on signup; existing sponsors without an email just don't get the email (graceful).
+- **Send trigger (`lib/billing.chargeForPlacement`).** When a charge succeeds (`'charged'`, `paid_at` set → move is live), send the "your Moove is live" email to the sponsor. This single point covers both the admin-approve happy path and the add-a-card-later path (`chargePendingForSponsor`), and fires once per move (charge is skipped once `paid_at` is set). Skip if the sponsor has no email; Mooves-authored moves (no `sponsor_id`) send nothing.
+- **Email (`lib/email.ts`, new — Resend).** From `Mooves <moves@makemooves.app>`. Subject "Your Moove is live on Mooves." Warm body: brand, the move title + when/where (`time_text`) + category, "it's now showing to people nearby who are into {category}", CTA button to the sponsor dashboard (`/sponsor`). Dep: `resend`. Server-side send, awaited in try/catch so a mail failure never breaks approval/charge.
+
+**Acceptance (5b):**
+- [ ] SponsorAuth signup has an Email field; stored on `sponsors.email` via the verify route.
+- [ ] When a sponsor move becomes live (approved + charged), one email is sent to the sponsor via Resend.
+- [ ] No email if the sponsor has no email on file; no email for Mooves-authored moves; a mail failure doesn't break the charge/approve path.
+- [ ] `tsc --noEmit` + `next build` clean.
