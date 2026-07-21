@@ -63,12 +63,14 @@ export default function SponsoredCard({ move, onInterestedChange, onGoWithFriend
         <img src={move.imageUrl} alt="" className="w-full h-24 object-cover" />
       )}
       <div className="p-4">
-        <div className="flex items-center justify-between mb-2.5">
+        {/* #4 — sponsored eyebrow and category pill each get their own line, so a
+            long brand + long category no longer collide on one justify-between row. */}
+        <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-grey-300 truncate mb-2">
+          {move.brand ? `Sponsored · ${move.brand}` : 'Sponsored'}
+        </div>
+        <div className="mb-2.5">
           <span className="inline-flex items-center gap-1.5 bg-purple-100 text-purple-700 rounded-full px-2.5 py-1 text-[11px] font-bold">
             {interestLabel(move.category)}
-          </span>
-          <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-grey-300">
-            {move.brand ? `Sponsored · ${move.brand}` : 'Sponsored'}
           </span>
         </div>
 
@@ -86,6 +88,12 @@ export default function SponsoredCard({ move, onInterestedChange, onGoWithFriend
           </div>
         )}
 
+        {/* #7 — show the description up front so a user knows what the move is
+            before committing (was previously only revealed after "I'm interested"). */}
+        {move.description && (
+          <p className="font-sans text-[13px] leading-relaxed text-ink-500 mt-2.5">{move.description}</p>
+        )}
+
         {!move.interestedByMe ? (
           <button
             onClick={() => void markInterested()}
@@ -96,8 +104,7 @@ export default function SponsoredCard({ move, onInterestedChange, onGoWithFriend
           </button>
         ) : (
           <div className="border-t border-[#E8E4F5] mt-3.5 pt-3">
-            <div className="text-[11px] font-bold uppercase tracking-[0.05em] text-grey-300 mb-1.5">✓ Interested</div>
-            <p className="font-sans text-[13px] leading-relaxed text-ink-500">{move.description}</p>
+            <div className="text-[11px] font-bold uppercase tracking-[0.05em] text-green-700 mb-1.5">✓ Interested</div>
             <button
               onClick={() => onGoWithFriends(move.id)}
               className="w-full h-[46px] mt-3.5 rounded-full bg-purple-500 text-white font-sans font-semibold text-[15px] flex items-center justify-center gap-2"
