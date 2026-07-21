@@ -199,7 +199,11 @@ export default function LandingScreen() {
             <CowMark size={24} />
             <span className="font-display text-[15px] font-extrabold text-ink-900">Mooves</span>
           </div>
-          <div className="text-[12.5px] text-ink-500">© 2026 Mooves · makemooves.app</div>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[12.5px] text-ink-500">
+            <Link href="/privacy" className="hover:text-ink-900">Privacy</Link>
+            <Link href="/terms" className="hover:text-ink-900">Terms</Link>
+            <span>© 2026 Mooves · makemooves.app</span>
+          </div>
         </footer>
       </div>
     </div>

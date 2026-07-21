@@ -51,3 +51,37 @@
 .grecaptcha-badge {
   visibility: hidden;
 }
+
+/* Legal pages (Privacy Policy, Terms of Use) — see src/components/legal/LegalShell.tsx.
+   Scoped prose styling so the page bodies can be written as plain semantic markup. */
+.legal-prose h2 {
+  margin-top: 2.25rem;
+  margin-bottom: 0.75rem;
+  font-family: var(--font-plus-jakarta), sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #1C1730;
+}
+.legal-prose h3 {
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1C1730;
+}
+.legal-prose p { margin-bottom: 1rem; }
+.legal-prose ul { margin: 0 0 1rem 1.25rem; list-style: disc; }
+.legal-prose li { margin-bottom: 0.4rem; }
+.legal-prose a { color: #7C5CDB; text-decoration: underline; }
+.legal-prose a:hover { color: #5F3FC4; }
+.legal-prose strong { color: #1C1730; font-weight: 600; }
+.legal-prose .callout {
+  margin: 1.25rem 0;
+  padding: 1rem 1.15rem;
+  background: #EDE9FF;
+  border: 1px solid #DED6FB;
+  border-radius: 14px;
+  color: #1C1730;
+}
+.legal-prose .callout p:last-child { margin-bottom: 0; }

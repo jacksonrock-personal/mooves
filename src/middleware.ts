@@ -5,6 +5,8 @@ const PUBLIC_PREFIXES = [
   '/join/',
   '/g/',
   '/auth',
+  '/privacy',       // public legal pages (also required for SMS/A2P registration)
+  '/terms',
   '/sponsor',       // sponsor portal has its own auth realm (mooves-sponsor-token)
   '/api/sponsor/',  // each /api/sponsor route self-gates via requireSponsor
   '/api/invite/',
