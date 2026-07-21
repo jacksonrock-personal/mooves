@@ -1,5 +1,12 @@
 <svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Mooves app icon">
-  <rect x="0" y="0" width="120" height="120" fill="#F5F0ED"></rect>
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8E6EE6"></stop>
+      <stop offset="0.6" stop-color="#7C5CDB"></stop>
+      <stop offset="1" stop-color="#6B49CC"></stop>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="120" height="120" fill="url(#tile)"></rect>
   <ellipse cx="11" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(-28 11 33)"></ellipse>
   <ellipse cx="109" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(28 109 33)"></ellipse>
   <ellipse cx="11" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(-28 11 34)"></ellipse>

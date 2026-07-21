@@ -17,6 +17,17 @@ function formatPhone(digits: string): string {
   return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`
 }
 
+// Reduce any input (typed or autofilled) to a clean 10-digit national number.
+// iOS autofill / Contacts commonly supplies the number with its +1 country code
+// (or a bare leading 1). NANP area codes never start with 1, so an 11-digit value
+// beginning with 1 is always country-code-prefixed — strip it, otherwise the naive
+// slice(0,10) keeps the 1 and drops the last real digit.
+function normalizeUSDigits(input: string): string {
+  const digits = input.replace(/\D/g, '')
+  const national = digits.length === 11 && digits.startsWith('1') ? digits.slice(1) : digits
+  return national.slice(0, 10)
+}
+
 function AuthContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -131,7 +142,7 @@ function AuthContent() {
             autoComplete="tel"
             value={formatPhone(rawDigits)}
             onChange={e => {
-              setRawDigits(e.target.value.replace(/\D/g, '').slice(0, 10))
+              setRawDigits(normalizeUSDigits(e.target.value))
               if (error) setError(null)
             }}
             onFocus={() => setIsFocused(true)}

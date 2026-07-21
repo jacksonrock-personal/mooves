@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mooves — Phase 16 Unit 1 (Hygiene)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #1C1730;
+    --app-bg: #F8F6FF;
+    --white: #FFFFFF;
+    --purple: #7C5CDB;
+    --purple-2: #9B7FE8;
+    --purple-3: #A98FF0;
+    --purple-tint: #EDE9FF;
+    --purple-700: #5B3FB0;
+    --green: #2ECC71;
+    --grey: #BDB5D4;
+    --ink: #1C1730;
+    --ink-2: #6B628A;
+    --border: #E8E4F5;
+    --red-bg: #FFF0F2;
+    --red: #E8405A;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    font-family: 'Inter', sans-serif;
+    color: #fff;
+    min-height: 100vh;
+    padding: 40px 20px 80px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .page-title {
+    text-align: center;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 800;
+    font-size: 22px;
+    letter-spacing: -0.02em;
+    margin-bottom: 4px;
+  }
+  .page-sub { text-align: center; color: #8B82AE; font-size: 13px; margin-bottom: 28px; }
+  .toggles {
+    display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+    max-width: 760px; margin: 0 auto 36px;
+  }
+  .toggle {
+    background: #2A2340; color: #C9C1E4; border: 1px solid #3A3355;
+    font-family: 'Inter', sans-serif; font-weight: 600; font-size: 13px;
+    padding: 10px 16px; border-radius: 999px; cursor: pointer; transition: all .15s;
+  }
+  .toggle:hover { border-color: var(--purple); }
+  .toggle.active { background: var(--purple); color: #fff; border-color: var(--purple); }
+  .state { display: none; }
+  .state.active { display: block; }
+
+  .stage { display: flex; flex-wrap: wrap; gap: 40px; justify-content: center; align-items: flex-start; }
+  .col { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  .col-label {
+    font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  }
+  .col-label.before { color: #E8709A; }
+  .col-label.after { color: #6FE0A0; }
+
+  /* Phone frame */
+  .phone {
+    width: 320px; border-radius: 44px; background: var(--app-bg);
+    overflow: hidden; position: relative;
+    box-shadow: 0 30px 70px rgba(0,0,0,.45);
+    border: 1px solid #2E2748;
+  }
+  .phone.tall { height: 620px; }
+  .phone.short { height: 500px; }
+
+  .caption {
+    max-width: 300px; text-align: center; font-size: 12.5px; line-height: 1.5;
+    color: #9990BC;
+  }
+  .caption b { color: #C9C1E4; font-weight: 600; }
+
+  /* ---- People header ---- */
+  .app-col { display: flex; flex-direction: column; height: 100%; }
+  .p-header { background: var(--white); padding: 42px 20px 0; border-bottom: 1px solid var(--border); }
+  .lockup { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 12px; }
+  .wm { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 21px; letter-spacing: -.01em; color: var(--ink); display: inline-flex; align-items: center; }
+  .wm .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin: 0 1.5px; }
+  .wm .dg { background: var(--green); }
+  .wm .dp { background: var(--purple); }
+  .p-titlerow { display: flex; align-items: center; justify-content: space-between; min-height: 44px; margin-bottom: 4px; }
+  .p-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 24px; letter-spacing: -.02em; color: var(--ink); }
+  .new-pill {
+    display: inline-flex; align-items: center; gap: 5px; height: 36px; padding: 0 15px 0 11px;
+    border-radius: 999px; background: var(--purple); color: #fff; font-weight: 600; font-size: 13px;
+    box-shadow: 0 2px 8px rgba(124,92,219,.3);
+  }
+  .new-pill svg { width: 14px; height: 14px; }
+  .tabs { display: flex; }
+  .tab {
+    flex: 1; text-align: center; font-weight: 600; font-size: 14px; padding-bottom: 10px;
+    border-bottom: 2px solid transparent; color: var(--ink-2);
+  }
+  .tab.active { color: var(--purple); border-bottom-color: var(--purple); }
+
+  /* Groups list */
+  .g-body { flex: 1; background: var(--white); overflow: hidden; }
+  .g-row { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #F1EEFA; }
+  .g-emoji { width: 46px; height: 46px; border-radius: 14px; background: var(--purple-tint); display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; }
+  .g-name { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 15px; color: var(--ink); }
+  .g-meta { font-size: 12.5px; color: var(--ink-2); margin-top: 1px; }
+  .g-chev { margin-left: auto; color: var(--grey); }
+  .g-hint { font-size: 11px; color: rgba(107,98,138,.7); text-align: center; padding: 10px 20px 4px; }
+
+  /* Bottom nav */
+  .bnav { display: flex; background: var(--white); border-top: 1px solid var(--border); }
+  .bnav a { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 10px 0; font-size: 10px; font-weight: 600; letter-spacing: .02em; color: var(--grey); }
+  .bnav a.active { color: var(--purple); }
+  .bnav svg { width: 22px; height: 22px; }
+
+  /* Simulated iOS Safari bottom chrome */
+  .safari {
+    background: #E9E7EE; border-top: 1px solid #D3D0DC; padding: 9px 18px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .safari .url { flex: 1; text-align: center; font-size: 12px; color: #55506A; font-weight: 500; }
+  .safari .sicon { color: #7E7A90; }
+  .home-indicator { display: flex; justify-content: center; }
+  .home-indicator::after { content: ""; display: block; width: 110px; height: 5px; border-radius: 3px; background: #B7B3C7; margin: 6px 0 4px; }
+
+  /* callout */
+  .callout { position: absolute; font-size: 10.5px; font-weight: 700; padding: 4px 9px; border-radius: 999px; white-space: nowrap; }
+  .callout.bad { background: #FFE1E9; color: var(--red); }
+  .callout.good { background: #DFF6E9; color: #17864B; }
+
+  /* App icon tiles */
+  .icon-tile { width: 150px; height: 150px; border-radius: 34px; display: flex; align-items: center; justify-content: center; box-shadow: 0 12px 30px rgba(0,0,0,.35); }
+  .icon-cream { background: #F8F6FF; }
+  .icon-purple { background: linear-gradient(160deg, #8E6EE6 0%, #7C5CDB 60%, #6B49CC 100%); }
+  .homescreen { display: flex; flex-direction: column; align-items: center; gap: 9px; }
+  .icon-name { font-size: 13px; color: #E9E5F5; font-weight: 500; }
+
+  /* Invite landing (gradient) */
+  .invite { height: 100%; background: linear-gradient(165deg, #7C5CDB 0%, #9B7FE8 55%, #A98FF0 100%); display: flex; flex-direction: column; align-items: center; padding: 70px 26px 34px; text-align: center; position: relative; }
+  .invite .cow-wrap { width: 96px; height: 96px; margin-bottom: 22px; filter: drop-shadow(0 8px 20px rgba(0,0,0,.2)); }
+  .invite h2 { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 26px; color: #fff; letter-spacing: -.02em; line-height: 1.15; }
+  .invite .sub { color: rgba(255,255,255,.85); font-size: 14px; margin-top: 10px; line-height: 1.5; }
+  .invite .members { margin-top: 20px; background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.25); border-radius: 16px; padding: 12px 18px; color: #fff; font-size: 13.5px; font-weight: 600; }
+  .invite .spacer { flex: 1; }
+  .invite .cta { width: 100%; padding: 16px; border-radius: 999px; background: #fff; color: var(--purple); font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 16px; }
+  .invite .consent { color: rgba(255,255,255,.75); font-size: 12px; margin-top: 14px; line-height: 1.5; }
+
+  /* ghost push card overlay (the removed bug) */
+  .ghost-push { position: absolute; left: 16px; right: 16px; bottom: 16px; background: #fff; border-radius: 22px; padding: 18px 18px 16px; box-shadow: 0 20px 40px rgba(0,0,0,.3); text-align: center; opacity: .55; }
+  .ghost-push .gp-icon { width: 52px; height: 52px; border-radius: 15px; background: #F5F0ED; margin: 0 auto 10px; display:flex;align-items:center;justify-content:center; }
+  .ghost-push h3 { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 17px; color: var(--ink); line-height: 1.15; }
+  .ghost-push p { font-size: 12px; color: var(--ink-2); margin-top: 6px; }
+  .strike-badge { position: absolute; top: -13px; left: 50%; transform: translateX(-50%); background: var(--red); color:#fff; font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 999px; box-shadow: 0 6px 16px rgba(232,64,90,.5); }
+
+  .screen-label { text-align: center; margin-top: 40px; color: #6E6690; font-size: 12px; letter-spacing: .04em; }
+  .note { max-width: 620px; margin: 22px auto 0; background: #241E3A; border: 1px solid #342D52; border-radius: 14px; padding: 14px 18px; font-size: 12.5px; color: #B3AAD2; line-height: 1.6; }
+  .note b { color: #E6DEFF; }
+</style>
+</head>
+<body>
+  <div class="page-title">Phase 16 · Unit 1 — Hygiene batch</div>
+  <div class="page-sub">Four polish fixes. #1 (phone autofill parsing) has no visual surface.</div>
+
+  <div class="toggles">
+    <button class="toggle active" data-state="groups">#2 · Groups first tab</button>
+    <button class="toggle" data-state="icon">#16 · Purple app icon</button>
+    <button class="toggle" data-state="nav">#8 · Bottom nav clearance</button>
+    <button class="toggle" data-state="invite">#10 · No pre-auth push card</button>
+  </div>
+
+  <!-- ============ #2 GROUPS FIRST ============ -->
+  <div class="state active" data-state="groups">
+    <div class="stage">
+      <div class="col">
+        <div class="col-label before">Before</div>
+        <div class="phone tall">
+          <div class="app-col">
+            <div class="p-header">
+              <div class="lockup">
+                <span id="cow-a"></span>
+                <span class="wm">M<span class="dot dg"></span><span class="dot dp"></span>VES</span>
+              </div>
+              <div class="p-titlerow">
+                <div class="p-title">People</div>
+              </div>
+              <div class="tabs">
+                <div class="tab active">Friends</div>
+                <div class="tab">Groups</div>
+              </div>
+            </div>
+            <div class="g-body" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 32px;">
+              <div style="width:72px;height:72px;border-radius:18px;display:flex;align-items:center;justify-content:center;margin-bottom:8px;" id="cowbig-a"></div>
+              <div class="g-name" style="font-size:20px;margin-bottom:6px;">Nobody here yet.</div>
+              <div class="g-meta" style="font-size:14px;">Invite your people, and they'll show up here.</div>
+              <button style="margin-top:22px;width:100%;padding:14px;border-radius:16px;background:var(--purple);color:#fff;font-weight:700;font-size:15px;">Invite friends</button>
+            </div>
+            <div class="bnav">
+              <a><span id="ni-feed-a"></span>Feed</a>
+              <a><span id="ni-disc-a"></span>Discover</a>
+              <a class="active"><span id="ni-ppl-a"></span>People</a>
+              <a><span id="ni-set-a"></span>Settings</a>
+            </div>
+          </div>
+        </div>
+        <div class="caption">Lands on <b>Friends</b> — empty for a brand-new user, and the create-group action is one tab away.</div>
+      </div>
+
+      <div class="col">
+        <div class="col-label after">After</div>
+        <div class="phone tall">
+          <div class="app-col">
+            <div class="p-header">
+              <div class="lockup">
+                <span id="cow-b"></span>
+                <span class="wm">M<span class="dot dg"></span><span class="dot dp"></span>VES</span>
+              </div>
+              <div class="p-titlerow">
+                <div class="p-title">People</div>
+                <div class="new-pill">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  New
+                </div>
+              </div>
+              <div class="tabs">
+                <div class="tab active">Groups</div>
+                <div class="tab">Friends</div>
+              </div>
+            </div>
+            <div class="g-body">
+              <div class="g-row">
+                <div class="g-emoji">🐶</div>
+                <div>
+                  <div class="g-name">Testing group</div>
+                  <div class="g-meta">You + 3 members</div>
+                </div>
+                <div class="g-chev">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+                </div>
+              </div>
+              <div class="g-row">
+                <div class="g-emoji">🌮</div>
+                <div>
+                  <div class="g-name">Taco Tuesday</div>
+                  <div class="g-meta">You + 5 members</div>
+                </div>
+                <div class="g-chev">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+                </div>
+              </div>
+              <div class="g-hint">Swipe left on a group you own to delete it</div>
+            </div>
+            <div class="bnav">
+              <a><span id="ni-feed-b"></span>Feed</a>
+              <a><span id="ni-disc-b"></span>Discover</a>
+              <a class="active"><span id="ni-ppl-b"></span>People</a>
+              <a><span id="ni-set-b"></span>Settings</a>
+            </div>
+          </div>
+        </div>
+        <div class="caption"><b>Groups</b> is now the first + default tab, so the <b>New</b> create-group pill is visible the moment People opens.</div>
+      </div>
+    </div>
+    <div class="note"><b>What changes:</b> tab order flips to <b>Groups | Friends</b> and the default selected tab becomes Groups. The <b>New</b> pill (already Groups-only) now shows on first load. Everything else on the screen is unchanged.</div>
+    <div class="screen-label">Screen 8/9 — People (Groups / Friends)</div>
+  </div>
+
+  <!-- ============ #16 PURPLE APP ICON ============ -->
+  <div class="state" data-state="icon">
+    <div class="stage">
+      <div class="col">
+        <div class="col-label before">Before</div>
+        <div class="homescreen">
+          <div class="icon-tile icon-cream" id="icontile-a"></div>
+          <div class="icon-name" style="color:#3a3355;">Mooves</div>
+        </div>
+        <div class="caption">Off-white tile (<b>#F8F6FF</b>). The cream cow face nearly disappears into the tile and vanishes on a light home screen.</div>
+      </div>
+      <div class="col">
+        <div class="col-label after">After</div>
+        <div class="homescreen">
+          <div class="icon-tile icon-purple" id="icontile-b"></div>
+          <div class="icon-name" style="color:#3a3355;">Mooves</div>
+        </div>
+        <div class="caption">Purple tile (brand <b>#7C5CDB</b>). The cow pops, matches the wordmark dot and the splash <b>theme_color</b>, and reads on any home screen.</div>
+      </div>
+    </div>
+    <div class="note"><b>What changes:</b> regenerate <b>apple-touch-icon</b> / <b>icon-180</b> on a purple background and set manifest <b>background_color</b> to purple (was <b>#F8F6FF</b>). Same cow geometry, just a purple tile behind it. Rendered here on a home-screen swatch so you can judge contrast.</div>
+    <div class="screen-label">Home-screen / PWA icon</div>
+  </div>
+
+  <!-- ============ #8 BOTTOM NAV CLEARANCE ============ -->
+  <div class="state" data-state="nav">
+    <div class="stage">
+      <div class="col">
+        <div class="col-label before">Before</div>
+        <div class="phone short" style="height:480px;">
+          <div class="app-col" style="position:relative;">
+            <div style="flex:1;background:var(--app-bg);padding:24px 18px;">
+              <div class="g-name" style="font-size:18px;">Feed</div>
+              <div style="height:14px;"></div>
+              <div style="background:#fff;border:1px solid var(--border);border-radius:16px;height:80px;margin-bottom:10px;"></div>
+              <div style="background:#fff;border:1px solid var(--border);border-radius:16px;height:80px;margin-bottom:10px;"></div>
+              <div style="background:#fff;border:1px solid var(--border);border-radius:16px;height:80px;"></div>
+            </div>
+            <div class="bnav" style="opacity:.4;">
+              <a><span id="nb-feed-a"></span>Feed</a>
+              <a><span id="nb-disc-a"></span>Discover</a>
+              <a><span id="nb-ppl-a"></span>People</a>
+              <a><span id="nb-set-a"></span>Settings</a>
+            </div>
+            <div class="safari">
+              <span class="sicon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg></span>
+              <span class="url">makemooves.app</span>
+              <span class="sicon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="8 6 12 2 16 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></span>
+            </div>
+            <div class="callout bad" style="bottom:64px;right:14px;">labels clipped by Safari bar</div>
+          </div>
+        </div>
+        <div class="caption">Nav pinned to <b>bottom: 0</b> sits <b>behind</b> the iOS Safari toolbar, clipping the labels and hit targets.</div>
+      </div>
+      <div class="col">
+        <div class="col-label after">After</div>
+        <div class="phone short" style="height:480px;">
+          <div class="app-col" style="position:relative;">
+            <div style="flex:1;background:var(--app-bg);padding:24px 18px;">
+              <div class="g-name" style="font-size:18px;">Feed</div>
+              <div style="height:14px;"></div>
+              <div style="background:#fff;border:1px solid var(--border);border-radius:16px;height:80px;margin-bottom:10px;"></div>
+              <div style="background:#fff;border:1px solid var(--border);border-radius:16px;height:80px;margin-bottom:10px;"></div>
+              <div style="background:#fff;border:1px solid var(--border);border-radius:16px;height:80px;"></div>
+            </div>
+            <div class="bnav">
+              <a class="active"><span id="nb-feed-b"></span>Feed</a>
+              <a><span id="nb-disc-b"></span>Discover</a>
+              <a><span id="nb-ppl-b"></span>People</a>
+              <a><span id="nb-set-b"></span>Settings</a>
+            </div>
+            <div class="safari">
+              <span class="sicon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg></span>
+              <span class="url">makemooves.app</span>
+              <span class="sicon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="8 6 12 2 16 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></span>
+            </div>
+            <div class="callout good" style="bottom:70px;right:14px;">fully visible, snug</div>
+          </div>
+        </div>
+        <div class="caption">Nav rests directly <b>above</b> the Safari bar via <b>safe-area-inset</b>, fully tappable, with no dead gap below it.</div>
+      </div>
+    </div>
+    <div class="note"><b>What changes:</b> the fixed bottom nav respects <b>env(safe-area-inset-bottom)</b> and stays clear of the iOS Safari toolbar — always visible, never floated so high it leaves dead space. Behavior fix, tuned on your device. (The Safari bar here is a simulation to show the relationship.)</div>
+    <div class="screen-label">Global chrome — Bottom nav</div>
+  </div>
+
+  <!-- ============ #10 NO PRE-AUTH PUSH CARD ============ -->
+  <div class="state" data-state="invite">
+    <div class="stage">
+      <div class="col">
+        <div class="col-label before">Before</div>
+        <div class="phone tall">
+          <div class="invite">
+            <div class="cow-wrap" id="cow-inv-a"></div>
+            <h2>Join Testing group</h2>
+            <div class="sub">Sam invited you. Join to see when the group's free.</div>
+            <div class="members">🐶 4 members</div>
+            <div class="spacer"></div>
+            <div class="cta" style="opacity:.5;">Join group</div>
+            <div class="ghost-push">
+              <div class="strike-badge">✕ should not appear pre-login</div>
+              <div class="gp-icon" id="cow-push"></div>
+              <h3>Know when your group's free</h3>
+              <p>Get a heads up when someone goes free…</p>
+            </div>
+          </div>
+        </div>
+        <div class="caption">The <b>push opt-in card</b> pops up the instant you open the invite link — before you've signed up or even seen the group.</div>
+      </div>
+      <div class="col">
+        <div class="col-label after">After</div>
+        <div class="phone tall">
+          <div class="invite">
+            <div class="cow-wrap" id="cow-inv-b"></div>
+            <h2>Join Testing group</h2>
+            <div class="sub">Sam invited you. Join to see when the group's free.</div>
+            <div class="members">🐶 4 members</div>
+            <div class="spacer"></div>
+            <div class="cta">Join group</div>
+            <div class="invite-consent" style="color:rgba(255,255,255,.75);font-size:12px;margin-top:14px;line-height:1.5;">Joining makes you friends with everyone in the group.</div>
+          </div>
+        </div>
+        <div class="caption">Clean invite landing. The push ask is <b>gated to after login</b>, and only fires later at a real value moment (first join or blast).</div>
+      </div>
+    </div>
+    <div class="note"><b>What changes:</b> <b>NotificationOptIn</b> (mounted app-wide) is gated so it never renders on the logged-out invite landing (or anywhere pre-auth). No copy or design change to the card itself — just <b>when</b> it can appear. Verified-behavior fix via the bug-fix flow.</div>
+    <div class="screen-label">Group invite landing (/g/[code])</div>
+  </div>
+
+<script>
+  // Cow mark SVG (transparent) — matches CowMark.tsx geometry
+  function cowSVG(size) {
+    return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">'
+      + '<ellipse cx="11" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(-28 11 33)"/>'
+      + '<ellipse cx="109" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(28 109 33)"/>'
+      + '<ellipse cx="11" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(-28 11 34)"/>'
+      + '<ellipse cx="109" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(28 109 34)"/>'
+      + '<ellipse cx="38" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(-14 38 19)"/>'
+      + '<ellipse cx="82" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(14 82 19)"/>'
+      + '<rect x="15" y="20" width="90" height="92" rx="30" fill="#F5F0ED"/>'
+      + '<ellipse cx="41" cy="44" rx="19" ry="13" fill="#7A7282" transform="rotate(-10 41 44)"/>'
+      + '<ellipse cx="79" cy="69" rx="14" ry="9" fill="#7A7282" transform="rotate(16 79 69)"/>'
+      + '<circle cx="44" cy="57" r="6" fill="#2A1E38"/>'
+      + '<circle cx="76" cy="57" r="6" fill="#2A1E38"/>'
+      + '<circle cx="46.5" cy="54.5" r="2.2" fill="white"/>'
+      + '<circle cx="78.5" cy="54.5" r="2.2" fill="white"/>'
+      + '<ellipse cx="60" cy="90" rx="27" ry="20" fill="#F0AABB"/>'
+      + '<circle cx="50" cy="91" r="9" fill="#2ECC71"/>'
+      + '<circle cx="70" cy="91" r="9" fill="#BDB5D4"/>'
+      + '</svg>';
+  }
+  // App-icon variant: cow scaled to sit inside a full-bleed tile
+  function cowIcon(size) {
+    return '<svg width="'+(size*0.82)+'" height="'+(size*0.82)+'" viewBox="0 0 120 120">'
+      + '<ellipse cx="11" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(-28 11 33)"/>'
+      + '<ellipse cx="109" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(28 109 33)"/>'
+      + '<ellipse cx="11" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(-28 11 34)"/>'
+      + '<ellipse cx="109" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(28 109 34)"/>'
+      + '<ellipse cx="38" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(-14 38 19)"/>'
+      + '<ellipse cx="82" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(14 82 19)"/>'
+      + '<rect x="15" y="20" width="90" height="92" rx="30" fill="#F5F0ED"/>'
+      + '<ellipse cx="41" cy="44" rx="19" ry="13" fill="#7A7282" transform="rotate(-10 41 44)"/>'
+      + '<ellipse cx="79" cy="69" rx="14" ry="9" fill="#7A7282" transform="rotate(16 79 69)"/>'
+      + '<circle cx="44" cy="57" r="6" fill="#2A1E38"/>'
+      + '<circle cx="76" cy="57" r="6" fill="#2A1E38"/>'
+      + '<circle cx="46.5" cy="54.5" r="2.2" fill="white"/>'
+      + '<circle cx="78.5" cy="54.5" r="2.2" fill="white"/>'
+      + '<ellipse cx="60" cy="90" rx="27" ry="20" fill="#F0AABB"/>'
+      + '<circle cx="50" cy="91" r="9" fill="#2ECC71"/>'
+      + '<circle cx="70" cy="91" r="9" fill="#BDB5D4"/>'
+      + '</svg>';
+  }
+  function navIcon(name) {
+    var s = 'width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
+    if (name==='feed') return '<svg '+s+'><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>';
+    if (name==='disc') return '<svg '+s+'><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5 5-2Z"/></svg>';
+    if (name==='ppl') return '<svg '+s+'><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>';
+    return '<svg '+s+'><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
+  }
+
+  document.getElementById('cow-a').innerHTML = cowSVG(30);
+  document.getElementById('cow-b').innerHTML = cowSVG(30);
+  document.getElementById('cowbig-a').innerHTML = cowSVG(64);
+  document.getElementById('cow-inv-a').innerHTML = cowSVG(96);
+  document.getElementById('cow-inv-b').innerHTML = cowSVG(96);
+  document.getElementById('cow-push').innerHTML = cowSVG(36);
+  document.getElementById('icontile-a').innerHTML = cowIcon(150);
+  document.getElementById('icontile-b').innerHTML = cowIcon(150);
+
+  [['a',''],['b','']].forEach(function(p){
+    var suf = p[0];
+    document.getElementById('ni-feed-'+suf).innerHTML = navIcon('feed');
+    document.getElementById('ni-disc-'+suf).innerHTML = navIcon('disc');
+    document.getElementById('ni-ppl-'+suf).innerHTML = navIcon('ppl');
+    document.getElementById('ni-set-'+suf).innerHTML = navIcon('set');
+    document.getElementById('nb-feed-'+suf).innerHTML = navIcon('feed');
+    document.getElementById('nb-disc-'+suf).innerHTML = navIcon('disc');
+    document.getElementById('nb-ppl-'+suf).innerHTML = navIcon('ppl');
+    document.getElementById('nb-set-'+suf).innerHTML = navIcon('set');
+  });
+
+  // toggles
+  document.querySelectorAll('.toggle').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var s = btn.dataset.state;
+      document.querySelectorAll('.toggle').forEach(function(b){ b.classList.toggle('active', b===btn); });
+      document.querySelectorAll('.state').forEach(function(st){ st.classList.toggle('active', st.dataset.state===s); });
+    });
+  });
+</script>
+</body>
+</html>

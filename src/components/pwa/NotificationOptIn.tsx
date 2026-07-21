@@ -45,6 +45,15 @@ export default function NotificationOptIn() {
       // iOS needs the installed PWA first — the install nudge handles that path.
       if (isIOS() && !isStandalone()) return
       if (!(await isPushSupported())) return
+      // Never surface pre-auth. The card is mounted app-wide, so without this it can
+      // render on logged-out surfaces like the /g/[code] group-invite landing before
+      // the visitor has an account. /api/users/me is only ok for an authenticated session.
+      try {
+        const meRes = await fetch('/api/users/me')
+        if (!meRes.ok) return
+      } catch {
+        return
+      }
       shownRef.current = true
       posthog.capture('push_optin_shown', { platform: platformTag() })
       setOpen(true)
