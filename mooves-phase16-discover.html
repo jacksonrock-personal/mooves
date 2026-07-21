@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mooves — Phase 16 Unit 3 (Discover)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #1C1730; --app-bg: #F8F6FF; --white: #FFFFFF;
+    --purple: #7C5CDB; --purple-100: #EDE9FF; --purple-700: #5B3FB0; --purple-50: #F5F2FF;
+    --green: #2ECC71; --green-700: #167A43; --grey: #BDB5D4;
+    --ink: #1C1730; --ink-2: #6B628A; --border: #E8E4F5; --red: #E8405A;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); font-family: 'Inter', sans-serif; color: #fff; min-height: 100vh; padding: 40px 20px 80px; -webkit-font-smoothing: antialiased; }
+  .page-title { text-align: center; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 22px; letter-spacing: -0.02em; margin-bottom: 4px; }
+  .page-sub { text-align: center; color: #8B82AE; font-size: 13px; margin-bottom: 26px; }
+  .toggles { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 720px; margin: 0 auto 32px; }
+  .toggle { background: #2A2340; color: #C9C1E4; border: 1px solid #3A3355; font-weight: 600; font-size: 13px; padding: 10px 16px; border-radius: 999px; cursor: pointer; transition: all .15s; }
+  .toggle:hover { border-color: var(--purple); }
+  .toggle.active { background: var(--purple); color: #fff; border-color: var(--purple); }
+  .state { display: none; }
+  .state.active { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+
+  .phone { width: 320px; height: 660px; border-radius: 44px; background: var(--app-bg); overflow: hidden; position: relative; box-shadow: 0 30px 70px rgba(0,0,0,.45); border: 1px solid #2E2748; display: flex; flex-direction: column; }
+  .caption { max-width: 340px; text-align: center; font-size: 12.5px; line-height: 1.5; color: #9990BC; }
+  .caption b { color: #C9C1E4; font-weight: 600; }
+  .screen-label { text-align: center; margin-top: 8px; color: #6E6690; font-size: 12px; letter-spacing: .04em; }
+  .note { max-width: 640px; margin: 6px auto 0; background: #241E3A; border: 1px solid #342D52; border-radius: 14px; padding: 14px 18px; font-size: 12.5px; color: #B3AAD2; line-height: 1.6; }
+  .note b { color: #E6DEFF; }
+  .tag { display:inline-block; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 6px; background:#3A2F5E; color:#C9B8FF; margin-right:6px; }
+
+  /* Discover header (white) */
+  .dhead { background: var(--white); padding: 40px 20px 12px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .dlock { display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .wm { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 20px; letter-spacing: -.01em; color: var(--ink); display: inline-flex; align-items: center; }
+  .wm .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin: 0 1.5px; }
+  .wm .dg { background: var(--green); } .wm .dp { background: var(--purple); }
+  .drow { display: flex; align-items: center; justify-content: space-between; }
+  .dtitle { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 24px; letter-spacing: -.02em; color: var(--ink); }
+  .near { display: inline-flex; align-items: center; gap: 6px; background: var(--purple-50); border: 1px solid var(--border); border-radius: 999px; padding: 6px 12px; font-size: 12px; font-weight: 600; color: var(--purple-700); }
+
+  .dbody { flex: 1; overflow-y: auto; padding: 16px 16px 90px; }
+  .dcount { font-size: 12px; color: var(--ink-2); margin: 0 2px 14px; }
+
+  /* Sponsored card */
+  .sp { background: #fff; border: 1px solid var(--border); border-radius: 20px; overflow: hidden; margin-bottom: 14px; }
+  .sp-img { width: 100%; height: 96px; background: linear-gradient(120deg,#C9BEF0,#EDE9FF); display:flex; align-items:center; justify-content:center; }
+  .sp-pad { padding: 15px 16px; }
+  .sp-eyebrow { font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--grey); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 8px; }
+  .sp-pill { display: inline-flex; align-items: center; gap: 6px; background: var(--purple-100); color: var(--purple-700); border-radius: 999px; padding: 4px 11px; font-size: 11px; font-weight: 700; }
+  .sp-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 17px; color: var(--ink); line-height: 1.2; letter-spacing: -.01em; margin-top: 10px; }
+  .sp-time { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-2); margin-top: 7px; }
+  .sp-desc { font-size: 13px; line-height: 1.55; color: var(--ink-2); margin-top: 11px; }
+  .sp-cta { width: 100%; height: 46px; margin-top: 15px; border-radius: 999px; background: var(--purple); color: #fff; font-weight: 600; font-size: 15px; border: none; cursor: pointer; }
+  .sp-interested { border-top: 1px solid var(--border); margin-top: 14px; padding-top: 12px; }
+  .sp-inlabel { font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--green-700); margin-bottom: 4px; display: flex; align-items: center; gap: 5px; }
+  .sp-cta2 { width: 100%; height: 46px; margin-top: 12px; border-radius: 999px; background: var(--purple); color: #fff; font-weight: 600; font-size: 15px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .sp-cta-outline { width: 100%; height: 46px; margin-top: 10px; border-radius: 999px; background: #fff; border: 1.5px solid var(--purple); color: var(--purple-700); font-weight: 600; font-size: 15px; cursor: pointer; }
+  .sp-hint { font-size: 11.5px; color: var(--ink-2); text-align: center; margin-top: 10px; line-height: 1.3; }
+
+  /* broken (before) header */
+  .sp-head-bad { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 8px; }
+  .sp-head-bad .sp-pill { flex-wrap: wrap; }
+  .sp-head-bad .bad-eyebrow { font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--grey); text-align: right; }
+
+  .bnav { position: absolute; bottom: 0; left: 0; right: 0; display: flex; background: var(--white); border-top: 1px solid var(--border); }
+  .bnav a { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 10px 0; font-size: 10px; font-weight: 600; color: var(--grey); }
+  .bnav a.active { color: var(--purple); }
+
+  .cmp { display: flex; flex-direction: column; gap: 14px; align-items: center; }
+  .cmp-lbl { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  .cmp-lbl.before { color: #E8709A; } .cmp-lbl.after { color: #6FE0A0; }
+  .cmp-card { width: 288px; }
+</style>
+</head>
+<body>
+  <div class="page-title">Phase 16 · Unit 3 — Discover</div>
+  <div class="page-sub">Two items on the sponsored-move card.</div>
+
+  <div class="toggles">
+    <button class="toggle active" data-state="discover">Discover</button>
+    <button class="toggle" data-state="interested">Interested state</button>
+    <button class="toggle" data-state="header">#4 · Header fix</button>
+  </div>
+
+  <!-- ========== DISCOVER (fixed card, pre-interested) ========== -->
+  <div class="state active" data-state="discover">
+    <div class="phone">
+      <div class="dhead">
+        <div class="dlock"><span id="cow-d"></span><span class="wm">M<span class="dot dg"></span><span class="dot dp"></span>VES</span></div>
+        <div class="drow">
+          <span class="dtitle">Discover</span>
+          <span class="near"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z" stroke="#5F3FC4" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.5" stroke="#5F3FC4" stroke-width="2"/></svg>Near 60640</span>
+        </div>
+      </div>
+      <div class="dbody">
+        <div class="dcount">1 move matches your area and interests.</div>
+        <div class="sp">
+          <div class="sp-img"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#7C5CDB" stroke-width="1.6"><path d="M3 9l1-4h16l1 4"/><path d="M4 9v10h16V9"/><path d="M9 19v-5h6v5"/></svg></div>
+          <div class="sp-pad">
+            <div class="sp-eyebrow">Sponsored · Logan Square Market</div>
+            <span class="sp-pill">Markets &amp; pop-ups</span>
+            <div class="sp-title">Logan Square makers market</div>
+            <div class="sp-time"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#6B628A" stroke-width="2"/><path d="M12 7v5l3 2" stroke="#6B628A" stroke-width="2" stroke-linecap="round"/></svg>Sun 10am · Logan Blvd</div>
+            <div class="sp-desc">Local makers, vintage, and food trucks along Logan Blvd every Sunday. Free to wander, easy to lose an afternoon.</div>
+            <button class="sp-cta">I'm interested</button>
+          </div>
+        </div>
+      </div>
+      <div class="bnav"><a><span id="ni-feed"></span>Feed</a><a class="active"><span id="ni-disc"></span>Discover</a><a><span id="ni-ppl"></span>People</a><a><span id="ni-set"></span>Settings</a></div>
+    </div>
+    <div class="caption">Header no longer collides (#4): the subtle <b>Sponsored · brand</b> sits on its own line, the <b>category pill</b> on its own line, then the title. And the <b>description is now visible before you commit</b> (#7), so you know what it is before tapping "I'm interested".</div>
+    <div class="screen-label">Discover — sponsored move card</div>
+  </div>
+
+  <!-- ========== INTERESTED STATE ========== -->
+  <div class="state" data-state="interested">
+    <div class="phone">
+      <div class="dhead">
+        <div class="dlock"><span id="cow-i"></span><span class="wm">M<span class="dot dg"></span><span class="dot dp"></span>VES</span></div>
+        <div class="drow">
+          <span class="dtitle">Discover</span>
+          <span class="near"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z" stroke="#5F3FC4" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.5" stroke="#5F3FC4" stroke-width="2"/></svg>Near 60640</span>
+        </div>
+      </div>
+      <div class="dbody">
+        <div class="dcount">1 move matches your area and interests.</div>
+        <div class="sp">
+          <div class="sp-img"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#7C5CDB" stroke-width="1.6"><path d="M3 9l1-4h16l1 4"/><path d="M4 9v10h16V9"/><path d="M9 19v-5h6v5"/></svg></div>
+          <div class="sp-pad">
+            <div class="sp-eyebrow">Sponsored · Logan Square Market</div>
+            <span class="sp-pill">Markets &amp; pop-ups</span>
+            <div class="sp-title">Logan Square makers market</div>
+            <div class="sp-time"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#6B628A" stroke-width="2"/><path d="M12 7v5l3 2" stroke="#6B628A" stroke-width="2" stroke-linecap="round"/></svg>Sun 10am · Logan Blvd</div>
+            <div class="sp-desc">Local makers, vintage, and food trucks along Logan Blvd every Sunday. Free to wander, easy to lose an afternoon.</div>
+            <div class="sp-interested">
+              <div class="sp-inlabel"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#167A43" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Interested</div>
+              <button class="sp-cta2"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="9" r="3.2" stroke="#fff" stroke-width="2"/><path d="M3.5 18a5.5 5.5 0 0 1 11 0" stroke="#fff" stroke-width="2" stroke-linecap="round"/><path d="M16 6.5a3 3 0 0 1 0 5.8M18.5 18a5.5 5.5 0 0 0-3-4.9" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>Go with friends</button>
+              <button class="sp-cta-outline">Get details ↗</button>
+              <div class="sp-hint">Go green with this move so friends can join you.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="bnav"><a><span id="ni-feed2"></span>Feed</a><a class="active"><span id="ni-disc2"></span>Discover</a><a><span id="ni-ppl2"></span>People</a><a><span id="ni-set2"></span>Settings</a></div>
+    </div>
+    <div class="caption">After tapping <b>I'm interested</b>: the ✓ label, <b>Go with friends</b> (launches it as your own green), and <b>Get details</b>. The description stays put above (no longer duplicated here).</div>
+    <div class="screen-label">Discover — interested</div>
+  </div>
+
+  <!-- ========== #4 HEADER FIX (before/after) ========== -->
+  <div class="state" data-state="header">
+    <div class="cmp">
+      <div class="cmp-lbl before">Before</div>
+      <div class="sp cmp-card">
+        <div class="sp-pad">
+          <div class="sp-head-bad">
+            <span class="sp-pill">Markets &amp; pop-ups</span>
+            <span class="bad-eyebrow">Sponsored · Logan Square Market</span>
+          </div>
+          <div class="sp-title">Logan Square makers market</div>
+          <div class="sp-time"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#6B628A" stroke-width="2"/><path d="M12 7v5l3 2" stroke="#6B628A" stroke-width="2" stroke-linecap="round"/></svg>Sun 10am · Logan Blvd</div>
+        </div>
+      </div>
+      <div class="cmp-lbl after" style="margin-top:8px;">After</div>
+      <div class="sp cmp-card">
+        <div class="sp-pad">
+          <div class="sp-eyebrow">Sponsored · Logan Square Market</div>
+          <span class="sp-pill">Markets &amp; pop-ups</span>
+          <div class="sp-title">Logan Square makers market</div>
+          <div class="sp-time"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#6B628A" stroke-width="2"/><path d="M12 7v5l3 2" stroke="#6B628A" stroke-width="2" stroke-linecap="round"/></svg>Sun 10am · Logan Blvd</div>
+        </div>
+      </div>
+    </div>
+    <div class="note"><span class="tag">before</span> pill + sponsored label fight on one <b>justify-between</b> row → the pill wraps and the label overlaps it. <span class="tag">after</span> sponsored label on its own line (truncates if long), pill on its own line, then title. Each has full width.</div>
+    <div class="screen-label">Discover card header (#4)</div>
+  </div>
+
+<script>
+  function cowSVG(size){return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">'
+    +'<ellipse cx="11" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(-28 11 33)"/><ellipse cx="109" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(28 109 33)"/>'
+    +'<ellipse cx="11" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(-28 11 34)"/><ellipse cx="109" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(28 109 34)"/>'
+    +'<ellipse cx="38" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(-14 38 19)"/><ellipse cx="82" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(14 82 19)"/>'
+    +'<rect x="15" y="20" width="90" height="92" rx="30" fill="#F5F0ED"/><ellipse cx="41" cy="44" rx="19" ry="13" fill="#7A7282" transform="rotate(-10 41 44)"/><ellipse cx="79" cy="69" rx="14" ry="9" fill="#7A7282" transform="rotate(16 79 69)"/>'
+    +'<circle cx="44" cy="57" r="6" fill="#2A1E38"/><circle cx="76" cy="57" r="6" fill="#2A1E38"/><circle cx="46.5" cy="54.5" r="2.2" fill="white"/><circle cx="78.5" cy="54.5" r="2.2" fill="white"/>'
+    +'<ellipse cx="60" cy="90" rx="27" ry="20" fill="#F0AABB"/><circle cx="50" cy="91" r="9" fill="#2ECC71"/><circle cx="70" cy="91" r="9" fill="#BDB5D4"/></svg>';}
+  function navIcon(n){var s='width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
+    if(n==='feed')return '<svg '+s+'><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>';
+    if(n==='disc')return '<svg '+s+'><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5 5-2Z"/></svg>';
+    if(n==='ppl')return '<svg '+s+'><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>';
+    return '<svg '+s+'><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';}
+  ['cow-d','cow-i'].forEach(function(id){var e=document.getElementById(id);if(e)e.innerHTML=cowSVG(24);});
+  ['','2'].forEach(function(sfx){['feed','disc','ppl','set'].forEach(function(n){var e=document.getElementById('ni-'+n+sfx);if(e)e.innerHTML=navIcon(n);});});
+  document.querySelectorAll('.toggle').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var s=btn.dataset.state;
+      document.querySelectorAll('.toggle').forEach(function(b){b.classList.toggle('active',b===btn);});
+      document.querySelectorAll('.state').forEach(function(st){st.classList.toggle('active',st.dataset.state===s);});
+    });
+  });
+</script>
+</body>
+</html>

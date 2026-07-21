@@ -3704,3 +3704,16 @@ Four items on Screen 4 (Feed) + the go-green/tip sheets, one PR (`feat/phase16-f
 - [ ] Tip jar visually separated from moves; only an explicit button opens it.
 - [ ] Apple Pay + Google Pay appear in the tip pay step (device/browser-appropriate).
 - [ ] `tsc --noEmit` + `next build` clean.
+
+### Unit 3 — Discover — ✅ Mockup APPROVED + ✅ CODED 2026-07-20 (`mooves-phase16-discover.html`, branch `feat/phase16-discover`)
+`tsc --noEmit` clean; needs Jackson's authed device test (Discover needs area + interests + a seeded/approved move).
+Two items on the Discover sponsored-move card (`SponsoredCard.tsx`), one PR (`feat/phase16-discover`):
+
+- **#4 — Card header collision.** The category pill (`interestLabel`, e.g. "Markets & pop-ups") and the "SPONSORED · {brand}" eyebrow share a single `justify-between` row and collide / overlap when both are long (especially on a 320px card). Fix: restructure the header so each has room — the subtle "SPONSORED · {brand}" eyebrow on its own line (full width, truncates if long), the category pill on its own line, then the title. No wrapping-collision or overlap.
+- **#7 — Description before "I'm interested".** Today `move.description` only renders *after* tapping "I'm interested", so a user can't read what the move is before committing. Surface it up front: show `move.description` under the title/time, visible pre- and post-interested; remove the now-duplicate copy from the interested-only block. No new field (description already exists in `MoveForm` / `SponsoredCard`).
+
+**Acceptance:**
+- [ ] Category pill + sponsored label never overlap or wrap-collide, on a 320px card.
+- [ ] Description blurb is visible before tapping "I'm interested".
+- [ ] Interested state still shows ✓ Interested + Go with friends + Get details (minus the now-redundant description).
+- [ ] `tsc --noEmit` + `next build` clean.
