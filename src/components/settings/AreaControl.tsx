@@ -260,7 +260,7 @@ export default function AreaControl({
       {sheet === 'method' && (
         <>
           <div className="fixed inset-0 bg-ink-900/50 z-40" onClick={() => setSheet('none')} aria-hidden="true" />
-          <div className="fixed bottom-0 left-0 right-0 z-50 px-3 pb-8 safe-area-pb">
+          <div className="fixed bottom-0 left-0 right-0 z-50 px-3 [--safe-pb-base:2rem] safe-area-pb">
             <div className="bg-white rounded-[28px] p-5 pb-6">
               <div className="w-[38px] h-1 rounded-full bg-[#DED8F0] mx-auto mb-4" />
               <div className="font-display font-extrabold text-[19px] text-ink-900 text-center">Set your area</div>
@@ -311,7 +311,7 @@ export default function AreaControl({
       {sheet === 'edit' && (
         <>
           <div className="fixed inset-0 bg-ink-900/50 z-40" onClick={() => setSheet('none')} aria-hidden="true" />
-          <div className="fixed bottom-0 left-0 right-0 z-50 px-3 pb-8 safe-area-pb">
+          <div className="fixed bottom-0 left-0 right-0 z-50 px-3 [--safe-pb-base:2rem] safe-area-pb">
             <div className="bg-white rounded-[28px] p-5 pb-6">
               <div className="w-[38px] h-1 rounded-full bg-[#DED8F0] mx-auto mb-4" />
               <div className="font-display font-extrabold text-[19px] text-ink-900 text-center">Your area</div>

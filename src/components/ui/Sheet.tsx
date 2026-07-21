@@ -25,18 +25,22 @@ export default function Sheet({ open, onClose, children, className = '', bottomI
         onClick={onClose}
         aria-hidden="true"
       />
-      {/* Sheet */}
+      {/* Sheet — the outer element carries the safe-area inset (base 0), the inner
+          wrapper carries the caller's own padding, so the two compose (inset is added
+          below the caller's bottom padding) without any caller needing to change. */}
       <div
-        className={`fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl safe-area-pb ${className}`}
+        className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl safe-area-pb"
         style={bottomInset > 0 ? { bottom: bottomInset } : undefined}
         role="dialog"
         aria-modal="true"
       >
-        {/* Drag handle */}
-        <div className="flex justify-center pt-3 pb-2">
-          <div className="w-9 h-1 rounded-full bg-gray-200" />
+        <div className={className}>
+          {/* Drag handle */}
+          <div className="flex justify-center pt-3 pb-2">
+            <div className="w-9 h-1 rounded-full bg-gray-200" />
+          </div>
+          {children}
         </div>
-        {children}
       </div>
     </>
   )

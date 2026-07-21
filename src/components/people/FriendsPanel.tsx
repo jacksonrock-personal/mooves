@@ -204,7 +204,7 @@ export default function FriendsPanel() {
             aria-hidden="true"
           />
           <div
-            className="fixed bottom-0 left-0 right-0 z-50 bg-card-white rounded-t-3xl px-5 pt-4 pb-8 safe-area-pb"
+            className="fixed bottom-0 left-0 right-0 z-50 bg-card-white rounded-t-3xl px-5 pt-4 [--safe-pb-base:2rem] safe-area-pb"
             role="dialog"
             aria-modal="true"
           >

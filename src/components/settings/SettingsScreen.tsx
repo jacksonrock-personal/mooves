@@ -334,7 +334,7 @@ export default function SettingsScreen() {
             onClick={() => setPhotoActionOpen(false)}
             aria-hidden="true"
           />
-          <div className="fixed bottom-0 left-0 right-0 z-50 px-2 pb-11 flex flex-col gap-2 safe-area-pb">
+          <div className="fixed bottom-0 left-0 right-0 z-50 px-2 [--safe-pb-base:2.75rem] flex flex-col gap-2 safe-area-pb">
             <div className="rounded-2xl overflow-hidden border border-[#E8E4F5] bg-surface-bg/95 backdrop-blur-xl divide-y divide-[#E8E4F5]">
               <button
                 onClick={() => {

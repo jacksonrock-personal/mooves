@@ -127,7 +127,7 @@ export default function FriendCard({
             onClick={() => setConfirmLeave(false)}
             aria-hidden="true"
           />
-          <div className="fixed bottom-0 left-0 right-0 z-50 px-2 pb-11 flex flex-col gap-2 safe-area-pb">
+          <div className="fixed bottom-0 left-0 right-0 z-50 px-2 [--safe-pb-base:2.75rem] flex flex-col gap-2 safe-area-pb">
             <div className="rounded-2xl overflow-hidden border border-[#E8E4F5] bg-surface-bg/95 backdrop-blur-xl">
               <p className="font-sans text-[12px] font-medium text-text-secondary text-center px-4 pt-3 pb-1.5 border-b border-[#E8E4F5]">
                 Leave this Moove? You&apos;ll drop off {name}&apos;s plan and stop showing as in.
