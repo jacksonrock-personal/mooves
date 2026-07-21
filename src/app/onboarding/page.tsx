@@ -117,9 +117,10 @@ function OnboardingContent() {
 
   return (
     <main className="min-h-screen bg-surface-bg flex flex-col">
-      {/* Step dots — step 1 of 3 */}
+      {/* Step dots — step 1 of 4 */}
       <div className="flex gap-1.5 justify-center pt-12">
         <div className="w-2 h-2 rounded-full bg-mooves-purple" />
+        <div className="w-2 h-2 rounded-full bg-[#E8E4F5]" />
         <div className="w-2 h-2 rounded-full bg-[#E8E4F5]" />
         <div className="w-2 h-2 rounded-full bg-[#E8E4F5]" />
       </div>

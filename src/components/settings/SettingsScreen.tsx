@@ -270,6 +270,26 @@ export default function SettingsScreen() {
               <InterestPicker selected={me.interests} onChange={handleInterestsChange} />
             </div>
 
+            <div className="h-3.5" />
+
+            <button
+              onClick={() => {
+                posthog.capture('settings_loop_opened')
+                router.push('/onboarding/loop?replay=1')
+              }}
+              className="flex items-center justify-between w-[calc(100%-2rem)] mx-4 bg-white border border-[#E8E4F5] rounded-[20px] p-4 text-left"
+            >
+              <span>
+                <span className="block font-sans font-bold text-[15px] text-ink-900">The Mooves Loop</span>
+                <span className="block font-sans text-[13px] text-ink-500 mt-0.5">
+                  A quick refresher on how Mooves works.
+                </span>
+              </span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#BDB5D4" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </button>
+
             <div className="h-6" />
 
             <NotificationSettings />
