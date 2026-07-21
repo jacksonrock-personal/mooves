@@ -42,6 +42,15 @@
   .animate-card-in { animation: card-in 0.25s ease-out; }
   .animate-toast-pop { animation: toast-pop 0.35s ease-out; }
   .animate-ambient-pulse { animation: ambient-pulse 2.6s ease-out infinite; }
+
+  /* Bottom safe-area inset for fixed bottom bars & sheets. Adds the iOS home-indicator /
+     browser-chrome inset ON TOP OF the element's base bottom padding — which the element
+     supplies via the --safe-pb-base custom property (default 0, e.g. `[--safe-pb-base:2rem]`
+     in place of `pb-8`). Collapses to just the base when there's no inset, so there's never
+     dead space below the element. */
+  .safe-area-pb {
+    padding-bottom: calc(var(--safe-pb-base, 0px) + env(safe-area-inset-bottom, 0px));
+  }
 }
 
 /* Phase 8.3 — suppress the floating Firebase reCAPTCHA badge everywhere.
