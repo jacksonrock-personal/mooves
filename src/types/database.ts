@@ -191,6 +191,7 @@ export type Database = {
           business_name: string | null
           created_at: string
           default_payment_method_id: string | null
+          email: string | null
           id: string
           phone: string
           stripe_customer_id: string | null
@@ -199,6 +200,7 @@ export type Database = {
           business_name?: string | null
           created_at?: string
           default_payment_method_id?: string | null
+          email?: string | null
           id?: string
           phone: string
           stripe_customer_id?: string | null
@@ -207,6 +209,7 @@ export type Database = {
           business_name?: string | null
           created_at?: string
           default_payment_method_id?: string | null
+          email?: string | null
           id?: string
           phone?: string
           stripe_customer_id?: string | null

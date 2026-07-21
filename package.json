@@ -21,6 +21,7 @@
     "posthog-node": "^4.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "resend": "^6.18.0",
     "stripe": "^22.3.2",
     "twilio": "^5.0.0",
     "zipcodes": "^8.0.0"

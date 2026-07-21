@@ -5,6 +5,8 @@
 import type Stripe from 'stripe'
 import { createServiceClient } from '@/lib/supabase/server'
 import { stripe, PLACEMENT_PRICE_CENTS } from '@/lib/stripe'
+import { sendMoveLiveEmail } from '@/lib/email'
+import { interestLabel } from '@/lib/interests'
 
 export type ChargeResult = 'charged' | 'no_payment_method' | 'failed' | 'skipped'
 
@@ -19,7 +21,7 @@ export async function chargeForPlacement(moveId: string): Promise<ChargeResult> 
 
   const { data: move } = await supabase
     .from('sponsored_moves')
-    .select('id, sponsor_id, status, paid_at')
+    .select('id, sponsor_id, status, paid_at, title, time_text, category')
     .eq('id', moveId)
     .single()
 
@@ -30,7 +32,7 @@ export async function chargeForPlacement(moveId: string): Promise<ChargeResult> 
 
   const { data: sponsor } = await supabase
     .from('sponsors')
-    .select('stripe_customer_id, default_payment_method_id')
+    .select('stripe_customer_id, default_payment_method_id, email, business_name')
     .eq('id', move.sponsor_id)
     .single()
 
@@ -53,6 +55,18 @@ export async function chargeForPlacement(moveId: string): Promise<ChargeResult> 
       .from('sponsored_moves')
       .update({ stripe_payment_intent_id: pi.id, price_cents: PLACEMENT_PRICE_CENTS, paid_at: paidAt })
       .eq('id', move.id)
+
+    // #15 — the move is now live; email the sponsor (best-effort, never blocks the
+    // charge). Skipped when there's no email on file (sendMoveLiveEmail no-ops too).
+    if (paidAt && sponsor.email) {
+      await sendMoveLiveEmail({
+        to: sponsor.email,
+        businessName: sponsor.business_name,
+        moveTitle: move.title,
+        categoryLabel: interestLabel(move.category),
+        whenWhere: move.time_text,
+      })
+    }
 
     return pi.status === 'succeeded' ? 'charged' : 'failed'
   } catch (err) {

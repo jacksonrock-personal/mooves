@@ -8,8 +8,10 @@ import { createServiceClient } from '@/lib/supabase/server'
 import { signSponsorToken, SPONSOR_COOKIE, SPONSOR_SESSION_SECONDS } from '@/lib/auth/sponsor-session'
 
 export async function POST(req: Request) {
-  const { idToken, businessName } = (await req.json()) as { idToken?: string; businessName?: string }
+  const { idToken, businessName, email } = (await req.json()) as { idToken?: string; businessName?: string; email?: string }
   if (!idToken) return NextResponse.json({ error: 'idToken required' }, { status: 400 })
+
+  const cleanEmail = email?.trim().toLowerCase().slice(0, 120) || null
 
   let phoneNumber: string
   try {
@@ -26,21 +28,24 @@ export async function POST(req: Request) {
   let isNew: boolean
   const { data: existing } = await supabase
     .from('sponsors')
-    .select('id, business_name')
+    .select('id, business_name, email')
     .eq('phone', phoneNumber)
     .maybeSingle()
 
   if (existing) {
     sponsorId = existing.id
     isNew = false
-    // Fill in the business name if this is the sign-up completing and it's still blank.
-    if (!existing.business_name && businessName?.trim()) {
-      await supabase.from('sponsors').update({ business_name: businessName.trim().slice(0, 80) }).eq('id', sponsorId)
+    // Fill in the business name / email if the sign-up is completing and they're still blank.
+    const fill: { business_name?: string; email?: string } = {}
+    if (!existing.business_name && businessName?.trim()) fill.business_name = businessName.trim().slice(0, 80)
+    if (!existing.email && cleanEmail) fill.email = cleanEmail
+    if (Object.keys(fill).length > 0) {
+      await supabase.from('sponsors').update(fill).eq('id', sponsorId)
     }
   } else {
     const { data: created, error } = await supabase
       .from('sponsors')
-      .insert({ phone: phoneNumber, business_name: businessName?.trim().slice(0, 80) || null })
+      .insert({ phone: phoneNumber, business_name: businessName?.trim().slice(0, 80) || null, email: cleanEmail })
       .select('id')
       .single()
     if (error || !created) return NextResponse.json({ error: 'Failed to create sponsor' }, { status: 500 })

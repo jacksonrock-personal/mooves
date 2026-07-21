@@ -18,6 +18,7 @@ export default function SponsorAuth({ onAuthed }: { onAuthed: () => void }) {
   const [mode, setMode] = useState<'signin' | 'signup'>('signin')
   const [step, setStep] = useState<'phone' | 'code'>('phone')
   const [businessName, setBusinessName] = useState('')
+  const [email, setEmail] = useState('')
   const [rawDigits, setRawDigits] = useState('')
   const [code, setCode] = useState('')
   const [loading, setLoading] = useState(false)
@@ -49,6 +50,10 @@ export default function SponsorAuth({ onAuthed }: { onAuthed: () => void }) {
       setError('Business name required.')
       return
     }
+    if (mode === 'signup' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setError('Enter a valid email so we can tell you when a move goes live.')
+      return
+    }
     setLoading(true)
     setError(null)
     try {
@@ -76,7 +81,7 @@ export default function SponsorAuth({ onAuthed }: { onAuthed: () => void }) {
       const res = await fetch('/api/sponsor/auth/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken, businessName: businessName.trim() || undefined }),
+        body: JSON.stringify({ idToken, businessName: businessName.trim() || undefined, email: email.trim() || undefined }),
       })
       if (!res.ok) throw new Error('verify failed')
       onAuthed()
@@ -105,10 +110,16 @@ export default function SponsorAuth({ onAuthed }: { onAuthed: () => void }) {
               {mode === 'signin' ? "Sign in with your phone. We'll text you a code." : 'Put your place in front of people nearby.'}
             </p>
             {mode === 'signup' && (
-              <div className="mb-3.5">
-                <label className="block text-[12px] font-bold text-ink-500 mb-1.5">Business name</label>
-                <input value={businessName} onChange={e => setBusinessName(e.target.value.slice(0, 80))} placeholder="The Vista" className={inputCls} />
-              </div>
+              <>
+                <div className="mb-3.5">
+                  <label className="block text-[12px] font-bold text-ink-500 mb-1.5">Business name</label>
+                  <input value={businessName} onChange={e => setBusinessName(e.target.value.slice(0, 80))} placeholder="The Vista" className={inputCls} />
+                </div>
+                <div className="mb-3.5">
+                  <label className="block text-[12px] font-bold text-ink-500 mb-1.5">Email</label>
+                  <input type="email" inputMode="email" value={email} onChange={e => { setEmail(e.target.value.slice(0, 120)); if (error) setError(null) }} placeholder="you@yourplace.com" className={inputCls} />
+                </div>
+              </>
             )}
             <div className="mb-3.5">
               <label className="block text-[12px] font-bold text-ink-500 mb-1.5">Phone number</label>
