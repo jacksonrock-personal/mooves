@@ -502,6 +502,7 @@ export type Database = {
         Args: { p_key: string; p_limit: number; p_window_seconds: number }
         Returns: boolean
       }
+      get_feed: { Args: { viewer: string }; Returns: Json }
     }
     Enums: {
       [_ in never]: never
