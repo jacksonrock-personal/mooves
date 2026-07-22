@@ -114,7 +114,12 @@ function OtpContent() {
       setDigits(['', '', '', '', '', ''])
 
       const errCode = (err as { code?: string }).code ?? ''
-      if (errCode === 'auth/code-expired') {
+      if (err instanceof Error && err.message === 'verify_failed') {
+        // The Firebase code was right, our server-side verify failed. Don't
+        // blame the code, the user would retry a now-consumed OTP forever.
+        setError("Your code was right, but signing in failed. Try again in a moment.")
+        posthog.capture('auth_verify_failed')
+      } else if (errCode === 'auth/code-expired') {
         setError("That code expired, we've sent a new one.")
         setCountdown(0)
         void doResend()
