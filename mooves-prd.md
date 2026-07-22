@@ -21,7 +21,7 @@
 | 6 | Friend Tap → SMS Handoff (non-screen) | ✅ Approved · ✅ Coded |
 | 7 | ~~Friend Connection Confirmation~~ | ❌ Removed — web flow already covered by Screen 1 + feed toast |
 | 8 | Friends List | ✅ Approved · ✅ Coded |
-| 9 | Groups Management | ✅ Approved · ✅ Coded · 🔁 Amended 2026-07-22 (create button → sticky bottom bar, mockup locked, code pending) |
+| 9 | Groups Management | ✅ Approved · ✅ Coded · 🔁 Amended 2026-07-22 (create button → sticky bottom bar, mockup + code shipped) |
 | 10 | Settings / Profile Edit | ✅ Approved · ✅ Coded |
 | 11 | SMS Feed Check (non-screen, Twilio flow) | ✅ Approved · ✅ Coded (deferred — A2P registration pending) |
 | 12 | Invite Link Deep-Link Flow (non-screen, technical) | ✅ Approved · ✅ Coded |
