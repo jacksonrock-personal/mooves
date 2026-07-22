@@ -36,6 +36,9 @@ export async function GET(req: Request) {
 
   // Live = moderation-approved AND (Mooves-authored OR paid). Sponsor-authored
   // moves only appear once their placement charge has cleared (13.6b).
+  // Dated moves expire 3h after start (late joiners ok, stale events gone);
+  // start_at NULL = evergreen (recurring events).
+  const expiryFloor = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString()
   const { data: rows, error } = await supabase
     .from('sponsored_moves')
     .select('id, title, description, category, brand, time_text, link_url, image_url')
@@ -43,6 +46,7 @@ export async function GET(req: Request) {
     .in('area_zip', zips)
     .in('category', interests)
     .or('sponsor_id.is.null,paid_at.not.is.null')
+    .or(`start_at.is.null,start_at.gt.${expiryFloor}`)
     .order('created_at', { ascending: false })
 
   if (error) return NextResponse.json({ error: 'Query failed' }, { status: 500 })
