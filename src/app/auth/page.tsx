@@ -161,9 +161,9 @@ function AuthContent() {
       {/* ToS + CTA */}
       <p className="font-sans text-[11px] text-ink-500 text-center leading-relaxed px-7 mb-5">
         By continuing, you agree to our{' '}
-        <a href="#" className="text-purple-500 font-medium">Terms</a>
+        <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-purple-500 font-medium">Terms</a>
         {' '}and{' '}
-        <a href="#" className="text-purple-500 font-medium">Privacy Policy</a>.
+        <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-purple-500 font-medium">Privacy Policy</a>.
       </p>
       <div className="px-7 pb-11">
         <button

@@ -21,7 +21,7 @@
 | 6 | Friend Tap → SMS Handoff (non-screen) | ✅ Approved · ✅ Coded |
 | 7 | ~~Friend Connection Confirmation~~ | ❌ Removed — web flow already covered by Screen 1 + feed toast |
 | 8 | Friends List | ✅ Approved · ✅ Coded |
-| 9 | Groups Management | ✅ Approved · ✅ Coded |
+| 9 | Groups Management | ✅ Approved · ✅ Coded · 🔁 Amended 2026-07-22 (create button → sticky bottom bar, mockup + code shipped) |
 | 10 | Settings / Profile Edit | ✅ Approved · ✅ Coded |
 | 11 | SMS Feed Check (non-screen, Twilio flow) | ✅ Approved · ✅ Coded (deferred — A2P registration pending) |
 | 12 | Invite Link Deep-Link Flow (non-screen, technical) | ✅ Approved · ✅ Coded |
@@ -1293,7 +1293,7 @@ The People tab now has two sub-tabs at the top:
 - The Friends sub-tab shows the Screen 8 content exactly as approved (search bar + friend list + invite button)
 - The Groups sub-tab shows Screen 9 content
 
-A create-group control appears in the top-right corner of the header **only when the Groups sub-tab is active**. Tapping it navigates to the Create Group screen. *(Phase 8 §8.2 upgrades this from an unlabeled `+` icon to an always-visible **labeled** control.)*
+The create-group control is a **sticky bottom bar** (full-width `New group` button with a plus icon, Mooves Purple, sitting directly above the bottom nav) shown **only when the Groups sub-tab is active** — the same bar pattern as the Friends sub-tab's `Invite friends` button. Tapping it navigates to the Create Group screen. The header carries no create control. *(Amended 2026-07-22: moved out of the header top-right, superseding Phase 8 §8.2's labeled-header-control plan.)*
 
 ---
 
@@ -1302,8 +1302,8 @@ A create-group control appears in the top-right corner of the header **only when
 **Layout (top to bottom):**
 
 - Sub-tab bar (Friends | Groups — Groups active)
-- `+` button in top-right of header
 - Scrollable list of groups
+- Sticky `New group` bottom bar above the bottom nav
 
 **Group rows** — each row contains:
 - **Emoji icon** (42px rounded square, purple-tint background) — shows the group's chosen emoji
@@ -1326,7 +1326,7 @@ When the user has no groups:
 - Centered in the list area:
   - Headline: `No groups yet.`
   - Sub-copy: `Groups let you choose who sees you when you go green.`
-  - CTA button: `Create a group` (Mooves Purple, full-width) — same action as the `+` button
+- The sticky `New group` bottom bar carries the create action — no inline CTA in the empty state (one primary action per screen). *(Amended 2026-07-22.)*
 
 ---
 
@@ -1490,7 +1490,7 @@ ORDER BY g.created_at ASC
 | Event | When |
 |---|---|
 | `groups_tab_viewed` | Groups sub-tab tapped |
-| `group_create_started` | + button or empty state CTA tapped |
+| `group_create_started` | Sticky `New group` bottom-bar button tapped |
 | `group_create_completed` | Done tapped, group saved successfully |
 | `group_edit_opened` | Group row tapped |
 | `group_edit_saved` | Done tapped on edit screen |
@@ -2959,7 +2959,7 @@ A design-critique → design-system pass (Claude Design) delivered a v1 system a
 - **Header icon + cow face** — enlarge the header icon **and** work a cow face into the **existing** mark, as one focused design task. Scope = refine/integrate, **not a rebrand** (a full cow-forward brand-mark exploration is deliberately out of this phase). Cow-face visual direction is a mockup-time decision.
 - **People tab: flip sub-tab order** so Friends is default/left, Groups second. **⚠️ LIKELY ALREADY DONE (2026-07-16):** `PeopleScreen.tsx:19,51` already defaults to `friends` and renders `['friends','groups']` (Friends-first). The design critique caught this too. **Verify against live `makemooves.app`; if confirmed, DROP this item** and just update the stale Screen 9 spec "People Tab Layout Update" note (which still documents the old reversed order).
 - **reCAPTCHA badge** — **suppress** the floating Firebase badge via the `badge` param, and add Google's **required attribution text** ("protected by reCAPTCHA — Privacy / Terms") on the auth screen instead. (Not repositioned — hidden + compliant.)
-- **"+" create-group button** — a clear, **labeled control in the Groups sub-tab header** (always visible, obvious purpose). Not a FAB, not an empty-state-only CTA.
+- **"+" create-group button** — a clear, **labeled control in the Groups sub-tab header** (always visible, obvious purpose). Not a FAB, not an empty-state-only CTA. *(Superseded 2026-07-22: create control moved to a sticky bottom bar above the bottom nav, matching the Friends invite bar — see Screen 9 spec.)*
 
 All four items are independent and parallelizable.
 
@@ -3154,6 +3154,8 @@ Guardrail unchanged: **group-level only, never per-person.**
 - **Groups tab, has groups:** an always-visible **labeled** create control ("New group") in the header top-right → Create Group screen.
 - **Groups tab, empty:** the large empty-state "Create a group" CTA remains (primary for first-timers) **and** the labeled header control is also present.
 - **Friends tab active:** create control hidden (Groups-specific).
+
+> **Superseded 2026-07-22:** the create control moved from the header top-right to a **sticky bottom bar** above the bottom nav (same pattern as the Friends `Invite friends` bar), and the empty-state inline CTA was dropped in favor of that bar. Current spec lives in the Screen 9 section; mockup `mooves-screen9-groups.html`.
 
 **User flow:** Tap the labeled header control (or empty-state CTA) → Create Group screen.
 

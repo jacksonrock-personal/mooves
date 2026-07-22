@@ -1,7 +1,9 @@
 'use client'
 
 // Screen 9: Groups sub-tab content — list of the user's groups with
-// swipe-to-delete, an empty state, and a delete confirmation sheet.
+// swipe-to-delete, an empty state, a delete confirmation sheet, and the
+// sticky "New group" bottom bar (amended 2026-07-22 — same pattern as
+// FriendsPanel's invite bar).
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -89,25 +91,19 @@ export default function GroupsPanel() {
     <div className="flex-1 flex flex-col min-h-0">
       {loaded &&
         (isEmpty ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-center px-8 bg-surface-bg">
+          <div className="flex-1 flex flex-col items-center justify-center text-center px-8 pb-[136px] bg-surface-bg">
             <div className="w-[52px] h-[52px] rounded-2xl bg-purple-tint flex items-center justify-center text-[26px] leading-none mb-4">
               👥
             </div>
             <p className="font-display font-extrabold text-[18px] text-text-primary tracking-tight mb-2">
               No groups yet.
             </p>
-            <p className="font-sans text-[14px] text-text-secondary leading-relaxed mb-7">
+            <p className="font-sans text-[14px] text-text-secondary leading-relaxed">
               Groups let you choose who sees you when you go green.
             </p>
-            <button
-              onClick={handleCreate}
-              className="w-full py-3.5 rounded-2xl bg-mooves-purple text-white font-display font-bold text-[15px] tracking-tight"
-            >
-              Create a group
-            </button>
           </div>
         ) : (
-          <div className="flex-1 overflow-y-auto bg-card-white">
+          <div className="flex-1 overflow-y-auto pb-[136px] bg-card-white">
             {groups.map(g => (
               <GroupRow
                 key={g.id}
@@ -126,6 +122,28 @@ export default function GroupsPanel() {
             )}
           </div>
         ))}
+
+      {/* Sticky create bar (above bottom nav) — mirrors FriendsPanel's invite bar */}
+      <div className="fixed bottom-[72px] left-0 right-0 z-30 bg-card-white border-t border-[#E8E4F5] px-4 py-2.5">
+        <button
+          onClick={handleCreate}
+          className="w-full py-3.5 rounded-2xl bg-mooves-purple text-white font-display font-bold text-[15px] tracking-tight flex items-center justify-center gap-2"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="white"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+          >
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          New group
+        </button>
+      </div>
 
       <Sheet
         open={deleteTarget !== null}
