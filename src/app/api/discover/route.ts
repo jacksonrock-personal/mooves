@@ -38,7 +38,7 @@ export async function GET(req: Request) {
   // moves only appear once their placement charge has cleared (13.6b).
   const { data: rows, error } = await supabase
     .from('sponsored_moves')
-    .select('id, title, description, category, brand, time_text, link_url, image_url, impressions')
+    .select('id, title, description, category, brand, time_text, link_url, image_url')
     .eq('status', 'approved')
     .in('area_zip', zips)
     .in('category', interests)
@@ -60,13 +60,13 @@ export async function GET(req: Request) {
     interestedIds = new Set((mine ?? []).map(r => r.move_id))
   }
 
-  // Best-effort aggregate impressions (fire-and-forget; move to an atomic RPC /
-  // events table at scale). Never tied to a user identity.
-  void Promise.all(
-    moves.map(m =>
-      supabase.from('sponsored_moves').update({ impressions: m.impressions + 1 }).eq('id', m.id),
-    ),
-  ).catch(() => {})
+  // Aggregate impressions — one atomic batch increment (race-free), fire-and-forget.
+  // Never tied to a user identity.
+  void supabase
+    .rpc('increment_move_impressions', { move_ids: moves.map(m => m.id) })
+    .then(({ error }) => {
+      if (error) console.error('impressions increment failed:', error)
+    })
 
   return NextResponse.json({
     needsSetup: false,
