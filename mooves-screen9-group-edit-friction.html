@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mooves — Screen 9 group edit friction</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --purple-50:#F8F6FF; --purple-100:#EDE9FF; --purple-500:#7C5CDB; --purple-700:#5F3FC4;
+    --green-500:#2ECC71; --green-700:#167A43;
+    --ink-900:#1C1730; --ink-500:#6B628A; --grey-300:#BDB5D4;
+    --border:#E8E4F5; --red:#E8405A; --red-tint:#FFF0F2; --cream:#F5F0ED;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Inter',sans-serif;background:#1C1730;color:var(--ink-900);min-height:100vh;padding:26px 16px 60px;-webkit-font-smoothing:antialiased}
+  h1.title{font-family:'Plus Jakarta Sans';font-weight:800;color:#fff;font-size:16px;text-align:center;margin-bottom:4px}
+  .sub{color:rgba(255,255,255,.45);font-size:12.5px;text-align:center;margin-bottom:20px}
+  .toggles{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;max-width:520px;margin:0 auto 24px}
+  .toggles button{font-family:'Inter';font-weight:600;font-size:12px;color:rgba(255,255,255,.7);background:rgba(255,255,255,.08);border:none;padding:8px 13px;border-radius:9999px;cursor:pointer;transition:.15s}
+  .toggles button.active{background:#fff;color:var(--ink-900)}
+
+  .frame{width:320px;margin:0 auto;background:var(--purple-50);border-radius:44px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.4);position:relative;height:672px}
+  .screen{position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden}
+
+  /* header */
+  .hd{background:#fff;border-bottom:1px solid var(--border);padding:44px 16px 12px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+  .hd .back{display:flex;align-items:center;gap:5px;font-size:15px;font-weight:500;color:var(--purple-500);min-width:56px}
+  .hd .ttl{flex:1;text-align:center;font-family:'Plus Jakarta Sans';font-weight:700;font-size:16px;letter-spacing:-.01em}
+  .hd .done{min-width:56px;text-align:right;font-size:15px;font-weight:600;color:var(--purple-500)}
+
+  .bod{flex:1;overflow-y:auto;padding-bottom:24px}
+
+  /* emoji + name row */
+  .enrow{background:#fff;margin-top:16px;padding:16px 20px;display:flex;align-items:center;gap:14px;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+  .enrow .emoji{position:relative;width:50px;height:50px;border-radius:16px;background:var(--purple-100);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0}
+  .enrow .emoji .pen{position:absolute;bottom:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--purple-500);border:2px solid #fff;display:flex;align-items:center;justify-content:center}
+  .enrow .lab{font-size:11px;font-weight:600;color:var(--ink-500);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px}
+  .enrow .nm{font-size:16px;font-weight:500}
+
+  /* section shells */
+  .sect{background:#fff;margin-top:8px;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+  .sect .shead{display:flex;align-items:center;justify-content:space-between;padding:12px 20px 8px}
+  .sect .slab{font-size:11px;font-weight:600;color:var(--ink-500);text-transform:uppercase;letter-spacing:.08em}
+  .sect .scount{font-size:12px;font-weight:600;color:var(--purple-500)}
+
+  /* friend / member rows (matches FriendChecklist) */
+  .frow{width:100%;display:flex;align-items:center;gap:13px;padding:10px 20px;border-top:1px solid var(--border);background:#fff;cursor:pointer;text-align:left;border-left:none;border-right:none;border-bottom:none;font-family:inherit}
+  .frow .av{width:36px;height:36px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Plus Jakarta Sans';font-weight:800;font-size:13px}
+  .frow .fn{flex:1;min-width:0;font-size:15px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .frow .chk{width:22px;height:22px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center}
+  .frow.on .chk{background:var(--purple-500);border-color:var(--purple-500)}
+  .frow .chk svg{display:none}
+  .frow.on .chk svg{display:block}
+  .frow.dim{opacity:.55}
+
+  .pinlab{font-size:10px;font-weight:700;color:var(--grey-300);text-transform:uppercase;letter-spacing:.08em;padding:10px 20px 4px;border-top:1px solid var(--border)}
+
+  /* search */
+  .srch{position:relative;padding:4px 16px 10px}
+  .srch svg{position:absolute;left:27px;top:14px;color:var(--ink-500)}
+  .srch input{width:100%;background:var(--purple-50);border:1.5px solid var(--border);border-radius:10px;padding:8px 12px 8px 32px;font-size:13px;outline:none;font-family:inherit}
+
+  /* buttons */
+  .bigbtn{margin:16px 20px 0;width:calc(100% - 40px);padding:14px;border-radius:16px;background:var(--purple-100);color:var(--purple-700);font-weight:600;font-size:15px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit}
+  .bigbtn.red{background:var(--red-tint);color:var(--red)}
+  .addbtn{margin:10px 20px 14px;width:calc(100% - 40px);padding:13px;border-radius:16px;background:var(--purple-500);color:#fff;font-weight:600;font-size:15px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit}
+  .addbtn.quiet{background:var(--purple-100);color:var(--purple-700)}
+
+  .emptyline{font-size:13.5px;color:var(--ink-500);padding:14px 20px 2px;line-height:1.5;border-top:1px solid var(--border)}
+
+  /* confirm sheet */
+  .overlay{position:absolute;inset:0;background:rgba(28,23,48,.5);opacity:0;pointer-events:none;transition:.2s;z-index:5}
+  .sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:28px 28px 0 0;padding:10px 20px 26px;transform:translateY(100%);transition:.28s cubic-bezier(.4,0,.2,1);z-index:6;box-shadow:0 -8px 40px rgba(28,23,48,.2)}
+  .grab{width:38px;height:4px;border-radius:9999px;background:var(--grey-300);margin:6px auto 16px;opacity:.6}
+  .sheet h2{font-family:'Plus Jakarta Sans';font-weight:800;font-size:19px;text-align:center;letter-spacing:-.01em}
+  .sheet .lead{text-align:center;font-size:13.5px;color:var(--ink-500);margin:6px 0 20px;line-height:1.45}
+  .sheet .rm{width:100%;background:var(--red-tint);color:var(--red);font-weight:700;font-size:15px;border:none;padding:14px;border-radius:16px;cursor:pointer;font-family:inherit}
+  .sheet .keep{width:100%;background:var(--purple-50);color:var(--ink-500);font-weight:600;font-size:15px;border:none;padding:14px;border-radius:16px;cursor:pointer;margin-top:8px;font-family:inherit}
+  .frame.confirming .overlay{opacity:1;pointer-events:auto}
+  .frame.confirming .sheet{transform:translateY(0)}
+
+  .label{text-align:center;color:rgba(255,255,255,.5);font-size:12px;font-weight:600;letter-spacing:.04em;margin-top:18px}
+  .caption{max-width:380px;margin:14px auto 0;text-align:center;font-size:12.5px;line-height:1.5;color:#9990BC}
+  .caption b{color:#C9C1E4;font-weight:600}
+  .stateview{display:none}
+  .stateview.active{display:block}
+</style>
+</head>
+<body>
+
+<h1 class="title">Mooves · Screen 9, group edit friction</h1>
+<p class="sub">Members only by default, the full friend list opens on request, removals always confirm</p>
+
+<div class="toggles">
+  <button class="active" onclick="show('collapsed',this)">1 · Edit (collapsed)</button>
+  <button onclick="show('expanded',this)">2 · Add friends (expanded)</button>
+  <button onclick="show('confirm',this)">3 · Remove confirm</button>
+  <button onclick="show('empty',this)">4 · Empty group</button>
+</div>
+
+<!-- ===== main interactive frame (states 1-3) ===== -->
+<div class="stateview active" id="v-main">
+  <div class="frame" id="fmain">
+    <div class="screen">
+      <div class="hd">
+        <span class="back"><svg width="9" height="15" viewBox="0 0 9 15" fill="none"><path d="M8 1L1.5 7.5L8 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Back</span>
+        <span class="ttl">College friends</span>
+        <span class="done">Done</span>
+      </div>
+      <div class="bod">
+        <div class="enrow">
+          <div class="emoji">🍺<span class="pen"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></span></div>
+          <div><div class="lab">Group name</div><div class="nm">College friends</div></div>
+        </div>
+
+        <div class="sect">
+          <div class="shead"><span class="slab">Members</span><span class="scount" id="mcount">3 members</span></div>
+          <div class="srch" id="srch" style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input placeholder="Search friends" readonly></div>
+          <div id="member-rows"></div>
+          <div id="expander" style="display:none">
+            <div class="pinlab">Everyone else</div>
+            <div id="other-rows"></div>
+          </div>
+          <button class="addbtn" id="addbtn" onclick="toggleExpand()">
+            <span id="addbtn-txt">Edit group</span>
+          </button>
+        </div>
+
+        <button class="bigbtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>Invite link</button>
+        <button class="bigbtn red">Delete group</button>
+      </div>
+
+      <div class="overlay" onclick="closeConfirm()"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <h2 id="cf-title">Remove Jordan from College friends?</h2>
+        <p class="lead">They lose the group and its greens.</p>
+        <button class="rm" onclick="confirmRemove()">Remove</button>
+        <button class="keep" onclick="closeConfirm()">Keep in group</button>
+      </div>
+    </div>
+  </div>
+  <div class="caption" id="cap-main"><b>Collapsed by default:</b> only the 3 current members show, checked. The full friend list is gone until you ask for it. Tap a member to see the removal confirm, tap <b>Edit group</b> to expand. Invite link and Delete are unchanged.</div>
+  <div class="label" id="lbl-main">Screen 9 — group edit, members collapsed</div>
+</div>
+
+<!-- ===== empty group frame ===== -->
+<div class="stateview" id="v-empty">
+  <div class="frame">
+    <div class="screen">
+      <div class="hd">
+        <span class="back"><svg width="9" height="15" viewBox="0 0 9 15" fill="none"><path d="M8 1L1.5 7.5L8 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Back</span>
+        <span class="ttl">Run club</span>
+        <span class="done">Done</span>
+      </div>
+      <div class="bod">
+        <div class="enrow">
+          <div class="emoji">🏃<span class="pen"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></span></div>
+          <div><div class="lab">Group name</div><div class="nm">Run club</div></div>
+        </div>
+        <div class="sect">
+          <div class="shead"><span class="slab">Members</span></div>
+          <p class="emptyline">No members yet, share the invite link to fill it up.</p>
+          <button class="addbtn" style="margin-top:12px">Edit group</button>
+        </div>
+        <button class="bigbtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>Invite link</button>
+        <button class="bigbtn red">Delete group</button>
+      </div>
+    </div>
+  </div>
+  <div class="caption"><b>Empty group:</b> no member rows, a nudge toward the invite link, and the same explicit Add friends path.</div>
+  <div class="label">Screen 9 — group edit, empty group</div>
+</div>
+
+<script>
+  var members = [
+    { id:'sam',    name:'Sam Ortiz',   color:'#7C5CDB', checked:true },
+    { id:'jordan', name:'Jordan Lee',  color:'#167A43', checked:true },
+    { id:'maya',   name:'Maya Patel',  color:'#B85C8A', checked:true },
+  ];
+  var others = [
+    { id:'alex',  name:'Alex Kim',      color:'#5C7CDB', checked:false },
+    { id:'chris', name:'Chris Nolan',   color:'#8A5CB8', checked:false },
+    { id:'dana',  name:'Dana Wu',       color:'#5CB88A', checked:false },
+    { id:'riley', name:'Riley Brooks',  color:'#B8865C', checked:false },
+  ];
+  var expanded = false;
+  var pendingRemove = null;
+
+  function initials(n){return n.split(' ').map(function(w){return w[0]}).join('').slice(0,2)}
+  function rowHTML(p, isMember){
+    return '<button class="frow '+(p.checked?'on':'')+(isMember&&!p.checked?' dim':'')+'" onclick="tapRow(\''+p.id+'\','+isMember+')">'
+      +'<span class="av" style="background:'+p.color+'">'+initials(p.name)+'</span>'
+      +'<span class="fn">'+p.name+'</span>'
+      +'<span class="chk"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>'
+      +'</button>';
+  }
+  function render(){
+    document.getElementById('member-rows').innerHTML = members.map(function(p){return rowHTML(p,true)}).join('');
+    document.getElementById('other-rows').innerHTML = others.map(function(p){return rowHTML(p,false)}).join('');
+    var n = members.filter(function(p){return p.checked}).length + others.filter(function(p){return p.checked}).length;
+    document.getElementById('mcount').textContent = n + (n===1?' member':' members');
+    document.getElementById('expander').style.display = expanded ? 'block' : 'none';
+    document.getElementById('srch').style.display = expanded ? 'block' : 'none';
+    document.getElementById('addbtn-txt').textContent = expanded ? 'Done editing' : 'Edit group';
+    document.getElementById('addbtn').className = 'addbtn' + (expanded ? ' quiet' : '');
+  }
+  function find(id){return members.concat(others).find(function(p){return p.id===id})}
+  function tapRow(id, isMember){
+    var p = find(id);
+    if (p.checked && isMember){ // removal intent → confirm
+      pendingRemove = p;
+      document.getElementById('cf-title').textContent = 'Remove '+p.name.split(' ')[0]+' from College friends?';
+      document.getElementById('fmain').classList.add('confirming');
+    } else {
+      p.checked = !p.checked; // add, or re-check undo — no confirm
+      render();
+    }
+  }
+  function confirmRemove(){
+    if (pendingRemove) pendingRemove.checked = false;
+    pendingRemove = null;
+    document.getElementById('fmain').classList.remove('confirming');
+    render();
+  }
+  function closeConfirm(){
+    pendingRemove = null;
+    document.getElementById('fmain').classList.remove('confirming');
+  }
+  function toggleExpand(){ expanded = !expanded; render(); }
+
+  function show(state, btn){
+    document.querySelectorAll('.toggles button').forEach(function(b){b.classList.toggle('active',b===btn)});
+    var main = state !== 'empty';
+    document.getElementById('v-main').classList.toggle('active', main);
+    document.getElementById('v-empty').classList.toggle('active', !main);
+    var cap = document.getElementById('cap-main'), lbl = document.getElementById('lbl-main');
+    closeConfirm();
+    if (state === 'collapsed'){ expanded = false; render();
+      cap.innerHTML = '<b>Collapsed by default:</b> only the 3 current members show, checked. The full friend list is gone until you ask for it. Tap a member to see the removal confirm, tap <b>Edit group</b> to expand. Invite link and Delete are unchanged.';
+      lbl.textContent = 'Screen 9 — group edit, members collapsed';
+    }
+    if (state === 'expanded'){ expanded = true; render();
+      cap.innerHTML = '<b>Expanded:</b> search sits on top, then members pre-checked, then the divider and everyone else unchecked. Checking someone new needs no confirm, unchecking a member always does. Nothing saves until Done.';
+      lbl.textContent = 'Screen 9 — group edit, expanded';
+    }
+    if (state === 'confirm'){ expanded = false; render();
+      pendingRemove = find('jordan');
+      document.getElementById('cf-title').textContent = 'Remove Jordan from College friends?';
+      document.getElementById('fmain').classList.add('confirming');
+      cap.innerHTML = '<b>Removal always confirms:</b> "Remove" unchecks Jordan but keeps the row until Done saves, so a re-tap re-checks them as an undo. "Keep in group" or tapping away changes nothing.';
+      lbl.textContent = 'Screen 9 — group edit, remove confirm';
+    }
+  }
+  render();
+</script>
+</body>
+</html>

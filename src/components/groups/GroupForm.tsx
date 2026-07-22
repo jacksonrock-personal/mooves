@@ -7,6 +7,7 @@
 import { useState } from 'react'
 import EmojiPicker from './EmojiPicker'
 import FriendChecklist from './FriendChecklist'
+import MemberEditor from './MemberEditor'
 
 interface Friend {
   id: string
@@ -120,21 +121,33 @@ export default function GroupForm({
           </div>
         </div>
 
-        {/* Friends section */}
+        {/* Friends section. Edit mode gets the frictioned MemberEditor (Screen 9
+            amendment): members only until "Edit group", removal always confirms.
+            Create mode keeps the open checklist — picking people is the point there. */}
         {hasFriends ? (
-          <div className="bg-card-white mt-2 border-t border-[#E8E4F5]">
-            <div className="flex items-center justify-between px-5 pt-3 pb-2">
-              <span className="font-sans text-[11px] font-semibold text-text-secondary uppercase tracking-[0.08em]">
-                Add friends (optional)
-              </span>
-              {selected.length > 0 && (
-                <span className="font-sans text-[12px] font-semibold text-mooves-purple">
-                  {selected.length} selected
+          !isCreate ? (
+            <MemberEditor
+              friends={friends}
+              initialMemberIds={initialMemberIds}
+              selected={selected}
+              onChange={setSelected}
+              groupName={name}
+            />
+          ) : (
+            <div className="bg-card-white mt-2 border-t border-[#E8E4F5]">
+              <div className="flex items-center justify-between px-5 pt-3 pb-2">
+                <span className="font-sans text-[11px] font-semibold text-text-secondary uppercase tracking-[0.08em]">
+                  Add friends (optional)
                 </span>
-              )}
+                {selected.length > 0 && (
+                  <span className="font-sans text-[12px] font-semibold text-mooves-purple">
+                    {selected.length} selected
+                  </span>
+                )}
+              </div>
+              <FriendChecklist friends={friends} selected={selected} onChange={setSelected} />
             </div>
-            <FriendChecklist friends={friends} selected={selected} onChange={setSelected} />
-          </div>
+          )
         ) : (
           <p className="font-sans text-[14px] text-text-secondary leading-relaxed px-6 py-7 text-center">
             No friends to add yet. Name your group, then share its invite link to fill it up.

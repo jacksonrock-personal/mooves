@@ -1514,6 +1514,38 @@ ORDER BY g.created_at ASC
 
 ---
 
+### Screen 9 amendment — Group edit member friction — *spec'd 2026-07-22 · SPEC ✅ · MOCKUP ✅ (`mooves-screen9-group-edit-friction.html`) · CODE ✅ 2026-07-22*
+
+**Build note:** NEW `MemberEditor.tsx` (pinned set = open-time membership; removed members stay listed at reduced opacity until save; search filters both lists; confirm via shared Sheet; events `group_member_remove_confirmed/_kept`). `GroupForm` edit mode swaps in MemberEditor; create mode + props + batch-save contract unchanged, no API/page changes.
+
+**Mockup notes (locked at approval — supersede the spec's "Add friends" label):** the expand control is **"Edit group"** (purple primary; flips to a quiet **"Done editing"** while expanded). Expanded order: **search on top → members pre-checked → "Everyone else" divider → other friends unchecked** (search never sits mid-list). Removal confirm copy: "Remove {first name} from {group}?" · lead "They lose the group and its greens." (no friendship-stays line) · red-tint **Remove** / neutral **Keep in group**. Removed member stays listed unchecked until Done (re-tap = undo, no confirm); member-count chip live-previews pending changes. Empty group: "No members yet, share the invite link to fill it up." + Edit group.
+
+**Purpose:** stop accidental member adds/removals on the group EDIT screen: the full friend list is no longer permanently exposed, and removing a member always asks first. **Create mode untouched** (picking people is the point there; the risk is about established groups).
+
+**States:**
+- **Edit, collapsed (default):** below emoji + name, a **"Members"** section listing *only current members*, each checked; below it an **"Add friends"** button. Full friend list not rendered. Invite link + Delete group unchanged.
+- **Edit, expanded (after Add friends):** searchable friend checklist — **current members pinned on top, pre-checked**, all other friends below unchecked, search above. Tapping the control again collapses.
+- **Removal confirm sheet** on tapping any *checked member* row (collapsed or expanded): "Remove {name} from {group name}?" · **Remove** / **Keep**. On Remove the row unchecks but stays in place until save; re-tapping re-checks (undo, no confirm on re-add).
+- **Empty group:** "No members yet, share the invite link" line + Add friends button. **No friends at all:** existing copy unchanged.
+
+**Flows:** add = open edit → Add friends → check freely (no confirm) → Done batch-saves. Remove = tap checked member → confirm → uncheck → Done. Keep/overlay dismiss = no-op.
+
+**Data:** no API/schema changes — membership still commits as one batch on Done via the existing group update write. Client-side presentation/friction only.
+
+**Decisions:** adds confirm-free (sheet reserved for the destructive direction) · batch save retained · removal copy mirrors the leave-a-moove confirm (#6).
+
+**Out of scope:** create mode, the member's read-only view + Leave flow, roles/permissions, API changes.
+
+**Acceptance:**
+- [ ] Edit renders only current members by default; full list requires tapping Add friends.
+- [ ] Expanded list pins members on top pre-checked, everyone else below.
+- [ ] Unchecking any member requires the confirm sheet; Keep/dismiss is a no-op.
+- [ ] A removed member stays visible unchecked until save; re-check needs no confirm.
+- [ ] Adds need no confirm. Done still saves one batch.
+- [ ] Create mode completely unchanged.
+
+---
+
 ## Screen 10: Settings / Profile Edit 🔄
 
 ### Purpose
