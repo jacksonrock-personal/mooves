@@ -460,6 +460,30 @@ export type Database = {
           },
         ]
       }
+      zip_codes: {
+        Row: {
+          zip: string
+          city: string | null
+          state: string | null
+          lat: number
+          lng: number
+        }
+        Insert: {
+          zip: string
+          city?: string | null
+          state?: string | null
+          lat: number
+          lng: number
+        }
+        Update: {
+          zip?: string
+          city?: string | null
+          state?: string | null
+          lat?: number
+          lng?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -469,6 +493,11 @@ export type Database = {
       increment_move_impressions: { Args: { move_ids: string[] }; Returns: undefined }
       record_move_click: { Args: { p_move_id: string }; Returns: { link_url: string | null }[] }
       increment_brought_over: { Args: { p_move_id: string }; Returns: undefined }
+      nearby_zips: { Args: { p_zip: string; p_radius_miles?: number }; Returns: { zip: string }[] }
+      nearest_zip: {
+        Args: { p_lat: number; p_lng: number }
+        Returns: { zip: string; city: string | null; state: string | null }[]
+      }
     }
     Enums: {
       [_ in never]: never

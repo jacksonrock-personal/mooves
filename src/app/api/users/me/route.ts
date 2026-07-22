@@ -21,7 +21,7 @@ export async function GET(req: Request) {
   if (error || !data) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   // Derive the display label from the stored zip; nothing else is persisted.
-  const area = data.area_zip ? lookupZip(data.area_zip) : null
+  const area = data.area_zip ? await lookupZip(supabase, data.area_zip) : null
 
   // Resolve the viewer's own anchored sponsored move (13.8), for their move card.
   let anchoredMove = null
