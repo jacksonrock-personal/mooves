@@ -6,8 +6,14 @@ import { NextResponse } from 'next/server'
 import { firebaseAdmin } from '@/lib/firebase/admin'
 import { createServiceClient } from '@/lib/supabase/server'
 import { signSponsorToken, SPONSOR_COOKIE, SPONSOR_SESSION_SECONDS } from '@/lib/auth/sponsor-session'
+import { checkRateLimit, clientIp, tooManyRequests } from '@/lib/ratelimit'
 
 export async function POST(req: Request) {
+  // Throttle OTP verification per IP (mirrors the consumer auth route).
+  if (!(await checkRateLimit(`sponsor-auth-verify:${clientIp(req)}`, 5, 60))) {
+    return tooManyRequests('Too many login attempts. Please wait a minute and try again.')
+  }
+
   const { idToken, businessName, email } = (await req.json()) as { idToken?: string; businessName?: string; email?: string }
   if (!idToken) return NextResponse.json({ error: 'idToken required' }, { status: 400 })
 

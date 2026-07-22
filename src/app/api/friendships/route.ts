@@ -5,11 +5,17 @@
 
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
+import { checkRateLimit, tooManyRequests } from '@/lib/ratelimit'
 
 export async function POST(req: Request) {
   const userId = req.headers.get('x-user-id')
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  // Throttle per user — blocks referral-code guessing / friend-spam.
+  if (!(await checkRateLimit(`friendships:${userId}`, 10, 60))) {
+    return tooManyRequests()
   }
 
   const { referral_code } = await req.json() as { referral_code?: string }

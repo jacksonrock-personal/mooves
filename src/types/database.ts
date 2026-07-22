@@ -498,6 +498,10 @@ export type Database = {
         Args: { p_lat: number; p_lng: number }
         Returns: { zip: string; city: string | null; state: string | null }[]
       }
+      rate_limit_hit: {
+        Args: { p_key: string; p_limit: number; p_window_seconds: number }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
