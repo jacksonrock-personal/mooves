@@ -10,10 +10,16 @@ import { firebaseAdmin } from '@/lib/firebase/admin'
 import { createServiceClient } from '@/lib/supabase/server'
 import { signSessionToken } from '@/lib/auth/session'
 import { generateReferralCode } from '@/lib/referral'
+import { checkRateLimit, clientIp, tooManyRequests } from '@/lib/ratelimit'
 
 const SESSION_DURATION_SECONDS = 60 * 60 * 24 * 30  // 30 days
 
 export async function POST(req: Request) {
+  // Throttle OTP verification per IP — blunts brute-force / token-spray attempts.
+  if (!(await checkRateLimit(`auth-verify:${clientIp(req)}`, 5, 60))) {
+    return tooManyRequests('Too many login attempts. Please wait a minute and try again.')
+  }
+
   const { idToken } = await req.json() as { idToken?: string }
 
   if (!idToken) {

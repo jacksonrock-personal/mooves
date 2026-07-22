@@ -7,10 +7,16 @@
 import { NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { isValidTipAmount } from '@/lib/tips'
+import { checkRateLimit, tooManyRequests } from '@/lib/ratelimit'
 
 export async function POST(req: Request) {
   const userId = req.headers.get('x-user-id')
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  // Throttle PaymentIntent creation per user — stops runaway Stripe intent spam.
+  if (!(await checkRateLimit(`tips-intent:${userId}`, 5, 60))) {
+    return tooManyRequests()
+  }
 
   let body: { amount_cents?: unknown }
   try {
