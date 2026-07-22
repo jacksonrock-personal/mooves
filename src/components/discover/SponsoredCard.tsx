@@ -18,16 +18,18 @@ export interface SponsoredMove {
   timeText: string | null
   linkUrl: string | null
   imageUrl: string | null
+  startAt: string | null
   interestedByMe: boolean
 }
 
 interface SponsoredCardProps {
   move: SponsoredMove
+  happeningNow?: boolean
   onInterestedChange: (id: string, interested: boolean) => void
   onGoWithFriends: (id: string) => void
 }
 
-export default function SponsoredCard({ move, onInterestedChange, onGoWithFriends }: SponsoredCardProps) {
+export default function SponsoredCard({ move, happeningNow, onInterestedChange, onGoWithFriends }: SponsoredCardProps) {
   const [busy, setBusy] = useState(false)
 
   async function markInterested() {
@@ -63,6 +65,14 @@ export default function SponsoredCard({ move, onInterestedChange, onGoWithFriend
         <img src={move.imageUrl} alt="" className="w-full h-24 object-cover" />
       )}
       <div className="p-4">
+        {/* 13.2a — started <3h ago and still inside the expiry grace. Green is the
+            availability metaphor; this is Discover's one deliberate borrow of it. */}
+        {happeningNow && (
+          <div className="inline-flex items-center gap-1.5 bg-green-100 text-green-700 rounded-full px-2.5 py-1 text-[11px] font-bold mb-2">
+            <span className="w-[7px] h-[7px] rounded-full bg-green-500 animate-pulse" />
+            Happening now
+          </div>
+        )}
         {/* #4 — sponsored eyebrow and category pill each get their own line, so a
             long brand + long category no longer collide on one justify-between row. */}
         <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-grey-300 truncate mb-2">

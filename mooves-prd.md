@@ -3391,8 +3391,8 @@ Covers the Settings "Your area" control (no-area · method sheet · locating · 
 
 **Build scope (2026-07-20):** Jackson chose to build ALL of Phase 13, sequenced across **4 surfaces** with per-surface mockup/build gates: (1) consumer Discover + 13.8 flywheel [mobile], (2) internal admin/moderation console [desktop], (3) self-serve sponsor portal [desktop], (4) **billing via Stripe** (decided 2026-07-20, supersedes the MoR/Paddle/Lemon-Squeezy plan — see Surface 4 Spec; **spec ✅ + mockup ✅ `mooves-phase13-billing.html` + ✅ CODED 2026-07-20**). **PHASE 13 COMPLETE — all 4 surfaces coded.** **Sponsor auth = phone OTP** (Jackson's call 2026-07-20 — no password storage): reuses the same Firebase Phone Auth as consumers, but sponsors are a **separate `sponsors` entity with their own session cookie (`mooves-sponsor-token`)**, so a business identity is distinct from any personal consumer account on the same number.
 
-### Surface 1 Mockup Status — ✅ APPROVED 2026-07-20 (`mooves-phase13-discover.html`)
-Consumer Discover (13.1 opt-in area+interests · 13.2 feed · 13.3 sponsored card + Interested) **+ 13.8 flywheel** (Go with friends → pre-anchored go-green sheet → anchored card on the friend feed). Design locked: **Discover = a 4th bottom-nav tab**; header location chip; subtle uppercase "Sponsored · brand" disclosure; **"I'm interested"** reveals details in-app then a link out; **"Go with friends"** reuses the Phase 9 go-green sheet pre-anchored (time defaults to the move, visibility + note retained); friend-feed anchored card is compact (name · title · time) with details on tap + normal "I'm in" join. Interest taxonomy locked: Running & fitness · Nightlife · Live music · Food & drink · Markets & pop-ups · Outdoors · Arts & culture · Pickup sports · Wellness · Community.
+### Surface 1 Mockup Status — ✅ APPROVED 2026-07-20 (`mooves-phase13-discover.html`) · **13.2a ordering/day-groups amendment SPEC ✅ + MOCKUP ✅ 2026-07-22 (`mooves-phase13-discover-daygroups.html`; build pending)**
+Consumer Discover (13.1 opt-in area+interests · 13.2 feed **+ 13.2a ordering/day groups** · 13.3 sponsored card + Interested) **+ 13.8 flywheel** (Go with friends → pre-anchored go-green sheet → anchored card on the friend feed). Design locked: **Discover = a 4th bottom-nav tab**; header location chip; subtle uppercase "Sponsored · brand" disclosure; **"I'm interested"** reveals details in-app then a link out; **"Go with friends"** reuses the Phase 9 go-green sheet pre-anchored (time defaults to the move, visibility + note retained); friend-feed anchored card is compact (name · title · time) with details on tap + normal "I'm in" join. Interest taxonomy locked: Running & fitness · Nightlife · Live music · Food & drink · Markets & pop-ups · Outdoors · Arts & culture · Pickup sports · Wellness · Community.
 
 ### Surface 1 Code Status — ✅ CODED 2026-07-20 (branch `feat/phase13-sponsored-moves`; `tsc` + `next build` clean)
 **Migration applied by Jackson:** `sponsored_moves` + `move_interested` tables (RLS enabled, no policies — all access via service client), `users.interests TEXT[]`, `users.status_move_id UUID`. **Dataset/area matching** reuses Phase 12 `resolveArea` (nearby-zip radius). **Interest slugs:** `running_fitness · nightlife · live_music · food_drink · markets_popups · outdoors · arts_culture · pickup_sports · wellness · community` (see `src/lib/interests.ts`). New: `discover/page.tsx` + `DiscoverScreen`, `SponsoredCard`, `InterestPicker`, `feed/AnchoredMoveCard`, `api/discover` (GET feed + records impressions), `api/discover/[id]` (GET anchor), `.../interested` (POST/DELETE), `.../click` (POST). Modified: `api/status` (statusMoveId + `brought_over_count`; cleared on grey), `api/feed` (resolves each friend's anchored move), `api/users/me` (interests + own anchored move), `GoGreenSheet` (anchor block + statusMoveId), `FeedScreen` (`?anchor=<id>` → pre-anchored sheet + renders anchors), `FriendCard`/`MyMoveCard` (anchor), `BottomNav` (Discover tab, 4 tabs), `SettingsScreen` (interests editor). **Aggregate-only counters** (impressions/clicks/interested/brought_over), no per-person exposure; move_interested is the interested source of truth. **Interpretation note:** coarse When chip can't encode a date, so the move's `time_text` is surfaced in the anchor + card and the user picks their own coarse chip. **Build-time verified only** — Discover setup→feed→Interested→Go-with-friends→anchored feed card + interests editing need Jackson's authed on-device test (seed `sponsored_moves` rows to populate). **Aggregate impressions are best-effort fire-and-forget** (move to atomic RPC / events table at scale). **Next: surface 2 (admin/moderation console).**
@@ -3457,6 +3457,41 @@ Billing UI on the sponsor-portal shell. States: Billing — no card (explains mo
 **Acceptance:**
 - [ ] Discover shows only approved sponsored moves matching area + interests.
 - [ ] Never shows friend/stranger greens. Empty + setup states handled. Impressions recorded (aggregate).
+
+### 13.2a — Discover ordering + day groups — *Amendment to 13.2, spec'd 2026-07-22 · SPEC ✅ · MOCKUP ✅ (`mooves-phase13-discover-daygroups.html`) · CODE ✅ 2026-07-22*
+
+**Build note:** server sort `start_at asc` NULLs-last + `created_at desc` tie-break in `api/discover` (response +`startAt`); grouping is pure client-side in `src/lib/discoverGroups.ts` (`groupMoves` + `isHappeningNow`, 17 acceptance checks pass incl. Sat/Sun weekend-vanishing and the Mon/Tue edge: pre-weekend weekdays land atop Later); chip renders in `SponsoredCard` via `happeningNow` prop.
+
+**Mockup notes (locked at approval):** three states — grouped feed (Wed-evening view, all five groups + Happening now chip), Saturday view (weekend header correctly absent), flat feed (≤2 moves, no headers). Group headers use the small muted uppercase eyebrow style; the Happening now chip sits at the top of the card above the Sponsored line — light green tint derived from Status Green with a pulsing dot.
+
+**Purpose:** order the Discover feed by when moves actually happen and break it into scannable day groups, so the top of the feed always answers "what can I do soonest?"
+
+**Entry:** unchanged — the Discover tab (13.2). This amendment changes only the ordering + layout of the populated state.
+
+**States:**
+- **Grouped feed (populated, >2 moves):** cards sorted by `start_at` ascending under group headers, in this fixed order:
+  1. **Today** — starts before viewer-local midnight tonight. Includes moves that started <3h ago (still live per the expiry rule); those sort first and carry a **"Happening now" chip**.
+  2. **Tomorrow** — viewer-local tomorrow.
+  3. **This weekend** — the upcoming **Fri–Sun**, minus any days already covered by Today/Tomorrow (on Thursday it holds Sat–Sun; on Saturday it's empty). Multi-day spans (e.g. a Fri–Sun fest) bucket by their `start_at` day.
+  4. **Later** — everything after the weekend (or after Tomorrow when no weekend days remain this week).
+  5. **Weekly & recurring** — moves with no `start_at` (evergreen). Ordered newest-created first.
+- **Flat feed (populated, ≤2 moves):** no headers — a plain chronological list (dated first, evergreen last).
+- **Empty / setup / loading:** unchanged from 13.2.
+- A header renders **only when its group has ≥1 move.** Headers are small muted eyebrow labels (existing section-label style), never card-like.
+
+**Data:** API response adds each move's `start_at`; server sort becomes `start_at` **ascending, NULLs last** (replaces `created_at desc`); tie-break newest-created first. Grouping is computed **client-side against the viewer's local clock** (area feed is local, matching the `time_text` convention). "Happening now" = `start_at ≤ now < start_at + 3h` (mirrors the server expiry window). **No new tables/columns/writes.**
+
+**Decisions:** weekend = Fri–Sun inclusive; "Happening now" chip is **green-accented** (the one place Discover borrows green = go; exact styling is the mockup's call); no per-day headers beyond the five groups (cards already show full date in `time_text`).
+
+**Out of scope:** no user-facing filter/sort controls; no change to expiry/impressions/Interested/flywheel; no pagination.
+
+**Acceptance:**
+- [ ] Feed sorts by `start_at` ascending; evergreen moves always last.
+- [ ] Groups render in fixed order Today / Tomorrow / This weekend / Later / Weekly & recurring; empty groups show no header.
+- [ ] Weekend bucket never duplicates Today/Tomorrow days and disappears late in the weekend.
+- [ ] Moves started <3h ago appear atop Today with a "Happening now" chip.
+- [ ] ≤2 total moves → flat list, no headers.
+- [ ] Grouping uses the viewer's local day boundaries.
 
 ### 13.3 — Sponsored move card + "Interested"
 **Behavior:** DS feed-card shell with a subtle **"Sponsored"** label (not a banner — guardrail #4). Tapping **"Interested"** reveals full details (description, link, lightweight time/place text) in-app **and** increments the sponsor's **aggregate** interested count — sponsor never sees who. A link/CTA opens the sponsor URL (aggregate click counted). *(SMS-back delivery = later A2P-gated enhancement, out of scope.)*
