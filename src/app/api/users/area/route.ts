@@ -16,6 +16,7 @@ export async function POST(req: Request) {
 
   const body = (await req.json()) as { lat?: number; lng?: number; zip?: string }
 
+  const supabase = createServiceClient()
   let area: CoarseArea | null = null
 
   if (typeof body.zip === 'string') {
@@ -23,20 +24,19 @@ export async function POST(req: Request) {
     if (!/^\d{5}$/.test(zip)) {
       return NextResponse.json({ error: 'Invalid zip' }, { status: 422 })
     }
-    area = lookupZip(zip)
+    area = await lookupZip(supabase, zip)
     if (!area) return NextResponse.json({ error: 'Unknown zip' }, { status: 422 })
   } else if (typeof body.lat === 'number' && typeof body.lng === 'number') {
     if (body.lat < -90 || body.lat > 90 || body.lng < -180 || body.lng > 180) {
       return NextResponse.json({ error: 'Invalid coordinates' }, { status: 400 })
     }
-    area = coarsenToZip(body.lat, body.lng)
+    area = await coarsenToZip(supabase, body.lat, body.lng)
     // body.lat / body.lng are intentionally never written or logged past here.
     if (!area) return NextResponse.json({ error: 'No area found' }, { status: 422 })
   } else {
     return NextResponse.json({ error: 'Provide lat/lng or zip' }, { status: 400 })
   }
 
-  const supabase = createServiceClient()
   const { error } = await supabase
     .from('users')
     .update({ area_zip: area.zip })

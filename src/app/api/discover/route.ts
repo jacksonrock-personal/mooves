@@ -31,7 +31,7 @@ export async function GET(req: Request) {
     })
   }
 
-  const match = resolveArea(areaZip)
+  const match = await resolveArea(supabase, areaZip)
   const zips = match ? match.nearbyZips : [areaZip]
 
   // Live = moderation-approved AND (Mooves-authored OR paid). Sponsor-authored
