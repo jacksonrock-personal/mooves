@@ -133,6 +133,7 @@ export type Database = {
           status_move_id: string | null
           status_note: string | null
           status_set_at: string | null
+          status_expires_at: string | null
           status_time: string | null
           visible_to: string[] | null
         }
@@ -153,6 +154,7 @@ export type Database = {
           status_move_id?: string | null
           status_note?: string | null
           status_set_at?: string | null
+          status_expires_at?: string | null
           status_time?: string | null
           visible_to?: string[] | null
         }
@@ -173,6 +175,7 @@ export type Database = {
           status_move_id?: string | null
           status_note?: string | null
           status_set_at?: string | null
+          status_expires_at?: string | null
           status_time?: string | null
           visible_to?: string[] | null
         }

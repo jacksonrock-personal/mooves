@@ -3250,11 +3250,40 @@ None.
 **Purpose:** nudge go-grey once a plan forms, without forcing it.
 **Entry:** immediately after returning from a blast.
 **Behavior:** prompt **"Plan's set — go grey, or keep green for more?"** Go-grey ends the move (clears joins + chip); keep-green leaves it open (more joins, re-blast).
-**Out of scope:** auto-expiry/timeout of green, reminders.
+**Out of scope:** ~~auto-expiry/timeout of green~~ *(superseded by 9.5, 2026-07-22)*, reminders.
 **Acceptance:**
 - [ ] Post-blast go-grey / keep-green prompt appears.
 - [ ] Go-grey ends the move and clears joins + chip.
-- [ ] Keep-green leaves the move open. Prompt is non-blocking; never auto-changes status.
+- [ ] Keep-green leaves the move open. Prompt is non-blocking; never auto-changes status *(9.5 adds time-based auto-grey; this prompt itself still never changes status)*.
+
+### 9.5 — Green auto-expiry + returning-mover prompt — *Amendment, spec'd 2026-07-22 · SPEC ✅ · MOCKUP ✅ (`mooves-phase9-green-expiry.html`) · CODE ✅ 2026-07-22*
+
+**Build note:** migration 0006 (`users.status_expires_at` + get_feed expiry filter) applied to prod. Expiry computed client-side in `src/lib/greenExpiry.ts` (16 acceptance checks pass incl. tonight-at-1:30am and weekend-on-Sunday edges), sent by GoGreenSheet, server-bounded in `api/status` (fallback +24h, cap 8 days). FeedScreen reconciles expired greens silently on open and shows the once-per-green prompt (marked on show, single localStorage key). Events: `green_expired_reconciled`, `returning_prompt_shown/_grey/_kept`.
+
+**Mockup notes (locked at approval):** three states — mid-session green w/ single joiner (no prompt, no blast button at 1 join), fresh-open prompt sheet, morning-after silent grey. Prompt sheet = 9.4 action-sheet pattern: cow, heading with real joiner name(s) ("Sam is in"), lead "Sounds like something came together. Go grey to wrap up this move, or keep it open for more.", primary purple **Go grey**, ghost **Keep me green**. Single joiner explicitly triggers (Jackson confirmed at review); Part A has zero UI beyond the grey state itself.
+
+> **Reverses 9.4's "never auto-changes status / no auto-expiry" scope line.** Rationale: with no expiry, a forgotten "tonight" green still reads as available days later — a false signal is worse than no signal.
+
+**Purpose:** greens end themselves at a sensible time, and a mover who comes back after friends joined gets nudged to close the loop.
+
+**Part A — auto-expiry (auto-grey).** Every green gets an expiry derived from the coarse time chip at go-green (viewer-local clock): **now** → +4h · **tonight** → 3:00 AM that night · **this weekend** → 3:00 AM Monday · **no chip** → +24h. Edge: "tonight" picked between midnight–3 AM expires 3 AM the same night. **Lazy expiry, no cron:** past-expiry greens stop rendering in friends' feeds; the mover's next app open reconciles to a real grey (joins/chip/note/anchor clear, identical to manual go-grey). **Silent** — no toast (anti-nag decision); status control just shows grey. Expiry never extends; "keep green" answers don't move the deadline.
+
+**Part B — returning-mover go-grey prompt.** Trigger on a fresh app open when ALL hold: green live (not expired) · **1+ joiner** · green set **>1h ago**. Never fires mid-session on a live join, never for a fresh green. Same action-sheet pattern as 9.4: **Go grey** (ends the move, clears joins + chip) / **Keep green** (dismisses only). **Once per green session** — either answer suppresses until the next green. Copy at mockup stage.
+
+**States:** friends' feed → expired greens simply absent · mover w/ expired green → status renders grey on open · mover w/ live green + 1h + joiners, unprompted → Part B sheet over the feed · all else unchanged.
+
+**Data:** new expiry timestamp on the user's status, computed client-side at go-green (viewer-local, same pattern as 13.2a) and sanity-bounded server-side (≤ ~8 days); NULL = legacy/non-expiring. Feed + realtime visibility additionally require unexpired. Reconcile-on-open uses the existing grey write path. Prompt dismissal = client-side memory keyed to the green session, no new tables. Ambient signals (`last_green_at`, `last_active_at`) untouched.
+
+**Out of scope:** reminders/push about expiry, countdown UI, editing/extending expiry, custom durations, changes to 9.4's prompt or the 2+ blast gate, auto-grey mid-session while the user is actively in the app.
+
+**Acceptance:**
+- [ ] Every new green stores an expiry per the chip table, computed on the viewer's local clock.
+- [ ] Expired greens are invisible to friends (feed + realtime) with no cron involved.
+- [ ] Mover's next app open reconciles an expired green to a true grey, clearing joins/chip/note/anchor, silently.
+- [ ] Prompt fires on fresh open only when: green live + 1h old + 1+ joiner + not yet prompted this green.
+- [ ] Go grey ends the move; Keep green only dismisses; neither moves the expiry deadline.
+- [ ] Prompt appears at most once per green session; never fires mid-session on a live join.
+- [ ] Legacy greens (no expiry stored) keep working, never auto-expire.
 
 ### Open questions
 - ~~Exact prefilled body wording (finalize at mockup).~~ **RESOLVED at mockup: no prefilled body — see amendment A4.**

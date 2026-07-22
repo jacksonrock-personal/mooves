@@ -9,6 +9,7 @@ import Sheet from '@/components/ui/Sheet'
 import { useKeyboardInset } from '@/lib/useKeyboardInset'
 import VisibilityChips from './VisibilityChips'
 import TimeChips, { type StatusTime } from './TimeChips'
+import { computeExpiresAt } from '@/lib/greenExpiry'
 import { posthog } from '@/lib/posthog'
 
 interface Group {
@@ -67,6 +68,8 @@ export default function GoGreenSheet({ open, onClose, groups, anchoredMove, onSu
           statusTime: time,
           visibleTo,
           statusMoveId: anchoredMove?.id ?? null,
+          // 9.5 Part A — expiry computed here on the viewer's local clock
+          statusExpiresAt: computeExpiresAt(time).toISOString(),
         }),
       })
       if (!res.ok) throw new Error('update failed')
