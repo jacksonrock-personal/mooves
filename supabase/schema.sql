@@ -1,177 +1,83 @@
 -- ─────────────────────────────────────────────────────────────────────────────
--- Mooves — complete database schema
--- Run this in Supabase: SQL Editor → New query → paste → Run
+-- Mooves — database schema snapshot (CURRENT STATE)
 --
--- Auth note: we use Firebase Phone Auth (not Supabase Auth).
--- users.id is a plain UUID we generate server-side — no FK to auth.users.
--- RLS still works: our server mints a Supabase-compatible JWT with the user's
--- UUID as `sub`, so auth.uid() resolves correctly in all policies.
+-- RECONSTRUCTED 2026-07-22 from the generated types + app behavior + the
+-- migration history — not a literal pg_dump. Inferred details are flagged in
+-- supabase/migrations/0000_baseline.sql. To reproduce this database from
+-- scratch, replay supabase/migrations/0000 → 0005 in order. If you ever run
+-- `supabase db dump --schema public -f supabase/schema.sql`, prefer that output.
+--
+-- Auth note: Firebase Phone Auth is the identity layer (not Supabase Auth).
+-- The server mints a Supabase-compatible JWT with the user's UUID as `sub`,
+-- so auth.uid() resolves in all RLS policies.
 -- ─────────────────────────────────────────────────────────────────────────────
 
+-- Extensions (migration 0003): cube + earthdistance in the `extensions` schema,
+-- powering zip radius / nearest-centroid lookups.
 
--- ══════════════════════════════════════════════════════════════════════════════
--- HELPER FUNCTION: referral code generator
--- ══════════════════════════════════════════════════════════════════════════════
+-- ══ TABLES ═══════════════════════════════════════════════════════════════════
+-- Full DDL with defaults/constraints lives in migrations/0000_baseline.sql
+-- (tables below), 0003 (zip_codes), 0004 (rate_limits). Column summary:
 
-CREATE OR REPLACE FUNCTION generate_referral_code()
-RETURNS TEXT AS $$
-DECLARE
-  chars TEXT := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; -- no ambiguous chars (0,O,1,I)
-  code  TEXT := '';
-  i     INT;
-BEGIN
-  FOR i IN 1..8 LOOP
-    code := code || substr(chars, floor(random() * length(chars) + 1)::int, 1);
-  END LOOP;
-  RETURN code;
-END;
-$$ LANGUAGE plpgsql;
+-- users                    — id PK, phone UNIQUE, display_name, avatar_url,
+--                            referral_code UNIQUE, is_available, status_note,
+--                            status_time, status_move_id → sponsored_moves,
+--                            visible_to UUID[] (NULL = all friends), status_set_at,
+--                            onboarding_complete, is_admin, area_zip, interests[],
+--                            last_active_at, last_green_at, created_at
+-- friendships              — (user_id, friend_id) PK, mutual rows both directions
+-- groups                   — id PK, owner_id → users, name, emoji, invite_code UNIQUE,
+--                            last_notified_at (push rate-limit floor), created_at
+-- group_members            — (group_id, user_id) PK
+-- sponsors                 — id PK, phone UNIQUE, business_name, email,
+--                            stripe_customer_id, default_payment_method_id
+-- sponsored_moves          — id PK, sponsor_id (no FK; NULL = Mooves-authored),
+--                            title/description/category/brand, area_zip, radius_miles,
+--                            link_url/image_url/time_text/start_at/location_text,
+--                            status (pending|approved|rejected), reject_reason,
+--                            paid_at, price_cents, stripe_payment_intent_id,
+--                            impressions/clicks/interested_count/brought_over_count
+-- move_interested          — (move_id, user_id) PK; source of truth for interested_count
+-- move_joins               — (mover_id, joiner_id) PK; Phase 9 presence
+-- push_subscriptions       — id PK, user_id → users, fcm_token UNIQUE, platform,
+--                            last_seen_at
+-- group_notification_mutes — (user_id, group_id) PK
+-- tips                     — id PK, user_id → users (SET NULL), amount_cents,
+--                            stripe_payment_intent_id UNIQUE (webhook idempotency)
+-- zip_codes                — zip PK, city, state, lat, lng; GiST earth index (0003)
+-- rate_limits              — (key, bucket) PK, count, expires_at (0004)
 
+-- ══ ROW LEVEL SECURITY (current) ═════════════════════════════════════════════
+-- RLS is ENABLED on every table.
+--
+-- Client-reachable policies (the app's anon-key/JWT surface):
+--   users:         users_select_own · users_update_own · users_select_friends
+--   friendships:   friendships_select_own
+--   groups:        groups_owner_all
+--   group_members: group_members_owner_all · group_members_select_self
+--   move_joins:    move_joins_select_visible (feed realtime; viewer is joiner,
+--                  mover, or a friend of the mover) — migration 0001
+--
+-- Default-deny (RLS on, NO policies → service-role only), migration 0001 + later:
+--   sponsors · sponsored_moves · tips · push_subscriptions · move_interested ·
+--   group_notification_mutes · zip_codes (0003) · rate_limits (0004)
+--
+-- Storage: Avatars bucket is public-read; writes scoped to the owner's
+-- `${uid}/…` folder — policies in migration 0001 (storage schema).
 
--- ══════════════════════════════════════════════════════════════════════════════
--- USERS
--- id is a UUID we generate server-side in /api/auth/verify.
--- No FK to auth.users — Firebase Auth is the identity layer, not Supabase Auth.
--- ══════════════════════════════════════════════════════════════════════════════
+-- ══ FUNCTIONS & TRIGGERS (current) ═══════════════════════════════════════════
+-- generate_referral_code()                          — 0000 · 8-char invite code
+-- increment_move_impressions(move_ids uuid[])       — 0002a · atomic batch counter
+-- record_move_click(p_move_id uuid) → link_url      — 0002a · atomic click + link
+-- increment_brought_over(p_move_id uuid)            — 0002a · atomic flywheel counter
+-- sync_interested_count() + trg_interested_count    — 0002b · trigger keeps
+--                                                     sponsored_moves.interested_count
+--                                                     equal to move_interested rows
+-- nearby_zips(p_zip, p_radius_miles) → zips         — 0003 · radius match (earth index)
+-- nearest_zip(p_lat, p_lng) → zip/city/state        — 0003 · reverse-geocode to centroid
+-- rate_limit_hit(p_key, p_limit, p_window_seconds)  — 0004 · fixed-window rate limiter
+-- get_feed(viewer uuid) → jsonb                     — 0005 · the entire /api/feed
+--                                                     payload in one query
 
-CREATE TABLE IF NOT EXISTS public.users (
-  id                   UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  phone                TEXT        UNIQUE NOT NULL,
-  display_name         TEXT        CHECK (char_length(display_name) <= 30),
-  avatar_url           TEXT,
-  referral_code        VARCHAR(8)  UNIQUE NOT NULL DEFAULT generate_referral_code(),
-  is_available         BOOLEAN     NOT NULL DEFAULT FALSE,
-  status_note          TEXT        CHECK (char_length(status_note) <= 60),
-  visible_to           UUID[]      DEFAULT NULL,  -- NULL = visible to all friends
-  status_set_at        TIMESTAMPTZ,
-  onboarding_complete  BOOLEAN     NOT NULL DEFAULT FALSE,
-  created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
--- Index for referral code lookups (invite landing page)
-CREATE INDEX IF NOT EXISTS idx_users_referral_code ON public.users(referral_code);
--- Index for phone lookups (SMS feed check + /api/auth/verify)
-CREATE INDEX IF NOT EXISTS idx_users_phone ON public.users(phone);
--- Index for feed queries (find green friends fast)
-CREATE INDEX IF NOT EXISTS idx_users_is_available ON public.users(is_available) WHERE is_available = TRUE;
-
-
--- ══════════════════════════════════════════════════════════════════════════════
--- FRIENDSHIPS
--- Mutual model: both A→B and B→A rows exist for every friendship.
--- ══════════════════════════════════════════════════════════════════════════════
-
-CREATE TABLE IF NOT EXISTS public.friendships (
-  user_id    UUID        NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-  friend_id  UUID        NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  PRIMARY KEY (user_id, friend_id),
-  CHECK (user_id <> friend_id)  -- no self-friending
-);
-
-CREATE INDEX IF NOT EXISTS idx_friendships_user_id ON public.friendships(user_id);
-
-
--- ══════════════════════════════════════════════════════════════════════════════
--- GROUPS
--- ══════════════════════════════════════════════════════════════════════════════
-
-CREATE TABLE IF NOT EXISTS public.groups (
-  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  owner_id   UUID        NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-  name       TEXT        NOT NULL CHECK (char_length(name) <= 40),
-  emoji      TEXT        NOT NULL DEFAULT '👥',
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE INDEX IF NOT EXISTS idx_groups_owner_id ON public.groups(owner_id);
-
-
--- ══════════════════════════════════════════════════════════════════════════════
--- GROUP MEMBERS
--- ══════════════════════════════════════════════════════════════════════════════
-
-CREATE TABLE IF NOT EXISTS public.group_members (
-  group_id UUID NOT NULL REFERENCES public.groups(id) ON DELETE CASCADE,
-  user_id  UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-  PRIMARY KEY (group_id, user_id)
-);
-
-CREATE INDEX IF NOT EXISTS idx_group_members_group_id ON public.group_members(group_id);
-CREATE INDEX IF NOT EXISTS idx_group_members_user_id  ON public.group_members(user_id);
-
-
--- ══════════════════════════════════════════════════════════════════════════════
--- ROW LEVEL SECURITY
--- auth.uid() reads the `sub` claim from the JWT we mint in /api/auth/verify.
--- That JWT is signed with SUPABASE_JWT_SECRET so Supabase trusts it.
--- ══════════════════════════════════════════════════════════════════════════════
-
-ALTER TABLE public.users         ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.friendships   ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.groups        ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.group_members ENABLE ROW LEVEL SECURITY;
-
-
--- ─── USERS policies ──────────────────────────────────────────────────────────
-
--- Users can read and update their own row
-CREATE POLICY "users_select_own" ON public.users
-  FOR SELECT USING (auth.uid() = id);
-
-CREATE POLICY "users_update_own" ON public.users
-  FOR UPDATE
-  USING (auth.uid() = id)
-  WITH CHECK (auth.uid() = id);
-
--- Users can read their friends' rows (feed + people tab)
-CREATE POLICY "users_select_friends" ON public.users
-  FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.friendships
-      WHERE user_id = auth.uid() AND friend_id = users.id
-    )
-  );
-
--- Insert and delete handled server-side via service role only.
-
-
--- ─── FRIENDSHIPS policies ─────────────────────────────────────────────────────
-
-CREATE POLICY "friendships_select_own" ON public.friendships
-  FOR SELECT
-  USING (user_id = auth.uid() OR friend_id = auth.uid());
-
--- Insert/delete via service role in API routes only.
-
-
--- ─── GROUPS policies ──────────────────────────────────────────────────────────
-
-CREATE POLICY "groups_owner_all" ON public.groups
-  FOR ALL
-  USING (owner_id = auth.uid())
-  WITH CHECK (owner_id = auth.uid());
-
-
--- ─── GROUP MEMBERS policies ───────────────────────────────────────────────────
-
-CREATE POLICY "group_members_owner_all" ON public.group_members
-  FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.groups
-      WHERE id = group_members.group_id AND owner_id = auth.uid()
-    )
-  );
-
-CREATE POLICY "group_members_select_self" ON public.group_members
-  FOR SELECT
-  USING (user_id = auth.uid());
-
-
--- ══════════════════════════════════════════════════════════════════════════════
--- REALTIME
--- ══════════════════════════════════════════════════════════════════════════════
-
-ALTER PUBLICATION supabase_realtime ADD TABLE public.users;
+-- ══ REALTIME ═════════════════════════════════════════════════════════════════
+-- Publication supabase_realtime: users (0000) · move_joins (0001)
