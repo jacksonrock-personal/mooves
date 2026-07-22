@@ -14,14 +14,13 @@ const PUBLIC_PREFIXES = [
   '/api/sms/inbound',
   '/api/stripe/webhook', // Stripe calls this unauthenticated; gated by signature
 
-  // PWA assets (Phase 15) — must be served directly, never redirected. A service
-  // worker script behind a redirect is rejected by the browser (SecurityError),
-  // and the manifest + icons must resolve for logged-out visitors to install.
+    // PWA assets (Phase 15) — must be served directly, never redirected. ...
   '/sw.js',
   '/manifest.webmanifest',
   '/brand/',
   '/icon',
   '/apple-icon',
+  '/.well-known/',  // Apple Pay domain verification (Stripe) + future well-known files
 
   '/_next/',
   '/favicon',
