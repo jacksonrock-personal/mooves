@@ -13,6 +13,7 @@ import CowIllustration from '@/components/ui/CowIllustration'
 import Toast from '@/components/ui/Toast'
 import InterestPicker from './InterestPicker'
 import SponsoredCard, { type SponsoredMove } from './SponsoredCard'
+import { groupMoves, isHappeningNow } from '@/lib/discoverGroups'
 import {
   captureDeviceArea,
   saveManualZip,
@@ -272,19 +273,31 @@ export default function DiscoverScreen() {
           </>
         )}
 
-        {/* FEED (13.2 / 13.3) */}
+        {/* FEED (13.2 / 13.3 / 13.2a day groups) */}
         {showFeed && (
           <>
             <p className="font-sans text-[12px] text-ink-500 mb-3.5 px-0.5">
               {moves.length} {moves.length === 1 ? 'move matches' : 'moves match'} your area and interests.
             </p>
-            {moves.map(m => (
-              <SponsoredCard
-                key={m.id}
-                move={m}
-                onInterestedChange={handleInterestedChange}
-                onGoWithFriends={handleGoWithFriends}
-              />
+            {groupMoves(moves).map((group, gi) => (
+              <div key={group.label ?? 'all'}>
+                {group.label && (
+                  <div
+                    className={`font-sans text-[11px] font-bold uppercase tracking-[0.08em] text-ink-500 mb-2.5 px-0.5 ${gi > 0 ? 'mt-5' : ''}`}
+                  >
+                    {group.label}
+                  </div>
+                )}
+                {group.moves.map(m => (
+                  <SponsoredCard
+                    key={m.id}
+                    move={m}
+                    happeningNow={isHappeningNow(m.startAt)}
+                    onInterestedChange={handleInterestedChange}
+                    onGoWithFriends={handleGoWithFriends}
+                  />
+                ))}
+              </div>
             ))}
           </>
         )}

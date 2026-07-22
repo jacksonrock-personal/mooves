@@ -39,14 +39,16 @@ export async function GET(req: Request) {
   // Dated moves expire 3h after start (late joiners ok, stale events gone);
   // start_at NULL = evergreen (recurring events).
   const expiryFloor = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString()
+  // 13.2a — soonest first; evergreen (start_at null) last, newest-created first.
   const { data: rows, error } = await supabase
     .from('sponsored_moves')
-    .select('id, title, description, category, brand, time_text, link_url, image_url')
+    .select('id, title, description, category, brand, time_text, link_url, image_url, start_at')
     .eq('status', 'approved')
     .in('area_zip', zips)
     .in('category', interests)
     .or('sponsor_id.is.null,paid_at.not.is.null')
     .or(`start_at.is.null,start_at.gt.${expiryFloor}`)
+    .order('start_at', { ascending: true, nullsFirst: false })
     .order('created_at', { ascending: false })
 
   if (error) return NextResponse.json({ error: 'Query failed' }, { status: 500 })
@@ -88,6 +90,7 @@ export async function GET(req: Request) {
       timeText: m.time_text,
       linkUrl: m.link_url,
       imageUrl: m.image_url,
+      startAt: m.start_at,
       interestedByMe: interestedIds.has(m.id),
     })),
   })
