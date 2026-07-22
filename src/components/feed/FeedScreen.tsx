@@ -12,6 +12,7 @@ import type { RealtimeChannel } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { initPostHog, posthog } from '@/lib/posthog'
 import { buildBlastHref } from '@/lib/blast'
+import { isGreenExpired } from '@/lib/greenExpiry'
 import { markValueMoment } from '@/lib/pwa'
 import FriendCard from './FriendCard'
 import MyMoveCard from './MyMoveCard'
@@ -77,6 +78,7 @@ export default function FeedScreen() {
   const [sheetOpen, setSheetOpen] = useState(false)
   const [greyOpen, setGreyOpen] = useState(false)
   const [planOpen, setPlanOpen] = useState(false)
+  const [joinedPromptOpen, setJoinedPromptOpen] = useState(false) // 9.5 Part B
   const [toastMessage, setToastMessage] = useState<string | null>(null)
 
   const meIdRef = useRef<string | null>(null)
@@ -182,6 +184,8 @@ export default function FeedScreen() {
         isAvailable?: boolean
         statusNote?: string | null
         statusTime?: string | null
+        statusSetAt?: string | null
+        statusExpiresAt?: string | null
         anchoredMove?: AnchoredMove | null
         referralCode?: string
       }
@@ -192,10 +196,26 @@ export default function FeedScreen() {
       }
       meIdRef.current = meData.id
       setMe({ id: meData.id, displayName: meData.displayName, avatarUrl: meData.avatarUrl })
-      setIsAvailable(!!meData.isAvailable)
-      setMyStatusNote(meData.statusNote ?? null)
-      setMyStatusTime(meData.statusTime ?? null)
-      setMyAnchoredMove(meData.anchoredMove ?? null)
+
+      // 9.5 Part A — the green expired while we were away: reconcile it to a real
+      // grey (clears joins/chip/note/anchor server-side), silently. No toast.
+      const greenExpired = !!meData.isAvailable && isGreenExpired(meData.statusExpiresAt ?? null)
+      if (greenExpired) {
+        posthog.capture('green_expired_reconciled')
+        try {
+          await fetch('/api/status', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ isAvailable: false }),
+          })
+        } catch {
+          // best-effort — the feed already hides expired greens server-side
+        }
+      }
+      setIsAvailable(!!meData.isAvailable && !greenExpired)
+      setMyStatusNote(greenExpired ? null : meData.statusNote ?? null)
+      setMyStatusTime(greenExpired ? null : meData.statusTime ?? null)
+      setMyAnchoredMove(greenExpired ? null : meData.anchoredMove ?? null)
       setReferralCode(meData.referralCode ?? null)
 
       await resolveInvite()
@@ -212,9 +232,25 @@ export default function FeedScreen() {
       friendIdsRef.current = new Set(friendsRes.friends.map(f => f.id))
       setTotalFriendCount(friendIdsRef.current.size)
       setFriends(feedRes.friends ?? [])
-      setMyJoiners(feedRes.myJoiners ?? [])
+      setMyJoiners(greenExpired ? [] : feedRes.myJoiners ?? [])
       if (feedRes.ambient) setAmbient(feedRes.ambient)
       setGroups(groupsRes.groups ?? [])
+
+      // 9.5 Part B — returning-mover prompt: fresh open, green still live, set
+      // over an hour ago, 1+ joiner, and not yet shown for this green. Marked on
+      // show so it appears at most once per green session.
+      if (!greenExpired && meData.isAvailable && meData.statusSetAt) {
+        const oldEnough = Date.now() - new Date(meData.statusSetAt).getTime() > 60 * 60 * 1000
+        const hasJoiner = (feedRes.myJoiners ?? []).length >= 1
+        const alreadyShown =
+          typeof window !== 'undefined' &&
+          localStorage.getItem('mooves_grey_prompted_for') === meData.statusSetAt
+        if (oldEnough && hasJoiner && !alreadyShown) {
+          localStorage.setItem('mooves_grey_prompted_for', meData.statusSetAt)
+          setJoinedPromptOpen(true)
+          posthog.capture('returning_prompt_shown')
+        }
+      }
 
       // Arriving from Discover "Go with friends" (13.8): pre-anchor the go-green sheet.
       const anchorId = searchParams.get('anchor')
@@ -357,6 +393,15 @@ export default function FeedScreen() {
     }
     setGreyOpen(false)
     setPlanOpen(false)
+    setJoinedPromptOpen(false)
+  }
+
+  // 9.5 Part B — sheet heading from the real joiner names.
+  function joinedHeading(): string {
+    const names = myJoiners.map(j => j.displayName ?? 'A friend')
+    if (names.length === 1) return `${names[0]} is in`
+    if (names.length === 2) return `${names[0]} and ${names[1]} are in`
+    return `${names[0]}, ${names[1]} and ${names.length - 2} more are in`
   }
 
   async function handleInviteTap() {
@@ -493,6 +538,48 @@ export default function FeedScreen() {
           className="w-full py-3.5 rounded-[14px] bg-purple-50 text-ink-500 font-sans font-bold text-[15px]"
         >
           Go grey
+        </button>
+      </Sheet>
+
+      {/* 9.5 Part B — returning-mover prompt: same action-sheet pattern as 9.4.
+          Overlay-dismiss counts as "keep green" (dismiss only, expiry unchanged). */}
+      <Sheet
+        open={joinedPromptOpen}
+        onClose={() => {
+          setJoinedPromptOpen(false)
+          posthog.capture('returning_prompt_kept')
+        }}
+        className="px-5 pb-8"
+      >
+        <div className="text-center">
+          <div className="flex justify-center mb-3">
+            <CowIllustration size={56} />
+          </div>
+          <h2 className="font-display font-extrabold text-[19px] text-ink-900 tracking-tight mb-1.5">
+            {joinedHeading()}
+          </h2>
+          <p className="font-sans text-[14px] text-ink-500 leading-relaxed mb-5">
+            Sounds like something came together. Go grey to wrap up this move, or keep it open for
+            more.
+          </p>
+        </div>
+        <button
+          onClick={() => {
+            posthog.capture('returning_prompt_grey')
+            void handleConfirmGrey()
+          }}
+          className="w-full py-4 rounded-full bg-purple-500 text-white font-sans font-bold text-[15px]"
+        >
+          Go grey
+        </button>
+        <button
+          onClick={() => {
+            setJoinedPromptOpen(false)
+            posthog.capture('returning_prompt_kept')
+          }}
+          className="w-full py-3 mt-1 text-ink-500 font-sans font-semibold text-[14px]"
+        >
+          Keep me green
         </button>
       </Sheet>
 

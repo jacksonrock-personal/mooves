@@ -13,6 +13,20 @@ function normalizeTime(value: unknown): StatusTime | null {
     : null
 }
 
+// 9.5 Part A — the client computes the expiry on its local clock (the server
+// can't know the user's 3am). Sanity-bound it: must be a valid future datetime
+// no more than 8 days out, else fall back to +24h so every new green expires.
+const MAX_EXPIRY_MS = 8 * 24 * 60 * 60 * 1000
+function boundExpiresAt(value: unknown, now: Date): string {
+  if (typeof value === 'string') {
+    const t = new Date(value).getTime()
+    if (!Number.isNaN(t) && t > now.getTime() && t <= now.getTime() + MAX_EXPIRY_MS) {
+      return new Date(t).toISOString()
+    }
+  }
+  return new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString()
+}
+
 export async function PATCH(req: Request) {
   const userId = req.headers.get('x-user-id')
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -23,6 +37,7 @@ export async function PATCH(req: Request) {
     visibleTo?: string[] | null
     statusTime?: string | null
     statusMoveId?: string | null
+    statusExpiresAt?: string | null
   }
 
   if (typeof body.isAvailable !== 'boolean') {
@@ -36,6 +51,7 @@ export async function PATCH(req: Request) {
     status_time: StatusTime | null
     status_move_id: string | null
     status_set_at: string
+    status_expires_at: string | null
     last_green_at?: string
   }
 
@@ -63,10 +79,12 @@ export async function PATCH(req: Request) {
       status_time: null,
       status_move_id: null,
       status_set_at: new Date().toISOString(),
+      status_expires_at: null,
     }
   } else {
     const note = body.statusNote?.trim() ?? null
-    const now = new Date().toISOString()
+    const nowDate = new Date()
+    const now = nowDate.toISOString()
     updates = {
       is_available: true,
       status_note: note && note.length > 0 ? note.slice(0, 60) : null,
@@ -74,6 +92,7 @@ export async function PATCH(req: Request) {
       status_time: normalizeTime(body.statusTime),
       status_move_id: anchoredMoveId,
       status_set_at: now,
+      status_expires_at: boundExpiresAt(body.statusExpiresAt, nowDate), // 9.5 Part A
       last_green_at: now, // recent-green signal (10.1); never cleared on go-grey
     }
   }
