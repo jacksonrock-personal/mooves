@@ -466,6 +466,9 @@ export type Database = {
     }
     Functions: {
       generate_referral_code: { Args: never; Returns: string }
+      increment_move_impressions: { Args: { move_ids: string[] }; Returns: undefined }
+      record_move_click: { Args: { p_move_id: string }; Returns: { link_url: string | null }[] }
+      increment_brought_over: { Args: { p_move_id: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

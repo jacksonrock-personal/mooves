@@ -13,14 +13,10 @@ export async function POST(req: Request, { params }: Params) {
 
   const supabase = createServiceClient()
 
-  const { data: move } = await supabase
-    .from('sponsored_moves')
-    .select('id, clicks, link_url')
-    .eq('id', id)
-    .single()
-  if (!move) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  // Atomic increment + link fetch in one round trip. Empty result = move not found.
+  const { data, error } = await supabase.rpc('record_move_click', { p_move_id: id })
+  if (error) return NextResponse.json({ error: 'Click failed' }, { status: 500 })
+  if (!data || data.length === 0) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  await supabase.from('sponsored_moves').update({ clicks: move.clicks + 1 }).eq('id', id)
-
-  return NextResponse.json({ linkUrl: move.link_url })
+  return NextResponse.json({ linkUrl: data[0].link_url })
 }

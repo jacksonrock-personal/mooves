@@ -103,18 +103,10 @@ export async function PATCH(req: Request) {
   }
 
   // Aggregate flywheel metric (13.8): count each time a move is brought to the feed.
+  // Atomic increment (race-free) — replaces the old read-modify-write.
   if (anchoredMoveId) {
-    const { data: move } = await supabase
-      .from('sponsored_moves')
-      .select('brought_over_count')
-      .eq('id', anchoredMoveId)
-      .single()
-    if (move) {
-      await supabase
-        .from('sponsored_moves')
-        .update({ brought_over_count: move.brought_over_count + 1 })
-        .eq('id', anchoredMoveId)
-    }
+    const { error: bumpError } = await supabase.rpc('increment_brought_over', { p_move_id: anchoredMoveId })
+    if (bumpError) console.error('brought_over increment failed:', bumpError)
   }
 
   return NextResponse.json({

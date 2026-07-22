@@ -17,11 +17,12 @@ export async function POST(req: Request, { params }: Params) {
 
   const { data: move } = await supabase
     .from('sponsored_moves')
-    .select('id, interested_count')
+    .select('id')
     .eq('id', id)
     .single()
   if (!move) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
+  // interested_count is maintained by the trg_interested_count trigger.
   const { data: existing } = await supabase
     .from('move_interested')
     .select('move_id')
@@ -31,10 +32,6 @@ export async function POST(req: Request, { params }: Params) {
 
   if (!existing) {
     await supabase.from('move_interested').insert({ move_id: id, user_id: userId })
-    await supabase
-      .from('sponsored_moves')
-      .update({ interested_count: move.interested_count + 1 })
-      .eq('id', id)
   }
 
   return NextResponse.json({ interested: true })
@@ -47,27 +44,9 @@ export async function DELETE(req: Request, { params }: Params) {
 
   const supabase = createServiceClient()
 
-  const { data: move } = await supabase
-    .from('sponsored_moves')
-    .select('id, interested_count')
-    .eq('id', id)
-    .single()
-  if (!move) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-
-  const { data: existing } = await supabase
-    .from('move_interested')
-    .select('move_id')
-    .eq('move_id', id)
-    .eq('user_id', userId)
-    .maybeSingle()
-
-  if (existing) {
-    await supabase.from('move_interested').delete().eq('move_id', id).eq('user_id', userId)
-    await supabase
-      .from('sponsored_moves')
-      .update({ interested_count: Math.max(0, move.interested_count - 1) })
-      .eq('id', id)
-  }
+  // interested_count is maintained by the trg_interested_count trigger, which only
+  // fires when a row is actually deleted — so an unconditional delete is idempotent.
+  await supabase.from('move_interested').delete().eq('move_id', id).eq('user_id', userId)
 
   return NextResponse.json({ interested: false })
 }
