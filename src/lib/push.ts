@@ -5,6 +5,7 @@
 
 import { createServiceClient } from '@/lib/supabase/server'
 import { firebaseMessaging } from '@/lib/firebase/admin'
+import { WAVE_TIME_PHRASE, type WaveTime } from '@/lib/blast'
 
 const RATE_LIMIT_MS = 60 * 60 * 1000 // one push per group per hour
 
@@ -113,11 +114,13 @@ function formatWaveNames(names: string[], total: number): string {
 }
 
 /**
- * Green wave (17.1): fire a NAMED push to every viewer who just reached exactly 3
- * currently-green, visible friends (the mover being one of them). Best-effort, and
- * never allowed to break the go-green write (callers wrap in try/catch). Returns the
- * set of viewer ids we actually pushed to, so the caller can suppress the anonymous
- * group push for them this event (the escalation-ladder supersede).
+ * Green wave (17.1, refined in 0008): fire a NAMED push to every viewer for whom
+ * the mover going green completes a wave — a CONNECTED group of ≥3 of their green,
+ * visible friends who share a time window (now/tonight/weekend), with the mover in
+ * it. The graph + time logic lives in green_wave_candidates → wave_group_for_viewer.
+ * Best-effort, and never allowed to break the go-green write (callers wrap in
+ * try/catch). Returns the set of viewer ids we actually pushed to, so the caller can
+ * suppress the anonymous group push for them this event (the escalation-ladder supersede).
  */
 export async function sendGreenWave(moverId: string): Promise<Set<string>> {
   const sent = new Set<string>()
@@ -162,11 +165,12 @@ export async function sendGreenWave(moverId: string): Promise<Set<string>> {
   for (const c of eligible) {
     const userSubs = subsByUser.get(c.viewer)
     if (!userSubs?.length) continue
+    const bucket: WaveTime = c.time_bucket in WAVE_TIME_PHRASE ? (c.time_bucket as WaveTime) : 'now'
     const res = await firebaseMessaging.sendEachForMulticast({
       tokens: userSubs.map(s => s.token),
       // Data-only: the service worker builds the notification (no duplicate display).
       data: {
-        title: `${formatWaveNames(c.green_names ?? [], c.green_count)} are free`,
+        title: `${formatWaveNames(c.green_names ?? [], c.green_count)} are free ${WAVE_TIME_PHRASE[bucket]}`,
         body: 'Start something — text the group.',
         url: '/feed?wave=1',
       },

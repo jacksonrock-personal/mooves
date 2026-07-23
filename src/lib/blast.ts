@@ -14,14 +14,27 @@ export function buildBlastHref(phones: string[]): string {
     : `sms:${recipients}`
 }
 
+// The time window a wave shares (17.1 amendment). 'now' also covers greens with
+// no declared time. Single source for the phrase used in the strip headline, the
+// wave push title, and the blast body, so all three read the same.
+export type WaveTime = 'now' | 'tonight' | 'weekend'
+
+export const WAVE_TIME_PHRASE: Record<WaveTime, string> = {
+  now: 'right now',
+  tonight: 'tonight',
+  weekend: 'this weekend',
+}
+
 // The green-wave blast (17.2). UNLIKE the 2+-join blast above (A4: empty body),
 // the wave blast opens with a prefilled body — the user still edits/sends it. Same
 // OS-specific multi-recipient syntax + iOS group-thread caveat (shared POC).
-const WAVE_BLAST_BODY = "Anyone free tonight? A few of us are green."
+function waveBlastBody(timeBucket: WaveTime): string {
+  return `Anyone free ${WAVE_TIME_PHRASE[timeBucket]}? A few of us are green.`
+}
 
-export function buildWaveBlastHref(phones: string[]): string {
+export function buildWaveBlastHref(phones: string[], timeBucket: WaveTime = 'now'): string {
   const recipients = phones.filter(Boolean).join(',')
-  const body = encodeURIComponent(WAVE_BLAST_BODY)
+  const body = encodeURIComponent(waveBlastBody(timeBucket))
   const isIOS =
     typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent)
   return isIOS

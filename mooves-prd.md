@@ -3555,6 +3555,22 @@ Billing UI on the sponsor-portal shell. States: Billing — no card (explains mo
 - [ ] ≤2 total moves → flat list, no headers.
 - [ ] Grouping uses the viewer's local day boundaries.
 
+### 13.2b — Discover rotating pool (show 5) — *Amendment to 13.2 / 13.2a, 2026-07-23 · CODE ✅ (`feat/phase17-green-wave`, `api/discover`)*
+
+**Purpose:** stop showing the entire eligible pool at once. Surface a small rotating handful so different sponsors get airtime and share impressions fairly, without burying time-sensitive events.
+
+**Behavior:** `api/discover` still queries the full eligible pool (approved · area · interests · unexpired), then returns at most **5**: **dated moves fill the slots first, soonest-first** (preserving 13.2a ordering, so a "tonight" event is never crowded out); any remaining slots are filled by **random evergreen** moves (Fisher–Yates shuffle). **Reshuffled every request**, so the evergreen picks rotate. *(Decision: "prioritize soon, then random" — Jackson 2026-07-23.)*
+
+**Interaction with 13.2a:** the client day-grouping (Today / Tomorrow / This weekend / Later / Weekly & recurring) is unchanged but now operates over the **≤5 returned**, not the full pool; empty-group headers stay hidden as before. **Impressions now increment only for the ≤5 shown** (was: the whole pool) — more accurate rotation accounting.
+
+**Out of scope:** no user-facing shuffle/refresh control; count stays a constant (5); no change to Interested/click/flywheel or expiry.
+
+**Acceptance:**
+- [ ] Discover returns at most 5 moves; dated soonest-first, then random evergreen fill.
+- [ ] Evergreen selection reshuffles across requests; dated ordering is stable.
+- [ ] Impressions increment only for the shown ≤5.
+- [ ] With ≤5 eligible total, all are shown (no starvation).
+
 ### 13.3 — Sponsored move card + "Interested"
 **Behavior:** DS feed-card shell with a subtle **"Sponsored"** label (not a banner — guardrail #4). Tapping **"Interested"** reveals full details (description, link, lightweight time/place text) in-app **and** increments the sponsor's **aggregate** interested count — sponsor never sees who. A link/CTA opens the sponsor URL (aggregate click counted). *(SMS-back delivery = later A2P-gated enhancement, out of scope.)*
 **Acceptance:**
@@ -3979,6 +3995,15 @@ Desktop, one PR (`feat/phase16-sponsor-email`). Sponsor gets a transactional **e
 - [ ] In-app wave strip shows on feed open when the condition holds and isn't dismissed; "Start a plan" → 17.2.
 - [ ] "Green waves" toggle in NotificationSettings; off suppresses the push (strip still shows).
 - [ ] Wave evaluation is best-effort and never breaks the go-green write.
+
+**Amendment — 17.1b (Green wave qualification + sticky dismissal) — *2026-07-23* · CODE ✅ (`feat/phase17-green-wave`, migration `0008_green_wave_refine.sql`):** the raw "any 3 green friends" trigger was too loose (it could name unrelated people who happen to be free). Two constraints now gate a wave, applied identically to the push and the in-app strip via one shared SQL resolver `wave_group_for_viewer()`:
+
+1. **Same time window.** Friends only wave together if they share a bucket: **`tonight`**, **`weekend`**, or **`now`** — where `now` also absorbs greens with **no declared time** (a no-time green reads as "right now," per Jackson 2026-07-23). Buckets never mix.
+2. **Connected group (not a clique).** Within a bucket, the green friends must form **one connected cluster** in the friendship graph — each linked to at least one other in the group; friend-of-a-friend chains are fine, isolated strangers are excluded. The viewer is **not** a bridge (connectivity is measured among the green friends only), so a set of the viewer's mutual-strangers never forms a wave. *(Decision: "connected," not full clique — Jackson 2026-07-23.)*
+
+A wave = the **largest** qualifying connected same-bucket cluster of **≥3**; ties broken by most-recently-green. The push copy and the strip headline both name the shared time ("…are free **tonight**"), and the 17.2 blast body is bucketed to match. `green_wave_candidates` now returns `time_bucket`; the "exactly 3 / no re-fire on 4th" rule is superseded by "≥3, deduped by the 6h `last_wave_at` cooldown" (a well-connected 4th joining is still one wave per 6h).
+
+**Sticky dismissal (reverses "dismissible this cycle"):** dismissing the strip now **persists across app opens**, keyed by the wave's **signature** (`timeBucket` + sorted member ids) in `localStorage` (`mooves.dismissedWaves`, cap 30). The *same* group re-forming stays hidden; a **different** group — or a new time bucket — can still surface a fresh strip. *(Decision: "gone until the wave changes," not gone-for-good — Jackson 2026-07-23.)* Push dismissal is unaffected (still governed by the 6h cooldown + the Green Waves toggle).
 
 ### 17.2 — Wave blast (SMS handoff, prefilled)
 

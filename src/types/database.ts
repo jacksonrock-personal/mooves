@@ -504,7 +504,11 @@ export type Database = {
       increment_brought_over: { Args: { p_move_id: string }; Returns: undefined }
       green_wave_candidates: {
         Args: { mover: string }
-        Returns: { viewer: string; green_names: string[]; green_count: number }[]
+        Returns: { viewer: string; green_names: string[]; green_count: number; time_bucket: string }[]
+      }
+      wave_group_for_viewer: {
+        Args: { p_viewer: string }
+        Returns: { time_bucket: string; member_ids: string[]; member_names: string[]; member_count: number }[]
       }
       nearby_zips: { Args: { p_zip: string; p_radius_miles?: number }; Returns: { zip: string }[] }
       nearest_zip: {
