@@ -11,7 +11,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { initPostHog, posthog } from '@/lib/posthog'
-import { buildBlastHref } from '@/lib/blast'
+import { buildBlastHref, type WaveTime } from '@/lib/blast'
 import { isGreenExpired } from '@/lib/greenExpiry'
 import { markValueMoment } from '@/lib/pwa'
 import FriendCard from './FriendCard'
@@ -54,6 +54,12 @@ interface Group {
   name: string
   emoji: string
 }
+// 17.1 (refined 0008) — the resolved wave group from get_feed: a connected set of
+// same-time green friends. null when no wave qualifies. friendIds ⊆ feed friends.
+interface Wave {
+  timeBucket: WaveTime
+  friendIds: string[]
+}
 interface Me {
   id: string
   displayName: string | null
@@ -81,7 +87,20 @@ export default function FeedScreen() {
   const [planOpen, setPlanOpen] = useState(false)
   const [joinedPromptOpen, setJoinedPromptOpen] = useState(false) // 9.5 Part B
   const [toastMessage, setToastMessage] = useState<string | null>(null)
-  const [waveDismissed, setWaveDismissed] = useState(false) // 17.1 in-app wave strip
+  // 17.1 in-app wave strip. `wave` is the resolved group from the feed; dismissal
+  // persists across app opens keyed by the wave's signature (its members + time), so
+  // a dismissed wave stays gone while that same group is green, but a genuinely new
+  // wave can still surface. (0008 amendment.)
+  const [wave, setWave] = useState<Wave | null>(null)
+  const [dismissedWaveSigs, setDismissedWaveSigs] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return []
+    try {
+      const raw = JSON.parse(localStorage.getItem('mooves.dismissedWaves') ?? '[]')
+      return Array.isArray(raw) ? raw.filter((s): s is string => typeof s === 'string') : []
+    } catch {
+      return []
+    }
+  })
 
   const meIdRef = useRef<string | null>(null)
   const friendIdsRef = useRef<Set<string>>(new Set())
@@ -93,12 +112,35 @@ export default function FeedScreen() {
       friends: Friend[]
       myJoiners: MyJoiner[]
       ambient?: { activeNow: number; recentGreen: number }
+      wave?: Wave | null
     }
     if (!mountedRef.current) return
     setFriends(data.friends ?? [])
     setMyJoiners(data.myJoiners ?? [])
     if (data.ambient) setAmbient(data.ambient)
+    setWave(data.wave ?? null)
   }, [])
+
+  // A wave's identity = its time bucket + its members (order-independent). Dismissing
+  // stores this; the same group re-forming stays hidden, a different group can appear.
+  const waveSignature = useCallback(
+    (w: Wave) => `${w.timeBucket}|${[...w.friendIds].sort().join(',')}`,
+    [],
+  )
+
+  const dismissWave = useCallback(() => {
+    if (!wave) return
+    const sig = waveSignature(wave)
+    setDismissedWaveSigs(prev => {
+      const next = [sig, ...prev.filter(s => s !== sig)].slice(0, 30) // cap; drop oldest
+      try {
+        localStorage.setItem('mooves.dismissedWaves', JSON.stringify(next))
+      } catch {
+        // storage unavailable (private mode) — dismissal falls back to this session
+      }
+      return next
+    })
+  }, [wave, waveSignature])
 
   const scheduleRefetch = useCallback(() => {
     if (refetchTimerRef.current) clearTimeout(refetchTimerRef.current)
@@ -226,7 +268,7 @@ export default function FeedScreen() {
 
       const [friendsRes, feedRes, groupsRes] = await Promise.all([
         fetch('/api/friends').then(r => r.json()) as Promise<{ friends: { id: string }[] }>,
-        fetch('/api/feed').then(r => r.json()) as Promise<{ friends: Friend[]; myJoiners: MyJoiner[]; ambient?: { activeNow: number; recentGreen: number } }>,
+        fetch('/api/feed').then(r => r.json()) as Promise<{ friends: Friend[]; myJoiners: MyJoiner[]; ambient?: { activeNow: number; recentGreen: number }; wave?: Wave | null }>,
         fetch('/api/groups').then(r => r.json()) as Promise<{ groups: Group[] }>,
       ])
       if (!mountedRef.current) return
@@ -236,6 +278,7 @@ export default function FeedScreen() {
       setFriends(feedRes.friends ?? [])
       setMyJoiners(greenExpired ? [] : feedRes.myJoiners ?? [])
       if (feedRes.ambient) setAmbient(feedRes.ambient)
+      setWave(feedRes.wave ?? null)
       setGroups(groupsRes.groups ?? [])
 
       // 9.5 Part B — returning-mover prompt: fresh open, green still live, set
@@ -441,19 +484,29 @@ export default function FeedScreen() {
       <div className="flex-1 flex flex-col px-4 pt-4 pb-24">
         {loaded && me && (
           <>
-            {/* 17.1 — green wave: 3+ friends currently green. Client-derived from the
-                feed's green-friends list; names not counts; dismissible for the session. */}
-            {friends.length >= 3 && !waveDismissed && (
-              <WaveStrip
-                friends={friends.map(f => ({
-                  id: f.id,
-                  displayName: f.displayName,
-                  avatarUrl: f.avatarUrl,
-                  phone: f.phone,
-                }))}
-                onDismiss={() => setWaveDismissed(true)}
-              />
-            )}
+            {/* 17.1 (refined 0008) — green wave: a connected group of 3+ green friends
+                sharing a time window, resolved server-side. Names not counts; dismissal
+                persists per wave signature. */}
+            {(() => {
+              if (!wave) return null
+              if (dismissedWaveSigs.includes(waveSignature(wave))) return null
+              const waveFriends = wave.friendIds
+                .map(id => friends.find(f => f.id === id))
+                .filter((f): f is Friend => f !== undefined)
+              if (waveFriends.length < 3) return null // stale membership vs. feed; skip
+              return (
+                <WaveStrip
+                  friends={waveFriends.map(f => ({
+                    id: f.id,
+                    displayName: f.displayName,
+                    avatarUrl: f.avatarUrl,
+                    phone: f.phone,
+                  }))}
+                  timeBucket={wave.timeBucket}
+                  onDismiss={dismissWave}
+                />
+              )
+            })()}
             {isAvailable ? (
               <MyMoveCard
                 statusNote={myStatusNote}

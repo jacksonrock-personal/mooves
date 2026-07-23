@@ -53,7 +53,19 @@ export async function GET(req: Request) {
 
   if (error) return NextResponse.json({ error: 'Query failed' }, { status: 500 })
 
-  const moves = rows ?? []
+  // 13.2b — surface a rotating handful, not the whole pool. Time-sensitive (dated)
+  // moves fill the slots first, soonest-first, so a "tonight" event never gets
+  // buried; any remaining slots are filled by random evergreen moves. Reshuffled
+  // each request, so different sponsors rotate through and share impressions.
+  const SHOW = 5
+  const pool = rows ?? []
+  const dated = pool.filter(m => m.start_at !== null) // already soonest-first from the query
+  const evergreen = pool.filter(m => m.start_at === null)
+  for (let i = evergreen.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[evergreen[i], evergreen[j]] = [evergreen[j], evergreen[i]]
+  }
+  const moves = [...dated, ...evergreen].slice(0, SHOW)
 
   // Which of these has the viewer already marked interested?
   let interestedIds = new Set<string>()

@@ -8,7 +8,7 @@
 import { useEffect } from 'react'
 import Avatar from '@/components/ui/Avatar'
 import { posthog } from '@/lib/posthog'
-import { buildWaveBlastHref } from '@/lib/blast'
+import { buildWaveBlastHref, WAVE_TIME_PHRASE, type WaveTime } from '@/lib/blast'
 import { markValueMoment } from '@/lib/pwa'
 
 export interface WaveFriend {
@@ -20,6 +20,7 @@ export interface WaveFriend {
 
 interface WaveStripProps {
   friends: WaveFriend[]
+  timeBucket: WaveTime
   onDismiss: () => void
 }
 
@@ -30,19 +31,19 @@ function nameLine(friends: WaveFriend[]): string {
   return shown[0] ?? ''
 }
 
-export default function WaveStrip({ friends, onDismiss }: WaveStripProps) {
+export default function WaveStrip({ friends, timeBucket, onDismiss }: WaveStripProps) {
   const extra = Math.max(0, friends.length - 3)
 
   useEffect(() => {
-    posthog.capture('wave_strip_shown', { greenCount: friends.length })
-  }, [friends.length])
+    posthog.capture('wave_strip_shown', { greenCount: friends.length, timeBucket })
+  }, [friends.length, timeBucket])
 
   function startPlan() {
     const phones = friends.map(f => f.phone).filter(Boolean)
     if (phones.length === 0) return
     markValueMoment() // Phase 15.4: a value moment → may nudge to install
-    posthog.capture('wave_blast_started', { greenCount: friends.length })
-    window.location.href = buildWaveBlastHref(phones)
+    posthog.capture('wave_blast_started', { greenCount: friends.length, timeBucket })
+    window.location.href = buildWaveBlastHref(phones, timeBucket)
   }
 
   function dismiss() {
@@ -69,7 +70,7 @@ export default function WaveStrip({ friends, onDismiss }: WaveStripProps) {
       </div>
 
       <p className="font-display font-extrabold text-[18px] leading-tight text-ink-900 tracking-tight mb-3 pr-6">
-        {nameLine(friends)} are free right now.
+        {nameLine(friends)} are free {WAVE_TIME_PHRASE[timeBucket]}.
       </p>
 
       <div className="flex items-center gap-2.5 mb-4">
@@ -82,7 +83,7 @@ export default function WaveStrip({ friends, onDismiss }: WaveStripProps) {
         </div>
         {extra > 0 && (
           <span className="font-sans text-[13px] font-medium text-ink-500">
-            and {extra} {extra === 1 ? 'other' : 'others'} around now
+            and {extra} {extra === 1 ? 'other' : 'others'}
           </span>
         )}
       </div>
