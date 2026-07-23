@@ -2,7 +2,7 @@
 
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
-import { sendGroupGreenPush } from '@/lib/push'
+import { sendGroupGreenPush, sendGreenWave } from '@/lib/push'
 
 const TIME_VALUES = ['now', 'tonight', 'weekend'] as const
 type StatusTime = (typeof TIME_VALUES)[number]
@@ -111,11 +111,17 @@ export async function PATCH(req: Request) {
 
   if (error || !data) return NextResponse.json({ error: 'Update failed' }, { status: 500 })
 
-  // Phase 15.3: a green scoped to groups notifies those groups' members. Awaited
-  // but never allowed to fail the status write (group-level only, no per-person).
-  if (data.is_available && updates.visible_to && updates.visible_to.length > 0) {
+  // Push on go-green. Awaited but never allowed to fail the status write.
+  if (data.is_available) {
     try {
-      await sendGroupGreenPush(userId, updates.visible_to)
+      // 17.1 green wave: a NAMED push to any friend who just reached 3 concurrent
+      // greens. Fires regardless of scope (friends-at-large), returns who it reached.
+      const waved = await sendGreenWave(userId)
+      // 15.3 anonymous per-group push, minus anyone the wave already reached this
+      // event (the escalation-ladder supersede).
+      if (updates.visible_to && updates.visible_to.length > 0) {
+        await sendGroupGreenPush(userId, updates.visible_to, waved)
+      }
     } catch {
       // push is best-effort; the go-green already succeeded
     }

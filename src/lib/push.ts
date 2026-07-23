@@ -13,7 +13,11 @@ const RATE_LIMIT_MS = 60 * 60 * 1000 // one push per group per hour
  * Best-effort and self-contained: callers should not let a failure here break
  * the status write (wrap in try/catch). `groupIds` is the mover's visible_to.
  */
-export async function sendGroupGreenPush(moverId: string, groupIds: string[]): Promise<void> {
+export async function sendGroupGreenPush(
+  moverId: string,
+  groupIds: string[],
+  exclude?: Set<string>,
+): Promise<void> {
   if (!groupIds.length) return
   const supabase = createServiceClient()
 
@@ -30,7 +34,9 @@ export async function sendGroupGreenPush(moverId: string, groupIds: string[]): P
   )
   if (!eligibleGroups.length) return
 
-  const alreadyTargeted = new Set<string>([moverId]) // one push per user per trigger
+  // One push per user per trigger. `exclude` carries viewers who just got a green
+  // wave (17.1) — the wave supersedes the anonymous push for this same event.
+  const alreadyTargeted = new Set<string>([moverId, ...(exclude ?? [])])
   const notifiedGroupIds: string[] = []
   const staleSubIds: string[] = []
 
@@ -90,4 +96,98 @@ export async function sendGroupGreenPush(moverId: string, groupIds: string[]): P
   if (staleSubIds.length) {
     await supabase.from('push_subscriptions').delete().in('id', staleSubIds)
   }
+}
+
+const WAVE_COOLDOWN_MS = 6 * 60 * 60 * 1000 // one wave push per viewer per 6h
+
+// "Sam, Alex, and Jordan" — names, never a bare count (17.1 reverses the
+// never-name guardrail for the wave surface only). total ≥ names.length.
+function formatWaveNames(names: string[], total: number): string {
+  const shown = names.slice(0, 3)
+  let base: string
+  if (shown.length <= 1) base = shown[0] ?? 'Your friends'
+  else if (shown.length === 2) base = `${shown[0]} and ${shown[1]}`
+  else base = `${shown[0]}, ${shown[1]}, and ${shown[2]}`
+  const extra = total - shown.length
+  return extra > 0 ? `${base} +${extra} more` : base
+}
+
+/**
+ * Green wave (17.1): fire a NAMED push to every viewer who just reached exactly 3
+ * currently-green, visible friends (the mover being one of them). Best-effort, and
+ * never allowed to break the go-green write (callers wrap in try/catch). Returns the
+ * set of viewer ids we actually pushed to, so the caller can suppress the anonymous
+ * group push for them this event (the escalation-ladder supersede).
+ */
+export async function sendGreenWave(moverId: string): Promise<Set<string>> {
+  const sent = new Set<string>()
+  const supabase = createServiceClient()
+
+  const { data: candidates } = await supabase.rpc('green_wave_candidates', { mover: moverId })
+  if (!candidates?.length) return sent
+
+  const viewerIds = candidates.map(c => c.viewer)
+
+  // Opt-out + 6h cooldown, per viewer.
+  const { data: prefs } = await supabase
+    .from('users')
+    .select('id, wave_push_enabled, last_wave_at')
+    .in('id', viewerIds)
+  const prefById = new Map((prefs ?? []).map(p => [p.id, p]))
+
+  const now = Date.now()
+  const eligible = candidates.filter(c => {
+    const p = prefById.get(c.viewer)
+    if (!p || p.wave_push_enabled === false) return false
+    if (p.last_wave_at && now - new Date(p.last_wave_at).getTime() < WAVE_COOLDOWN_MS) return false
+    return true
+  })
+  if (!eligible.length) return sent
+
+  const { data: subs } = await supabase
+    .from('push_subscriptions')
+    .select('id, fcm_token, user_id')
+    .in('user_id', eligible.map(c => c.viewer))
+  if (!subs?.length) return sent
+
+  const subsByUser = new Map<string, { id: string; token: string }[]>()
+  for (const s of subs) {
+    const list = subsByUser.get(s.user_id) ?? []
+    list.push({ id: s.id, token: s.fcm_token })
+    subsByUser.set(s.user_id, list)
+  }
+
+  const staleSubIds: string[] = []
+
+  for (const c of eligible) {
+    const userSubs = subsByUser.get(c.viewer)
+    if (!userSubs?.length) continue
+    const res = await firebaseMessaging.sendEachForMulticast({
+      tokens: userSubs.map(s => s.token),
+      // Data-only: the service worker builds the notification (no duplicate display).
+      data: {
+        title: `${formatWaveNames(c.green_names ?? [], c.green_count)} are free`,
+        body: 'Start something — text the group.',
+        url: '/feed?wave=1',
+      },
+    })
+    let delivered = false
+    res.responses.forEach((r, i) => {
+      if (r.success) { delivered = true; return }
+      const code = r.error?.code
+      if (code === 'messaging/registration-token-not-registered' || code === 'messaging/invalid-argument') {
+        staleSubIds.push(userSubs[i].id)
+      }
+    })
+    if (delivered) sent.add(c.viewer)
+  }
+
+  // Cooldown: stamp every viewer we actually reached.
+  if (sent.size) {
+    await supabase.from('users').update({ last_wave_at: new Date().toISOString() }).in('id', [...sent])
+  }
+  if (staleSubIds.length) {
+    await supabase.from('push_subscriptions').delete().in('id', staleSubIds)
+  }
+  return sent
 }

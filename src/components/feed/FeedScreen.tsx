@@ -17,6 +17,7 @@ import { markValueMoment } from '@/lib/pwa'
 import FriendCard from './FriendCard'
 import MyMoveCard from './MyMoveCard'
 import SwipeToGoGreen from './SwipeToGoGreen'
+import WaveStrip from './WaveStrip'
 import TipJar from './TipJar'
 import AmbientTier from './AmbientTier'
 import { type AnchoredMove } from './AnchoredMoveCard'
@@ -80,6 +81,7 @@ export default function FeedScreen() {
   const [planOpen, setPlanOpen] = useState(false)
   const [joinedPromptOpen, setJoinedPromptOpen] = useState(false) // 9.5 Part B
   const [toastMessage, setToastMessage] = useState<string | null>(null)
+  const [waveDismissed, setWaveDismissed] = useState(false) // 17.1 in-app wave strip
 
   const meIdRef = useRef<string | null>(null)
   const friendIdsRef = useRef<Set<string>>(new Set())
@@ -439,6 +441,19 @@ export default function FeedScreen() {
       <div className="flex-1 flex flex-col px-4 pt-4 pb-24">
         {loaded && me && (
           <>
+            {/* 17.1 — green wave: 3+ friends currently green. Client-derived from the
+                feed's green-friends list; names not counts; dismissible for the session. */}
+            {friends.length >= 3 && !waveDismissed && (
+              <WaveStrip
+                friends={friends.map(f => ({
+                  id: f.id,
+                  displayName: f.displayName,
+                  avatarUrl: f.avatarUrl,
+                  phone: f.phone,
+                }))}
+                onDismiss={() => setWaveDismissed(true)}
+              />
+            )}
             {isAvailable ? (
               <MyMoveCard
                 statusNote={myStatusNote}
