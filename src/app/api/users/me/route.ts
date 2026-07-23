@@ -14,7 +14,7 @@ export async function GET(req: Request) {
   const supabase = createServiceClient()
   const { data, error } = await supabase
     .from('users')
-    .select('id, phone, display_name, avatar_url, referral_code, is_available, is_admin, status_note, status_time, status_move_id, status_set_at, status_expires_at, visible_to, onboarding_complete, area_zip, interests')
+    .select('id, phone, display_name, avatar_url, referral_code, is_available, is_admin, status_note, status_time, status_move_id, status_set_at, status_expires_at, visible_to, onboarding_complete, area_zip, interests, wave_push_enabled')
     .eq('id', userId)
     .single()
 
@@ -64,6 +64,7 @@ export async function GET(req: Request) {
     areaCity: area?.city ?? null,
     areaState: area?.state ?? null,
     interests: (data.interests ?? []).filter(s => INTEREST_SLUGS.includes(s)),
+    wavePushEnabled: data.wave_push_enabled,
   })
 }
 
@@ -76,6 +77,7 @@ export async function PATCH(req: Request) {
     avatarUrl?: string | null
     onboardingComplete?: boolean
     interests?: string[]
+    wavePushEnabled?: boolean
   }
 
   type UserUpdate = {
@@ -83,6 +85,7 @@ export async function PATCH(req: Request) {
     avatar_url?: string | null
     onboarding_complete?: boolean
     interests?: string[]
+    wave_push_enabled?: boolean
   }
   const updates: UserUpdate = {}
 
@@ -98,6 +101,7 @@ export async function PATCH(req: Request) {
     // Keep only known curated slugs; de-dupe.
     updates.interests = [...new Set(body.interests.filter(s => INTEREST_SLUGS.includes(s)))]
   }
+  if (body.wavePushEnabled !== undefined) updates.wave_push_enabled = body.wavePushEnabled
 
   const supabase = createServiceClient()
   const { data, error } = await supabase

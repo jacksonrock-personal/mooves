@@ -127,6 +127,7 @@ export type Database = {
           is_available: boolean
           last_active_at: string | null
           last_green_at: string | null
+          last_wave_at: string | null
           onboarding_complete: boolean
           phone: string
           referral_code: string
@@ -136,6 +137,7 @@ export type Database = {
           status_expires_at: string | null
           status_time: string | null
           visible_to: string[] | null
+          wave_push_enabled: boolean
         }
         Insert: {
           area_zip?: string | null
@@ -148,6 +150,7 @@ export type Database = {
           is_available?: boolean
           last_active_at?: string | null
           last_green_at?: string | null
+          last_wave_at?: string | null
           onboarding_complete?: boolean
           phone: string
           referral_code?: string
@@ -157,6 +160,7 @@ export type Database = {
           status_expires_at?: string | null
           status_time?: string | null
           visible_to?: string[] | null
+          wave_push_enabled?: boolean
         }
         Update: {
           area_zip?: string | null
@@ -169,6 +173,7 @@ export type Database = {
           is_available?: boolean
           last_active_at?: string | null
           last_green_at?: string | null
+          last_wave_at?: string | null
           onboarding_complete?: boolean
           phone?: string
           referral_code?: string
@@ -178,6 +183,7 @@ export type Database = {
           status_expires_at?: string | null
           status_time?: string | null
           visible_to?: string[] | null
+          wave_push_enabled?: boolean
         }
         Relationships: [
           {
@@ -496,6 +502,10 @@ export type Database = {
       increment_move_impressions: { Args: { move_ids: string[] }; Returns: undefined }
       record_move_click: { Args: { p_move_id: string }; Returns: { link_url: string | null }[] }
       increment_brought_over: { Args: { p_move_id: string }; Returns: undefined }
+      green_wave_candidates: {
+        Args: { mover: string }
+        Returns: { viewer: string; green_names: string[]; green_count: number }[]
+      }
       nearby_zips: { Args: { p_zip: string; p_radius_miles?: number }; Returns: { zip: string }[] }
       nearest_zip: {
         Args: { p_lat: number; p_lng: number }

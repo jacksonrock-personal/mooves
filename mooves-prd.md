@@ -34,6 +34,7 @@
 | 18 | Middleware | ✅ Approved |
 | 19 | Environment Variables | ✅ Approved |
 | — | Post-MVP Roadmap (Phases 8–15) | 🔮 Definitions finalized 2026-07-16 — needs spec + mockup per phase |
+| — | Phase 17 — Green Wave + Wave Blast + Onboarding Group CTA + Loop Stance Card | ✅ Spec 2026-07-23 (see "Phase 17" near EOF) · ✅ Mockup `mooves-phase17-wave-stance.html` · ✅ Code 2026-07-23 (`feat/phase17-green-wave`) |
 
 ---
 
@@ -3930,3 +3931,135 @@ Desktop, one PR (`feat/phase16-sponsor-email`). Sponsor gets a transactional **e
 - [ ] When a sponsor move becomes live (approved + charged), one email is sent to the sponsor via Resend.
 - [ ] No email if the sponsor has no email on file; no email for Mooves-authored moves; a mail failure doesn't break the charge/approve path.
 - [ ] `tsc --noEmit` + `next build` clean.
+
+---
+
+## Phase 17 — Green Wave + Wave Blast + Onboarding Group CTA + Loop Stance Card (Spec) — *spec'd 2026-07-23* · SPEC ✅ · MOCKUP ✅ (`mooves-phase17-wave-stance.html`, approved 2026-07-23) · CODE ✅ 2026-07-23 (`feat/phase17-green-wave`; `tsc --noEmit` clean; migration `0007_green_wave.sql` run by Jackson; device test of wave push + iOS group-thread `sms:` body pending)
+
+*Four related growth/flywheel features from the 2026-07-23 ideation session. 17.1 detects a "green wave" (a viewer's 3rd currently-green friend) and pushes a named moment. 17.2 is the SMS handoff off that moment (prefilled, personal-number, no A2P). 17.3 inserts an anti-engagement stance card into the Mooves Loop. 17.4 rebuilds the onboarding Invite step as a group-first CTA (pre-filled "Group Chat" → copy invite link → "drop this in the group chat"). Builds on shipped push infra (`lib/push.ts`, FCM, `push_subscriptions`), the shipped anonymous group-green push, green-expiry (9.5), the blast pattern (`lib/blast.ts`), and shipped group invite links (Phase 10.2: `api/groups/[id]/invite`, `/g/[code]`). Workflow after spec: mockup → build-loop → deploy.*
+
+**Naming note:** "green wave" is the internal name for the new 3-friend threshold moment, to avoid collision with the shipped `sendGroupGreenPush` (the anonymous per-group "Someone in {group} is free" push, which stays).
+
+**Decisions locked at approval (2026-07-23):** friends-at-large trigger (not group-scoped) · escalation ladder reconciled experientially (wave supersedes the anonymous push per-event, not the same scope) · naming reversal scoped to the wave surface only · prefilled body on the wave blast only (Phase 9 A4 stands for the 2+-join blast) · in-app wave strip retained (rescues iOS install-gated reach) · 6h per-viewer cooldown · concurrency-based trigger, no hard daypart · stance heading "The whole idea" · new `onboarding_stance_viewed` event · onboarding Invite step becomes group-first (lazy group creation on copy/share; personal referral link removed).
+
+### 17.1 — Green wave detection + push
+
+**Purpose:** turn "several friends are free at once" into a single, named, get-out-the-door moment — the one push that *ends* app usage instead of feeding it.
+
+**Entry / trigger:** evaluated per-viewer on every go-green write. When a friend going green raises a given viewer's count of **currently-green friends** (green = `is_available` AND not past `status_expires_at`) to **exactly 3**, that viewer is eligible for a wave.
+
+**Delivery — two surfaces:**
+- **Push (primary):** data-only FCM push, title names up to 3 green friends, then "+N others" beyond 3. Body = a get-out CTA. Deep-links to `/feed?wave=1`. Reuses `push_subscriptions`, stale-token cleanup, and the send path in `lib/push.ts`. Copy placeholder (final at mockup): *"Sam, Alex, and Jordan are free tonight"* / *"Start something — text the group."*
+- **In-app wave strip:** because iOS push is install-gated, on feed open when the 3-green condition holds and the viewer hasn't dismissed it this cycle, show a lightweight strip at the top of the feed naming the green friends with a "Start a plan" button (→ 17.2). Tappable, dismissible, non-blocking. Gives the feature value even for non-push users.
+
+**Naming rule (reverses the "never name individuals" guardrail — wave only):** the wave names up to 3 currently-green friends (most-recently-green first), then "+N others." Ambient signals (10.1) and the anonymous single-green push **stay nameless** — the reversal is scoped to actively-green friends in the wave surface only.
+
+**Escalation ladder vs. shipped push:** the shipped anonymous per-group push keeps firing for greens 1–2. When a go-green event triggers a wave for a viewer, that viewer receives the **wave in place of** the anonymous push for that event, and is suppressed from further anonymous pushes for the cooldown.
+
+**Dedupe / cooldown:** a viewer gets at most **one wave per 6h** (`users.last_wave_at`). A 4th/5th friend going green does **not** re-fire. If the count falls below 3 and returns to 3 within the cooldown, no re-fire.
+
+**Window:** trigger is **concurrency-based, no hard daypart** — 3 friends green *at the same time*, any time of day (green already means "free now-ish"; the coarse chip carries "tonight").
+
+**Opt-out:** a **"Green waves"** toggle in `NotificationSettings` (`users.wave_push_enabled`, default true). The existing per-group mutes don't map to a friend-based trigger, so waves get their own switch. Opting out suppresses the push (the in-app strip still appears).
+
+**Data:**
+- Read: viewer's friends (`friendships`), their `is_available` + `status_expires_at` + `display_name`, `push_subscriptions`, `wave_push_enabled`, `last_wave_at`.
+- Write: `users.last_wave_at` on send; stale-token cleanup (existing).
+- **New columns:** `users.last_wave_at timestamptz`, `users.wave_push_enabled boolean default true`. No new tables.
+- Evaluation fans out over the mover's friends on go-green; best-effort, wrapped so it never breaks the status write (same pattern as `sendGroupGreenPush`).
+
+**Out of scope:** RSVP/attendance, a wave "who's coming" list, waves for groups specifically (that's the shipped per-group push), re-firing on additional joins, cron-based evaluation, waves below 3.
+
+**Acceptance:**
+- [ ] Wave fires per-viewer when their count of currently-green (unexpired) friends reaches exactly 3.
+- [ ] Push names up to 3 friends, then "+N others"; deep-links to `/feed?wave=1`.
+- [ ] Ambient signals and the anonymous single-green push remain nameless.
+- [ ] When a wave fires to a viewer, it supersedes the anonymous push for that event and suppresses further anonymous pushes for the cooldown.
+- [ ] At most one wave per viewer per 6h; no re-fire on 4th+ green or on count dropping and returning.
+- [ ] In-app wave strip shows on feed open when the condition holds and isn't dismissed; "Start a plan" → 17.2.
+- [ ] "Green waves" toggle in NotificationSettings; off suppresses the push (strip still shows).
+- [ ] Wave evaluation is best-effort and never breaks the go-green write.
+
+### 17.2 — Wave blast (SMS handoff, prefilled)
+
+**Purpose:** convert the wave into a plan in one tap, via the user's own Messages app.
+
+**Entry:** "Start a plan" on the wave push (`/feed?wave=1`) or the in-app wave strip.
+
+**Behavior:** opens the device's **native SMS composer**, pre-addressed to the **currently-green friends named in the wave**, with a **prefilled body** (placeholder, final at mockup: *"Anyone free tonight? A few of us are green."*). Personal number, no Mooves number/link, **no A2P**. User edits/sends; Mooves' role ends. Reuses `lib/blast.ts`.
+
+**Scope of the A4 reversal:** prefill applies to the **wave blast only**. The shipped 2+-join blast (Phase 9.3) keeps A4's **empty** body — unchanged.
+
+**Known risk (shared with 9.3):** multi-recipient `sms:` group-thread behavior differs by OS (iOS may split threads). Same POC as Phase 9; validate on iOS + Android in build.
+
+**Data:** reads the green friends' phone numbers for the deep link; writes only an analytics event.
+
+**Out of scope:** Mooves-brokered/outbound SMS, in-app chat, delivery tracking, changing the 2+-join blast's empty body.
+
+**Acceptance:**
+- [ ] "Start a plan" opens the native composer pre-addressed to exactly the currently-green named friends.
+- [ ] Body is prefilled (wave blast only); the 2+-join blast stays empty.
+- [ ] No Mooves link/number; fires a blast analytics event.
+
+### 17.3 — Mooves Loop stance card
+
+**Purpose:** state the anti-engagement philosophy as the trust signal, at the one point invite-link users (who skip the landing page) meet it.
+
+**Entry:** the onboarding Mooves Loop, and Settings replay (`?replay=1`).
+
+**Behavior:** a **new card inserted between Card 3 (Plan over text) and Card 4 (Launchpad)** — becomes card 4 of 5, Launchpad becomes 5. Same card anatomy as the existing teaching cards (eyebrow label → icon tile → display heading → three stance lines). **Copy (locked, #3):**
+- Heading: *"The whole idea"*
+- *We don't want your attention.*
+- *We want you off the app and out the door.*
+- *Green means free. That's it.*
+
+Progress indicator goes 4→**5** pips; `CARD_COUNT` 4→5; swipe/pip/arrow/Skip all unchanged. No new data. Add a `onboarding_stance_viewed` PostHog event when the card lands (consistent with existing loop analytics).
+
+**Launchpad now a single CTA (amends the shipped card):** the finale card (now card 5) collapses from three rows to **one direct option — "Start your group"** (the group invite link). The **Open Discover** and **Go green** rows are **removed**. This enforces the session's single-CTA principle: the one action at the end of onboarding is getting your friends on via the group link. The card's "Let's go" finish to the feed is unchanged, and an explicit **"Maybe later"** decline sits under the single option (plus the persistent top-right Skip) so declining the group is always obvious — starting a group is never forced.
+
+**Out of scope:** changes to cards 1–3; any new loop mechanic; landing-page copy (separate).
+
+**Acceptance:**
+- [ ] New stance card renders between Plan-over-text and Launchpad; loop is now 5 cards.
+- [ ] Launchpad (card 5) shows a single "Start your group" option; the Open Discover and Go green rows are removed.
+- [ ] Launchpad offers an explicit decline ("Maybe later"), plus the persistent Skip; starting a group is never forced.
+- [ ] Progress indicator shows 5; swipe, pips, arrow, and Skip work across all 5.
+- [ ] Copy matches #3 exactly; card reuses the existing teaching-card anatomy.
+- [ ] Replay from Settings includes the card.
+- [ ] `onboarding_stance_viewed` fires when the card is shown.
+
+### 17.4 — Onboarding group-first CTA (Invite step)
+
+**Purpose:** make creating a group and dropping its link into your group chat the single, frictionless CTA at the end of setup — the flywheel's ignition. This is the highest-leverage growth change: it turns every new user into a channel to their whole friend group on day one.
+
+**Entry:** the **Invite step** of onboarding (revised Screen 3 sequence: Profile → Area → Interests → **Invite** → Loop). **Replaces** the current personal-referral Invite step (which shares a generic `makemooves.app/join/…` per-user link).
+
+**Behavior:**
+- The step presents a **pre-filled group named "Group Chat"** (a local draft), with the **rename field auto-focused and the stock text fully selected**, so the first keystroke overwrites it — zero-friction rename into whatever the group is actually called. Fallback: if untouched, the group persists as "Group Chat."
+- A prominent primary **"Copy invite link"** action (plus Share). Guiding copy locked: **"Drop this in the group chat and get your friends on."**
+- **Lazy creation:** the real group is created only when the user taps Copy/Share — at which point it's created (owner = the user) and its invite link is generated via the shipped group-invite infra, then copied/shared. **Skipping creates nothing** (no orphan groups).
+- **Skip-proofed:** skippable, but the skip carries a visible cost line (copy at mockup, e.g. "Mooves is quiet without your people."), not a hard block.
+- The **personal per-user referral link is removed** from onboarding — the group link is the only path.
+
+**Data:**
+- Reuses `POST /api/groups` (name = renamed value or "Group Chat") + the shipped group-invite-link generation (`api/groups/[id]/invite`) + join semantics (`/g/[code]` → adds joiner to the group and auto-friends its members, per Phase 10.2). No new tables.
+- Skip writes nothing.
+- Analytics: `onboarding_group_prefilled_viewed`, `onboarding_group_renamed`, `onboarding_group_link_copied` / `_shared`, `onboarding_group_invite_skipped`.
+
+**Relationship to other surfaces:**
+- The Loop Launchpad (17.3 card 5) is now a **single "Start your group" CTA** (Open Discover + Go green rows removed) — the group re-entry for anyone who skipped this step.
+- Reuses Phase 10.2 group-invite join semantics unchanged.
+
+**Out of scope:** changes to group-invite join semantics, multi-group creation in onboarding, contact import/picker, changes to the Loop teaching cards, any change to the personal referral system outside onboarding.
+
+**Acceptance:**
+- [ ] Invite step shows a pre-filled "Group Chat" group with the rename field auto-focused and its text pre-selected (first keystroke overwrites).
+- [ ] Untouched name persists as "Group Chat"; a renamed value persists on create.
+- [ ] "Copy invite link" / "Share" lazily creates the group + generates its invite link (shipped infra) and copies/opens share; nothing is created on skip.
+- [ ] CTA copy reads exactly "Drop this in the group chat and get your friends on."
+- [ ] The personal per-user referral link no longer appears in onboarding.
+- [ ] Skip is available with a visible cost line, not blocked.
+- [ ] Analytics events fire (prefilled viewed, renamed, link copied/shared, skipped).
+
+### Open questions
+- iOS group-thread `sms:` behavior — shared POC with Phase 9.3, still open.

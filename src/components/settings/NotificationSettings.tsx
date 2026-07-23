@@ -20,6 +20,7 @@ export default function NotificationSettings() {
   const [supported, setSupported] = useState<boolean | null>(null)
   const [on, setOn] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [waveOn, setWaveOn] = useState(true) // 17.1 green-wave push opt-out
 
   useEffect(() => {
     let cancelled = false
@@ -33,6 +34,29 @@ export default function NotificationSettings() {
       cancelled = true
     }
   }, [])
+
+  useEffect(() => {
+    fetch('/api/users/me')
+      .then(r => r.json())
+      .then((d: { wavePushEnabled?: boolean }) => {
+        if (typeof d.wavePushEnabled === 'boolean') setWaveOn(d.wavePushEnabled)
+      })
+      .catch(() => {})
+  }, [])
+
+  async function toggleWave(next: boolean) {
+    setWaveOn(next)
+    posthog.capture(next ? 'wave_push_enabled' : 'wave_push_disabled')
+    try {
+      await fetch('/api/users/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ wavePushEnabled: next }),
+      })
+    } catch {
+      // best-effort; leave the optimistic toggle as-is
+    }
+  }
 
   async function toggle(next: boolean) {
     if (busy) return
@@ -83,6 +107,19 @@ export default function NotificationSettings() {
       <p className="font-sans text-[12px] text-ink-500 px-5 pt-3 leading-relaxed">
         You only get notified when a friend goes free for a group you&apos;re in. Turn any group off from its own page.
       </p>
+
+      {/* 17.1 — green-wave push opt-out */}
+      <div className="bg-white border border-[#E8E4F5] rounded-[20px] mx-4 mt-3">
+        <div className="flex items-center gap-3 px-4 py-3.5">
+          <div className="flex-1 min-w-0">
+            <div className="font-sans font-bold text-[15px] text-ink-900">Green waves</div>
+            <div className="font-sans text-[12.5px] text-ink-500 mt-0.5 leading-snug">
+              A heads-up when a few friends are all free at once.
+            </div>
+          </div>
+          <Toggle on={waveOn} onChange={next => void toggleWave(next)} disabled={on === false} label="Green waves" />
+        </div>
+      </div>
     </>
   )
 }

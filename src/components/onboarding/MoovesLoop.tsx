@@ -10,8 +10,9 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { posthog } from '@/lib/posthog'
 
-const CARD_COUNT = 4
-const TRACK_TX = ['translate-x-0', '-translate-x-[25%]', '-translate-x-[50%]', '-translate-x-[75%]']
+const CARD_COUNT = 5
+const TRACK_TX = ['translate-x-0', '-translate-x-[20%]', '-translate-x-[40%]', '-translate-x-[60%]', '-translate-x-[80%]']
+const STANCE_IDX = 3 // 17.3 — the stance card sits between Plan-over-text and the Launchpad
 
 export default function MoovesLoop() {
   const router = useRouter()
@@ -22,14 +23,22 @@ export default function MoovesLoop() {
   const [idx, setIdx] = useState(0)
   const [exiting, setExiting] = useState(false)
   const startXRef = useRef<number | null>(null)
+  const stanceSeenRef = useRef(false)
 
   useEffect(() => {
     posthog.capture('onboarding_loop_viewed', { replay })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // 17.3 — fire once when the stance card first lands on screen.
+  useEffect(() => {
+    if (idx === STANCE_IDX && !stanceSeenRef.current) {
+      stanceSeenRef.current = true
+      posthog.capture('onboarding_stance_viewed', { replay })
+    }
+  }, [idx, replay])
+
   const feedPath = inviteCode ? `/feed?invite=${inviteCode}` : '/feed'
-  const goGreenPath = inviteCode ? `/feed?gogreen=1&invite=${inviteCode}` : '/feed?gogreen=1'
 
   async function complete() {
     if (replay) return // already onboarded; Settings replay never re-writes
@@ -96,10 +105,10 @@ export default function MoovesLoop() {
 
       {/* Carousel viewport */}
       <div className="flex-1 overflow-hidden" onPointerDown={onPointerDown} onPointerUp={onPointerUp}>
-        <div className={`flex w-[400%] h-full transition-transform duration-[420ms] ease-out ${TRACK_TX[idx]}`}>
+        <div className={`flex w-[500%] h-full transition-transform duration-[420ms] ease-out ${TRACK_TX[idx]}`}>
 
           {/* Card 1 — Go green (slide teaching visual) */}
-          <div className="w-1/4 h-full flex flex-col items-center justify-center px-8 text-center">
+          <div className="w-1/5 h-full flex flex-col items-center justify-center px-8 text-center">
             <div className="w-[200px] h-[168px] rounded-[28px] bg-green-100 flex items-center justify-center mb-8">
               <div className="relative w-[176px] h-[56px] rounded-full bg-green-700/10 border-[1.5px] border-green-700/20 flex items-center">
                 <span className="absolute left-1 top-1 w-12 h-12 rounded-full bg-green-700 flex items-center justify-center shadow-[0_2px_8px_rgba(22,122,67,0.35)]">
@@ -121,7 +130,7 @@ export default function MoovesLoop() {
           </div>
 
           {/* Card 2 — Friends see it (avatar stack) */}
-          <div className="w-1/4 h-full flex flex-col items-center justify-center px-8 text-center">
+          <div className="w-1/5 h-full flex flex-col items-center justify-center px-8 text-center">
             <div className="w-[200px] h-[168px] rounded-[28px] bg-green-100 flex items-center justify-center mb-8">
               <div className="flex">
                 <div className="relative w-[52px] h-[52px] rounded-full border-[3px] border-green-100 bg-purple-500 flex items-center justify-center font-display font-extrabold text-[19px] text-white">
@@ -143,7 +152,7 @@ export default function MoovesLoop() {
           </div>
 
           {/* Card 3 — Plan over text (bubbles) */}
-          <div className="w-1/4 h-full flex flex-col items-center justify-center px-8 text-center">
+          <div className="w-1/5 h-full flex flex-col items-center justify-center px-8 text-center">
             <div className="w-[200px] h-[168px] rounded-[28px] bg-purple-tint flex items-center justify-center mb-8">
               <div className="flex flex-col gap-2 w-[168px]">
                 <div className="self-end max-w-[130px] px-3 py-2.5 rounded-[15px_15px_4px_15px] bg-purple-500 text-white text-left text-[13px] font-medium leading-tight">
@@ -161,34 +170,54 @@ export default function MoovesLoop() {
             </p>
           </div>
 
-          {/* Card 4 — Launchpad */}
-          <div className="w-1/4 h-full flex flex-col justify-center px-7">
-            <h1 className="font-display font-extrabold text-[25px] text-text-primary tracking-tight text-center mb-1.5 leading-[1.14]">
+          {/* Card 4 — Stance (17.3) */}
+          <div className="w-1/5 h-full flex flex-col items-center justify-center px-8 text-center">
+            <div className="w-[200px] h-[168px] rounded-[28px] bg-purple-tint flex items-center justify-center mb-8">
+              <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#7C5CDB" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 10 8 10 8a13.16 13.16 0 0 1-1.67 2.68" />
+                <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 8 10 8a9.74 9.74 0 0 0 5.39-1.61" />
+                <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
+                <line x1="2" y1="2" x2="22" y2="22" />
+              </svg>
+            </div>
+            <div className="font-sans text-[12px] font-bold tracking-[0.12em] uppercase text-mooves-purple mb-2.5">The Mooves Loop · 4</div>
+            <h1 className="font-display font-extrabold text-[27px] text-text-primary tracking-tight mb-3 leading-[1.1]">The whole idea</h1>
+            <div className="flex flex-col gap-2.5 max-w-[260px]">
+              <p className="font-sans text-[15px] leading-snug text-text-secondary">We don&apos;t want your attention.</p>
+              <p className="font-sans text-[15px] leading-snug text-text-secondary">We want you off the app and out the door.</p>
+              <p className="font-display font-extrabold text-[17px] text-text-primary tracking-tight">Green means <span className="text-green-700">free.</span> That&apos;s it.</p>
+            </div>
+          </div>
+
+          {/* Card 5 — Launchpad (single group-first CTA) */}
+          <div className="w-1/5 h-full flex flex-col items-center justify-center px-7 text-center">
+            <div className="w-[92px] h-[92px] rounded-[26px] bg-purple-tint flex items-center justify-center mb-6">
+              <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#7C5CDB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+            </div>
+            <h1 className="font-display font-extrabold text-[25px] text-text-primary tracking-tight mb-1.5 leading-[1.14]">
               You&apos;re ready<br />to make Mooves.
             </h1>
-            <p className="font-sans text-[14px] text-text-secondary text-center mb-6">A few good places to start.</p>
-            <div className="flex flex-col gap-3">
+            <p className="font-sans text-[14px] text-text-secondary mb-6">One thing to do first.</p>
+            <div className="w-full">
               <LaunchRow
                 tone="purple"
-                title="Start a group"
+                title="Start your group"
                 desc="Invite your whole crew with one link."
                 icon={<GroupIcon />}
                 onClick={() => void exitTo('/people/groups/new', { launchpad: 'group' })}
               />
-              <LaunchRow
-                tone="purple"
-                title="Open Discover"
-                desc="Sponsored Mooves happening near you."
-                icon={<CompassIcon />}
-                onClick={() => void exitTo('/discover', { launchpad: 'discover' })}
-              />
-              <LaunchRow
-                tone="green"
-                title="Go green"
-                desc="Tap when you're free, friends see it."
-                icon={<CheckCircleIcon />}
-                onClick={() => void exitTo(goGreenPath, { launchpad: 'gogreen' })}
-              />
+              <button
+                onClick={() => void exitTo(feedPath, { skipped: true })}
+                disabled={exiting}
+                className="block w-full text-center mt-4 font-sans text-[14px] font-semibold text-text-secondary disabled:opacity-50"
+              >
+                Maybe later
+              </button>
             </div>
           </div>
 
@@ -198,7 +227,7 @@ export default function MoovesLoop() {
       {/* Controls */}
       <div className="flex items-center justify-between px-7 pb-11 pt-5 shrink-0">
         <div className="flex gap-1.5">
-          {[0, 1, 2, 3].map(i => (
+          {[0, 1, 2, 3, 4].map(i => (
             <button
               key={i}
               aria-label={`Card ${i + 1}`}
@@ -274,20 +303,3 @@ function GroupIcon() {
   )
 }
 
-function CompassIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7C5CDB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10" />
-      <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
-    </svg>
-  )
-}
-
-function CheckCircleIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2ECC71" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="9" />
-      <polyline points="8.5 12.5 11 15 15.5 9.5" />
-    </svg>
-  )
-}
