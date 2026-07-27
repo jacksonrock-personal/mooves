@@ -4501,6 +4501,68 @@ Never auto-grey. Joining a friend's green while you are green, your green has **
 - [ ] **20.1 visibility** — a "Seen by {scope}" chip sits above the swipe, opens the scope picker, and persists the choice; the swipe itself asks nothing.
 - [ ] Editing a Moove does not notify joiners; only cancelling does.
 - [ ] When your own Moove's start time arrives you are **prompted** to go free, never switched automatically.
+
+---
+
+## Phase 21 — Comments on a Moove (Kickoff context) — *written 2026-07-27, NOT yet specced*
+
+*Everything decided in the Phase 20 session that a fresh session would otherwise have to rediscover. Start with `mooves-spec-writer`; this is interview material, not a spec.*
+
+### Why it exists, and why it's next
+
+Jackson's original ask: *"Commenting function on a Moove. Let's people be clever and enjoy their experience in the app."* Offered reactions vs. comments vs. nothing, he chose **comments as their own phase**. Then at mockup pass 3 he **cut reactions entirely** — which left Phase 20 with **no expressive layer at all**. Comments were therefore **promoted ahead of scheduled availability** so that need isn't left unserved indefinitely.
+
+### ⚠️ The thing that makes this phase different from every other one
+
+**This phase must consciously amend a hard rule.** `mooves-build-loop` states, verbatim: *"No in-app messaging. Ever. Not even a placeholder."* The shipped stance card (17.3) is explicit anti-engagement copy, and the whole product deliberately pushes conversation out to SMS (the blast, the group text).
+
+Comments are how that rule dies quietly if nobody is watching: **they create a reason to come back and check.** That is precisely the loop the app is built against.
+
+So the first job of the spec is **not** the comment UI. It is deciding, in daylight, *what the amended rule is* — where the line now sits between "expressive" and "a messaging app" — and writing that down so the next twelve decisions have something to reason from. Do not let this get decided implicitly by a component.
+
+### Questions the spec must answer
+
+- **What can be commented on?** Mooves only, or greens too? (Greens are ~4h objects; a thread on one may be nonsense.)
+- **Notifications are the hard part.** Does a comment notify the author? Other commenters? Nothing at all? Every answer is a different product. "No notification" preserves the ethos but may make comments feel dead.
+- **No unread counts, no red dots** — those are named engagement patterns the build skill already forbids, and comments are the classic vector.
+- Lifetime: do comments die with the Moove (which expires 3h after start)? Almost certainly yes.
+- Moderation, editing, deletion, length cap, rate limiting.
+- Does the group text stay the primary handoff, with comments explicitly the lesser path?
+
+### What already exists to build on
+
+`move_joins` now carries a nullable `plan_id`, `plans` is a real table, and `WhosIn` renders rosters for both objects. A comments table would attach to `plans.id`. **Nothing about Phase 20's data model blocks this.**
+
+---
+
+## Phase 22 — Scheduled availability (Kickoff context) — *written 2026-07-27, NOT yet specced*
+
+*Jackson's ideas #3, #4 and #7 from the 2026-07-27 session, which belong together. Start with `mooves-spec-writer`.*
+
+### The feature
+
+1. **Preset availability** — set the days and times you're typically free, up to a month out.
+2. **Confirm-push when one arrives** — "you said you're free at 6, still true?" → tap to go green.
+3. **A Monday push** prompting you to set the week.
+
+**This is the strongest idea in Jackson's list.** It attacks the app's core weakness directly: nobody is green when you look. Jackson's own instinct on #4 — **confirm, never auto-broadcast** — is right and should be treated as locked. Auto-going-green for availability someone no longer has would poison trust fast, and one bad instance is worse than ten missed pushes.
+
+### ⚠️ The architectural prerequisite, and why it's a real decision
+
+**This requires storing each user's timezone, which this app has deliberately never done.**
+
+Phase 18 punted on it explicitly, in writing: *"server-side enforcement would require storing the mover's timezone — a separate spec, deliberately not taken on here."* Every time chip in the app today (`now`/`tonight`/`week`/`weekend`), green expiry (9.5), and Phase 20's plan timestamps are all **computed client-side** for exactly this reason. The server is deliberately ignorant of local time and only sanity-bounds what clients hand it.
+
+A scheduler that fires at "Thursday 6pm *your* time" cannot be client-side. So this phase:
+- adds a timezone to `users`,
+- introduces the app's **first server-side scheduler** (cron / edge function / pg_cron — an open choice),
+- and must decide what happens on DST boundaries and when someone travels.
+
+Jackson confirmed this direction at Phase 20 spec time. It is not a surprise, but it is the largest architectural change since the sponsor realm.
+
+### Downstream
+
+**Phase 23 (30-day friend-availability calendar) is gated on this.** Greens are ephemeral today, so that view would render nearly empty until scheduled availability produces future data. Once it exists, the aggregate heat-map framing fits the shipped "never name individuals" privacy rule.
 - [ ] Join-while-green prompts only at green + zero joiners + matching bucket; never automatic; greens only.
 - [ ] **Every `move_joins` read and write filters `plan_id IS NULL` where it means green joins** — verified specifically for go-grey, which must not delete plan joins.
 - [ ] `get_feed` redefinition preserves the `status_expires_at` filter and adds the `plan_id` filter.
