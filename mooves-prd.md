@@ -36,7 +36,10 @@
 | — | Post-MVP Roadmap (Phases 8–15) | 🔮 Definitions finalized 2026-07-16 — needs spec + mockup per phase |
 | — | Phase 17 — Green Wave + Wave Blast + Onboarding Group CTA + Loop Stance Card | ✅ Spec 2026-07-23 (see "Phase 17" near EOF) · ✅ Mockup `mooves-phase17-wave-stance.html` · ✅ Code 2026-07-23 (`feat/phase17-green-wave`) |
 | — | Phase 18 — "This week" time chip (18.1) + group visibility label (18.2) | ✅ Spec 2026-07-27 (see "Phase 18" at EOF) · ✅ Mockup `mooves-phase18-week-chip-group-label.html` · ✅ Code 2026-07-27 (`feat/phase18-week-chip-group-label`) |
-| — | Phase 19 — In-person adds: "Add everyone here" (19.1) + personal QR (19.2) | ✅ Spec 2026-07-27 (see "Phase 19" at EOF) · ✅ Mockup `mooves-phase19-in-person-adds.html` (approved 2026-07-27) · ✅ Code 2026-07-27 (`feat/phase19-in-person-adds`) |
+| — | Phase 19 — In-person adds: "Add everyone here" (19.1) + personal QR (19.2) | ✅ Spec 2026-07-27 (see "Phase 19" at EOF) · ✅ Mockup `mooves-phase19-in-person-adds.html` (approved 2026-07-27) · ✅ Code 2026-07-27 (`feat/phase19-in-person-adds`, merged PR #42) |
+| — | Phase 20 — Greens & Planned Mooves: lighter swipe (20.1) · rail of all greens + wave fold-in (20.2) · planned Mooves (20.3) · Mooves-only feed (20.4) · join-while-green (20.5) · who's-in (20.6) · Free until (20.7) · reactions (20.8) | ✅ Spec 2026-07-27, **revised at mockup** (see "Phase 20" at EOF) · ✅ Mockup `mooves-phase20-greens-plans.html` (approved 2026-07-27) · ⬜ Code |
+| — | Phase 21 — Scheduled availability (preset green times + confirm-push + Monday nudge) | 🔮 Deferred from Phase 20 · **requires storing user timezones**, which the app has never done |
+| — | Phase 22 — Comments on a Moove · 30-day friend-availability calendar (gated on Phase 21) | 🔮 Deferred from Phase 20 · comments require consciously amending the no-in-app-messaging rule |
 
 ---
 
@@ -4332,3 +4335,158 @@ State-based throughout, **no coined noun anywhere**:
 - [ ] Code resolve and join endpoints are rate-limited.
 - [ ] The personal QR renders the existing referral link and produces a single friendship on scan, with no backend change.
 - [ ] `/g/[code]`, the group invite sheet, and group auto-friend behavior are unchanged.
+
+---
+
+## Phase 20 — Greens & Planned Mooves (Spec) — *spec'd 2026-07-27* · SPEC ✅ (**revised at mockup, see "Revision" below**) · MOCKUP ✅ (`mooves-phase20-greens-plans.html`, approved 2026-07-27) · CODE ⬜
+
+> ### ⚠️ Revision at mockup approval (2026-07-27) — read this before the sections below
+>
+> Three passes of mockup changed the structure. **Where this block and the original sections disagree, this block wins.**
+>
+> 1. **Greens are OUT of the feed entirely. The rail is people, the feed is Mooves.** Jackson on seeing interleaving rendered: *"like a striped animal."* Correct — two objects sharing one surface never resolved visually. **This reverses both "rail = now greens only" (20.2) and "fully interleaved" (20.4).** The rail now holds **every** green, ordered by immediacy, each with its own time label (*Now · This wk · Wknd*); later greens get a softer ring so "right now" still reads first. The feed holds **only** Mooves, under a single "Mooves" section label. Rationale: "rail = now only" existed solely because greens still needed somewhere to sit in the feed. Once they don't, *who's free* vs *what's happening* is the better split, and it makes interleaving structurally impossible rather than merely discouraged.
+> 2. **Formality settled: a Moove has a day, a green does not.** That is the whole line between the objects. **Date required; time, place and notes all optional.** "Sunday, long walk, lake path" is a legitimate Moove. Composer fields are exactly: What is it · When (date required, time optional) · Where (optional) · Anything else (optional) · Who can see this.
+> 3. **Three additions ride along** (Jackson: "ship it all with Phase 20") — 20.6 expandable who's-in, 20.7 "Free until", 20.8 reactions. Specced below.
+>
+> **Scope warning, recorded deliberately:** this phase was already the largest build since Phase 13. With the additions plus the `move_joins` surgery it is now roughly double the original spec. Flagged to Jackson at approval; he chose to keep it as one branch.
+
+### Deferred out of this phase, with reasons
+
+- **Real comments on a Moove** — Jackson wants them, and chose "its own phase" over reactions-only. Deferred because "no in-app messaging, ever" is a hard rule in the build skill and the shipped stance card (17.3) is explicitly anti-engagement: comments create a reason to come back and check, which is the loop the app is built against. It gets a dedicated phase where that rule is **consciously amended**, not eroded sideways. 20.8 reactions ship now as the bounded version (expressive, no thread, no unread).
+- **Scheduled availability — preset weekly/monthly green times, a confirm-push when one arrives, and a Monday nudge to set the week** (Jackson's #3/#4/#7). Strong idea, attacks cold start directly, and his instinct to **confirm rather than auto-broadcast** is right. **Phase 21**, because all three require **storing each user's timezone — which this app has deliberately never done** (Phase 18 explicitly punted: every time chip today is computed client-side for exactly this reason). A scheduler firing at "Thursday 6pm your time" cannot be client-side. Jackson confirmed the direction at spec time.
+- **30-day calendar of friend availability** (#8) — **Phase 22, gated on Phase 21.** Greens are ephemeral today, so the view would render almost entirely empty until scheduled availability exists. The aggregate heat-map framing then fits the existing "never name individuals" rule.
+- **Pivoting from the swipe into the plan flow** (part of #6) — **rejected.** This phase exists to make the swipe a zero-decision gesture; asking "now or later?" mid-swipe puts the decision straight back and undoes 20.1. The FAB is the plan path and is one tap away.
+
+*The Moovers/Greeners split. Two objects, two surfaces, one feed. Shipped as a SINGLE build (Jackson's call at spec) — the rail and the plans object are two halves of one idea, and shipping plans into today's feed would mean building a layout you immediately replace. Note for planning: this is the largest single build since Phase 13, and it touches the most load-bearing shipped code in the app.*
+
+### Purpose
+
+Let the app express two things it currently conflates: **"I'm free right now"** (a Greener, zero forethought) and **"here is an actual plan"** (a Moover, with a time and a place).
+
+### The framing that settles it
+
+Some people generate plans; some are simply open to being pulled into one. Today both must squeeze into a 60-character `status_note` plus a coarse time chip — greens are asked to carry planning they were never designed for.
+
+### 20.1 — The lighter swipe
+
+**Swipe = "I'm free right now and want to be contacted."** Nothing else.
+
+- The swipe posts a green **immediately** with defaults: time = `now`, no note, visibility = last used.
+- The **visibility control stays** on the swipe (a privacy decision, not a detail).
+- Vibe note and time chip become **optional edits after the fact**, made on your own expanded card.
+- **Adding a time chip moves your card out of the rail and into the feed.** A feature, not a side effect: "make it a later thing" visibly demotes it from immediate to scheduled.
+- The swipe control appears **only when you are grey**.
+
+### 20.2 — The rail *(REVISED — now holds ALL greens, not just `now`)*
+
+A horizontal avatar rail at the top of the feed holding ~~only "free right now" greens~~ **every green the viewer can see**, ordered by immediacy (`now` → `tonight` → `week` → `weekend`). A green with no time chip counts as `now` (already the rule in `wave_group_for_viewer`).
+
+**Each avatar carries its own time label** (*Now · Tonight · This wk · Wknd*) under the name, and **non-`now` greens use a softer ring** so "right now" still reads first at a glance. The rail sits **above the swipe** in every state.
+
+- **You are the first avatar** when green-now, "Your story"-style.
+- **Tapping any avatar expands it into a full card**, because the note is what makes a green tappable. A friend's card carries their note, joiners, **"I'm in"**, and text-them. Your own carries joiners, the blast, and go-grey — today's `MyMoveCard`, reached by a tap instead of always-on.
+- **"I'm in" and text-them stay within one tap of the rail.** Non-negotiable: this phase shortens creation and must not lengthen response.
+- The rail **hides entirely** when nobody is green now.
+
+**The wave folds into the rail.** A `now` wave puts its named headline and one-tap blast on the avatars already in the rail, instead of rendering the same three faces twice in a stacked strip. `tonight`/`weekend` waves keep the existing `WaveStrip`, since those people live in the feed. Wave detection, the 6h cooldown, `week` exclusion and dismissal-by-signature are **unchanged**.
+
+### 20.3 — Planned Mooves
+
+- **Fields *(REVISED at mockup)*:** title (required) · **date required, time OPTIONAL** · location (optional) · note (optional) · visibility via the same `visible_to` group scoping as greens. ~~start time (required)~~. **A Moove has a day, a green does not** — that is the whole formality line. With no time set, the card's lead tile shows the date (`SUN` / `AUG 3`) instead of a clock, and the sub-line reads "Sunday, no set time".
+- **Entry point *(REVISED at mockup)*: a floating purple "+" FAB, bottom right above the nav** — ~~a "+" in the feed header~~. Bigger and bolder than a header control, and the header stays the cow lockup alone. Deliberately far from the swipe so the two creation paths are never confused. Feed content must pad clear of it so the last card is never trapped underneath.
+- **Creating a plan does not make you green.** When its start time arrives, you are prompted to go green on it.
+- **Joinable exactly like a green** — "I'm in", joiner avatars, and the same **2+ group-text blast** (the gate exists so you never blast into silence; identical logic).
+- **Expiry mirrors Discover:** hidden 3 hours after start time.
+- Author can **edit or cancel**.
+- **Group-scoped plans fire the existing group push** under the same 60-minute per-group cooldown.
+- Plans **never** appear in Discover, and **never** form or join a green wave.
+
+### 20.4 — The feed *(REVISED — was "the interleaved feed")*
+
+~~The vertical feed holds everything with a future time, fully interleaved.~~ **Superseded at mockup.**
+
+The vertical feed holds **only planned Mooves**, sorted by when they happen, under a single **"Mooves"** section label. No greens appear in it at any time, so interleaving is structurally impossible rather than merely discouraged.
+
+**Empty states:** the rail hides entirely when nobody is green; the swipe takes the top slot. `AmbientTier` shows only when the rail **and** the Mooves list are both empty, with copy pointing at both available actions ("Go free, or plan something for later."). Zero-friends cold start unchanged.
+
+### 20.6 — Who's in, expandable *(NEW)*
+
+**Problem:** today you cannot see who has joined until *after* you commit and the group text opens. That is backwards — the roster is a decision input.
+
+A joiner row sits on every green and Moove card: overlapping avatars, a count ("3 in"), and a chevron. **Collapsed by default** so cards stay short. Tapping expands the card in place to name everyone, **host/author first**. Applies to both objects.
+
+### 20.7 — "Free until" *(NEW)*
+
+Your own green gets an editable expiry, shown as a **"Free until"** row on your own card alongside "Add a note" and the time chip.
+
+**It is not on the swipe.** 20.1 exists to make going free a single zero-decision gesture; a time picker in the swipe puts the decision straight back. Greens already auto-expire (9.5: now→+4h, tonight→3am, week→3am Fri, weekend→3am Mon) — this makes that deadline visible and adjustable after the fact. Editing it moves the deadline; it does not change the time bucket.
+
+### 20.8 — Reactions *(NEW)*
+
+A **fixed, small set of emoji** on a Moove, shown as pills with counts beneath the joiner row, plus an add affordance. One reaction per user per emoji, toggleable.
+
+**Deliberately bounded:** no free-text, no threads, no replies, no unread count, no notification. This is the expressive outlet without the come-back-and-check loop — see the deferred-comments note above.
+
+### 20.5 — Join-while-green prompt
+
+Never auto-grey. Joining a friend's green while you are green, your green has **zero joiners**, and your time buckets match → one-tap "You're in with Sam, drop your own move?"
+
+**Zero-joiners is a hard guard:** going grey deletes `move_joins`, so prompting someone with joiners invites them to silently destroy other people's commitments. **Greens only, never plans.**
+
+### Data
+
+**New `plans` table:** author, title, start time, optional location and note, `visible_to`, created/cancelled timestamps.
+
+**`move_joins` gains a nullable `plan_id`** (NULL = a green join). The primary key `(mover_id, joiner_id)` is replaced by two partial unique indexes, one per join kind. `mover_id` stays NOT NULL and holds the **plan's author** for plan joins.
+
+> ⚠️ **The dangerous part of this build, on a live table.** Because `mover_id` is populated for plan joins too, **every existing query against `move_joins` must add `plan_id IS NULL`** or plan joins leak into greens. Sites to audit:
+> - `get_feed` — plan joins would appear in a green's joiner list.
+> - **`/api/status` go-grey**, which today runs `delete().eq('mover_id', userId)` — as written this would **delete every join on all of your plans** the moment you go grey.
+> - `/api/moves/join`, the FeedScreen realtime handler, and the 9.5 returning-mover prompt.
+>
+> `get_feed` has already been broken twice by redefinition (the 0008 expiry regression). It must keep the `status_expires_at` filter **and** gain the `plan_id` filter. Diff against the deployed definition, not the newest migration file.
+
+**Reuse:** `movetime.ts`, `discoverGroups.ts` (day grouping, happening-now), `MoveForm`'s date/time/location patterns, `Joiners.tsx`, `lib/blast.ts`, `visible_to`, and the 3h-grace expiry from `api/discover`.
+
+### Out of scope
+
+- RSVP management, attendee caps, maybe/declined states.
+- Recurring plans, calendar integration or export.
+- Plans in Discover, or any sponsor/billing interaction.
+- Plans forming green waves.
+- Notifying joiners when a plan is **edited** (cancel is in — see Open questions).
+- Comments, threads, or any in-app messaging.
+- Changing wave detection, the 6h cooldown, or `week` exclusion.
+- Migrating greens into a general `moves` table.
+
+### Open questions
+
+1. ~~Notifying joiners when a plan is cancelled.~~ **Decided at approval (2026-07-27): include it.** A cancelled plan would otherwise silently vanish for people who committed to it, which is the one place this spec knowingly left someone hanging. Reuses the existing push, **joiners only**, on cancel. *Jackson approved without answering directly — the recommendation was taken as written and is reversible at mockup.*
+2. Whether a plan shows a joiner cap or "who's in" beyond avatars. Settle at mockup.
+3. Rail sizing, avatar count before horizontal scroll, expanded-card transition. Mockup.
+
+### Acceptance criteria
+
+- [ ] Swipe posts a green immediately with time=`now`, no note, last-used visibility; visibility control still on the swipe.
+- [ ] Note and time chip are editable after the fact on your own card.
+- [ ] Adding a time chip moves your card from the rail into the feed.
+- [ ] Swipe control appears only when grey.
+- [ ] Rail shows **every** green (no-chip counts as `now`), ordered by immediacy, you first, each with a time label; non-`now` greens use a softer ring; rail hides entirely when empty and sits above the swipe.
+- [ ] **No green ever renders in the feed**, in any state.
+- [ ] Tapping a rail avatar opens that person's card directly beneath the rail, above the Mooves list, one at a time; "I'm in" and text-them are within one tap of the rail.
+- [ ] A `now` wave renders on the rail, not as a separate strip; tonight/weekend waves still use `WaveStrip`.
+- [ ] Wave detection, 6h cooldown, `week` exclusion and dismissal-by-signature are unchanged.
+- [ ] The floating FAB creates a Moove with title and **date required, time optional**, plus optional place, note, and group visibility; feed content pads clear of the FAB.
+- [ ] A Moove with no time shows a date tile and "no set time" copy, not a placeholder clock.
+- [ ] Creating a Moove does not change your availability.
+- [ ] Mooves are joinable, show joiners, and get the 2+ blast.
+- [ ] Mooves disappear 3h after start time (date-only Mooves expire at end of that day); author can edit and cancel; cancelling pushes joiners.
+- [ ] Group-scoped Mooves push under the existing 60-minute cooldown; Mooves never reach Discover; Mooves never form waves.
+- [ ] Feed contains **only** Mooves, sorted by when they happen, under one "Mooves" label.
+- [ ] AmbientTier shows only when the rail and the Mooves list are both empty; zero-friends cold start unchanged.
+- [ ] **20.6** — every green and Moove card shows a collapsed joiner row (avatars + count); tapping expands in place and names everyone, author/host first.
+- [ ] **20.7** — "Free until" is editable on your own green card and nowhere on the swipe; editing moves the deadline without changing the time bucket.
+- [ ] **20.8** — reactions are a fixed emoji set with counts, toggleable, one per user per emoji; no free text, no threads, no unread badge, no notification.
+- [ ] Join-while-green prompts only at green + zero joiners + matching bucket; never automatic; greens only.
+- [ ] **Every `move_joins` read and write filters `plan_id IS NULL` where it means green joins** — verified specifically for go-grey, which must not delete plan joins.
+- [ ] `get_feed` redefinition preserves the `status_expires_at` filter and adds the `plan_id` filter.

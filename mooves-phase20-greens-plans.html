@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mooves — Phase 20: Greens &amp; Planned Mooves</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg:#1C1730; --app-bg:#F8F6FF; --white:#FFFFFF;
+    --purple:#7C5CDB; --purple-100:#EDE9FF; --purple-700:#5F3FC4;
+    --green:#2ECC71; --green-700:#167A43; --green-100:#E3F9EC;
+    --grey:#BDB5D4; --grey-100:#F1EEFA;
+    --ink:#1C1730; --ink-2:#6B628A; --border:#E8E4F5; --red:#E8405A;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); font-family:'Inter',sans-serif; color:#fff; min-height:100vh; padding:40px 20px 90px; -webkit-font-smoothing:antialiased; }
+  .page-title { text-align:center; font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:22px; letter-spacing:-.02em; margin-bottom:5px; }
+  .page-sub { text-align:center; color:#8B82AE; font-size:13px; margin-bottom:26px; }
+  .toggles { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; align-items:center; max-width:840px; margin:0 auto 30px; }
+  .grp-lbl { font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:rgba(255,255,255,.32); margin:0 4px; }
+  .toggle { background:#2A2340; color:#C9C1E4; border:1px solid #3A3355; font-weight:600; font-size:12.5px; padding:9px 15px; border-radius:999px; cursor:pointer; transition:all .15s; }
+  .toggle:hover { border-color:var(--purple); }
+  .toggle.active { background:var(--purple); color:#fff; border-color:var(--purple); }
+  .state { display:none; }
+  .state.active { display:flex; flex-direction:column; align-items:center; gap:15px; }
+
+  .phone { width:320px; height:680px; border-radius:44px; background:var(--app-bg); overflow:hidden; position:relative; box-shadow:0 30px 70px rgba(0,0,0,.45); border:1px solid #2E2748; display:flex; flex-direction:column; }
+  .caption { max-width:400px; text-align:center; font-size:12.5px; line-height:1.55; color:#9990BC; }
+  .caption b { color:#C9C1E4; font-weight:600; }
+  .screen-label { text-align:center; color:#6E6690; font-size:12px; letter-spacing:.04em; }
+  .note { max-width:700px; margin:4px auto 0; background:#241E3A; border:1px solid #342D52; border-radius:14px; padding:14px 18px; font-size:12.5px; color:#B3AAD2; line-height:1.65; }
+  .note b { color:#E6DEFF; }
+
+  /* ══ chrome ══ */
+  .fhead { background:linear-gradient(160deg,#7C5CDB 0%,#9B7FE8 70%,#A98FF0 100%); padding:26px 16px 20px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .lockup { display:flex; align-items:center; gap:9px; }
+  .cow { width:30px; height:30px; }
+  .wm { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:23px; color:#fff; letter-spacing:-.02em; display:flex; align-items:center; }
+  .wm .oo { display:inline-flex; align-items:center; gap:2px; margin:0 1px; position:relative; top:1px; }
+  .wm .d1 { width:12px; height:12px; background:var(--green); border-radius:50%; box-shadow:0 0 6px rgba(46,204,113,.6); }
+  .wm .d2 { width:12px; height:12px; background:rgba(255,255,255,.35); border-radius:50%; }
+
+  .fbody { flex:1; overflow-y:auto; padding:13px 14px 96px; display:flex; flex-direction:column; }
+  .fab { position:absolute; right:15px; bottom:74px; width:58px; height:58px; border-radius:50%; background:var(--purple); display:flex; align-items:center; justify-content:center; box-shadow:0 8px 22px rgba(124,92,219,.5); z-index:6; border:2.5px solid var(--app-bg); cursor:pointer; }
+  .nav { position:absolute; bottom:0; left:0; right:0; background:var(--white); border-top:1px solid var(--border); display:flex; z-index:5; }
+  .nav a { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:9px 0 10px; font-size:10px; font-weight:600; color:var(--grey); }
+  .nav a.on { color:var(--purple); }
+
+  /* ══ RAIL — every green lives here now, ordered by immediacy ══ */
+  .rail-wrap { margin-bottom:13px; }
+  .rail-wrap.wave { background:var(--white); border:1.5px solid rgba(46,204,113,.25); border-radius:20px; padding:13px 0; box-shadow:0 4px 24px rgba(46,204,113,.26); position:relative; }
+  .wave-head { padding:0 14px; margin-bottom:10px; }
+  .wave-eyebrow { display:flex; align-items:center; gap:8px; margin-bottom:7px; }
+  .wave-dot { width:10px; height:10px; border-radius:50%; background:var(--green); box-shadow:0 0 0 4px rgba(46,204,113,.16); }
+  .wave-eyebrow span { font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--green-700); }
+  .wave-title { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:17px; line-height:1.25; color:var(--ink); letter-spacing:-.02em; padding-right:22px; }
+  .wave-x { position:absolute; top:10px; right:10px; width:26px; height:26px; border-radius:50%; background:var(--app-bg); color:var(--ink-2); display:flex; align-items:center; justify-content:center; }
+  .wave-cta { margin:11px 14px 0; padding:12px; border-radius:14px; background:var(--purple); color:#fff; font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:14.5px; display:flex; align-items:center; justify-content:center; gap:8px; }
+
+  .rail-lbl { font-size:10.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-2); padding:0 2px 8px; }
+  .rail { display:flex; gap:11px; overflow-x:auto; padding:2px 0 3px; scrollbar-width:none; }
+  .rail::-webkit-scrollbar { display:none; }
+  .rail-wrap.wave .rail { padding-left:14px; padding-right:14px; }
+  .ritem { flex-shrink:0; width:58px; display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer; }
+  .rav { width:54px; height:54px; border-radius:50%; position:relative; display:flex; align-items:center; justify-content:center; font-family:'Plus Jakarta Sans',sans-serif; font-weight:700; font-size:18px; color:#fff; }
+  .rav::after { content:''; position:absolute; inset:-4px; border-radius:50%; border:2.5px solid var(--green); }
+  .ritem.later .rav::after { border-color:rgba(46,204,113,.42); }
+  .ritem.sel .rav::after { border-width:3px; box-shadow:0 0 0 2px rgba(46,204,113,.22); }
+  .ritem.me .rav::after { border-style:dashed; }
+  .rname { font-size:11px; font-weight:600; color:var(--ink-2); max-width:58px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ritem.sel .rname { color:var(--ink); font-weight:700; }
+  .rwhen { font-size:9.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--green-700); }
+  .ritem.later .rwhen { color:var(--ink-2); }
+
+  /* ══ CARDS ══ */
+  .card { border-radius:16px; padding:11px 12px; margin-bottom:8px; }
+  .card.green { border:1.5px solid rgba(46,204,113,.28); background:rgba(46,204,113,.085); }
+  .card.plan { border:1.5px solid var(--border); background:var(--white); }
+  .card.mine { border-color:rgba(124,92,219,.4); }
+  .crow { display:flex; align-items:center; gap:11px; }
+  .lead { width:46px; height:46px; flex-shrink:0; }
+  .lead.av { border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Plus Jakarta Sans',sans-serif; font-weight:700; font-size:16px; color:#fff; }
+  .lead.tile { border-radius:13px; background:var(--purple-100); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; }
+  .lead.tile .t1 { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:14px; color:var(--purple-700); line-height:1; letter-spacing:-.02em; }
+  .lead.tile .t2 { font-size:9px; font-weight:700; letter-spacing:.08em; color:var(--purple-700); opacity:.75; line-height:1; }
+  .cbody { flex:1; min-width:0; }
+  .ctitle { font-family:'Plus Jakarta Sans',sans-serif; font-weight:700; font-size:15px; color:var(--ink); line-height:1.25; letter-spacing:-.01em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .csub { font-size:12.5px; color:var(--ink-2); line-height:1.35; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .csub.wrap { white-space:normal; }
+  .cmeta { display:flex; align-items:center; gap:6px; margin-top:4px; }
+  .chip-t { font-size:10.5px; font-weight:700; color:var(--purple-700); background:var(--purple-100); padding:2px 7px; border-radius:100px; }
+  .btn-join { flex-shrink:0; padding:8px 13px; border-radius:100px; font-weight:700; font-size:12.5px; border:none; background:var(--purple); color:#fff; cursor:pointer; }
+  .btn-join.in { background:var(--green-700); }
+
+  /* ── #1 who's in, expandable ── */
+  .who { margin-top:10px; padding-top:9px; border-top:1px solid rgba(28,23,48,.07); }
+  .who-hd { display:flex; align-items:center; gap:8px; cursor:pointer; }
+  .jav { width:23px; height:23px; border-radius:50%; border:2px solid var(--white); display:flex; align-items:center; justify-content:center; font-size:9.5px; font-weight:700; color:#fff; flex-shrink:0; }
+  .jav+.jav { margin-left:-8px; }
+  .who-txt { flex:1; font-size:11.5px; color:var(--ink-2); font-weight:600; }
+  .who-chev { color:var(--ink-2); flex-shrink:0; transition:transform .15s; }
+  .who-chev.open { transform:rotate(180deg); }
+  .who-list { margin-top:9px; display:flex; flex-direction:column; gap:1px; }
+  .who-row { display:flex; align-items:center; gap:9px; padding:5px 0; }
+  .who-row .jav { width:26px; height:26px; margin:0; font-size:10px; }
+  .who-row span { font-size:13px; color:var(--ink); font-weight:500; }
+  .who-row .you { font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-2); margin-left:auto; }
+
+  /* ── #2 reactions ── */
+  .rx { display:flex; align-items:center; gap:6px; margin-top:9px; flex-wrap:wrap; }
+  .rx-pill { display:inline-flex; align-items:center; gap:4px; padding:4px 9px; border-radius:100px; border:1px solid var(--border); background:var(--white); font-size:12px; font-weight:600; color:var(--ink-2); cursor:pointer; }
+  .rx-pill.on { background:var(--purple-100); border-color:var(--purple); color:var(--purple-700); }
+  .rx-add { width:27px; height:27px; border-radius:50%; border:1px dashed var(--border); display:flex; align-items:center; justify-content:center; color:var(--grey); cursor:pointer; }
+
+  /* ══ swipe ══ */
+  .swipe { position:relative; width:100%; height:56px; border-radius:100px; overflow:hidden; margin-bottom:14px; display:flex; align-items:center; background:rgba(22,122,67,.10); border:1.5px solid rgba(22,122,67,.20); flex-shrink:0; }
+  .swipe .thumb { position:absolute; left:4px; top:4px; width:48px; height:48px; border-radius:50%; background:var(--green-700); display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(22,122,67,.35); }
+  .swipe .lbl { width:100%; text-align:center; padding-left:44px; font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:15.5px; color:var(--green-700); letter-spacing:-.01em; }
+
+  .seclbl { font-size:10.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-2); padding:2px 2px 9px; }
+
+  /* ══ sheets ══ */
+  .scrim { position:absolute; inset:0; background:rgba(28,23,48,.5); z-index:7; }
+  .sheet { position:absolute; left:0; right:0; bottom:0; z-index:8; background:var(--white); border-radius:26px 26px 0 0; padding:11px 18px 26px; max-height:90%; overflow-y:auto; }
+  .sheet.split { display:flex; flex-direction:column; padding-bottom:0; }
+  .sheet.split .sh-scroll { flex:1; overflow-y:auto; min-height:0; margin:0 -18px; padding:0 18px 4px; }
+  .sheet.split .sh-foot { flex-shrink:0; padding:12px 0 22px; background:var(--white); border-top:1px solid var(--grey-100); }
+  .grab { width:38px; height:4px; border-radius:100px; background:var(--border); margin:0 auto 16px; }
+  .sh-title { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:18px; color:var(--ink); letter-spacing:-.02em; margin-bottom:6px; }
+  .sh-sub { font-size:13.5px; color:var(--ink-2); line-height:1.5; margin-bottom:18px; }
+  .flabel { font-size:11px; font-weight:600; color:var(--ink-2); text-transform:uppercase; letter-spacing:.08em; margin-bottom:7px; }
+  .opt { text-transform:none; letter-spacing:0; font-weight:400; }
+  .finput { width:100%; min-height:46px; border-radius:14px; border:1.5px solid var(--border); background:var(--app-bg); padding:12px 14px; font-size:14.5px; color:var(--ink); display:flex; align-items:center; margin-bottom:15px; }
+  .finput.ph { color:var(--grey); }
+  .frow2 { display:flex; gap:9px; }
+  .frow2 .finput { flex:1; }
+  .chips { display:flex; gap:7px; flex-wrap:wrap; margin-bottom:16px; }
+  .chip { font-size:12.5px; font-weight:600; padding:8px 13px; border-radius:100px; border:1.5px solid var(--border); background:var(--white); color:var(--ink-2); cursor:pointer; }
+  .chip.on { background:var(--purple-100); border-color:var(--purple); color:var(--purple-700); }
+  .btn { width:100%; padding:15px; border-radius:16px; background:var(--purple); color:#fff; font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:15.5px; border:none; cursor:pointer; box-shadow:0 6px 18px rgba(124,92,219,.3); }
+  .btn.off { opacity:.4; box-shadow:none; }
+  .btn.quiet { background:var(--app-bg); color:var(--ink-2); box-shadow:none; font-family:'Inter',sans-serif; font-weight:600; font-size:14.5px; }
+  .btn.danger { background:#FFF0F2; color:var(--red); box-shadow:none; font-family:'Inter',sans-serif; font-weight:600; font-size:15px; }
+  .btn.blast { background:var(--purple); display:flex; align-items:center; justify-content:center; gap:8px; font-size:14px; padding:11px; border-radius:13px; }
+
+  .editrow { display:flex; align-items:center; gap:8px; padding:11px 12px; border-radius:13px; background:var(--app-bg); border:1px solid var(--border); margin-top:7px; }
+  .editrow svg { color:var(--purple); flex-shrink:0; }
+  .editrow .k { font-size:12px; color:var(--ink-2); font-weight:600; }
+  .editrow .v { font-size:12.5px; color:var(--ink); font-weight:600; margin-left:auto; }
+
+  .ambient { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:0 24px 40px; }
+  .apulse { width:74px; height:74px; border-radius:50%; border:2px solid var(--grey); display:flex; align-items:center; justify-content:center; margin-bottom:18px; position:relative; }
+  .apulse::after { content:''; position:absolute; inset:-9px; border-radius:50%; border:1.5px solid rgba(189,181,212,.4); }
+  .adot { width:9px; height:9px; border-radius:50%; background:var(--grey); }
+  .ah { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:19px; color:var(--ink); letter-spacing:-.02em; margin-bottom:8px; }
+  .ap { font-size:14px; color:var(--ink-2); line-height:1.55; max-width:230px; }
+</style>
+</head>
+<body>
+  <div class="page-title">Phase 20 — Greens &amp; Planned Mooves</div>
+  <div class="page-sub">Rail is people. Feed is plans. Nothing interleaved.</div>
+
+  <div class="toggles">
+    <span class="grp-lbl">Feed</span>
+    <button class="toggle active" data-state="feed">Rail + plans</button>
+    <button class="toggle" data-state="wave">Wave on the rail</button>
+    <button class="toggle" data-state="norail">Nobody free</button>
+    <button class="toggle" data-state="empty">Both empty</button>
+    <span class="grp-lbl">Cards</span>
+    <button class="toggle" data-state="friendcard">Green card</button>
+    <button class="toggle" data-state="mycard">Your green</button>
+    <button class="toggle" data-state="plancard">Your Moove</button>
+    <button class="toggle" data-state="whosin">Who's in, open</button>
+    <span class="grp-lbl">Actions</span>
+    <button class="toggle" data-state="composer">Plan a Moove</button>
+    <button class="toggle" data-state="joinprompt">Join while green</button>
+    <button class="toggle" data-state="cancel">Cancel Moove</button>
+  </div>
+
+  <!-- ══════ 1. FEED ══════ -->
+  <div class="state active" data-state="feed">
+    <div class="phone">
+      <div class="fhead" data-head></div>
+      <div class="fbody">
+        <div class="rail-wrap">
+          <div class="rail-lbl">Free</div>
+          <div class="rail">
+            <div class="ritem me"><div class="rav" style="background:var(--purple);">J</div><div class="rname">You</div><div class="rwhen">Now</div></div>
+            <div class="ritem sel"><div class="rav" style="background:#E8A0B4;">M</div><div class="rname">Maya</div><div class="rwhen">Now</div></div>
+            <div class="ritem"><div class="rav" style="background:#7FA8E8;">T</div><div class="rname">Tom</div><div class="rwhen">Now</div></div>
+            <div class="ritem later"><div class="rav" style="background:#9B8FB0;">D</div><div class="rname">Dev</div><div class="rwhen">This wk</div></div>
+            <div class="ritem later"><div class="rav" style="background:#C9A87C;">P</div><div class="rname">Priya</div><div class="rwhen">Wknd</div></div>
+            <div class="ritem later"><div class="rav" style="background:#8FBF9F;">A</div><div class="rname">Aaron</div><div class="rwhen">Wknd</div></div>
+          </div>
+        </div>
+
+        <div class="seclbl">Mooves</div>
+
+        <div class="card plan">
+          <div class="crow">
+            <span class="lead tile"><span class="t1">8:30</span><span class="t2">PM</span></span>
+            <span class="cbody">
+              <span class="ctitle">Trivia at Sportsman's</span>
+              <span class="csub">Tonight, Logan Square</span>
+              <span class="cmeta"><span class="chip-t">Tom</span></span>
+            </span>
+            <button class="btn-join">I'm in</button>
+          </div>
+          <div class="who"><div class="who-hd">
+            <span class="jav" style="background:#C9A87C;">P</span><span class="jav" style="background:#8FBF9F;">A</span>
+            <span class="who-txt">2 in</span>
+            <span class="who-chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+          </div></div>
+        </div>
+
+        <div class="card plan">
+          <div class="crow">
+            <span class="lead tile"><span class="t1">SAT</span><span class="t2">AUG 2</span></span>
+            <span class="cbody">
+              <span class="ctitle">Climbing at First Ascent</span>
+              <span class="csub">Saturday, Avondale</span>
+              <span class="cmeta"><span class="chip-t">Priya</span></span>
+            </span>
+            <button class="btn-join in">You're in ✓</button>
+          </div>
+          <div class="who"><div class="who-hd">
+            <span class="jav" style="background:var(--purple);">J</span><span class="jav" style="background:#E8A0B4;">M</span><span class="jav" style="background:#7FA8E8;">T</span>
+            <span class="who-txt">3 in</span>
+            <span class="who-chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+          </div></div>
+          <div class="rx">
+            <span class="rx-pill on">🔥 2</span><span class="rx-pill">😂 1</span>
+            <span class="rx-add"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
+          </div>
+        </div>
+
+        <div class="card plan">
+          <div class="crow">
+            <span class="lead tile"><span class="t1">SUN</span><span class="t2">AUG 3</span></span>
+            <span class="cbody">
+              <span class="ctitle">Long walk, lake path</span>
+              <span class="csub">Sunday, no set time</span>
+              <span class="cmeta"><span class="chip-t">Aaron</span></span>
+            </span>
+            <button class="btn-join">I'm in</button>
+          </div>
+        </div>
+      </div>
+      <div class="fab" data-fab></div>
+      <div class="nav" data-nav></div>
+    </div>
+    <div class="caption"><b>One surface per object.</b> Every green lives in the rail, ordered by immediacy with its own time label. The feed is nothing but Mooves, so it reads as one uniform list. No stripes, because the two objects never share a surface.</div>
+    <div class="screen-label">Screen 4 — Feed</div>
+  </div>
+
+  <!-- ══════ 2. WAVE ══════ -->
+  <div class="state" data-state="wave">
+    <div class="phone">
+      <div class="fhead" data-head></div>
+      <div class="fbody">
+        <div class="rail-wrap wave">
+          <div class="wave-x"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></div>
+          <div class="wave-head">
+            <div class="wave-eyebrow"><span class="wave-dot"></span><span>Green wave</span></div>
+            <div class="wave-title">Maya, Tom, and Priya are free right now.</div>
+          </div>
+          <div class="rail">
+            <div class="ritem me"><div class="rav" style="background:var(--purple);">J</div><div class="rname">You</div><div class="rwhen">Now</div></div>
+            <div class="ritem"><div class="rav" style="background:#E8A0B4;">M</div><div class="rname">Maya</div><div class="rwhen">Now</div></div>
+            <div class="ritem"><div class="rav" style="background:#7FA8E8;">T</div><div class="rname">Tom</div><div class="rwhen">Now</div></div>
+            <div class="ritem"><div class="rav" style="background:#C9A87C;">P</div><div class="rname">Priya</div><div class="rwhen">Now</div></div>
+          </div>
+          <div class="wave-cta">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            Start a plan
+          </div>
+        </div>
+        <div class="seclbl">Mooves</div>
+        <div class="card plan">
+          <div class="crow">
+            <span class="lead tile"><span class="t1">SAT</span><span class="t2">AUG 2</span></span>
+            <span class="cbody"><span class="ctitle">Climbing at First Ascent</span><span class="csub">Saturday, Avondale</span><span class="cmeta"><span class="chip-t">Priya</span></span></span>
+            <button class="btn-join">I'm in</button>
+          </div>
+        </div>
+      </div>
+      <div class="fab" data-fab></div>
+      <div class="nav" data-nav></div>
+    </div>
+    <div class="caption"><b>The wave takes over the rail</b> rather than stacking a second strip above it, so the same faces are never drawn twice.</div>
+    <div class="screen-label">Screen 4 — Feed (now wave)</div>
+  </div>
+
+  <!-- ══════ 3. NOBODY FREE ══════ -->
+  <div class="state" data-state="norail">
+    <div class="phone">
+      <div class="fhead" data-head></div>
+      <div class="fbody">
+        <div class="swipe">
+          <div class="thumb"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+          <div class="lbl">Slide to go free</div>
+        </div>
+        <div class="seclbl">Mooves</div>
+        <div class="card plan">
+          <div class="crow">
+            <span class="lead tile"><span class="t1">8:30</span><span class="t2">PM</span></span>
+            <span class="cbody"><span class="ctitle">Trivia at Sportsman's</span><span class="csub">Tonight, Logan Square</span><span class="cmeta"><span class="chip-t">Tom</span></span></span>
+            <button class="btn-join">I'm in</button>
+          </div>
+        </div>
+        <div class="card plan">
+          <div class="crow">
+            <span class="lead tile"><span class="t1">SAT</span><span class="t2">AUG 2</span></span>
+            <span class="cbody"><span class="ctitle">Climbing at First Ascent</span><span class="csub">Saturday, Avondale</span><span class="cmeta"><span class="chip-t">Priya</span></span></span>
+            <button class="btn-join">I'm in</button>
+          </div>
+        </div>
+      </div>
+      <div class="fab" data-fab></div>
+      <div class="nav" data-nav></div>
+    </div>
+    <div class="caption"><b>The rail disappears entirely</b> when nobody is free, and the swipe takes the top slot. The Mooves below carry the screen, which is exactly why plans earn their own surface.</div>
+    <div class="screen-label">Screen 4 — Feed (no greens)</div>
+  </div>
+
+  <!-- ══════ 4. BOTH EMPTY ══════ -->
+  <div class="state" data-state="empty">
+    <div class="phone">
+      <div class="fhead" data-head></div>
+      <div class="fbody">
+        <div class="swipe">
+          <div class="thumb"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+          <div class="lbl">Slide to go free</div>
+        </div>
+        <div class="ambient">
+          <div class="apulse"><span class="adot"></span></div>
+          <div class="ah">6 friends went green recently.</div>
+          <div class="ap">Go free, or plan something for later.</div>
+        </div>
+      </div>
+      <div class="fab" data-fab></div>
+      <div class="nav" data-nav></div>
+    </div>
+    <div class="caption">The ambient tier shows only when the rail <b>and</b> the Mooves list are both empty. Grey pulse, never green, since it signals activity rather than availability. Copy now points at both things you can do.</div>
+    <div class="screen-label">Screen 4 — Feed (both empty)</div>
+  </div>
+
+  <!-- ══════ 5. GREEN CARD ══════ -->
+  <div class="state" data-state="friendcard">
+    <div class="phone">
+      <div class="fhead" data-head></div>
+      <div class="fbody">
+        <div class="rail-wrap">
+          <div class="rail-lbl">Free</div>
+          <div class="rail">
+            <div class="ritem me"><div class="rav" style="background:var(--purple);">J</div><div class="rname">You</div><div class="rwhen">Now</div></div>
+            <div class="ritem"><div class="rav" style="background:#E8A0B4;">M</div><div class="rname">Maya</div><div class="rwhen">Now</div></div>
+            <div class="ritem sel"><div class="rav" style="background:#7FA8E8;">T</div><div class="rname">Tom</div><div class="rwhen">Now</div></div>
+            <div class="ritem later"><div class="rav" style="background:#9B8FB0;">D</div><div class="rname">Dev</div><div class="rwhen">This wk</div></div>
+            <div class="ritem later"><div class="rav" style="background:#C9A87C;">P</div><div class="rname">Priya</div><div class="rwhen">Wknd</div></div>
+          </div>
+        </div>
+        <div class="card green">
+          <div class="crow">
+            <span class="lead av" style="background:#7FA8E8;">T</span>
+            <span class="cbody"><span class="ctitle">Tom</span><span class="csub">at the bar til late, come through</span></span>
+            <button class="btn-join">I'm in</button>
+          </div>
+          <div class="who"><div class="who-hd">
+            <span class="jav" style="background:#C9A87C;">P</span><span class="jav" style="background:#8FBF9F;">A</span>
+            <span class="who-txt">2 in</span>
+            <span class="who-chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+          </div></div>
+        </div>
+        <div class="seclbl">Mooves</div>
+        <div class="card plan">
+          <div class="crow">
+            <span class="lead tile"><span class="t1">SAT</span><span class="t2">AUG 2</span></span>
+            <span class="cbody"><span class="ctitle">Climbing at First Ascent</span><span class="csub">Saturday, Avondale</span></span>
+            <button class="btn-join">I'm in</button>
+          </div>
+        </div>
+      </div>
+      <div class="fab" data-fab></div>
+      <div class="nav" data-nav></div>
+    </div>
+    <div class="caption"><b>Tapping a rail avatar opens that person's card directly beneath the rail</b>, above the Mooves list. One green card at a time, so it never becomes a second feed. "I'm in" and tap-to-text stay one tap from the rail.</div>
+    <div class="screen-label">Screen 4 — Green card</div>
+  </div>
+
+  <!-- ══════ 6. YOUR GREEN ══════ -->
+  <div class="state" data-state="mycard">
+    <div class="phone">
+      <div class="fhead" data-head></div>
+      <div class="fbody">
+        <div class="rail-wrap">
+          <div class="rail-lbl">Free</div>
+          <div class="rail">
+            <div class="ritem me sel"><div class="rav" style="background:var(--purple);">J</div><div class="rname">You</div><div class="rwhen">Now</div></div>
+            <div class="ritem"><div class="rav" style="background:#E8A0B4;">M</div><div class="rname">Maya</div><div class="rwhen">Now</div></div>
+            <div class="ritem later"><div class="rav" style="background:#C9A87C;">P</div><div class="rname">Priya</div><div class="rwhen">Wknd</div></div>
+          </div>
+        </div>
+        <div class="card green mine">
+          <div class="crow">
+            <span class="lead av" style="background:var(--purple);">J</span>
+            <span class="cbody"><span class="ctitle">You're free</span><span class="csub">Everyone can see this</span></span>
+            <span style="font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--green-700);flex-shrink:0;">Now</span>
+          </div>
+          <div class="editrow">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            <span class="k">Add a note</span>
+          </div>
+          <div class="editrow">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>
+            <span class="k">Free until</span><span class="v">11:00 PM</span>
+          </div>
+          <div class="who"><div class="who-hd">
+            <span class="jav" style="background:#E8A0B4;">M</span><span class="jav" style="background:#9B8FB0;">D</span>
+            <span class="who-txt">2 in</span>
+            <span class="who-chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+          </div></div>
+          <button class="btn blast" style="margin-top:10px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            Start a group text
+          </button>
+          <button class="btn quiet" style="margin-top:6px;padding:10px;border-radius:13px;font-size:13.5px;">Go grey</button>
+        </div>
+      </div>
+      <div class="fab" data-fab></div>
+      <div class="nav" data-nav></div>
+    </div>
+    <div class="caption"><b>Everything optional lives here, after the fact.</b> The swipe stays a single gesture; the note, the time and now <b>"Free until"</b> are edited on your own card. That's #6a, without putting a decision back into the swipe.</div>
+    <div class="screen-label">Screen 4 — Your green</div>
+  </div>
+
+  <!-- ══════ 7. YOUR MOOVE ══════ -->
+  <div class="state" data-state="plancard">
+    <div class="phone">
+      <div class="fhead" data-head></div>
+      <div class="fbody">
+        <div class="seclbl">Mooves</div>
+        <div class="card plan mine">
+          <div class="crow">
+            <span class="lead tile"><span class="t1">10:00</span><span class="t2">AM</span></span>
+            <span class="cbody"><span class="ctitle">Climbing at First Ascent</span><span class="csub">Saturday, Avondale</span><span class="cmeta"><span class="chip-t">Your Moove</span></span></span>
+          </div>
+          <div class="csub wrap" style="margin-top:9px;">Meet at the front desk. Bring shoes if you have them, rentals are $8.</div>
+          <div class="who"><div class="who-hd">
+            <span class="jav" style="background:#E8A0B4;">M</span><span class="jav" style="background:#7FA8E8;">T</span><span class="jav" style="background:#8FBF9F;">A</span>
+            <span class="who-txt">3 in</span>
+            <span class="who-chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+          </div></div>
+          <div class="rx">
+            <span class="rx-pill on">🔥 2</span><span class="rx-pill">🧗 1</span>
+            <span class="rx-add"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
+          </div>
+          <button class="btn blast" style="margin-top:10px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            Start a group text
+          </button>
+          <div style="display:flex;gap:6px;margin-top:6px;">
+            <button class="btn quiet" style="padding:10px;border-radius:13px;font-size:13.5px;">Edit</button>
+            <button class="btn quiet" style="padding:10px;border-radius:13px;font-size:13.5px;">Cancel Moove</button>
+          </div>
+        </div>
+      </div>
+      <div class="fab" data-fab></div>
+      <div class="nav" data-nav></div>
+    </div>
+    <div class="caption">Your own Moove carries the group text, edit and cancel. <b>Reactions sit under the joiners</b>, bounded to a fixed set with a count. Expressive, but nothing to come back and check.</div>
+    <div class="screen-label">Screen 4 — Your Moove</div>
+  </div>
+
+  <!-- ══════ 8. WHO'S IN OPEN ══════ -->
+  <div class="state" data-state="whosin">
+    <div class="phone">
+      <div class="fhead" data-head></div>
+      <div class="fbody">
+        <div class="seclbl">Mooves</div>
+        <div class="card plan">
+          <div class="crow">
+            <span class="lead tile"><span class="t1">SAT</span><span class="t2">AUG 2</span></span>
+            <span class="cbody"><span class="ctitle">Climbing at First Ascent</span><span class="csub">Saturday, Avondale</span><span class="cmeta"><span class="chip-t">Priya</span></span></span>
+            <button class="btn-join">I'm in</button>
+          </div>
+          <div class="who">
+            <div class="who-hd">
+              <span class="jav" style="background:#E8A0B4;">M</span><span class="jav" style="background:#7FA8E8;">T</span><span class="jav" style="background:#8FBF9F;">A</span>
+              <span class="who-txt">4 in</span>
+              <span class="who-chev open"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+            </div>
+            <div class="who-list">
+              <div class="who-row"><span class="jav" style="background:#C9A87C;">P</span><span>Priya</span><span class="you">Host</span></div>
+              <div class="who-row"><span class="jav" style="background:#E8A0B4;">M</span><span>Maya</span></div>
+              <div class="who-row"><span class="jav" style="background:#7FA8E8;">T</span><span>Tom</span></div>
+              <div class="who-row"><span class="jav" style="background:#8FBF9F;">A</span><span>Aaron</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="fab" data-fab></div>
+      <div class="nav" data-nav></div>
+    </div>
+    <div class="caption"><b>#1, fixed.</b> Tap the joiner row and the card grows to name everyone, host first. You can now see who is in <b>before</b> deciding, instead of finding out only when the group text opens. Collapsed by default so cards stay short.</div>
+    <div class="screen-label">Screen 4 — Who's in</div>
+  </div>
+
+  <!-- ══════ 9. COMPOSER ══════ -->
+  <div class="state" data-state="composer">
+    <div class="phone">
+      <div class="fhead" data-head></div>
+      <div class="fbody" style="filter:blur(1.5px);opacity:.5;">
+        <div class="rail-wrap"><div class="rail-lbl">Free</div><div class="rail">
+          <div class="ritem me"><div class="rav" style="background:var(--purple);">J</div><div class="rname">You</div><div class="rwhen">Now</div></div>
+          <div class="ritem"><div class="rav" style="background:#E8A0B4;">M</div><div class="rname">Maya</div><div class="rwhen">Now</div></div>
+        </div></div>
+      </div>
+      <div class="scrim"></div>
+      <div class="sheet split">
+        <div class="grab"></div>
+        <div class="sh-title">Plan a Moove</div>
+        <div class="sh-sub">Something with a day on it. This does not make you free right now.</div>
+        <div class="sh-scroll">
+          <div class="flabel">What is it</div>
+          <div class="finput ph">Climbing, dinner, trivia night</div>
+          <div class="flabel">When</div>
+          <div class="frow2">
+            <div class="finput">Sat, Aug 2</div>
+            <div class="finput ph">Time <span class="opt" style="margin-left:4px;">(optional)</span></div>
+          </div>
+          <div class="flabel">Where <span class="opt">(optional)</span></div>
+          <div class="finput ph">First Ascent, Avondale</div>
+          <div class="flabel">Anything else <span class="opt">(optional)</span></div>
+          <div class="finput ph">Bring shoes if you have them</div>
+          <div class="flabel">Who can see this?</div>
+          <div class="chips">
+            <span class="chip on">Everyone</span>
+            <span class="chip">🧗 Climbing crew</span>
+            <span class="chip">💬 Group Chat</span>
+          </div>
+        </div>
+        <div class="sh-foot"><button class="btn">Post this Moove</button></div>
+      </div>
+      <div class="nav" data-nav></div>
+    </div>
+    <div class="caption"><b>A day is the only thing required.</b> Time, place and notes are all optional, so "Saturday, climbing, First Ascent" is a perfectly good Moove. That's the line between the two objects: <b>a Moove has a day, a green does not.</b></div>
+    <div class="screen-label">Screen 4 — Plan a Moove</div>
+  </div>
+
+  <!-- ══════ 10. JOIN WHILE GREEN ══════ -->
+  <div class="state" data-state="joinprompt">
+    <div class="phone">
+      <div class="fhead" data-head></div>
+      <div class="fbody" style="filter:blur(1.5px);opacity:.5;">
+        <div class="rail-wrap"><div class="rail-lbl">Free</div><div class="rail">
+          <div class="ritem me"><div class="rav" style="background:var(--purple);">J</div><div class="rname">You</div><div class="rwhen">Now</div></div>
+          <div class="ritem"><div class="rav" style="background:#7FA8E8;">T</div><div class="rname">Tom</div><div class="rwhen">Now</div></div>
+        </div></div>
+      </div>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="sh-title">You're in with Tom.</div>
+        <div class="sh-sub">You're still showing as free yourself. Want to drop your own move, so friends see one plan instead of two?</div>
+        <button class="btn">Drop mine</button>
+        <button class="btn quiet" style="margin-top:8px;">Keep both</button>
+      </div>
+      <div class="nav" data-nav></div>
+    </div>
+    <div class="caption"><b>Never automatic.</b> Only when you're free, your own move has <b>zero joiners</b>, and the time buckets match. With joiners it never shows, because going grey deletes their joins and would quietly destroy something people committed to.</div>
+    <div class="screen-label">Screen 4 — Join while green</div>
+  </div>
+
+  <!-- ══════ 11. CANCEL ══════ -->
+  <div class="state" data-state="cancel">
+    <div class="phone">
+      <div class="fhead" data-head></div>
+      <div class="fbody" style="filter:blur(1.5px);opacity:.5;">
+        <div class="seclbl">Mooves</div>
+        <div class="card plan"><div class="crow"><span class="lead tile"><span class="t1">10:00</span><span class="t2">AM</span></span><span class="cbody"><span class="ctitle">Climbing at First Ascent</span><span class="csub">Saturday, Avondale</span></span></div></div>
+      </div>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="sh-title">Cancel this Moove?</div>
+        <div class="sh-sub">Maya, Tom, and Aaron are in. They'll get a notification that it's off, and it disappears from everyone's feed.</div>
+        <button class="btn danger">Cancel the Moove</button>
+        <button class="btn quiet" style="margin-top:8px;">Keep it</button>
+      </div>
+      <div class="nav" data-nav></div>
+    </div>
+    <div class="caption">The confirm names <b>who is affected</b> and says they'll be told, so a cancelled Moove never silently vanishes on people who committed.</div>
+    <div class="screen-label">Screen 4 — Cancel a Moove</div>
+  </div>
+
+  <div class="note">
+    <b>The structural change.</b> Greens are out of the feed entirely. <b>The rail is people, the feed is Mooves</b> — one surface per object, so nothing is interleaved and the striping problem cannot come back. This reverses the earlier "rail = now only" rule, which only existed while greens still needed somewhere to sit in the feed; now that they don't, "who's free" versus "what's happening" is the better split. Rail avatars carry their own time label (Now · This wk · Wknd), and later greens get a softer ring so the eye still finds "right now" first.<br><br>
+    <b>A Moove has a day, a green does not.</b> That is the whole formality question: date required, time and place and notes all optional. "Sunday, long walk, lake path" is a legitimate Moove.<br><br>
+    <b>Riding along:</b> #1 expandable who's-in (before you decide, not after), #6a "Free until" on your own card (never on the swipe), and bounded reactions. <b>Not here:</b> real comments (its own phase, with the no-in-app-messaging rule consciously amended) and scheduled availability (#3/#4/#7, Phase 21, gated on storing user timezones).<br><br>
+    <b>Green still only ever means availability</b> — rail rings, green cards, the swipe. Mooves are white with purple tiles.
+  </div>
+
+<script>
+  var HEAD = '<div class="lockup">'
+    + '<svg class="cow" viewBox="0 0 120 120"><ellipse cx="11" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(-28 11 33)"/><ellipse cx="109" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(28 109 33)"/><ellipse cx="11" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(-28 11 34)"/><ellipse cx="109" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(28 109 34)"/><ellipse cx="38" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(-14 38 19)"/><ellipse cx="82" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(14 82 19)"/><rect x="15" y="20" width="90" height="92" rx="30" fill="#F5F0ED"/><ellipse cx="41" cy="44" rx="19" ry="13" fill="#7A7282" transform="rotate(-10 41 44)"/><ellipse cx="79" cy="69" rx="14" ry="9" fill="#7A7282" transform="rotate(16 79 69)"/><circle cx="44" cy="57" r="6" fill="#2A1E38"/><circle cx="76" cy="57" r="6" fill="#2A1E38"/><circle cx="46.5" cy="54.5" r="2.2" fill="#fff"/><circle cx="78.5" cy="54.5" r="2.2" fill="#fff"/><ellipse cx="60" cy="90" rx="27" ry="20" fill="#F0AABB"/><circle cx="50" cy="91" r="9" fill="#2ECC71"/><circle cx="70" cy="91" r="9" fill="#BDB5D4"/></svg>'
+    + '<span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>';
+  var FAB = '<svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+  var ICONS = {
+    feed:'<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+    disc:'<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5 5-2Z"/>',
+    ppl:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+    set:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>'
+  };
+  function tab(i,l,on){ return '<a class="'+(on?'on':'')+'"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+ICONS[i]+'</svg>'+l+'</a>'; }
+  var NAV = tab('feed','Feed',true)+tab('disc','Discover',false)+tab('ppl','People',false)+tab('set','Settings',false);
+  document.querySelectorAll('[data-head]').forEach(function(e){ e.innerHTML=HEAD; });
+  document.querySelectorAll('[data-nav]').forEach(function(e){ e.innerHTML=NAV; });
+  document.querySelectorAll('[data-fab]').forEach(function(e){ e.innerHTML=FAB; });
+  document.querySelectorAll('.toggle').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var s=btn.dataset.state;
+      document.querySelectorAll('.toggle').forEach(function(b){ b.classList.toggle('active',b===btn); });
+      document.querySelectorAll('.state').forEach(function(st){ st.classList.toggle('active',st.dataset.state===s); });
+    });
+  });
+</script>
+</body>
+</html>
