@@ -3346,7 +3346,7 @@ None.
 **Purpose:** make the feed feel alive when a viewer has friends but none are green *right now*, so a first-mover believes they'll be seen.
 **Entry:** the Feed, "has friends but none currently green" state (distinct from the zero-friends cold-start).
 **Behavior:** show the DS ambient tier — two **aggregate, never-named** signals + a green CTA:
-- **Recent-activity:** "N friends were green this week" (rolling ~7-day green count).
+- **Recent-activity:** "N friends went green recently" (rolling ~7-day green count). *Copy amended 2026-07-27 — was "were green this week", which claimed a calendar week the rolling window doesn't measure (on a Monday it reported mostly the previous week). Naming the window explicitly ("in the past week") is honest but wraps to two lines at 375px, so the copy stays vague about the span and holds one line.*
 - **Friends-active-now:** "N friends around now" (friends who **foregrounded the app in the last ~15 min**).
 - **CTA:** "Be the first — go free" (green-700).
 Every signal is **suppressed when its count is < 3** → fall back to neutral encouragement copy with no number. Never any "nobody's free" negativity.
@@ -3388,7 +3388,7 @@ Every signal is **suppressed when its count is < 3** → fall back to neutral en
 ✅ **Mockup approved 2026-07-17** — `mooves-phase10-coldstart.html`. Cross-cutting (Feed grey-state + group invite links), not a single numbered screen. States: grey-feed **around-now** + **this-week** ambient variants, neutral fallback; invite **share** sheet, join **consent**, **already-member**, **dead-link**.
 
 ### Design decisions locked at mockup approval (2026-07-17)
-- **One signal at a time, not both.** The grey feed shows **either** "N friends around now" **or** "N friends were green this week" — never stacked. (Prefer active-now when ≥3, else recent-green ≥3, else neutral fallback.)
+- **One signal at a time, not both.** The grey feed shows **either** "N friends around now" **or** "N friends went green recently" (copy amended 2026-07-27) — never stacked. (Prefer active-now when ≥3, else recent-green ≥3, else neutral fallback.)
 - **Ambient pulse + signal dots are GREY, not green** — the visual signals *activity*, not availability (also honors the DS "green = availability only, never decorative" rule). Green stays reserved for the swipe-to-go-free control (the green-700 CTA), which sits at the top of the grey feed (reused from Phase 9).
 - **Copy locked:** ambient trailing line = "Go free to get in on the action."; neutral state headline = "People want to hang out." + "Be the first to go free and get in on the action." No "nobody's free" negativity; commas not em dashes.
 - **Zero-friends cold-start unchanged** (cow + invite), per spec out-of-scope.

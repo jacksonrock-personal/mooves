@@ -4,6 +4,12 @@
 // none are green right now. One aggregate, never-named signal at a time, each
 // suppressed below 3 (prefer the more immediate "around now"); otherwise a warm,
 // no-number fallback. The pulse is GREY — it signals activity, not availability.
+//
+// "recently", not "this week": recentGreen is get_feed's ROLLING 7-day count
+// (last_green_at > now() - interval '7 days'), not a calendar week. On a Monday
+// "this week" claimed a number that was mostly last Tue–Sun. Naming the window
+// ("in the past week") is honest but wraps to two lines at 375px, so the copy
+// stays vague about the span instead — one line, like the around-now variant.
 
 interface AmbientTierProps {
   activeNow: number
@@ -15,7 +21,7 @@ export default function AmbientTier({ activeNow, recentGreen }: AmbientTierProps
     activeNow >= 3
       ? { count: activeNow, label: 'around now', live: true }
       : recentGreen >= 3
-        ? { count: recentGreen, label: 'were green this week', live: false }
+        ? { count: recentGreen, label: 'went green recently', live: false }
         : null
 
   return (
