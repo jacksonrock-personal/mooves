@@ -109,11 +109,15 @@
   .who-row span { font-size:13px; color:var(--ink); font-weight:500; }
   .who-row .you { font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-2); margin-left:auto; }
 
-  /* ── #2 reactions ── */
-  .rx { display:flex; align-items:center; gap:6px; margin-top:9px; flex-wrap:wrap; }
-  .rx-pill { display:inline-flex; align-items:center; gap:4px; padding:4px 9px; border-radius:100px; border:1px solid var(--border); background:var(--white); font-size:12px; font-weight:600; color:var(--ink-2); cursor:pointer; }
-  .rx-pill.on { background:var(--purple-100); border-color:var(--purple); color:var(--purple-700); }
-  .rx-add { width:27px; height:27px; border-radius:50%; border:1px dashed var(--border); display:flex; align-items:center; justify-content:center; color:var(--grey); cursor:pointer; }
+  /* your own Moove: actions behind a "···" so the card stays short */
+  .dots { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--ink-2); flex-shrink:0; cursor:pointer; background:var(--app-bg); border:1px solid var(--border); }
+  .act-sheet { position:absolute; left:0; right:0; bottom:0; z-index:8; padding:0 8px; display:flex; flex-direction:column; gap:8px; padding-bottom:26px; }
+  .act-grp { border-radius:16px; overflow:hidden; border:1px solid var(--border); background:rgba(248,246,255,.97); }
+  .act-grp .hd { font-size:12px; font-weight:500; color:var(--ink-2); text-align:center; padding:11px 14px 9px; border-bottom:1px solid var(--border); }
+  .act-grp button { width:100%; padding:15px; font-size:17px; font-weight:600; background:none; border:none; cursor:pointer; color:var(--purple); }
+  .act-grp button+button { border-top:1px solid var(--border); }
+  .act-grp button.danger { color:var(--red); }
+  .act-cancel { width:100%; padding:15px; border-radius:16px; border:1px solid var(--border); background:rgba(248,246,255,.97); font-size:17px; font-weight:700; color:var(--ink); cursor:pointer; }
 
   /* ══ swipe ══ */
   .swipe { position:relative; width:100%; height:56px; border-radius:100px; overflow:hidden; margin-bottom:14px; display:flex; align-items:center; background:rgba(22,122,67,.10); border:1.5px solid rgba(22,122,67,.20); flex-shrink:0; }
@@ -121,6 +125,20 @@
   .swipe .lbl { width:100%; text-align:center; padding-left:44px; font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:15.5px; color:var(--green-700); letter-spacing:-.01em; }
 
   .seclbl { font-size:10.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-2); padding:2px 2px 9px; }
+
+  /* 20.1 — visibility lives BESIDE the swipe, not inside it. Set once, then the
+     gesture stays a single decision-free motion. */
+  .vis-row { display:flex; justify-content:center; margin-bottom:8px; }
+  .vis-chip { display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:100px; background:var(--white); border:1px solid var(--border); font-size:12px; font-weight:600; color:var(--ink-2); cursor:pointer; }
+  .vis-chip b { color:var(--ink); font-weight:700; }
+  .vis-chip svg { color:var(--grey); }
+
+  .optrow { display:flex; align-items:center; gap:11px; padding:13px 13px; border-radius:14px; border:1.5px solid var(--border); background:var(--app-bg); margin-bottom:8px; cursor:pointer; }
+  .optrow.on { border-color:var(--purple); background:var(--purple-100); }
+  .optrow .ok { flex:1; font-size:14.5px; font-weight:600; color:var(--ink); }
+  .optrow .ov { font-size:12.5px; color:var(--ink-2); }
+  .optrow .tick { width:20px; height:20px; border-radius:50%; background:var(--purple); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+
 
   /* ══ sheets ══ */
   .scrim { position:absolute; inset:0; background:rgba(28,23,48,.5); z-index:7; }
@@ -176,8 +194,14 @@
     <button class="toggle" data-state="whosin">Who's in, open</button>
     <span class="grp-lbl">Actions</span>
     <button class="toggle" data-state="composer">Plan a Moove</button>
+    <button class="toggle" data-state="editmoove">Edit a Moove</button>
     <button class="toggle" data-state="joinprompt">Join while green</button>
     <button class="toggle" data-state="cancel">Cancel Moove</button>
+    <span class="grp-lbl">Pickers</span>
+    <button class="toggle" data-state="swipevis">Visibility on swipe</button>
+    <button class="toggle" data-state="freeuntil">Free until</button>
+    <button class="toggle" data-state="mooveactions">Moove actions</button>
+    <button class="toggle" data-state="startprompt">Moove starting</button>
   </div>
 
   <!-- ══════ 1. FEED ══════ -->
@@ -231,21 +255,17 @@
             <span class="who-txt">3 in</span>
             <span class="who-chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg></span>
           </div></div>
-          <div class="rx">
-            <span class="rx-pill on">🔥 2</span><span class="rx-pill">😂 1</span>
-            <span class="rx-add"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
-          </div>
         </div>
 
-        <div class="card plan">
+        <div class="card plan mine">
           <div class="crow">
             <span class="lead tile"><span class="t1">SUN</span><span class="t2">AUG 3</span></span>
             <span class="cbody">
               <span class="ctitle">Long walk, lake path</span>
               <span class="csub">Sunday, no set time</span>
-              <span class="cmeta"><span class="chip-t">Aaron</span></span>
+              <span class="cmeta"><span class="chip-t">Your Moove</span></span>
             </span>
-            <button class="btn-join">I'm in</button>
+            <span class="dots"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></span>
           </div>
         </div>
       </div>
@@ -447,6 +467,7 @@
           <div class="crow">
             <span class="lead tile"><span class="t1">10:00</span><span class="t2">AM</span></span>
             <span class="cbody"><span class="ctitle">Climbing at First Ascent</span><span class="csub">Saturday, Avondale</span><span class="cmeta"><span class="chip-t">Your Moove</span></span></span>
+            <span class="dots"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></span>
           </div>
           <div class="csub wrap" style="margin-top:9px;">Meet at the front desk. Bring shoes if you have them, rentals are $8.</div>
           <div class="who"><div class="who-hd">
@@ -454,24 +475,16 @@
             <span class="who-txt">3 in</span>
             <span class="who-chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg></span>
           </div></div>
-          <div class="rx">
-            <span class="rx-pill on">🔥 2</span><span class="rx-pill">🧗 1</span>
-            <span class="rx-add"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
-          </div>
           <button class="btn blast" style="margin-top:10px;">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
             Start a group text
           </button>
-          <div style="display:flex;gap:6px;margin-top:6px;">
-            <button class="btn quiet" style="padding:10px;border-radius:13px;font-size:13.5px;">Edit</button>
-            <button class="btn quiet" style="padding:10px;border-radius:13px;font-size:13.5px;">Cancel Moove</button>
-          </div>
         </div>
       </div>
       <div class="fab" data-fab></div>
       <div class="nav" data-nav></div>
     </div>
-    <div class="caption">Your own Moove carries the group text, edit and cancel. <b>Reactions sit under the joiners</b>, bounded to a fixed set with a count. Expressive, but nothing to come back and check.</div>
+    <div class="caption">Your own Moove keeps the group text as its one visible action. Edit and Cancel sit behind the <b>"···"</b>, so the card stays short. No reactions anywhere.</div>
     <div class="screen-label">Screen 4 — Your Moove</div>
   </div>
 
@@ -597,10 +610,168 @@
     <div class="screen-label">Screen 4 — Cancel a Moove</div>
   </div>
 
+  <!-- ══════ 12. VISIBILITY ON THE SWIPE ══════ -->
+  <div class="state" data-state="swipevis">
+    <div class="phone">
+      <div class="fhead" data-head></div>
+      <div class="fbody">
+        <div class="vis-row">
+          <span class="vis-chip">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+            Seen by <b>Everyone</b>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </span>
+        </div>
+        <div class="swipe">
+          <div class="thumb"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+          <div class="lbl">Slide to go free</div>
+        </div>
+        <div class="seclbl">Mooves</div>
+        <div class="card plan">
+          <div class="crow">
+            <span class="lead tile"><span class="t1">SAT</span><span class="t2">AUG 2</span></span>
+            <span class="cbody"><span class="ctitle">Climbing at First Ascent</span><span class="csub">Saturday, Avondale</span></span>
+            <button class="btn-join">I'm in</button>
+          </div>
+        </div>
+      </div>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="sh-title">Who can see this?</div>
+        <div class="sh-sub">Stays set for next time, so going free stays one motion.</div>
+        <div class="optrow on"><span class="ok">Everyone</span><span class="tick"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></div>
+        <div class="optrow"><span class="ok">🧗 Climbing crew</span><span class="ov">6</span></div>
+        <div class="optrow"><span class="ok">💬 Group Chat</span><span class="ov">4</span></div>
+        <button class="btn" style="margin-top:8px;">Done</button>
+      </div>
+      <div class="nav" data-nav></div>
+    </div>
+    <div class="caption"><b>The contradiction, resolved.</b> The spec said the swipe posts instantly <i>and</i> keeps a visibility control, which cannot both live inside the gesture. So visibility sits <b>beside</b> the swipe as a chip showing your current scope, set once and remembered. The swipe itself stays a single decision-free motion.</div>
+    <div class="screen-label">Screen 4 — Visibility (before the swipe)</div>
+  </div>
+
+  <!-- ══════ 13. EDIT A MOOVE ══════ -->
+  <div class="state" data-state="editmoove">
+    <div class="phone">
+      <div class="fhead" data-head></div>
+      <div class="fbody" style="filter:blur(1.5px);opacity:.5;">
+        <div class="seclbl">Mooves</div>
+        <div class="card plan mine"><div class="crow"><span class="lead tile"><span class="t1">10:00</span><span class="t2">AM</span></span><span class="cbody"><span class="ctitle">Climbing at First Ascent</span><span class="csub">Saturday, Avondale</span></span></div></div>
+      </div>
+      <div class="scrim"></div>
+      <div class="sheet split">
+        <div class="grab"></div>
+        <div class="sh-title">Edit your Moove</div>
+        <div class="sh-sub">3 people are in. They won't be notified about edits, only if you cancel.</div>
+        <div class="sh-scroll">
+          <div class="flabel">What is it</div>
+          <div class="finput">Climbing at First Ascent</div>
+          <div class="flabel">When</div>
+          <div class="frow2">
+            <div class="finput">Sat, Aug 2</div>
+            <div class="finput">10:00 AM</div>
+          </div>
+          <div class="flabel">Where <span class="opt">(optional)</span></div>
+          <div class="finput">Avondale, front desk</div>
+          <div class="flabel">Anything else <span class="opt">(optional)</span></div>
+          <div class="finput">Bring shoes, rentals are $8</div>
+          <div class="flabel">Who can see this?</div>
+          <div class="chips"><span class="chip on">Everyone</span><span class="chip">🧗 Climbing crew</span><span class="chip">💬 Group Chat</span></div>
+        </div>
+        <div class="sh-foot"><button class="btn">Save changes</button></div>
+      </div>
+      <div class="nav" data-nav></div>
+    </div>
+    <div class="caption">The composer in edit mode, prefilled. The sub-line is the honest part: <b>edits are silent, only cancelling notifies</b>. That matches the spec, which put edit-notifications out of scope.</div>
+    <div class="screen-label">Screen 4 — Edit a Moove</div>
+  </div>
+
+  <!-- ══════ 14. FREE UNTIL ══════ -->
+  <div class="state" data-state="freeuntil">
+    <div class="phone">
+      <div class="fhead" data-head></div>
+      <div class="fbody" style="filter:blur(1.5px);opacity:.5;">
+        <div class="rail-wrap"><div class="rail-lbl">Free</div><div class="rail">
+          <div class="ritem me sel"><div class="rav" style="background:var(--purple);">J</div><div class="rname">You</div><div class="rwhen">Now</div></div>
+          <div class="ritem"><div class="rav" style="background:#E8A0B4;">M</div><div class="rname">Maya</div><div class="rwhen">Now</div></div>
+        </div></div>
+      </div>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="sh-title">Free until</div>
+        <div class="sh-sub">Your move drops off on its own then, so nobody texts you about something that's over.</div>
+        <div class="optrow"><span class="ok">Another hour</span><span class="ov">9:00 PM</span></div>
+        <div class="optrow on"><span class="ok">Tonight</span><span class="ov">11:00 PM</span><span class="tick"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></div>
+        <div class="optrow"><span class="ok">Late</span><span class="ov">3:00 AM</span></div>
+        <div class="optrow"><span class="ok">Pick a time</span></div>
+        <button class="btn" style="margin-top:8px;">Save</button>
+      </div>
+      <div class="nav" data-nav></div>
+    </div>
+    <div class="caption"><b>20.7.</b> Presets first, custom last, because the point is speed. Editing moves the deadline only, it never changes the time bucket, so a "now" green stays in the rail no matter what you set here.</div>
+    <div class="screen-label">Screen 4 — Free until</div>
+  </div>
+
+  <!-- ══════ 15. MOOVE ACTIONS ══════ -->
+  <div class="state" data-state="mooveactions">
+    <div class="phone">
+      <div class="fhead" data-head></div>
+      <div class="fbody" style="filter:blur(1.5px);opacity:.5;">
+        <div class="seclbl">Mooves</div>
+        <div class="card plan mine">
+          <div class="crow">
+            <span class="lead tile"><span class="t1">10:00</span><span class="t2">AM</span></span>
+            <span class="cbody"><span class="ctitle">Climbing at First Ascent</span><span class="csub">Saturday, Avondale</span><span class="cmeta"><span class="chip-t">Your Moove</span></span></span>
+            <span class="dots"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></span>
+          </div>
+        </div>
+      </div>
+      <div class="scrim"></div>
+      <div class="act-sheet">
+        <div class="act-grp">
+          <div class="hd">Climbing at First Ascent, Saturday</div>
+          <button>Edit this Moove</button>
+          <button class="danger">Cancel this Moove</button>
+        </div>
+        <button class="act-cancel">Never mind</button>
+      </div>
+      <div class="nav" data-nav></div>
+    </div>
+    <div class="caption"><b>This was the missing entry point.</b> Your own Moove carries a <b>"···"</b> in the card, which opens the same native-style action sheet the app already uses for go-grey and for leaving a move. Edit and Cancel live here, so the card itself stays short instead of becoming a wall of buttons.</div>
+    <div class="screen-label">Screen 4 — Your Moove, actions</div>
+  </div>
+
+  <!-- ══════ 16. MOOVE STARTING ══════ -->
+  <div class="state" data-state="startprompt">
+    <div class="phone">
+      <div class="fhead" data-head></div>
+      <div class="fbody" style="filter:blur(1.5px);opacity:.5;">
+        <div class="seclbl">Mooves</div>
+        <div class="card plan mine"><div class="crow"><span class="lead tile"><span class="t1">8:30</span><span class="t2">PM</span></span><span class="cbody"><span class="ctitle">Trivia at Sportsman's</span><span class="csub">Tonight, Logan Square</span></span></div></div>
+      </div>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="sh-title">Trivia starts soon.</div>
+        <div class="sh-sub">Go free so the 3 people who are in can find you, and so anyone else free tonight can still join.</div>
+        <button class="btn">Go free</button>
+        <button class="btn quiet" style="margin-top:8px;">Not yet</button>
+      </div>
+      <div class="nav" data-nav></div>
+    </div>
+    <div class="caption">Creating a Moove never sets your green, so this is the handoff at start time. <b>Always a prompt, never automatic</b>, for the same reason as everywhere else in this phase: the app does not broadcast availability you did not confirm.</div>
+    <div class="screen-label">Screen 4 — Your Moove is starting</div>
+  </div>
+
   <div class="note">
+    <b>Reactions are gone entirely</b> (Jackson, third pass). There is now no expressive layer in this phase at all, since comments were deferred to their own phase. That gap is a deliberate open decision, not an oversight.<br><br>
+    <b>Editing your own Moove</b> is reached from a <b>"···"</b> on your own card, which opens the action sheet the app already uses for go-grey and for leaving a move. Your own Mooves also now appear in the main feed, tagged "Your Moove", so the entry point is visible where you actually are rather than only on a detail screen.<br><br>
+    <b>Second pass added five states the spec required but the mockup never drew:</b> visibility before the swipe, edit a Moove, the Free-until picker, the actions sheet, and the go-free prompt when your own Moove starts.<br><br>
     <b>The structural change.</b> Greens are out of the feed entirely. <b>The rail is people, the feed is Mooves</b> — one surface per object, so nothing is interleaved and the striping problem cannot come back. This reverses the earlier "rail = now only" rule, which only existed while greens still needed somewhere to sit in the feed; now that they don't, "who's free" versus "what's happening" is the better split. Rail avatars carry their own time label (Now · This wk · Wknd), and later greens get a softer ring so the eye still finds "right now" first.<br><br>
     <b>A Moove has a day, a green does not.</b> That is the whole formality question: date required, time and place and notes all optional. "Sunday, long walk, lake path" is a legitimate Moove.<br><br>
-    <b>Riding along:</b> #1 expandable who's-in (before you decide, not after), #6a "Free until" on your own card (never on the swipe), and bounded reactions. <b>Not here:</b> real comments (its own phase, with the no-in-app-messaging rule consciously amended) and scheduled availability (#3/#4/#7, Phase 21, gated on storing user timezones).<br><br>
+    <b>Riding along:</b> #1 expandable who's-in (before you decide, not after) and #6a "Free until" on your own card (never on the swipe). <b>Not here:</b> reactions (cut), real comments (its own phase, with the no-in-app-messaging rule consciously amended) and scheduled availability (#3/#4/#7, Phase 21, gated on storing user timezones).<br><br>
     <b>Green still only ever means availability</b> — rail rings, green cards, the swipe. Mooves are white with purple tiles.
   </div>
 
