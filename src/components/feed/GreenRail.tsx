@@ -23,6 +23,16 @@ interface GreenRailProps {
   people: RailPerson[]
   selectedId: string | null
   onSelect: (id: string) => void
+  /**
+   * Tapping the avatar that is ALREADY selected texts them.
+   *
+   * Added after device testing: the rail reads as "the people who are free", so
+   * tapping a face is expected to reach that person — the pre-Phase-20 muscle
+   * memory, where a green card was a text handoff. First tap opens their card
+   * (you need the note before you text), second tap sends you to Messages.
+   * Never fires for your own avatar.
+   */
+  onText?: (id: string) => void
 }
 
 const ORDER: Record<string, number> = { now: 0, tonight: 1, week: 2, weekend: 3 }
@@ -47,7 +57,7 @@ export function sortRail(people: RailPerson[]): RailPerson[] {
   })
 }
 
-export default function GreenRail({ people, selectedId, onSelect }: GreenRailProps) {
+export default function GreenRail({ people, selectedId, onSelect, onText }: GreenRailProps) {
   if (people.length === 0) return null
 
   return (
@@ -63,7 +73,10 @@ export default function GreenRail({ people, selectedId, onSelect }: GreenRailPro
           return (
             <button
               key={p.id}
-              onClick={() => onSelect(p.id)}
+              onClick={() => {
+                if (selected && !p.isMe && onText) onText(p.id)
+                else onSelect(p.id)
+              }}
               aria-pressed={selected}
               className="shrink-0 w-[58px] flex flex-col items-center gap-1"
             >

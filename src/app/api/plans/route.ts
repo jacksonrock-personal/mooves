@@ -72,6 +72,7 @@ export async function POST(req: Request) {
     locationText?: string | null
     note?: string | null
     visibleTo?: string[] | null
+    sponsoredMoveId?: string | null
   }
 
   const title = trimmed(body.title, PLAN_TITLE_MAX)
@@ -86,6 +87,20 @@ export async function POST(req: Request) {
     Array.isArray(body.visibleTo) && body.visibleTo.length > 0 ? body.visibleTo : null
 
   const supabase = createServiceClient()
+
+  // 13.8 — only attach an origin we can actually verify, so the "Sponsored"
+  // disclosure on the friend feed can never be forged by a hand-built request.
+  let sponsoredMoveId: string | null = null
+  if (typeof body.sponsoredMoveId === 'string') {
+    const { data: sm } = await supabase
+      .from('sponsored_moves')
+      .select('id')
+      .eq('id', body.sponsoredMoveId)
+      .eq('status', 'approved')
+      .maybeSingle()
+    if (sm) sponsoredMoveId = sm.id
+  }
+
   const { data, error } = await supabase
     .from('plans')
     .insert({
@@ -97,6 +112,7 @@ export async function POST(req: Request) {
       location_text: trimmed(body.locationText, PLAN_LOCATION_MAX),
       note: trimmed(body.note, PLAN_NOTE_MAX),
       visible_to: visibleTo,
+      sponsored_move_id: sponsoredMoveId,
     })
     .select('id')
     .single()
@@ -104,6 +120,15 @@ export async function POST(req: Request) {
   if (error || !data) {
     console.error('plan insert failed:', error)
     return NextResponse.json({ error: 'Could not post that' }, { status: 500 })
+  }
+
+  // 13.8 flywheel metric: count each time a sponsored move is brought to a
+  // friend feed. Atomic; failure is logged, never surfaced.
+  if (sponsoredMoveId) {
+    const { error: bumpError } = await supabase.rpc('increment_brought_over', {
+      p_move_id: sponsoredMoveId,
+    })
+    if (bumpError) console.error('brought_over increment failed:', bumpError)
   }
 
   // Group-scoped Mooves notify that group, under the same 60-minute per-group

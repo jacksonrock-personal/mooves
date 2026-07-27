@@ -23,7 +23,7 @@ import AmbientTier from './AmbientTier'
 import RoundupJoinedSheet from './RoundupJoinedSheet'
 import GreenRail, { sortRail, type RailPerson } from './GreenRail'
 import PlanCard from './PlanCard'
-import PlanComposer from './PlanComposer'
+import PlanComposer, { type PlanPrefill } from './PlanComposer'
 import MooveActionsSheet from './MooveActionsSheet'
 import FreeUntilSheet from './FreeUntilSheet'
 import JoinWhileGreenSheet from './JoinWhileGreenSheet'
@@ -115,6 +115,7 @@ export default function FeedScreen() {
   const [composerOpen, setComposerOpen] = useState(false)
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null)
   const [actionsPlan, setActionsPlan] = useState<Plan | null>(null)
+  const [planPrefill, setPlanPrefill] = useState<PlanPrefill | null>(null)
   const [freeUntilOpen, setFreeUntilOpen] = useState(false)
   const [myStatusExpiresAt, setMyStatusExpiresAt] = useState<string | null>(null)
   // 20.5 — never automatic; only offered when your green has zero joiners and
@@ -376,22 +377,34 @@ export default function FeedScreen() {
         }
       }
 
-      // Arriving from Discover "Go with friends" (13.8): pre-anchor the go-green sheet.
+      // Arriving from Discover "Go with friends" (13.8).
+      //
+      // This used to pre-anchor the GO-GREEN sheet, which was wrong: a sponsored
+      // move has a date, a time and a place, and "I'm free right now" cannot
+      // carry any of them. Bringing one to your friends is a MOOVE. So it now
+      // opens the composer prefilled, and the sponsored id rides along so the
+      // friend-facing disclosure survives the hand-off.
       const anchorId = searchParams.get('anchor')
       if (anchorId) {
         try {
           const move = (await fetch(`/api/discover/${anchorId}`).then(r =>
             r.ok ? r.json() : null,
-          )) as AnchoredMove | null
+          )) as (AnchoredMove & { startAt?: string | null; locationText?: string | null }) | null
           if (move && mountedRef.current) {
-            setPendingAnchor(move)
-            setSheetOpen(true)
-            posthog.capture('go_green_sheet_opened', { anchored: true })
+            setPlanPrefill({
+              sponsoredMoveId: move.id,
+              title: move.title,
+              startAt: move.startAt ?? null,
+              locationText: move.locationText ?? null,
+              note: move.description ?? null,
+            })
+            setComposerOpen(true)
+            posthog.capture('plan_composer_opened', { source: 'discover' })
             // Strip ?anchor= so a refresh/remount doesn't reopen the sheet.
             if (typeof window !== 'undefined') window.history.replaceState({}, '', '/feed')
           }
         } catch {
-          // ignore — bad/expired anchor just opens the normal flow
+          // ignore — bad/expired anchor just leaves the feed as it was
         }
       }
 
@@ -709,6 +722,12 @@ export default function FeedScreen() {
               people={railPeople}
               selectedId={effectiveRailSelection}
               onSelect={id => setRailSelected(id)}
+              onText={id => {
+                const f = (friends ?? []).find(x => x.id === id)
+                if (!f?.phone) return
+                posthog.capture('rail_tap_sms_opened')
+                window.location.href = `sms:${f.phone}`
+              }}
             />
 
             {isAvailable ? (
@@ -910,9 +929,11 @@ export default function FeedScreen() {
         onClose={() => {
           setComposerOpen(false)
           setEditingPlan(null)
+          setPlanPrefill(null)
         }}
         groups={groups}
         editing={editingPlan}
+        prefill={planPrefill}
         onSaved={() => {
           setToastMessage(editingPlan ? 'Moove updated.' : 'Moove posted.')
           void refetchPlans()

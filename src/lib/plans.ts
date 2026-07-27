@@ -27,6 +27,8 @@ export interface Plan {
   locationText: string | null
   note: string | null
   isMine: boolean
+  /** 13.8 — set when this Moove was brought over from a sponsored move. */
+  sponsorBrand: string | null
   visibleGroups: string[]
   joiners: PlanJoiner[]
   joinedByMe: boolean
