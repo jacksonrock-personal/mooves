@@ -116,3 +116,9 @@ the versions those migrations already carry in the remote history table.
   ⚠ Also silently reverted `green_expiry`'s filter — see *Why this matters*.
 - `get_feed_expiry_restore` — restores that filter. Any future redefinition of
   `get_feed` must carry it forward.
+- `owner_group_visibility` — `viewer_group_ids(user)` = groups joined ∪ groups
+  owned, and `get_feed` / `wave_group_for_viewer` resolve "my groups" through it.
+  `group_members` never holds the owner, so a green scoped to a group reached
+  every member except the person who owns it. Never query `group_members`
+  directly for a visibility question — SQL uses this function, TypeScript uses
+  `src/lib/groups.ts`.

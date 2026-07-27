@@ -1,9 +1,11 @@
 // Phase 15 Surface B — server-side Web Push send (FCM). Fired from the go-green
 // route when a green is scoped to a group (visible_to). Notifies that group's
-// members via group_members — minus the mover, minus muters, minus groups inside
-// the 60-min rate-limit floor. Aggregate/group-level only: never names a person.
+// members AND its owner (groupRecipientIds — group_members excludes owners)
+// minus the mover, minus muters, minus groups inside the 60-min rate-limit
+// floor. Aggregate/group-level only: never names a person.
 
 import { createServiceClient } from '@/lib/supabase/server'
+import { groupRecipientIds } from '@/lib/groups'
 import { firebaseMessaging } from '@/lib/firebase/admin'
 import { WAVE_TIME_PHRASE, type WaveTime } from '@/lib/blast'
 
@@ -45,11 +47,8 @@ export async function sendGroupGreenPush(
   for (const group of eligibleGroups) {
     notifiedGroupIds.push(group.id) // refresh the floor regardless of recipient count
 
-    const { data: members } = await supabase
-      .from('group_members')
-      .select('user_id')
-      .eq('group_id', group.id)
-    const candidateIds = (members ?? []).map(m => m.user_id).filter(id => !alreadyTargeted.has(id))
+    const recipients = await groupRecipientIds(supabase, group.id)
+    const candidateIds = recipients.filter(id => !alreadyTargeted.has(id))
     if (!candidateIds.length) continue
 
     // Drop members who muted this group.

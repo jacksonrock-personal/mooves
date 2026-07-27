@@ -76,6 +76,12 @@
 -- nearby_zips(p_zip, p_radius_miles) → zips         — 0003 · radius match (earth index)
 -- nearest_zip(p_lat, p_lng) → zip/city/state        — 0003 · reverse-geocode to centroid
 -- rate_limit_hit(p_key, p_limit, p_window_seconds)  — 0004 · fixed-window rate limiter
+-- viewer_group_ids(p_user uuid) → group_id          — 20260727183000 · the one
+--                                                     definition of "groups this
+--                                                     user is in": joined ∪ owned.
+--                                                     group_members excludes
+--                                                     owners — never query it
+--                                                     directly for visibility
 -- get_feed(viewer uuid) → jsonb                     — 0005 · the entire /api/feed
 --                                                     payload in one query
 --                                                     0006 · hides expired greens
@@ -83,6 +89,10 @@
 --                                                     0009 · restored the 0006
 --                                                     filter 0008 dropped — any
 --                                                     redefinition must keep it
+--                                                     20260727151328 · visibleGroups
+--                                                     20260727183000 · my_groups via
+--                                                     viewer_group_ids (owners were
+--                                                     blind to their own groups)
 
 -- ══ REALTIME ═════════════════════════════════════════════════════════════════
 -- Publication supabase_realtime: users (0000) · move_joins (0001)
