@@ -12,6 +12,7 @@ import { posthog } from '@/lib/posthog'
 import { timeLabel } from '@/components/go-green/TimeChips'
 import Joiners, { type Joiner } from './Joiners'
 import AnchoredMoveCard, { type AnchoredMove } from './AnchoredMoveCard'
+import GroupLabel from './GroupLabel'
 
 interface FriendCardProps {
   id: string
@@ -19,6 +20,8 @@ interface FriendCardProps {
   avatarUrl?: string | null
   statusNote?: string | null
   statusTime?: string | null
+  /** 18.2 — group names this viewer is entitled to see; already intersected server-side. */
+  visibleGroups?: string[]
   anchoredMove?: AnchoredMove | null
   phone: string
   joiners: Joiner[]
@@ -33,6 +36,7 @@ export default function FriendCard({
   avatarUrl,
   statusNote,
   statusTime,
+  visibleGroups,
   anchoredMove,
   phone,
   joiners,
@@ -42,6 +46,7 @@ export default function FriendCard({
 }: FriendCardProps) {
   const time = timeLabel(statusTime)
   const name = displayName ?? 'Friend'
+  const groupNames = visibleGroups ?? []
   const [confirmLeave, setConfirmLeave] = useState(false)
 
   function openSMS() {
@@ -96,10 +101,12 @@ export default function FriendCard({
         </button>
       </div>
 
-      {/* Sub-row: time chip + vibe note on their own full-width line (aligned under
-          the name, past the 44px avatar), so the note is always readable and wraps. */}
-      {(time || statusNote) && (
-        <div className="flex items-center gap-2 flex-wrap mt-2 pl-[56px]">
+      {/* Sub-row: time chip + vibe note + group label (18.2) on their own full-width
+          line (aligned under the name, past the 44px avatar), so the note is always
+          readable and wraps. items-start so a multi-line group label doesn't drag
+          the chip and note off their baseline. */}
+      {(time || statusNote || groupNames.length > 0) && (
+        <div className="flex items-start gap-2 flex-wrap mt-2 pl-[56px]">
           {time && (
             <span className="shrink-0 font-sans text-[11px] font-semibold text-purple-700 bg-purple-100 px-1.5 py-0.5 rounded-full">
               {time}
@@ -108,6 +115,7 @@ export default function FriendCard({
           {statusNote && (
             <span className="font-sans text-[13px] text-ink-500">{statusNote}</span>
           )}
+          <GroupLabel groups={groupNames} />
         </div>
       )}
 

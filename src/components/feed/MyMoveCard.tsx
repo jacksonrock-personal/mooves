@@ -7,10 +7,13 @@
 import { timeLabel } from '@/components/go-green/TimeChips'
 import Joiners, { type Joiner } from './Joiners'
 import AnchoredMoveCard, { type AnchoredMove } from './AnchoredMoveCard'
+import GroupLabel from './GroupLabel'
 
 interface MyMoveCardProps {
   statusNote: string | null
   statusTime: string | null
+  /** 18.2 — every group you picked. Your own card, so nothing is filtered out. */
+  visibleGroups?: string[]
   anchoredMove?: AnchoredMove | null
   joiners: Joiner[]
   meId: string
@@ -21,6 +24,7 @@ interface MyMoveCardProps {
 export default function MyMoveCard({
   statusNote,
   statusTime,
+  visibleGroups,
   anchoredMove,
   joiners,
   meId,
@@ -44,6 +48,12 @@ export default function MyMoveCard({
       </div>
 
       {statusNote && <p className="font-sans text-[14px] text-ink-500 mt-1">{statusNote}</p>}
+
+      {(visibleGroups?.length ?? 0) > 0 && (
+        <div className="mt-2">
+          <GroupLabel groups={visibleGroups ?? []} />
+        </div>
+      )}
 
       {anchoredMove && <AnchoredMoveCard move={anchoredMove} />}
 

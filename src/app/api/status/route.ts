@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { sendGroupGreenPush, sendGreenWave } from '@/lib/push'
 
-const TIME_VALUES = ['now', 'tonight', 'weekend'] as const
+const TIME_VALUES = ['now', 'tonight', 'week', 'weekend'] as const
 type StatusTime = (typeof TIME_VALUES)[number]
 
 function normalizeTime(value: unknown): StatusTime | null {
@@ -38,6 +38,7 @@ export async function PATCH(req: Request) {
     statusTime?: string | null
     statusMoveId?: string | null
     statusExpiresAt?: string | null
+    statusShowGroups?: boolean
   }
 
   if (typeof body.isAvailable !== 'boolean') {
@@ -52,6 +53,7 @@ export async function PATCH(req: Request) {
     status_move_id: string | null
     status_set_at: string
     status_expires_at: string | null
+    status_show_groups: boolean
     last_green_at?: string
   }
 
@@ -80,6 +82,7 @@ export async function PATCH(req: Request) {
       status_move_id: null,
       status_set_at: new Date().toISOString(),
       status_expires_at: null,
+      status_show_groups: false, // 18.2 — ephemeral, clears with the rest of the move
     }
   } else {
     const note = body.statusNote?.trim() ?? null
@@ -93,6 +96,10 @@ export async function PATCH(req: Request) {
       status_move_id: anchoredMoveId,
       status_set_at: now,
       status_expires_at: boundExpiresAt(body.statusExpiresAt, nowDate), // 9.5 Part A
+      // 18.2 — only meaningful when the green is scoped to groups; with
+      // everyone-visibility there is no audience to name.
+      status_show_groups:
+        body.statusShowGroups === true && Array.isArray(body.visibleTo) && body.visibleTo.length > 0,
       last_green_at: now, // recent-green signal (10.1); never cleared on go-grey
     }
   }

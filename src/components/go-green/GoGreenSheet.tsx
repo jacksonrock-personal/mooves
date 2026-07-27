@@ -30,13 +30,19 @@ interface GoGreenSheetProps {
   onClose: () => void
   groups: Group[]
   anchoredMove?: AnchoredMove | null
-  onSuccess: (move: { statusNote: string | null; statusTime: string | null }) => void
+  onSuccess: (move: {
+    statusNote: string | null
+    statusTime: string | null
+    visibleGroupIds: string[]
+    showGroups: boolean
+  }) => void
 }
 
 export default function GoGreenSheet({ open, onClose, groups, anchoredMove, onSuccess }: GoGreenSheetProps) {
   const [note, setNote] = useState('')
   const [time, setTime] = useState<StatusTime | null>(null)
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([])
+  const [showGroups, setShowGroups] = useState(false) // 18.2 — per-moove, default off
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const keyboardInset = useKeyboardInset(open)
@@ -46,9 +52,17 @@ export default function GoGreenSheet({ open, onClose, groups, anchoredMove, onSu
       setNote('')
       setTime(null)
       setSelectedGroupIds([])
+      setShowGroups(false)
       setError(null)
     }
   }, [open])
+
+  // 18.2 — the label only exists in the context of a group scope. Dropping back
+  // to everyone-visibility takes the toggle away, so don't leave it armed.
+  function handleGroupsChange(ids: string[]) {
+    setSelectedGroupIds(ids)
+    if (ids.length === 0) setShowGroups(false)
+  }
 
   async function handleConfirm() {
     if (submitting) return
@@ -70,6 +84,7 @@ export default function GoGreenSheet({ open, onClose, groups, anchoredMove, onSu
           statusMoveId: anchoredMove?.id ?? null,
           // 9.5 Part A — expiry computed here on the viewer's local clock
           statusExpiresAt: computeExpiresAt(time).toISOString(),
+          statusShowGroups: showGroups, // 18.2
         }),
       })
       if (!res.ok) throw new Error('update failed')
@@ -79,9 +94,15 @@ export default function GoGreenSheet({ open, onClose, groups, anchoredMove, onSu
       if (trimmedNote) posthog.capture('go_green_with_note')
       if (time) posthog.capture('go_green_with_time')
       if (visibleTo) posthog.capture('go_green_with_groups')
+      if (visibleTo && showGroups) posthog.capture('go_green_with_group_label')
       if (anchoredMove) posthog.capture('go_green_with_move', { move: anchoredMove.id })
 
-      onSuccess({ statusNote: data.statusNote, statusTime: data.statusTime })
+      onSuccess({
+        statusNote: data.statusNote,
+        statusTime: data.statusTime,
+        visibleGroupIds: visibleTo ?? [],
+        showGroups: !!visibleTo && showGroups,
+      })
     } catch {
       setError("Couldn't update, try again.")
     } finally {
@@ -130,15 +151,51 @@ export default function GoGreenSheet({ open, onClose, groups, anchoredMove, onSu
         {groups.length > 0 && (
           <>
             <p className="font-sans text-[11px] font-semibold text-ink-500 uppercase tracking-[0.08em] mb-2.5">
-              Who can see you?
+              Who can see this?
             </p>
             <div className="mb-1">
               <VisibilityChips
                 groups={groups}
                 selected={selectedGroupIds}
-                onChange={setSelectedGroupIds}
+                onChange={handleGroupsChange}
               />
             </div>
+
+            {/* 18.2 — offered only once the green is scoped to groups. The
+                sub-line is load-bearing: a mover needs to know the label can't
+                expose their other groups before they'll turn it on. */}
+            {selectedGroupIds.length > 0 && (
+              <button
+                type="button"
+                role="switch"
+                aria-checked={showGroups}
+                onClick={() => setShowGroups(v => !v)}
+                className="w-full mt-3 flex items-start gap-3 text-left rounded-2xl border-[1.5px] border-[#E8E4F5] bg-purple-50 px-3.5 py-3"
+              >
+                <span className="flex-1 min-w-0">
+                  <span className="block font-sans text-[13.5px] font-semibold text-ink-900 leading-snug">
+                    Show who this is shared with
+                  </span>
+                  <span className="block font-sans text-[11.5px] text-ink-500 leading-snug mt-0.5">
+                    {showGroups
+                      ? "Friends only see the groups they're in."
+                      : 'Off, nobody sees which groups you picked.'}
+                  </span>
+                </span>
+                <span
+                  aria-hidden="true"
+                  className={`shrink-0 mt-0.5 w-11 h-6 rounded-full relative transition-colors ${
+                    showGroups ? 'bg-green-700' : 'bg-grey-300'
+                  }`}
+                >
+                  <span
+                    className={`absolute top-[3px] left-[3px] w-[18px] h-[18px] rounded-full bg-white shadow-sm transition-transform ${
+                      showGroups ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </span>
+              </button>
+            )}
           </>
         )}
       </div>
