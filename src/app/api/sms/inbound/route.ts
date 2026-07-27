@@ -6,6 +6,7 @@
 import { createServiceClient } from '@/lib/supabase/server'
 import { validateTwilioSignature, twimlResponse } from '@/lib/twilio'
 import { captureServerEvent } from '@/lib/posthog-server'
+import { userGroupIds } from '@/lib/groups'
 
 type GreenFriend = {
   id: string
@@ -105,23 +106,16 @@ export async function POST(req: Request) {
   }
 
   // 4. Resolve group visibility. A green friend with visible_to = null is public.
-  //    Otherwise `visible_to` holds GROUP IDs owned by that friend — the sender
-  //    only sees them if they're a member of at least one of those groups.
+  //    Otherwise `visible_to` holds GROUP IDs — the sender only sees them if
+  //    they're in at least one of those groups. "In" includes owning it:
+  //    group_members excludes owners, so this must go through userGroupIds.
   const targetedGroupIds = Array.from(
     new Set(
       greenFriends.flatMap(f => (Array.isArray(f.visible_to) ? f.visible_to : []))
     )
   )
 
-  let senderGroupIds = new Set<string>()
-  if (targetedGroupIds.length > 0) {
-    const { data: memberships } = await supabase
-      .from('group_members')
-      .select('group_id')
-      .eq('user_id', sender.id)
-      .in('group_id', targetedGroupIds)
-    senderGroupIds = new Set((memberships ?? []).map(m => m.group_id))
-  }
+  const senderGroupIds = await userGroupIds(supabase, sender.id, targetedGroupIds)
 
   const visible = greenFriends.filter(
     f =>
