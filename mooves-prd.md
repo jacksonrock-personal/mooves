@@ -35,7 +35,7 @@
 | 19 | Environment Variables | ✅ Approved |
 | — | Post-MVP Roadmap (Phases 8–15) | 🔮 Definitions finalized 2026-07-16 — needs spec + mockup per phase |
 | — | Phase 17 — Green Wave + Wave Blast + Onboarding Group CTA + Loop Stance Card | ✅ Spec 2026-07-23 (see "Phase 17" near EOF) · ✅ Mockup `mooves-phase17-wave-stance.html` · ✅ Code 2026-07-23 (`feat/phase17-green-wave`) |
-| — | Phase 18 — "This week" time chip (18.1) + group visibility label (18.2) | ✅ Spec 2026-07-27 (see "Phase 18" at EOF) · ✅ Mockup `mooves-phase18-week-chip-group-label.html` · ⬜ Code |
+| — | Phase 18 — "This week" time chip (18.1) + group visibility label (18.2) | ✅ Spec 2026-07-27 (see "Phase 18" at EOF) · ✅ Mockup `mooves-phase18-week-chip-group-label.html` · ✅ Code 2026-07-27 (`feat/phase18-week-chip-group-label`) |
 
 ---
 
@@ -4092,7 +4092,7 @@ Progress indicator goes 4→**5** pips; `CARD_COUNT` 4→5; swipe/pip/arrow/Skip
 
 ---
 
-## Phase 18 — "This week" time chip + group visibility label (Spec) — *spec'd 2026-07-27* · SPEC ✅ · MOCKUP ✅ (`mooves-phase18-week-chip-group-label.html`, approved 2026-07-27) · CODE ⬜
+## Phase 18 — "This week" time chip + group visibility label (Spec) — *spec'd 2026-07-27* · SPEC ✅ · MOCKUP ✅ (`mooves-phase18-week-chip-group-label.html`, approved 2026-07-27) · CODE ✅ 2026-07-27 (`feat/phase18-week-chip-group-label`; `tsc --noEmit` clean; migration `20260727151328` applied by Jackson via `npm run db:push`)
 
 *Two independent amendments to the go-green flow (Screen 5) and the feed card (Screen 4). No dependency between them — either can build first.*
 
@@ -4123,7 +4123,8 @@ Progress indicator goes 4→**5** pips; `CARD_COUNT` 4→5; swipe/pip/arrow/Skip
 **Acceptance:**
 - [ ] "This week" appears in the chip row Mon–Thu only; Fri–Sun shows the original three.
 - [ ] Selecting it expires the green at 3:00 AM the coming Friday, viewer-local.
-- [ ] Chip renders on the mover's card and friends' feed cards, and carries into the blast body.
+- [ ] Chip renders on the mover's card and friends' feed cards.
+  - ~~*and carries into the blast body*~~ — **struck 2026-07-27 at build.** Amendment A4 removed the prefilled body from the join blast (it opens an empty composer), and the wave blast is the only one carrying a body, which `week` is excluded from by 18.1. No code path can satisfy this.
 - [ ] A `week` green never appears in a green wave, in-app or push.
 - [ ] Migration extends the `status_time` CHECK constraint; existing greens unaffected.
 - [ ] Chip clears on go-grey.

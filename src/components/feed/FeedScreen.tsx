@@ -43,6 +43,8 @@ interface Friend {
   avatarUrl: string | null
   statusNote: string | null
   statusTime: string | null
+  /** 18.2 — already intersected with this viewer's groups by get_feed. */
+  visibleGroups?: string[]
   phone: string
   statusSetAt: string | null
   joiners: Joiner[]
@@ -77,6 +79,10 @@ export default function FeedScreen() {
   const [isAvailable, setIsAvailable] = useState(false)
   const [myStatusNote, setMyStatusNote] = useState<string | null>(null)
   const [myStatusTime, setMyStatusTime] = useState<string | null>(null)
+  // 18.2 — your own green's group scope. Names resolve client-side against the
+  // groups list already loaded, so this needs no extra round trip.
+  const [myVisibleGroupIds, setMyVisibleGroupIds] = useState<string[]>([])
+  const [myShowGroups, setMyShowGroups] = useState(false)
   const [myAnchoredMove, setMyAnchoredMove] = useState<AnchoredMove | null>(null)
   const [pendingAnchor, setPendingAnchor] = useState<AnchoredMove | null>(null)
   const [myJoiners, setMyJoiners] = useState<MyJoiner[]>([])
@@ -230,6 +236,8 @@ export default function FeedScreen() {
         statusTime?: string | null
         statusSetAt?: string | null
         statusExpiresAt?: string | null
+        visibleTo?: string[] | null
+        statusShowGroups?: boolean
         anchoredMove?: AnchoredMove | null
         referralCode?: string
       }
@@ -260,6 +268,8 @@ export default function FeedScreen() {
       setMyStatusNote(greenExpired ? null : meData.statusNote ?? null)
       setMyStatusTime(greenExpired ? null : meData.statusTime ?? null)
       setMyAnchoredMove(greenExpired ? null : meData.anchoredMove ?? null)
+      setMyVisibleGroupIds(greenExpired ? [] : meData.visibleTo ?? [])
+      setMyShowGroups(greenExpired ? false : meData.statusShowGroups === true)
       setReferralCode(meData.referralCode ?? null)
 
       await resolveInvite()
@@ -371,10 +381,18 @@ export default function FeedScreen() {
     setSheetOpen(true)
   }
 
-  function handleGoGreenSuccess(move: { statusNote: string | null; statusTime: string | null }) {
+  function handleGoGreenSuccess(move: {
+    statusNote: string | null
+    statusTime: string | null
+    visibleGroupIds: string[]
+    showGroups: boolean
+  }) {
     setIsAvailable(true)
     setMyStatusNote(move.statusNote)
     setMyStatusTime(move.statusTime)
+    // 18.2 — the sheet reports its own selection; /api/users/me isn't refetched here.
+    setMyVisibleGroupIds(move.visibleGroupIds)
+    setMyShowGroups(move.showGroups)
     setMyAnchoredMove(pendingAnchor) // null for a normal go-green
     setPendingAnchor(null)
     setMyJoiners([])
@@ -433,6 +451,8 @@ export default function FeedScreen() {
       setMyStatusNote(null)
       setMyStatusTime(null)
       setMyAnchoredMove(null)
+      setMyVisibleGroupIds([])
+      setMyShowGroups(false)
       setMyJoiners([])
       posthog.capture('go_grey_confirmed')
     }
@@ -511,6 +531,11 @@ export default function FeedScreen() {
               <MyMoveCard
                 statusNote={myStatusNote}
                 statusTime={myStatusTime}
+                visibleGroups={
+                  myShowGroups
+                    ? groups.filter(g => myVisibleGroupIds.includes(g.id)).map(g => g.name)
+                    : []
+                }
                 anchoredMove={myAnchoredMove}
                 joiners={myJoiners}
                 meId={me.id}
@@ -550,6 +575,7 @@ export default function FeedScreen() {
                     avatarUrl={f.avatarUrl}
                     statusNote={f.statusNote}
                     statusTime={f.statusTime}
+                    visibleGroups={f.visibleGroups}
                     anchoredMove={f.anchoredMove}
                     phone={f.phone}
                     joiners={f.joiners}

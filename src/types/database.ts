@@ -135,6 +135,7 @@ export type Database = {
           status_note: string | null
           status_set_at: string | null
           status_expires_at: string | null
+          status_show_groups: boolean
           status_time: string | null
           visible_to: string[] | null
           wave_push_enabled: boolean
@@ -158,6 +159,7 @@ export type Database = {
           status_note?: string | null
           status_set_at?: string | null
           status_expires_at?: string | null
+          status_show_groups?: boolean
           status_time?: string | null
           visible_to?: string[] | null
           wave_push_enabled?: boolean
@@ -181,6 +183,7 @@ export type Database = {
           status_note?: string | null
           status_set_at?: string | null
           status_expires_at?: string | null
+          status_show_groups?: boolean
           status_time?: string | null
           visible_to?: string[] | null
           wave_push_enabled?: boolean
