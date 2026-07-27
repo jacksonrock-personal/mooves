@@ -4,6 +4,8 @@ import { verifySessionToken } from '@/lib/auth/session'
 const PUBLIC_PREFIXES = [
   '/join/',
   '/g/',
+  '/r/',            // Phase 19: "add everyone here" landing — scanned by people
+                    // who may not have an account yet, so it must render logged out.
   '/auth',
   '/privacy',       // public legal pages (also required for SMS/A2P registration)
   '/terms',

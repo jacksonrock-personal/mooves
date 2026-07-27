@@ -5,6 +5,7 @@
 // The People header, sub-tabs, and bottom nav live in PeopleScreen.
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { initPostHog, posthog } from '@/lib/posthog'
 import CowIllustration from '@/components/ui/CowIllustration'
 import Toast from '@/components/ui/Toast'
@@ -17,8 +18,8 @@ interface Friend {
 }
 
 export default function FriendsPanel() {
+  const router = useRouter()
   const [friends, setFriends] = useState<Friend[] | null>(null)
-  const [referralCode, setReferralCode] = useState<string | null>(null)
   const [query, setQuery] = useState('')
   const [removeTarget, setRemoveTarget] = useState<Friend | null>(null)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
@@ -32,14 +33,12 @@ export default function FriendsPanel() {
       initPostHog()
       posthog.capture('friends_list_viewed')
 
-      const [friendsRes, me] = await Promise.all([
-        fetch('/api/friends').then(r => r.json()) as Promise<{ friends: Friend[] }>,
-        fetch('/api/users/me').then(r => r.json()) as Promise<{ referralCode?: string }>,
-      ])
+      // Phase 19: the referral code moved to the Add friends hub, which owns
+      // every invite path now, so this panel only needs the list itself.
+      const friendsRes = (await fetch('/api/friends').then(r => r.json())) as { friends: Friend[] }
       if (cancelled) return
 
       setFriends(sortFriends(friendsRes.friends ?? []))
-      setReferralCode(me.referralCode ?? null)
     }
 
     void init()
@@ -83,31 +82,6 @@ export default function FriendsPanel() {
       // Restore the row and let the user know.
       setFriends(prev => sortFriends([...(prev ?? []), target]))
       setToastMessage(`Couldn't remove ${target.displayName ?? 'friend'}, try again.`)
-    }
-  }
-
-  async function handleInvite() {
-    posthog.capture('friends_invite_tapped')
-    if (!referralCode) return
-    const shareUrl = `https://makemooves.app/join/${referralCode}`
-    const canShare = typeof navigator !== 'undefined' && 'share' in navigator
-    if (canShare) {
-      try {
-        await navigator.share({
-          title: 'Join me on Mooves',
-          text: 'See when your friends are free, without having to ask.',
-          url: shareUrl,
-        })
-      } catch {
-        // user dismissed the share sheet — no-op
-      }
-    } else {
-      try {
-        await navigator.clipboard.writeText(shareUrl)
-        setToastMessage('Copied!')
-      } catch {
-        // silent
-      }
     }
   }
 
@@ -171,10 +145,14 @@ export default function FriendsPanel() {
           ))}
       </div>
 
-      {/* Sticky invite button (above bottom nav) */}
+      {/* Sticky add button (above bottom nav).
+          Phase 19: this was "Invite friends", which fired the share sheet
+          directly. It now opens the Add friends hub, which offers the in-person
+          code, a personal QR, and that same share action — one entry with three
+          paths instead of two competing buttons in one bar. */}
       <div className="fixed bottom-[72px] left-0 right-0 z-30 bg-card-white border-t border-[#E8E4F5] px-4 py-2.5">
         <button
-          onClick={() => void handleInvite()}
+          onClick={() => router.push('/people/add')}
           className="w-full py-3.5 rounded-2xl bg-mooves-purple text-white font-display font-bold text-[15px] tracking-tight flex items-center justify-center gap-2"
         >
           <svg
@@ -187,11 +165,12 @@ export default function FriendsPanel() {
             strokeLinecap="round"
             strokeLinejoin="round"
           >
-            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-            <polyline points="16 6 12 2 8 6" />
-            <line x1="12" y1="2" x2="12" y2="15" />
+            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="8.5" cy="7" r="4" />
+            <line x1="20" y1="8" x2="20" y2="14" />
+            <line x1="23" y1="11" x2="17" y2="11" />
           </svg>
-          Invite friends
+          Add friends
         </button>
       </div>
 
