@@ -36,6 +36,7 @@
 | — | Post-MVP Roadmap (Phases 8–15) | 🔮 Definitions finalized 2026-07-16 — needs spec + mockup per phase |
 | — | Phase 17 — Green Wave + Wave Blast + Onboarding Group CTA + Loop Stance Card | ✅ Spec 2026-07-23 (see "Phase 17" near EOF) · ✅ Mockup `mooves-phase17-wave-stance.html` · ✅ Code 2026-07-23 (`feat/phase17-green-wave`) |
 | — | Phase 18 — "This week" time chip (18.1) + group visibility label (18.2) | ✅ Spec 2026-07-27 (see "Phase 18" at EOF) · ✅ Mockup `mooves-phase18-week-chip-group-label.html` · ✅ Code 2026-07-27 (`feat/phase18-week-chip-group-label`) |
+| — | Phase 19 — In-person adds: "Add everyone here" (19.1) + personal QR (19.2) | ✅ Spec 2026-07-27 (see "Phase 19" at EOF) · ✅ Mockup `mooves-phase19-in-person-adds.html` (approved 2026-07-27) · ✅ Code 2026-07-27 (`feat/phase19-in-person-adds`) |
 
 ---
 
@@ -4170,3 +4171,164 @@ Progress indicator goes 4→**5** pips; `CARD_COUNT` 4→5; swipe/pip/arrow/Skip
 
 ### Open questions
 None.
+
+---
+
+## Phase 19 — In-person adds (Spec) — *spec'd 2026-07-27* · SPEC ✅ · MOCKUP ✅ (`mooves-phase19-in-person-adds.html`, approved 2026-07-27) · CODE ✅ 2026-07-27 (`feat/phase19-in-person-adds`; `tsc --noEmit` + `next build` clean; migration `20260727170535` applied to prod via the Supabase connector)
+
+### Code status — built 2026-07-27 (Jackson: "ship it")
+
+**Dependency added:** `qrcode.react@4.2.0` (SVG, own types, React 19 peer).
+
+**Migration `20260727170535_phase19_in_person_adds`** — applied to prod via the Supabase connector and verified. Purely additive: `roundups` + `roundup_members`, a partial unique index (`one open session per host`), RLS on both, one scoped SELECT policy, realtime publication, and two RPCs.
+
+- **`roundup_join` is atomic on purpose.** Cap check, membership write, and the mutual-friend fan-out happen under one `FOR UPDATE` row lock — otherwise two simultaneous scans could both read 24 and both get in.
+- **`roundup_members.new_friend_ids`** records exactly which friendships each join created (`ON CONFLICT DO NOTHING ... RETURNING`), which is what makes Undo precise. `roundup_undo` also cleans the reverse direction, so people who joined *after* you and were friended to you are covered.
+- **The RLS SELECT policy is scoped to the host, deliberately not `USING (true)`.** The roster is exactly what the consent landing withholds, so a permissive policy would hand it to any authenticated client. It exists only so the host's own live roster arrives over Realtime.
+- **Verified against production data** in a rolled-back transaction: 3 users joined, friendships went 86 → 90 (**+4, not +6** — one pair already existed and `ON CONFLICT` correctly skipped it), undo then removed only the pair it had created and **left the pre-existing friendship intact**. Re-join returned `already`, bad code returned `invalid`, and the transaction rolled back to 86.
+
+**Files.** New: `lib/roundup.ts`, `lib/useWakeLock.ts`, `components/ui/QrCode.tsx`, `api/roundups` (POST start / GET current), `api/roundups/close`, `api/roundup-invite/[code]/join`, `api/roundup-invite/[code]/undo`, `app/r/[code]/page.tsx`, `components/invite/RoundupJoinLanding.tsx`, `app/people/add/page.tsx`, `components/people/AddFriendsHub.tsx`, `components/people/RoundupSession.tsx`, `components/feed/RoundupJoinedSheet.tsx`. Modified: `FriendsPanel.tsx` (sticky bar → "Add friends", share action + referral fetch moved to the hub), `FeedScreen.tsx` (`resolveRoundup` + the confirmation sheet), `middleware.ts` (`/r/` public), `types/database.ts`.
+
+**Two deviations from the plan, both deliberate:**
+1. **The expired host state would have been unreachable.** `GET /api/roundups` originally filtered expired sessions out, so a host returning after 24h landed on the hub with no explanation of where their code went. It now lazily closes the stale session and reports it, so "That code expired" renders along with the reassurance that the people who joined are still friends.
+2. `FriendsPanel` no longer fetches the referral code; the hub owns every invite path.
+
+**Live-verified (dev server):** the dead-link landing (no host name, no count) and the consent landing (host name + "1 person in so far", **no roster**). Page metadata is deliberately generic, so a pasted link never previews the host's name.
+
+**Still needs Jackson's device test:** the two-account scan → consent → join → confirmation flow, **Undo** (RPC verified against real data, UI wiring untested), the live roster over Realtime, and the wake lock on a real iPhone.
+
+*Two independent additions to friend-adding. 19.1 is the N-at-once in-person path; 19.2 is the 1:1 fallback riding on the same screen. Neither touches the existing group invite link.*
+
+### Purpose
+
+Let one person standing in a room connect everyone in it — mutually — without creating a group that outlives the gathering.
+
+### The problem being solved
+
+Today the only many-at-once path is the group invite link (10.2), which *requires* creating a group. For a transient formation — the originating example was a bachelor party drawing people from several different circles who will never reassemble — that group then permanently clutters the Groups list, appears as a go-green visibility target, and becomes a push target. Users are forced to create a durable object to get a transient effect.
+
+### 19.1 — Add everyone here
+
+**Entry point:** People tab → Friends sub-tab → the **sticky bottom bar**, whose button becomes **"Add friends"** and opens an Add-friends hub holding both 19.1 and 19.2.
+
+> **Corrected at mockup (2026-07-27).** The spec originally said "Friends sub-tab *header* button, mirroring the 'New' button on the Groups sub-tab header." That was stale on two counts: the create-group control moved to a **sticky bottom bar** on 2026-07-22, and the Friends sub-tab already has its own sticky bar holding "Invite friends". The hub **absorbs** that existing share action rather than sitting beside it — two competing invite buttons in one bar is worse than one entry with three ordered paths.
+
+**Naming decision (locked at spec):** **verb-only, no coined noun.** The feature is never called a "roundup", "huddle", or any other object name in the UI. Because the session can live up to 24h and the host must close it, copy refers to it **by state, not by name** — "Adding everyone here" → "3 joined" → "Done". This is the one place the naming choice costs something; watch it at mockup.
+
+**Behavior:**
+
+- Tapping it opens a session and displays a **QR code** plus a copyable link.
+- **No in-app scanner is built.** The QR encodes a URL; the native iOS/Android camera opens it. No camera permission is requested and nothing is read by Mooves. (This is also the only workable path: iOS Safari has no `BarcodeDetector`.)
+- The host is a member of their own session, so scanners are friended to the host as well as to each other.
+- **Every person who joins is mutually friended with every person already in**, including the host. Late joiners friend everyone who came before them.
+- **No group is created.** Nothing persists after the session closes except friendships.
+- The host sees a **live roster** — names appear as people join — and a running count against the cap.
+- **Bounds:** host closes it manually; auto-closes **24h** after opening; **cap of 25 people including the host**. The 24h window exists because a brand-new user must walk the full existing signup (~90s) before they can join, and stragglers must still land.
+- **One open session per host at a time.** Starting a new one requires closing the old.
+- Only the host can display the QR; joiners cannot re-broadcast the code.
+
+**Host states:**
+
+- **Idle** — the entry button; no session exists.
+- **Open** — QR, link, live roster, running count ("4 of 25"), "Done" to close.
+- **Full** — cap reached; no further joiners accepted, host can still close.
+- **Closed** — one-time confirmation ("You added 4 people"), then dismissed. No history surface, no reopening.
+- **Expired** — host returns after 24h; treated as closed, cannot resume.
+
+**Joiner states:**
+
+- **Valid + signed in** → consent landing: host's display name + count of people currently in → "Joining adds all N as friends" → Join / Not now.
+- **Valid + signed out** → existing auth flow, then back to the consent landing.
+- **Already joined** → "You're already in."
+- **Closed / expired / invalid** → "This link isn't active anymore." No host name revealed on a dead link.
+- **Full** → "This is full."
+
+**Consent disclosure rule:** the landing shows the **host's name and a count only — never the roster** of who is already in. Names are revealed after joining. This follows the precedent set at Phase 10.2's build, where the group-join consent landing deliberately shipped a member *count* instead of the specced avatar cluster for exactly this reason: anyone holding the link would otherwise learn who is in the room.
+
+**Flows:**
+
+1. **Host runs it.** People → Friends → "Add everyone here" → QR displays → roster fills as people scan → "Done" → confirmation → back to a grown friends list.
+2. **Existing user joins.** Native camera on QR → consent landing → Join → friended with everyone in → lands in feed with confirmation, feed now populated.
+3. **New user joins.** Native camera on QR → landing → existing signup (phone → OTP → onboarding) → returns to consent landing → Join → as above.
+
+**Data:**
+
+- A session record (code, host, opened-at, closed-at, 24h expiry) and a membership record per joiner.
+- On join: write the membership, then mutual friendship rows against every existing member. **Idempotent** — pairs already friends are skipped silently, no error, no duplicate rows.
+- Join and code-resolve endpoints are rate-limited (existing rate-limit infrastructure) against code-guessing.
+- Reuses the mutual-insert-against-all-existing-members logic already shipped for group-invite joins (`/api/group-invite/[code]/join`), and the consent-landing pattern from `GroupJoinLanding`.
+- Requires a client-side QR image generator (new dependency).
+
+**Safety model:** cap + 24h expiry + host-visible roster + instant close. A leaked link is bounded to 25 people and one day. There is no in-session kick in v1; the remedy for an unwanted add is the existing unfriend.
+
+### 19.2 — Personal QR
+
+**Entry point:** the same screen, as a secondary section below the primary control.
+
+**Behavior:** renders the user's **existing** referral link (`/invite/[code]`) as a QR. Persistent, no lifetime, no cap — this is the already-shipped referral link, unchanged, just made scannable. Scanning routes to the existing invite landing (Screen 1) and produces a single friendship. No new backend.
+
+### Out of scope
+
+- Any change to the group invite link, its sheet, its landing, or group auto-friend behavior — **explicitly unchanged**.
+- An in-app camera or QR scanner.
+- Contacts sync. No contacts API exists on iOS Safari, and the Android Contact Picker is a system multi-select, not an address-book read — this is a native-app decision, not a feature decision.
+- Deferred or shortened onboarding for scanners — explicitly rejected; new users walk the full existing flow.
+- Converting a session into a group, or any "keep this as a group?" offer.
+- Push or notifications on join.
+- Bluetooth, AirDrop, or proximity-based discovery.
+- Reopening a closed session; any post-close history surface.
+
+### Open questions
+
+1. ~~Undo after joining.~~ **Decided at approval (2026-07-27): include it.** Scanning the wrong code otherwise costs up to 25 individual unfriends. A single **"Undo — remove those N friends"** is offered on the post-join confirmation **only**, and is gone once dismissed; it removes only friendships created by that join, never pre-existing ones. *Jackson approved the spec without answering this directly — the recommendation was taken as written and is reversible at mockup.*
+2. ~~Screen brightness / sleep while the QR is displayed.~~ **RESOLVED at mockup — settled by a platform constraint, not a preference.** There is **no web API for screen brightness**, so brightness cannot be touched. The **Screen Wake Lock API** (Safari 16.4+, Chrome) *is* available: hold a wake lock while the QR is on screen, release on Done, on navigation, and on tab blur. No UI copy mentions it. Dark modules on a white card scan fine at normal brightness.
+3. ~~Exact copy for the state-based labels.~~ **RESOLVED at mockup — locked below.**
+
+### Copy locked at mockup approval (2026-07-27)
+
+State-based throughout, **no coined noun anywhere**:
+
+| Surface | Copy |
+|---|---|
+| Friends sticky bar | "Add friends" |
+| Hub, primary card | eyebrow "In the room" · heading **"Add everyone here"** · body "Everyone who scans this code gets added as friends with each other, not just to you. No formal group gets created." · button "Show the code" |
+| Hub, secondary card | "Your own code" · "For adding one person. This is your personal link, it never expires." · "Share your link instead" |
+| Live session | title "Adding everyone here" · "Point their cameras at this code." · "Nobody yet" / "4 joined" · "Room for 21 more" · "This stops working in 24 hours, or when you tap Done." · close = **"Done"** |
+| Empty roster | "They'll show up here as they scan." |
+| Full (host) | "That's 25 people" · "This one is full, so the code has stopped working. Tap Done to finish up, then start another if you need to." |
+| Closed | "You added 4 people." · "They're all friends with each other now, and with you. Nothing else was created, there's no new group to manage." · "Back to friends" |
+| Expired (host) | "That code expired" · "Codes stop working after 24 hours. The 3 people who joined are still your friends." |
+| Consent | "{Host} invited you all to Mooves" · "Joining will add everyone here as a friend, along with anyone who joins via the same code after." · count pill "5 people in so far" · "Join" / "Not now" · fine print "No group is created, just friendships." |
+| Joined | "You're in." · "You're now friends with 5 people, so you'll see each other's moves." · "See who's free" · **"Undo, remove those 5"** |
+| Already in | "You're already in" · "You're friends with everyone here. Head back and see who's free." |
+| Dead link | "This link isn't active anymore" · "Codes stop working after 24 hours, or once the person who started it is done. Ask them for a fresh one." |
+| Full (joiner) | "This one is full" · "It reached its 25 person limit. Ask whoever shared it to start another one." |
+
+### Design decisions locked at mockup approval (2026-07-27)
+
+- **No green anywhere in this phase.** Green is reserved for availability and nothing here is availability, so success and confirmation states are **purple**. The only green pixels are the cow's nose dot and the wordmark dot, both shipped brand assets.
+- **At the cap the QR is replaced, not greyed out** — nobody should keep pointing a camera at a code that has stopped accepting people.
+- **The closed state names the non-outcome** ("there's no new group to manage"), because avoiding a group is the entire reason this exists rather than a group link.
+- **The host appears in their own roster**, tagged "Host", since they count toward the 25 and every joiner is friended to them.
+- **Dead-link and full states reveal nothing** — no host name, no count, no roster. "25 person limit" is a property of the product, not a fact about the room.
+- **Layout:** the code, the count, and the first names sit together above the fold at 320×660; a long roster scrolls beneath them.
+
+### Acceptance criteria
+
+- [ ] "Add everyone here" appears in the People → Friends sub-tab header; the Groups "New" button is unaffected.
+- [ ] Starting a session displays a QR and a copyable link; no camera permission is ever requested by Mooves.
+- [ ] The native phone camera resolves the QR to the consent landing on both iOS and Android.
+- [ ] Every joiner ends mutually friended with every other joiner **and** the host; late joiners friend everyone already in.
+- [ ] No group is created, and nothing appears in the Groups list at any point.
+- [ ] The host sees a live roster and running count, and can close the session immediately.
+- [ ] The session auto-closes 24h after opening and cannot be resumed.
+- [ ] The cap of 25 (including host) is enforced server-side; the 26th person sees the full state.
+- [ ] A host can have only one open session at a time.
+- [ ] The consent landing shows the host's name and a count, never the roster.
+- [ ] A dead, closed, expired, or invalid link shows a friendly state and reveals no host name or count.
+- [ ] Signed-out scanners route through the existing auth + onboarding flow and return to the consent landing.
+- [ ] Re-joining, and joining people you're already friends with, are both no-ops — no errors, no duplicate friendship rows.
+- [ ] "Undo" on the post-join confirmation removes exactly the friendships that join created, and is unavailable after dismissal.
+- [ ] Code resolve and join endpoints are rate-limited.
+- [ ] The personal QR renders the existing referral link and produces a single friendship on scan, with no backend change.
+- [ ] `/g/[code]`, the group invite sheet, and group auto-friend behavior are unchanged.

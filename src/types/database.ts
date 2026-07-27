@@ -472,6 +472,77 @@ export type Database = {
           },
         ]
       }
+      roundups: {
+        Row: {
+          id: string
+          code: string
+          host_id: string
+          created_at: string
+          expires_at: string
+          closed_at: string | null
+        }
+        Insert: {
+          id?: string
+          code: string
+          host_id: string
+          created_at?: string
+          expires_at?: string
+          closed_at?: string | null
+        }
+        Update: {
+          id?: string
+          code?: string
+          host_id?: string
+          created_at?: string
+          expires_at?: string
+          closed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roundups_host_id_fkey"
+            columns: ["host_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      roundup_members: {
+        Row: {
+          roundup_id: string
+          user_id: string
+          joined_at: string
+          new_friend_ids: string[]
+        }
+        Insert: {
+          roundup_id: string
+          user_id: string
+          joined_at?: string
+          new_friend_ids?: string[]
+        }
+        Update: {
+          roundup_id?: string
+          user_id?: string
+          joined_at?: string
+          new_friend_ids?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roundup_members_roundup_id_fkey"
+            columns: ["roundup_id"]
+            isOneToOne: false
+            referencedRelation: "roundups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "roundup_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       zip_codes: {
         Row: {
           zip: string
@@ -523,6 +594,14 @@ export type Database = {
         Returns: boolean
       }
       get_feed: { Args: { viewer: string }; Returns: Json }
+      // Phase 19.1 — join is atomic (cap check + membership + mutual friend
+      // fan-out under one row lock), and records which friendships it created
+      // so undo can remove exactly those.
+      roundup_join: {
+        Args: { p_code: string; p_user: string }
+        Returns: { status: string; member_count: number; connected_count: number }[]
+      }
+      roundup_undo: { Args: { p_code: string; p_user: string }; Returns: number }
     }
     Enums: {
       [_ in never]: never

@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mooves — Phase 19: In-person adds</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    /* DS v1 tokens — tailwind.config.ts */
+    --bg: #1C1730;            /* page surround */
+    --app-bg: #F8F6FF;        /* purple-50 */
+    --white: #FFFFFF;
+    --purple: #7C5CDB;        /* purple-500 */
+    --purple-700: #5F3FC4;
+    --purple-100: #EDE9FF;
+    --green: #2ECC71;         /* availability ONLY, not used in this phase */
+    --grey: #BDB5D4;          /* grey-300 */
+    --ink: #1C1730;           /* ink-900 */
+    --ink-2: #6B628A;         /* ink-500 */
+    --border: #E8E4F5;
+    --red: #E8405A;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); font-family: 'Inter', sans-serif; color: #fff;
+    min-height: 100vh; padding: 40px 20px 90px; -webkit-font-smoothing: antialiased;
+  }
+  .page-title { text-align: center; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 22px; letter-spacing: -0.02em; margin-bottom: 5px; }
+  .page-sub { text-align: center; color: #8B82AE; font-size: 13px; margin-bottom: 26px; }
+
+  .toggles { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center; max-width: 780px; margin: 0 auto 30px; }
+  .grp-lbl { font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: rgba(255,255,255,.32); margin: 0 4px; }
+  .toggle { background: #2A2340; color: #C9C1E4; border: 1px solid #3A3355; font-weight: 600; font-size: 12.5px; padding: 9px 15px; border-radius: 999px; cursor: pointer; transition: all .15s; }
+  .toggle:hover { border-color: var(--purple); }
+  .toggle.active { background: var(--purple); color: #fff; border-color: var(--purple); }
+
+  .state { display: none; }
+  .state.active { display: flex; flex-direction: column; align-items: center; gap: 15px; }
+
+  .phone { width: 320px; height: 660px; border-radius: 44px; background: var(--app-bg); overflow: hidden; position: relative; box-shadow: 0 30px 70px rgba(0,0,0,.45); border: 1px solid #2E2748; display: flex; flex-direction: column; }
+  .caption { max-width: 380px; text-align: center; font-size: 12.5px; line-height: 1.55; color: #9990BC; }
+  .caption b { color: #C9C1E4; font-weight: 600; }
+  .screen-label { text-align: center; color: #6E6690; font-size: 12px; letter-spacing: .04em; }
+  .note { max-width: 680px; margin: 4px auto 0; background: #241E3A; border: 1px solid #342D52; border-radius: 14px; padding: 14px 18px; font-size: 12.5px; color: #B3AAD2; line-height: 1.65; }
+  .note b { color: #E6DEFF; }
+
+  /* ══════════ app chrome ══════════ */
+  .p-head { background: var(--white); padding: 44px 20px 0; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .wm { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 12px; }
+  .wm-cow { width: 26px; height: 26px; flex-shrink: 0; }
+  .wm-txt { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 20px; color: var(--ink); letter-spacing: -.02em; display: flex; align-items: center; }
+  .wm-txt .oo { display: inline-flex; align-items: center; gap: 1px; margin: 0 1px; position: relative; top: 1px; }
+  .wm-txt .d1 { width: 11px; height: 11px; border-radius: 50%; background: var(--green); }
+  .wm-txt .d2 { width: 11px; height: 11px; border-radius: 50%; background: var(--grey); }
+  .p-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 24px; color: var(--ink); letter-spacing: -.02em; margin-bottom: 10px; }
+  .subtabs { display: flex; }
+  .subtab { flex: 1; text-align: center; font-size: 14px; font-weight: 600; padding-bottom: 10px; border-bottom: 2px solid transparent; color: var(--ink-2); }
+  .subtab.on { color: var(--purple); border-bottom-color: var(--purple); }
+
+  .nav { position: absolute; bottom: 0; left: 0; right: 0; background: var(--white); border-top: 1px solid var(--border); display: flex; z-index: 5; }
+  .nav a { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 10px 0 11px; font-size: 10px; font-weight: 600; color: var(--grey); }
+  .nav a.on { color: var(--purple); }
+
+  .sticky-bar { position: absolute; left: 0; right: 0; bottom: 61px; background: var(--white); border-top: 1px solid var(--border); padding: 10px 16px; z-index: 4; }
+
+  /* pushed-screen header */
+  .s-head { background: var(--white); border-bottom: 1px solid var(--border); padding: 46px 16px 13px; display: flex; align-items: center; flex-shrink: 0; }
+  .s-head .back { min-width: 40px; display: flex; align-items: center; color: var(--purple); }
+  .s-head .t { flex: 1; text-align: center; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 16px; color: var(--ink); letter-spacing: -.01em; }
+  .s-head .r { min-width: 40px; }
+
+  .body { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .body.pad-btm { padding: 13px 14px 84px; gap: 9px; }
+
+  /* ══════════ cards / atoms ══════════ */
+  .card { background: var(--white); border: 1px solid var(--border); border-radius: 20px; padding: 18px 16px; }
+  .card-primary { border: 1.5px solid var(--purple); box-shadow: 0 6px 20px rgba(124,92,219,.10); }
+  .eyebrow { font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--purple); margin-bottom: 7px; }
+  .h-card { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 18px; color: var(--ink); letter-spacing: -.02em; margin-bottom: 7px; }
+  .h-sm { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 14px; color: var(--ink); letter-spacing: -.01em; }
+  .p-body { font-size: 13px; line-height: 1.55; color: var(--ink-2); }
+  .btn { width: 100%; padding: 15px; border-radius: 16px; background: var(--purple); color: #fff; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 15.5px; letter-spacing: -.01em; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 6px 18px rgba(124,92,219,.30); }
+  .btn.quiet { background: var(--app-bg); color: var(--ink-2); box-shadow: none; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 14.5px; }
+  .btn.ghost { background: transparent; color: var(--purple); box-shadow: none; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 14px; padding: 12px; }
+  .btn.sm { padding: 12px; font-size: 14px; border-radius: 14px; }
+
+  /* QR */
+  .qr-wrap { display: flex; flex-direction: column; align-items: center; }
+  .qr { display: grid; background: #fff; padding: 9px; border-radius: 12px; }
+  .qr i { display: block; }
+  .qr i.on { background: var(--ink); }
+  .qr-hint { font-size: 12.5px; color: var(--ink-2); text-align: center; margin-top: 10px; line-height: 1.45; }
+
+  .link-row { display: flex; align-items: center; gap: 8px; background: var(--app-bg); border: 1px solid var(--border); border-radius: 14px; padding: 9px 12px; margin-top: 10px; }
+  .link-row .u { flex: 1; font-size: 12.5px; font-weight: 600; color: var(--ink); font-variant-ligatures: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .link-row .c { display: flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 700; color: var(--purple); flex-shrink: 0; }
+
+  .count-row { display: flex; align-items: baseline; justify-content: space-between; padding: 0 3px 8px; }
+  .count-row .n { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 15px; color: var(--ink); letter-spacing: -.01em; }
+  .count-row .cap { font-size: 11.5px; font-weight: 600; color: var(--ink-2); }
+
+  .prow { display: flex; align-items: center; gap: 11px; padding: 9px 3px; border-top: 1px solid #F1EEFA; }
+  .prow:first-of-type { border-top: none; }
+  .av { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 13px; flex-shrink: 0; }
+  .av.lg { width: 42px; height: 42px; font-size: 15px; }
+  .prow .n { flex: 1; font-size: 14px; font-weight: 600; color: var(--ink); }
+  .prow .tag { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); background: var(--app-bg); border: 1px solid var(--border); padding: 3px 7px; border-radius: 7px; }
+  .prow .just { font-size: 11.5px; font-weight: 600; color: var(--purple); }
+
+  .empty-roster { text-align: center; padding: 12px 16px 6px; }
+  .empty-roster .dots { display: flex; gap: 5px; justify-content: center; margin-bottom: 9px; }
+  .empty-roster .dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--grey); animation: pulse 1.4s ease-in-out infinite; }
+  .empty-roster .dots span:nth-child(2) { animation-delay: .18s; }
+  .empty-roster .dots span:nth-child(3) { animation-delay: .36s; }
+  @keyframes pulse { 0%,100% { opacity: .3; } 50% { opacity: 1; } }
+
+  .foot-note { font-size: 11.5px; color: var(--ink-2); text-align: center; line-height: 1.5; padding: 2px 8px; }
+  .avatar-cluster { display: flex; justify-content: center; margin: 4px 0 14px; }
+  .avatar-cluster .av { border: 2.5px solid var(--white); margin-left: -9px; }
+  .avatar-cluster .av:first-child { margin-left: 0; }
+
+  /* ══════════ joiner landing (purple gradient, matches GroupJoinLanding) ══════════ */
+  .land { flex: 1; display: flex; flex-direction: column; background: linear-gradient(180deg, #7C5CDB 0%, #9B7FE8 62%, #A98FF0 100%); position: relative; overflow: hidden; }
+  .land .blob1 { position: absolute; top: -64px; right: -64px; width: 208px; height: 208px; border-radius: 50%; background: rgba(255,255,255,.06); }
+  .land .blob2 { position: absolute; bottom: 128px; left: -32px; width: 128px; height: 128px; border-radius: 50%; background: rgba(46,204,113,.08); }
+  .land-wm { position: relative; z-index: 2; display: flex; justify-content: center; padding: 54px 24px 0; }
+  .land-wm .t { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 22px; color: #fff; letter-spacing: -.02em; display: flex; align-items: center; }
+  .land-wm .oo { display: inline-flex; align-items: center; gap: 1px; margin: 0 1px; position: relative; top: 1px; }
+  .land-wm .d1 { width: 13px; height: 13px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px rgba(46,204,113,.6); }
+  .land-wm .d2 { width: 13px; height: 13px; border-radius: 50%; background: rgba(255,255,255,.3); }
+  .land-hero { position: relative; z-index: 2; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 30px; }
+  .tile-ring { position: relative; margin-bottom: 22px; }
+  .tile-ring .ring { position: absolute; inset: -6px; border-radius: 28px; border: 2px solid rgba(255,255,255,.25); }
+  .tile { position: relative; z-index: 1; width: 88px; height: 88px; border-radius: 24px; display: flex; align-items: center; justify-content: center; border: 3px solid rgba(255,255,255,.3); background: rgba(255,255,255,.15); font-size: 40px; line-height: 1; }
+  .land-h1 { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 24px; color: #fff; text-align: center; letter-spacing: -.02em; line-height: 1.22; margin-bottom: 12px; }
+  .land-sub { font-size: 15px; color: rgba(255,255,255,.78); text-align: center; line-height: 1.55; max-width: 246px; }
+  .land-meta { display: flex; align-items: center; gap: 7px; margin-top: 18px; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.18); border-radius: 100px; padding: 7px 14px; }
+  .land-meta span { font-size: 12.5px; font-weight: 600; color: #fff; }
+  .land-cta { position: relative; z-index: 2; padding: 20px 24px 42px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .land-btn { width: 100%; padding: 17px; border-radius: 16px; background: #fff; color: var(--purple); font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 17px; letter-spacing: -.01em; border: none; cursor: pointer; box-shadow: 0 4px 20px rgba(0,0,0,.15); }
+  .land-alt { font-size: 15px; font-weight: 600; color: rgba(255,255,255,.75); background: none; border: none; cursor: pointer; }
+  .land-fine { font-size: 12px; color: rgba(255,255,255,.6); text-align: center; line-height: 1.5; max-width: 250px; }
+
+  /* ══════════ confirmation sheet over feed ══════════ */
+  .feed-behind { flex: 1; background: var(--app-bg); position: relative; }
+  .feed-behind .fh { background: linear-gradient(160deg, #7C5CDB 0%, #9B7FE8 70%, #A98FF0 100%); height: 96px; }
+  .feed-behind .fb { padding: 16px; display: flex; flex-direction: column; gap: 9px; }
+  .skel { height: 62px; border-radius: 18px; background: var(--white); border: 1px solid var(--border); }
+  .scrim { position: absolute; inset: 0; background: rgba(28,23,48,.5); z-index: 6; }
+  .sheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 7; background: var(--white); border-radius: 26px 26px 0 0; padding: 12px 20px 30px; }
+  .grabber { width: 38px; height: 4px; border-radius: 100px; background: var(--border); margin: 0 auto 18px; }
+</style>
+</head>
+<body>
+  <div class="page-title">Phase 19 — In-person adds</div>
+  <div class="page-sub">Connect a whole room, without creating a group that outlives it.</div>
+
+  <div class="toggles">
+    <span class="grp-lbl">Host</span>
+    <button class="toggle active" data-state="entry">Entry</button>
+    <button class="toggle" data-state="hub">Add friends</button>
+    <button class="toggle" data-state="open">Open, nobody yet</button>
+    <button class="toggle" data-state="roster">Open, 4 joined</button>
+    <button class="toggle" data-state="full">Full</button>
+    <button class="toggle" data-state="closed">Closed</button>
+    <button class="toggle" data-state="expired">Expired</button>
+    <span class="grp-lbl">Joiner</span>
+    <button class="toggle" data-state="consent">Consent</button>
+    <button class="toggle" data-state="joined">Joined, undo</button>
+    <button class="toggle" data-state="already">Already in</button>
+    <button class="toggle" data-state="dead">Dead link</button>
+    <button class="toggle" data-state="jfull">Full</button>
+  </div>
+
+  <!-- ═══════════════ HOST · ENTRY ═══════════════ -->
+  <div class="state active" data-state="entry">
+    <div class="phone">
+      <div class="p-head">
+        <div class="wm">
+          <svg class="wm-cow" viewBox="0 0 120 120"><ellipse cx="11" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(-28 11 33)"/><ellipse cx="109" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(28 109 33)"/><ellipse cx="11" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(-28 11 34)"/><ellipse cx="109" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(28 109 34)"/><ellipse cx="38" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(-14 38 19)"/><ellipse cx="82" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(14 82 19)"/><rect x="15" y="20" width="90" height="92" rx="30" fill="#F5F0ED"/><ellipse cx="41" cy="44" rx="19" ry="13" fill="#7A7282" transform="rotate(-10 41 44)"/><ellipse cx="79" cy="69" rx="14" ry="9" fill="#7A7282" transform="rotate(16 79 69)"/><circle cx="44" cy="57" r="6" fill="#2A1E38"/><circle cx="76" cy="57" r="6" fill="#2A1E38"/><circle cx="46.5" cy="54.5" r="2.2" fill="#fff"/><circle cx="78.5" cy="54.5" r="2.2" fill="#fff"/><ellipse cx="60" cy="90" rx="27" ry="20" fill="#F0AABB"/><circle cx="50" cy="91" r="9" fill="#2ECC71"/><circle cx="70" cy="91" r="9" fill="#BDB5D4"/></svg>
+          <span class="wm-txt">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span>
+        </div>
+        <div class="p-title">People</div>
+        <div class="subtabs"><div class="subtab">Groups</div><div class="subtab on">Friends</div></div>
+      </div>
+      <div style="background:#fff;padding:10px 16px 12px;border-bottom:1px solid var(--border);">
+        <div style="display:flex;align-items:center;background:var(--app-bg);border:1.5px solid var(--border);border-radius:12px;padding:9px 12px;gap:8px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6B628A" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <span style="font-size:14px;color:var(--ink-2);">Search friends</span>
+        </div>
+      </div>
+      <div style="flex:1;overflow:hidden;">
+        <div class="prow" style="padding:11px 18px;"><span class="av" style="background:#E8A0B4;">S</span><span class="n">Sarah</span></div>
+        <div class="prow" style="padding:11px 18px;"><span class="av" style="background:#7FA8E8;">M</span><span class="n">Marcus</span></div>
+        <div class="prow" style="padding:11px 18px;"><span class="av" style="background:#9B8FB0;">J</span><span class="n">Jess</span></div>
+        <div class="prow" style="padding:11px 18px;"><span class="av" style="background:#C9A87C;">D</span><span class="n">Dev</span></div>
+      </div>
+      <div class="sticky-bar">
+        <button class="btn sm">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+          Add friends
+        </button>
+      </div>
+      <div class="nav">
+        <a><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Feed</a>
+        <a><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5 5-2Z"/></svg>Discover</a>
+        <a class="on"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>People</a>
+        <a><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+      </div>
+    </div>
+    <div class="caption"><b>Entry point.</b> The Friends sticky bar's button becomes <b>"Add friends"</b> and opens a hub. It absorbs today's "Invite friends" share action rather than sitting beside it, since the hub offers sharing anyway.</div>
+    <div class="screen-label">Screen 8 — People, Friends sub-tab</div>
+  </div>
+
+  <!-- ═══════════════ HOST · HUB ═══════════════ -->
+  <div class="state" data-state="hub">
+    <div class="phone">
+      <div class="s-head">
+        <span class="back"><svg width="9" height="15" viewBox="0 0 9 15" fill="none"><path d="M8 1L1.5 7.5L8 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <span class="t">Add friends</span><span class="r"></span>
+      </div>
+      <div class="body">
+        <div class="card card-primary">
+          <div class="eyebrow">In the room</div>
+          <div class="h-card">Add everyone here</div>
+          <div class="p-body" style="margin-bottom:15px;">Everyone who scans this code gets added as friends with each other, not just to you. No formal group gets created.</div>
+          <button class="btn">Show the code</button>
+        </div>
+
+        <div class="card">
+          <div class="h-sm" style="margin-bottom:4px;">Your own code</div>
+          <div class="p-body" style="margin-bottom:14px;">For adding one person. This is your personal link, it never expires.</div>
+          <div class="qr-wrap">
+            <div class="qr" data-qr="personal" data-size="112" data-seed="7"></div>
+          </div>
+          <button class="btn quiet sm" style="margin-top:15px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6B628A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+            Share your link instead
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="caption"><b>19.1 and 19.2 on one screen.</b> The in-person path is visually dominant, the 1:1 personal QR sits below it, and the old share action survives as the quietest option.</div>
+    <div class="screen-label">Phase 19 — Add friends</div>
+  </div>
+
+  <!-- ═══════════════ HOST · OPEN, NOBODY YET ═══════════════ -->
+  <div class="state" data-state="open">
+    <div class="phone">
+      <div class="s-head">
+        <span class="back"><svg width="9" height="15" viewBox="0 0 9 15" fill="none"><path d="M8 1L1.5 7.5L8 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <span class="t">Adding everyone here</span><span class="r"></span>
+      </div>
+      <div class="body pad-btm">
+        <div class="card" style="padding:15px 14px 14px;">
+          <div class="qr-wrap">
+            <div class="qr" data-qr="room" data-size="150" data-seed="21"></div>
+            <div class="qr-hint">Point their cameras at this code.</div>
+          </div>
+          <div class="link-row">
+            <span class="u">makemooves.app/r/8FQ2KD</span>
+            <span class="c"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="count-row"><span class="n">Nobody yet</span><span class="cap">Room for 25</span></div>
+          <div class="empty-roster">
+            <div class="dots"><span></span><span></span><span></span></div>
+            <div class="p-body">They'll show up here as they scan.</div>
+          </div>
+        </div>
+        <div class="foot-note">This stops working in 24 hours, or when you tap Done.</div>
+      </div>
+      <div style="position:absolute;left:0;right:0;bottom:0;background:var(--white);border-top:1px solid var(--border);padding:12px 16px 22px;">
+        <button class="btn">Done</button>
+      </div>
+    </div>
+    <div class="caption">The QR is the whole screen's job. The code, the count and the first names sit together above the fold, so the host holds the phone up and watches it fill. A long roster scrolls under them.</div>
+    <div class="screen-label">Phase 19 — Adding, open (0 joined)</div>
+  </div>
+
+  <!-- ═══════════════ HOST · OPEN, 4 JOINED ═══════════════ -->
+  <div class="state" data-state="roster">
+    <div class="phone">
+      <div class="s-head">
+        <span class="back"><svg width="9" height="15" viewBox="0 0 9 15" fill="none"><path d="M8 1L1.5 7.5L8 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <span class="t">Adding everyone here</span><span class="r"></span>
+      </div>
+      <div class="body pad-btm">
+        <div class="card" style="padding:15px 14px 14px;">
+          <div class="qr-wrap">
+            <div class="qr" data-qr="room2" data-size="150" data-seed="21"></div>
+            <div class="qr-hint">Point their cameras at this code.</div>
+          </div>
+          <div class="link-row">
+            <span class="u">makemooves.app/r/8FQ2KD</span>
+            <span class="c"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="count-row"><span class="n">4 joined</span><span class="cap">Room for 21 more</span></div>
+          <div class="prow"><span class="av" style="background:#7FA8E8;">T</span><span class="n">Tom R.</span><span class="just">Just now</span></div>
+          <div class="prow"><span class="av" style="background:#C9A87C;">P</span><span class="n">Priya N.</span></div>
+          <div class="prow"><span class="av" style="background:#E8A0B4;">B</span><span class="n">Ben K.</span></div>
+          <div class="prow"><span class="av" style="background:#9B8FB0;">A</span><span class="n">Aaron W.</span></div>
+          <div class="prow" style="opacity:.75;"><span class="av" style="background:var(--purple);">J</span><span class="n">You</span><span class="tag">Host</span></div>
+        </div>
+        <div class="foot-note">This stops working in 24 hours, or when you tap Done.</div>
+      </div>
+      <div style="position:absolute;left:0;right:0;bottom:0;background:var(--white);border-top:1px solid var(--border);padding:12px 16px 22px;">
+        <button class="btn">Done</button>
+      </div>
+    </div>
+    <div class="caption">Names appear live as people scan. The host is listed too, tagged, because they count toward the 25 and every joiner is friended to them.</div>
+    <div class="screen-label">Phase 19 — Adding, open (4 joined)</div>
+  </div>
+
+  <!-- ═══════════════ HOST · FULL ═══════════════ -->
+  <div class="state" data-state="full">
+    <div class="phone">
+      <div class="s-head">
+        <span class="back"><svg width="9" height="15" viewBox="0 0 9 15" fill="none"><path d="M8 1L1.5 7.5L8 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <span class="t">Adding everyone here</span><span class="r"></span>
+      </div>
+      <div class="body pad-btm">
+        <div class="card" style="padding:26px 20px;text-align:center;">
+          <div style="width:52px;height:52px;border-radius:50%;background:var(--purple-100);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7C5CDB" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div class="h-card" style="margin-bottom:6px;">That's 25 people</div>
+          <div class="p-body">This one is full, so the code has stopped working. Tap Done to finish up, then start another if you need to.</div>
+        </div>
+
+        <div class="card">
+          <div class="count-row"><span class="n">25 joined</span><span class="cap">Full</span></div>
+          <div class="prow"><span class="av" style="background:#7FA8E8;">T</span><span class="n">Tom R.</span></div>
+          <div class="prow"><span class="av" style="background:#C9A87C;">P</span><span class="n">Priya N.</span></div>
+          <div class="prow"><span class="av" style="background:#E8A0B4;">B</span><span class="n">Ben K.</span></div>
+          <div class="prow" style="justify-content:center;"><span class="p-body" style="font-size:12.5px;">and 21 more</span></div>
+        </div>
+      </div>
+      <div style="position:absolute;left:0;right:0;bottom:0;background:var(--white);border-top:1px solid var(--border);padding:12px 16px 22px;">
+        <button class="btn">Done</button>
+      </div>
+    </div>
+    <div class="caption">At the cap the QR is <b>replaced, not greyed out</b>, so nobody keeps pointing a camera at a code that has stopped accepting people.</div>
+    <div class="screen-label">Phase 19 — Adding, full</div>
+  </div>
+
+  <!-- ═══════════════ HOST · CLOSED ═══════════════ -->
+  <div class="state" data-state="closed">
+    <div class="phone">
+      <div class="s-head">
+        <span class="back"></span><span class="t">Add friends</span><span class="r"></span>
+      </div>
+      <div class="body" style="justify-content:center;padding-bottom:70px;">
+        <div style="text-align:center;padding:0 8px;">
+          <div class="avatar-cluster">
+            <span class="av lg" style="background:#7FA8E8;">T</span>
+            <span class="av lg" style="background:#C9A87C;">P</span>
+            <span class="av lg" style="background:#E8A0B4;">B</span>
+            <span class="av lg" style="background:#9B8FB0;">A</span>
+          </div>
+          <div class="h-card" style="font-size:21px;margin-bottom:9px;">You added 4 people.</div>
+          <div class="p-body" style="max-width:250px;margin:0 auto;">They're all friends with each other now, and with you. Nothing else was created, there's no new group to manage.</div>
+        </div>
+      </div>
+      <div style="position:absolute;left:0;right:0;bottom:0;background:var(--white);border-top:1px solid var(--border);padding:12px 16px 22px;">
+        <button class="btn">Back to friends</button>
+      </div>
+    </div>
+    <div class="caption">Confirmation states the outcome and, deliberately, the <b>non-outcome</b>: no group. That's the whole reason this exists instead of a group link. Purple, not green, since none of this is availability.</div>
+    <div class="screen-label">Phase 19 — Closed</div>
+  </div>
+
+  <!-- ═══════════════ HOST · EXPIRED ═══════════════ -->
+  <div class="state" data-state="expired">
+    <div class="phone">
+      <div class="s-head">
+        <span class="back"><svg width="9" height="15" viewBox="0 0 9 15" fill="none"><path d="M8 1L1.5 7.5L8 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <span class="t">Add friends</span><span class="r"></span>
+      </div>
+      <div class="body">
+        <div class="card" style="padding:26px 20px;text-align:center;">
+          <svg width="66" height="72" viewBox="0 0 120 120" style="margin:0 auto 14px;display:block;"><ellipse cx="11" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(-28 11 33)"/><ellipse cx="109" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(28 109 33)"/><ellipse cx="11" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(-28 11 34)"/><ellipse cx="109" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(28 109 34)"/><ellipse cx="38" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(-14 38 19)"/><ellipse cx="82" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(14 82 19)"/><rect x="15" y="20" width="90" height="92" rx="30" fill="#F5F0ED"/><ellipse cx="41" cy="44" rx="19" ry="13" fill="#7A7282" transform="rotate(-10 41 44)"/><ellipse cx="79" cy="69" rx="14" ry="9" fill="#7A7282" transform="rotate(16 79 69)"/><circle cx="44" cy="57" r="6" fill="#2A1E38"/><circle cx="76" cy="57" r="6" fill="#2A1E38"/><circle cx="46.5" cy="54.5" r="2.2" fill="#fff"/><circle cx="78.5" cy="54.5" r="2.2" fill="#fff"/><ellipse cx="60" cy="90" rx="27" ry="20" fill="#F0AABB"/><circle cx="50" cy="91" r="9" fill="#2ECC71"/><circle cx="70" cy="91" r="9" fill="#BDB5D4"/></svg>
+          <div class="h-card" style="margin-bottom:7px;">That code expired</div>
+          <div class="p-body" style="margin-bottom:17px;">Codes stop working after 24 hours. The 3 people who joined are still your friends.</div>
+          <button class="btn">Add everyone here</button>
+        </div>
+      </div>
+    </div>
+    <div class="caption">Expiry is stated plainly, and it reassures that the friendships survived, since that's the only thing the session was ever for.</div>
+    <div class="screen-label">Phase 19 — Expired</div>
+  </div>
+
+  <!-- ═══════════════ JOINER · CONSENT ═══════════════ -->
+  <div class="state" data-state="consent">
+    <div class="phone">
+      <div class="land">
+        <div class="blob1"></div><div class="blob2"></div>
+        <div class="land-wm"><span class="t">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+        <div class="land-hero">
+          <div class="tile-ring"><div class="ring"></div><div class="tile">👋</div></div>
+          <div class="land-h1">Jackson invited you<br>all to Mooves</div>
+          <div class="land-sub">Joining will add everyone here as a friend, along with anyone who joins via the same code after.</div>
+          <div class="land-meta">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>
+            <span>5 people in so far</span>
+          </div>
+        </div>
+        <div class="land-cta">
+          <button class="land-btn">Join</button>
+          <button class="land-alt">Not now</button>
+          <div class="land-fine">No group is created, just friendships.</div>
+        </div>
+      </div>
+    </div>
+    <div class="caption"><b>Host name and a count, never the roster.</b> Anyone holding the link would otherwise learn who is in the room. Same call Phase 10.2 made at build when it shipped a member count instead of the specced avatars.</div>
+    <div class="screen-label">Phase 19 — /r/[code] consent</div>
+  </div>
+
+  <!-- ═══════════════ JOINER · JOINED + UNDO ═══════════════ -->
+  <div class="state" data-state="joined">
+    <div class="phone">
+      <div class="feed-behind">
+        <div class="fh"></div>
+        <div class="fb"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>
+      </div>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="grabber"></div>
+        <div style="text-align:center;">
+          <div class="avatar-cluster">
+            <span class="av lg" style="background:var(--purple);">J</span>
+            <span class="av lg" style="background:#7FA8E8;">T</span>
+            <span class="av lg" style="background:#C9A87C;">P</span>
+            <span class="av lg" style="background:#E8A0B4;">B</span>
+            <span class="av lg" style="background:#9B8FB0;">A</span>
+          </div>
+          <div class="h-card" style="font-size:20px;margin-bottom:8px;">You're in.</div>
+          <div class="p-body" style="max-width:246px;margin:0 auto 20px;">You're now friends with 5 people, so you'll see each other's moves.</div>
+        </div>
+        <button class="btn" style="margin-bottom:6px;">See who's free</button>
+        <button class="btn ghost">Undo, remove those 5</button>
+      </div>
+    </div>
+    <div class="caption"><b>Undo lives here and only here.</b> Scanning the wrong code otherwise costs up to 25 separate unfriends. It removes exactly the friendships this join created, never ones you already had, and it's gone once the sheet is dismissed.</div>
+    <div class="screen-label">Phase 19 — Joined confirmation</div>
+  </div>
+
+  <!-- ═══════════════ JOINER · ALREADY IN ═══════════════ -->
+  <div class="state" data-state="already">
+    <div class="phone">
+      <div class="land">
+        <div class="blob1"></div><div class="blob2"></div>
+        <div class="land-wm"><span class="t">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+        <div class="land-hero">
+          <div class="tile-ring"><div class="ring"></div><div class="tile">✓</div></div>
+          <div class="land-h1">You're already in</div>
+          <div class="land-sub">You're friends with everyone here. Head back and see who's free.</div>
+        </div>
+        <div class="land-cta"><button class="land-btn">Go to Mooves</button></div>
+      </div>
+    </div>
+    <div class="caption">Re-scanning is a no-op, not an error. Matches the already-member state on the group invite landing.</div>
+    <div class="screen-label">Phase 19 — Already joined</div>
+  </div>
+
+  <!-- ═══════════════ JOINER · DEAD LINK ═══════════════ -->
+  <div class="state" data-state="dead">
+    <div class="phone">
+      <div class="land">
+        <div class="blob1"></div><div class="blob2"></div>
+        <div class="land-wm"><span class="t">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+        <div class="land-hero">
+          <div class="tile-ring"><div class="ring"></div><div class="tile">🐮</div></div>
+          <div class="land-h1">This link isn't<br>active anymore</div>
+          <div class="land-sub">Codes stop working after 24 hours, or once the person who started it is done. Ask them for a fresh one.</div>
+        </div>
+        <div class="land-cta"><button class="land-btn">Go to Mooves</button></div>
+      </div>
+    </div>
+    <div class="caption"><b>No host name, no count, no roster.</b> A dead link tells a stranger nothing about who was in it. The cow does the softening instead.</div>
+    <div class="screen-label">Phase 19 — Dead link</div>
+  </div>
+
+  <!-- ═══════════════ JOINER · FULL ═══════════════ -->
+  <div class="state" data-state="jfull">
+    <div class="phone">
+      <div class="land">
+        <div class="blob1"></div><div class="blob2"></div>
+        <div class="land-wm"><span class="t">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+        <div class="land-hero">
+          <div class="tile-ring"><div class="ring"></div><div class="tile">🐮</div></div>
+          <div class="land-h1">This one is full</div>
+          <div class="land-sub">It reached its 25 person limit. Ask whoever shared it to start another one.</div>
+        </div>
+        <div class="land-cta"><button class="land-btn">Go to Mooves</button></div>
+      </div>
+    </div>
+    <div class="caption">Also name-free and count-free. "25 person limit" is a property of the product, not a fact about the room.</div>
+    <div class="screen-label">Phase 19 — Full</div>
+  </div>
+
+  <div class="note">
+    <b>Open question 2 settled, by constraint:</b> there is <b>no web API for screen brightness</b>, so a mockup cannot promise one. What is available is the <b>Screen Wake Lock API</b> (Safari 16.4+, Chrome), so the build holds a wake lock while the QR is on screen and releases it on Done, on navigating away, or on tab blur. No copy tells the user this, it just doesn't sleep mid-scan. Dark modules on a white card scan fine at normal brightness.<br><br>
+    <b>Open question 3 settled:</b> copy is state-based throughout, with no coined noun anywhere. "Add friends" (entry) → "Add everyone here" (action) → "Adding everyone here" (live) → "4 joined" (count) → "Done" (close) → "You added 4 people." (outcome).<br><br>
+    <b>Spec correction found while building:</b> the approved spec says the entry mirrors "the existing 'New' button on the Groups sub-tab <i>header</i>". That's stale, the create-group control moved to a <b>sticky bottom bar</b> on 2026-07-22, and the Friends sub-tab already has its own sticky bar holding "Invite friends". The mockup follows the shipped pattern instead, and folds the old share action into the hub rather than leaving two competing buttons. Confirm at approval and I'll amend the spec.<br><br>
+    <b>No green anywhere in this phase.</b> Green is reserved for availability, and nothing here is availability, so the success and confirmation states are purple. The only green pixels are the cow's nose dot and the wordmark dot, both shipped brand assets.
+  </div>
+
+<script>
+  document.querySelectorAll('.toggle').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var s = btn.dataset.state;
+      document.querySelectorAll('.toggle').forEach(function (b) { b.classList.toggle('active', b === btn); });
+      document.querySelectorAll('.state').forEach(function (st) { st.classList.toggle('active', st.dataset.state === s); });
+    });
+  });
+
+  // Plausible QR rendering. Real finder + timing patterns, deterministic data
+  // modules, so it reads as a scannable code without pretending to encode one.
+  function buildQR(el) {
+    var N = 25;
+    var px = parseInt(el.dataset.size, 10);
+    var seed = parseInt(el.dataset.seed, 10) || 1;
+    var cell = px / N;
+
+    var m = [];
+    for (var r = 0; r < N; r++) { m.push(new Array(N).fill(0)); }
+
+    function finder(top, left) {
+      for (var r = 0; r < 7; r++) {
+        for (var c = 0; c < 7; c++) {
+          var edge = (r === 0 || r === 6 || c === 0 || c === 6);
+          var core = (r >= 2 && r <= 4 && c >= 2 && c <= 4);
+          m[top + r][left + c] = (edge || core) ? 1 : 0;
+        }
+      }
+      for (var i = -1; i < 8; i++) {
+        for (var j = -1; j < 8; j++) {
+          var rr = top + i, cc = left + j;
+          if (rr < 0 || cc < 0 || rr >= N || cc >= N) continue;
+          if (i === -1 || i === 7 || j === -1 || j === 7) m[rr][cc] = 0;
+        }
+      }
+    }
+
+    var rnd = seed;
+    function next() { rnd = (rnd * 1103515245 + 12345) & 0x7fffffff; return rnd / 0x7fffffff; }
+
+    for (var r2 = 0; r2 < N; r2++) {
+      for (var c2 = 0; c2 < N; c2++) { m[r2][c2] = next() > 0.52 ? 1 : 0; }
+    }
+    for (var k = 8; k < N - 8; k++) { m[6][k] = k % 2 === 0 ? 1 : 0; m[k][6] = k % 2 === 0 ? 1 : 0; }
+    finder(0, 0); finder(0, N - 7); finder(N - 7, 0);
+    for (var a = 0; a < 5; a++) {
+      for (var b = 0; b < 5; b++) {
+        var e2 = (a === 0 || a === 4 || b === 0 || b === 4);
+        var c3 = (a === 2 && b === 2);
+        m[N - 9 + a][N - 9 + b] = (e2 || c3) ? 1 : 0;
+      }
+    }
+
+    el.style.gridTemplateColumns = 'repeat(' + N + ', ' + cell + 'px)';
+    el.style.gridTemplateRows = 'repeat(' + N + ', ' + cell + 'px)';
+    var html = '';
+    for (var r3 = 0; r3 < N; r3++) {
+      for (var c4 = 0; c4 < N; c4++) { html += '<i class="' + (m[r3][c4] ? 'on' : '') + '"></i>'; }
+    }
+    el.innerHTML = html;
+  }
+  document.querySelectorAll('.qr').forEach(buildQR);
+</script>
+</body>
+</html>

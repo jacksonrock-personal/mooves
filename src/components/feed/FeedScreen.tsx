@@ -20,6 +20,7 @@ import SwipeToGoGreen from './SwipeToGoGreen'
 import WaveStrip from './WaveStrip'
 import TipJar from './TipJar'
 import AmbientTier from './AmbientTier'
+import RoundupJoinedSheet from './RoundupJoinedSheet'
 import { type AnchoredMove } from './AnchoredMoveCard'
 import GoGreenSheet from '@/components/go-green/GoGreenSheet'
 import GoGreyConfirm from '@/components/go-green/GoGreyConfirm'
@@ -93,6 +94,11 @@ export default function FeedScreen() {
   const [planOpen, setPlanOpen] = useState(false)
   const [joinedPromptOpen, setJoinedPromptOpen] = useState(false) // 9.5 Part B
   const [toastMessage, setToastMessage] = useState<string | null>(null)
+  // 19.1 — set after an "add everyone here" join completes. Drives the one and
+  // only surface where Undo is offered; clearing it retires Undo for good.
+  const [roundupJoin, setRoundupJoin] = useState<{ code: string; connectedCount: number } | null>(
+    null,
+  )
   // 17.1 in-app wave strip. `wave` is the resolved group from the feed; dismissal
   // persists across app opens keyed by the wave's signature (its members + time), so
   // a dismissed wave stays gone while that same group is green, but a genuinely new
@@ -222,6 +228,42 @@ export default function FeedScreen() {
       }
     }
 
+    // Phase 19.1: complete an "add everyone here" join. Unlike the group invite
+    // above, this ends in a SHEET rather than a toast, because it is the only
+    // place Undo is ever offered — scanning the wrong code otherwise costs up to
+    // 25 separate unfriends.
+    async function resolveRoundup() {
+      const code =
+        (typeof window !== 'undefined' ? sessionStorage.getItem('mooves_roundup_code') : null) ||
+        searchParams.get('rinvite')
+      if (!code) return
+      try {
+        const res = await fetch(`/api/roundup-invite/${code}/join`, { method: 'POST' })
+        if (res.ok) {
+          const data = (await res.json()) as {
+            status: string
+            memberCount?: number
+            connectedCount?: number
+          }
+          if (data.status === 'joined') {
+            posthog.capture('roundup_joined', { connected: data.connectedCount })
+            setRoundupJoin({ code, connectedCount: data.connectedCount ?? 0 })
+          } else if (data.status === 'already') {
+            setToastMessage("You're already in.")
+          } else if (data.status === 'full') {
+            setToastMessage('That one is full.')
+          } else if (data.status === 'expired' || data.status === 'invalid') {
+            setToastMessage("That link isn't active anymore.")
+          }
+        }
+        if (res.ok || res.status === 404) {
+          sessionStorage.removeItem('mooves_roundup_code')
+        }
+      } catch {
+        // network error — leave the code to retry next visit
+      }
+    }
+
     async function init() {
       initPostHog()
       posthog.capture('feed_viewed')
@@ -274,6 +316,7 @@ export default function FeedScreen() {
 
       await resolveInvite()
       await resolveGroupInvite()
+      await resolveRoundup()
       if (!mountedRef.current) return
 
       const [friendsRes, feedRes, groupsRes] = await Promise.all([
@@ -676,6 +719,24 @@ export default function FeedScreen() {
           Keep me green
         </button>
       </Sheet>
+
+      {/* 19.1 — post-join confirmation. Undo lives here and nowhere else. */}
+      {roundupJoin && (
+        <RoundupJoinedSheet
+          code={roundupJoin.code}
+          connectedCount={roundupJoin.connectedCount}
+          onDismiss={() => setRoundupJoin(null)}
+          onUndone={removed => {
+            setRoundupJoin(null)
+            setToastMessage(
+              removed === 0
+                ? 'Undone.'
+                : `Removed ${removed} ${removed === 1 ? 'person' : 'people'}.`,
+            )
+            scheduleRefetch()
+          }}
+        />
+      )}
 
       {toastMessage && (
         <Toast message={toastMessage} onDismiss={() => setToastMessage(null)} />
