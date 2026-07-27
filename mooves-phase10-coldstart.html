@@ -158,7 +158,7 @@
 <div class="state-bar">
   <span class="state-group-label">10.1 grey feed</span>
   <button class="state-btn active" onclick="show('ambient-now')">Around now</button>
-  <button class="state-btn" onclick="show('ambient-week')">This week</button>
+  <button class="state-btn" onclick="show('ambient-week')">Recently</button>
   <button class="state-btn" onclick="show('neutral')">Neutral (&lt;3)</button>
   <span class="state-group-label">10.2 invite links</span>
   <button class="state-btn" onclick="show('share')">Share link</button>
@@ -199,7 +199,7 @@
   </div>
 
   <!-- ══════════════════════════════ -->
-  <!-- 10.1 — Ambient (were green this week) -->
+  <!-- 10.1 — Ambient (went green recently) -->
   <!-- ══════════════════════════════ -->
   <div class="screen" id="screen-ambient-week">
     <div class="feed-header">
@@ -216,7 +216,7 @@
           <div class="pulse-ring d2"></div>
           <div class="pulse-core"><div class="pulse-dot"></div></div>
         </div>
-        <div class="signal"><span class="signal-dot"></span><span><b>5 friends</b> were green this week</span></div>
+        <div class="signal"><span class="signal-dot"></span><span><b>5 friends</b> went green recently</span></div>
         <div class="ambient-sub">Go free to get in on the action.</div>
       </div>
     </div>
@@ -377,7 +377,7 @@
 
   const captions = {
     'ambient-now': "10.1 Has friends but none green right now: one aggregate, never-named signal at a time. “Around now” = friends in-app in the last ~15 min. The grey pulse signals activity, not availability. Swipe to go free.",
-    'ambient-week': "10.1 The other variant, shown when nobody's around right now: “N friends were green this week.” Only one signal shows at a time, each hidden below 3.",
+    'ambient-week': "10.1 The other variant, shown when nobody's around right now: “N friends went green recently.” The count is a rolling 7 days, not a calendar week, so the copy no longer says “this week” (amended 2026-07-27). Only one signal shows at a time, each hidden below 3.",
     'neutral': "10.1 When both signals are under 3 (small-N suppression), the numbers hide entirely and it falls back to warm, no-number encouragement. Never any “nobody's free” negativity.",
     'share': "10.2 Every group has one persistent invite link any member can copy or share. “Reset link” revokes it and issues a new one, invalidating the old.",
     'consent': "10.2 Tapping a valid link (logged in) shows a consent landing: joining connects you with all N members. Logged-out users auth first, then land here.",
