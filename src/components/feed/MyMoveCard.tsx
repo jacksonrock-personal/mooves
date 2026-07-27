@@ -5,7 +5,8 @@
 // A11y: green-tint card + green-700 label (never solid-green-on-white text).
 
 import { timeLabel } from '@/components/go-green/TimeChips'
-import Joiners, { type Joiner } from './Joiners'
+import { type Joiner } from './Joiners'
+import WhosIn from './WhosIn'
 import AnchoredMoveCard, { type AnchoredMove } from './AnchoredMoveCard'
 import GroupLabel from './GroupLabel'
 
@@ -17,8 +18,18 @@ interface MyMoveCardProps {
   anchoredMove?: AnchoredMove | null
   joiners: Joiner[]
   meId: string
+  /** 20.7 — when this green lapses. NULL = a legacy green that never expires. */
+  statusExpiresAt?: string | null
+  onEditExpiry?: () => void
   onBlast: () => void
   onGoGrey: () => void
+}
+
+function untilLabel(iso: string | null | undefined): string | null {
+  if (!iso) return null
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return null
+  return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
 }
 
 export default function MyMoveCard({
@@ -28,10 +39,13 @@ export default function MyMoveCard({
   anchoredMove,
   joiners,
   meId,
+  statusExpiresAt,
+  onEditExpiry,
   onBlast,
   onGoGrey,
 }: MyMoveCardProps) {
   const time = timeLabel(statusTime)
+  const until = untilLabel(statusExpiresAt)
 
   return (
     <div className="rounded-[20px] border-[1.5px] border-green-500/25 bg-green-500/[0.09] p-4 mb-5">
@@ -57,11 +71,24 @@ export default function MyMoveCard({
 
       {anchoredMove && <AnchoredMoveCard move={anchoredMove} />}
 
-      {joiners.length > 0 && (
-        <div className="mt-3.5">
-          <Joiners joiners={joiners} meId={meId} />
-        </div>
+      {/* 20.7 — the deadline, visible and editable, on the card rather than in
+          the swipe. Hidden for legacy greens that have no expiry at all. */}
+      {onEditExpiry && until && (
+        <button
+          onClick={onEditExpiry}
+          className="w-full flex items-center gap-2 mt-3 rounded-[13px] border border-[#E8E4F5] bg-surface-bg px-3 py-2.5 text-left"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" className="text-purple-500 shrink-0">
+            <circle cx="12" cy="12" r="9" />
+            <polyline points="12 7 12 12 15.5 14" />
+          </svg>
+          <span className="font-sans text-[12px] font-semibold text-ink-500">Free until</span>
+          <span className="ml-auto font-sans text-[12.5px] font-semibold text-ink-900">{until}</span>
+        </button>
       )}
+
+      {/* 20.6 — collapsed by default, expands to name everyone. */}
+      <WhosIn people={joiners} meId={meId} tone="green" />
 
       {joiners.length >= 2 && (
         <button

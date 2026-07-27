@@ -10,7 +10,8 @@ import { useState } from 'react'
 import Avatar from '@/components/ui/Avatar'
 import { posthog } from '@/lib/posthog'
 import { timeLabel } from '@/components/go-green/TimeChips'
-import Joiners, { type Joiner } from './Joiners'
+import { type Joiner } from './Joiners'
+import WhosIn from './WhosIn'
 import AnchoredMoveCard, { type AnchoredMove } from './AnchoredMoveCard'
 import GroupLabel from './GroupLabel'
 
@@ -121,11 +122,9 @@ export default function FriendCard({
 
       {anchoredMove && <AnchoredMoveCard move={anchoredMove} />}
 
-      {joiners.length > 0 && (
-        <div className="mt-2.5 pt-2.5 border-t border-green-500/20">
-          <Joiners joiners={joiners} meId={meId} />
-        </div>
-      )}
+      {/* 20.6 — collapsed by default, tap to name everyone. The roster is a
+          decision input, so it belongs here rather than only in the group text. */}
+      <WhosIn people={joiners} meId={meId} hostId={id} hostLabel="Free" tone="green" />
 
       {/* #6 — leave confirmation (native action-sheet style, mirrors GoGreyConfirm). */}
       {confirmLeave && (
