@@ -1,0 +1,12 @@
+# Supabase CLI project config.
+#
+# Deliberately minimal: this repo uses the CLI only to apply migrations to the
+# hosted project (`npm run db:push`). There is no local Docker stack, so none of
+# the [db] / [auth] / [studio] blocks that `supabase init` normally generates are
+# here — an absent block is never pushed, and settings that don't exist can't
+# silently diverge from production.
+#
+# The remote project ref lives in .temp/linked-project.json (written by
+# `supabase link`), not here.
+
+project_id = "mooves"

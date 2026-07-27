@@ -1,0 +1,8 @@
+# CLI scratch state — machine-local (pooler URL, service versions), except the
+# two files that identify the project. Keeping project-ref tracked matters:
+# the CLI reads *that* file, not linked-project.json (which the MCP server
+# writes), and without it every --linked command fails with
+# "Cannot find project ref. Have you run supabase link?"
+.temp/*
+!.temp/project-ref
+!.temp/linked-project.json
