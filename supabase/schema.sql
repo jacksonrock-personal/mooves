@@ -78,6 +78,11 @@
 -- rate_limit_hit(p_key, p_limit, p_window_seconds)  — 0004 · fixed-window rate limiter
 -- get_feed(viewer uuid) → jsonb                     — 0005 · the entire /api/feed
 --                                                     payload in one query
+--                                                     0006 · hides expired greens
+--                                                     0008 · + wave field
+--                                                     0009 · restored the 0006
+--                                                     filter 0008 dropped — any
+--                                                     redefinition must keep it
 
 -- ══ REALTIME ═════════════════════════════════════════════════════════════════
 -- Publication supabase_realtime: users (0000) · move_joins (0001)
