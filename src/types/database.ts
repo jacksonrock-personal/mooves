@@ -492,12 +492,14 @@ export type Database = {
           location_text: string | null
           note: string | null
           visible_to: string[] | null
+          sponsored_move_id: string | null
           created_at: string
           updated_at: string
           cancelled_at: string | null
         }
         Insert: {
           id?: string
+          sponsored_move_id?: string | null
           author_id: string
           title: string
           start_at: string
@@ -512,6 +514,7 @@ export type Database = {
         }
         Update: {
           id?: string
+          sponsored_move_id?: string | null
           author_id?: string
           title?: string
           start_at?: string

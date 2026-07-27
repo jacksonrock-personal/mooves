@@ -21,16 +21,38 @@ interface Group {
   emoji: string | null
 }
 
+/**
+ * 13.8 — arriving from Discover's "Go with friends". Creates a Moove, not a
+ * green: the whole point is bringing a dated thing to your friends, which is
+ * what a Moove is. The sponsored move's details prefill the form, and its id
+ * rides along so the friend-facing "Sponsored · brand" disclosure survives.
+ */
+export interface PlanPrefill {
+  sponsoredMoveId: string
+  title: string
+  startAt: string | null
+  locationText: string | null
+  note: string | null
+}
+
 interface PlanComposerProps {
   open: boolean
   onClose: () => void
   groups: Group[]
   /** Present = edit mode. */
   editing?: Plan | null
+  prefill?: PlanPrefill | null
   onSaved: () => void
 }
 
-export default function PlanComposer({ open, onClose, groups, editing, onSaved }: PlanComposerProps) {
+export default function PlanComposer({
+  open,
+  onClose,
+  groups,
+  editing,
+  prefill,
+  onSaved,
+}: PlanComposerProps) {
   const [title, setTitle] = useState('')
   const [date, setDate] = useState('')
   const [time, setTime] = useState('')
@@ -51,6 +73,15 @@ export default function PlanComposer({ open, onClose, groups, editing, onSaved }
       setLocation(editing.locationText ?? '')
       setNote(editing.note ?? '')
       setVisibleTo([])
+    } else if (prefill) {
+      // A dated sponsored move already has everything the composer asks for.
+      const parts = splitStartAt(prefill.startAt)
+      setTitle(prefill.title)
+      setDate(parts.date)
+      setTime(parts.time)
+      setLocation(prefill.locationText ?? '')
+      setNote(prefill.note ?? '')
+      setVisibleTo([])
     } else {
       setTitle('')
       setDate('')
@@ -60,8 +91,11 @@ export default function PlanComposer({ open, onClose, groups, editing, onSaved }
       setVisibleTo([])
     }
     setError(null)
-    posthog.capture(editing ? 'plan_edit_opened' : 'plan_composer_opened')
-  }, [open, editing])
+    posthog.capture(
+      editing ? 'plan_edit_opened' : prefill ? 'plan_composer_prefilled' : 'plan_composer_opened',
+      prefill ? { source: 'discover' } : undefined,
+    )
+  }, [open, editing, prefill])
 
   const canSave = useMemo(() => title.trim().length > 0 && date.length > 0, [title, date])
 
@@ -87,6 +121,8 @@ export default function PlanComposer({ open, onClose, groups, editing, onSaved }
       locationText: location.trim() || null,
       note: note.trim() || null,
       visibleTo: visibleTo.length > 0 ? visibleTo : null,
+      // Carries 13.8's disclosure requirement through to the friend feed.
+      sponsoredMoveId: !editing && prefill ? prefill.sponsoredMoveId : null,
     }
 
     try {
@@ -131,11 +167,42 @@ export default function PlanComposer({ open, onClose, groups, editing, onSaved }
         role="dialog"
         aria-modal="true"
       >
+        {/* Escaping this sheet was impossible on device: it fills ~90% of the
+            screen, so there was almost no scrim left to tap. Three ways out now
+            — drag the grabber down, tap Cancel, or tap what scrim there is. */}
+        <div
+          className="shrink-0 pt-3 cursor-grab touch-none"
+          onPointerDown={e => {
+            const startY = e.clientY
+            const el = e.currentTarget.parentElement
+            const onMove = (ev: PointerEvent) => {
+              const dy = Math.max(0, ev.clientY - startY)
+              if (el) el.style.transform = `translateY(${dy}px)`
+            }
+            const onUp = (ev: PointerEvent) => {
+              window.removeEventListener('pointermove', onMove)
+              window.removeEventListener('pointerup', onUp)
+              if (el) el.style.transform = ''
+              if (ev.clientY - startY > 90) onClose()
+            }
+            window.addEventListener('pointermove', onMove)
+            window.addEventListener('pointerup', onUp)
+          }}
+        >
+          <div className="w-9 h-1 rounded-full bg-[#E8E4F5] mx-auto" />
+        </div>
         <div className="shrink-0 px-5 pt-3">
-          <div className="w-9 h-1 rounded-full bg-[#E8E4F5] mx-auto mb-4" />
-          <h2 className="font-display font-extrabold text-[18px] text-text-primary tracking-tight mb-1.5">
-            {editing ? 'Edit your Moove' : 'Plan a Moove'}
-          </h2>
+          <div className="flex items-start gap-3 mb-1.5">
+            <h2 className="flex-1 font-display font-extrabold text-[18px] text-text-primary tracking-tight">
+              {editing ? 'Edit your Moove' : 'Plan a Moove'}
+            </h2>
+            <button
+              onClick={onClose}
+              className="shrink-0 -mt-0.5 font-sans text-[14px] font-semibold text-text-secondary"
+            >
+              Cancel
+            </button>
+          </div>
           <p className="font-sans text-[13.5px] text-text-secondary leading-relaxed mb-4">
             {editing
               ? `${editing.joiners.length} ${editing.joiners.length === 1 ? 'person is' : 'people are'} in. They won't be notified about edits, only if you cancel.`

@@ -14,7 +14,7 @@ export async function GET(req: Request, { params }: Params) {
   const supabase = createServiceClient()
   const { data: m } = await supabase
     .from('sponsored_moves')
-    .select('id, title, description, category, brand, time_text, link_url')
+    .select('id, title, description, category, brand, time_text, link_url, start_at, location_text')
     .eq('id', id)
     .eq('status', 'approved')
     .maybeSingle()
@@ -29,5 +29,9 @@ export async function GET(req: Request, { params }: Params) {
     brand: m.brand,
     timeText: m.time_text,
     linkUrl: m.link_url,
+    // Phase 20: "Go with friends" now prefills the Moove composer rather than
+    // anchoring a green, so the composer needs the structured date/place too.
+    startAt: m.start_at,
+    locationText: m.location_text,
   })
 }

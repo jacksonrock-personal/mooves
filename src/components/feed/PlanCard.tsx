@@ -97,6 +97,14 @@ export default function PlanCard({ plan, meId, onToggleJoin, onBlast, onActions 
         <p className="font-sans text-[12.5px] leading-snug text-ink-500 mt-2.5">{plan.note}</p>
       )}
 
+      {/* 13.8 guardrail — a Moove brought over from Discover stays disclosed to
+          the friends seeing it. User-initiated is not the same as unmarked. */}
+      {plan.sponsorBrand && (
+        <p className="font-sans text-[10.5px] font-bold uppercase tracking-[0.08em] text-ink-500 mt-2">
+          Sponsored · {plan.sponsorBrand}
+        </p>
+      )}
+
       <WhosIn
         people={plan.joiners}
         meId={meId}

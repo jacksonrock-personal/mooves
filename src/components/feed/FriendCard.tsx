@@ -7,7 +7,6 @@
 // tapping "You're in ✓" confirms before dropping the join (#6).
 
 import { useState } from 'react'
-import Avatar from '@/components/ui/Avatar'
 import { posthog } from '@/lib/posthog'
 import { timeLabel } from '@/components/go-green/TimeChips'
 import { type Joiner } from './Joiners'
@@ -81,15 +80,34 @@ export default function FriendCard({
 
   return (
     <div className="rounded-[18px] border-[1.5px] border-green-500/25 bg-green-500/[0.09] px-3.5 py-3 mb-2 animate-card-in">
-      {/* Top row: avatar · name · join button. */}
-      <div className="flex items-center gap-3">
+      {/* Phase 20: this card is the expanded state of a rail avatar, so it does
+          NOT repeat the avatar — the rail is showing the same face 8px above it,
+          which read as duplication on device. The whole content area is now one
+          tap target for the SMS handoff: the note used to sit outside the
+          button, so tapping the actual content did nothing. */}
+      <div className="flex items-start gap-3">
         <button
           onClick={handleTapSMS}
           aria-label={`Text ${name}`}
-          className="flex-1 min-w-0 flex items-center gap-3 text-left"
+          className="flex-1 min-w-0 text-left"
         >
-          <Avatar src={avatarUrl} name={name} size={44} className="shrink-0" />
-          <span className="block flex-1 min-w-0 font-display font-bold text-[15px] text-ink-900 truncate">{name}</span>
+          <span className="flex items-center gap-2">
+            <span className="font-display font-bold text-[15px] text-ink-900 truncate">{name}</span>
+            {time && (
+              <span className="shrink-0 font-sans text-[11px] font-semibold text-purple-700 bg-purple-100 px-1.5 py-0.5 rounded-full">
+                {time}
+              </span>
+            )}
+          </span>
+          {statusNote && (
+            <span className="block font-sans text-[13px] text-ink-500 mt-1">{statusNote}</span>
+          )}
+          <span className="flex items-center gap-1.5 mt-1.5 font-sans text-[11.5px] font-semibold text-purple-700">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+            </svg>
+            Tap to text {name}
+          </span>
         </button>
         <button
           onClick={handleJoinButton}
@@ -102,20 +120,8 @@ export default function FriendCard({
         </button>
       </div>
 
-      {/* Sub-row: time chip + vibe note + group label (18.2) on their own full-width
-          line (aligned under the name, past the 44px avatar), so the note is always
-          readable and wraps. items-start so a multi-line group label doesn't drag
-          the chip and note off their baseline. */}
-      {(time || statusNote || groupNames.length > 0) && (
-        <div className="flex items-start gap-2 flex-wrap mt-2 pl-[56px]">
-          {time && (
-            <span className="shrink-0 font-sans text-[11px] font-semibold text-purple-700 bg-purple-100 px-1.5 py-0.5 rounded-full">
-              {time}
-            </span>
-          )}
-          {statusNote && (
-            <span className="font-sans text-[13px] text-ink-500">{statusNote}</span>
-          )}
+      {groupNames.length > 0 && (
+        <div className="mt-2">
           <GroupLabel groups={groupNames} />
         </div>
       )}
