@@ -35,6 +35,7 @@
 | 19 | Environment Variables | ✅ Approved |
 | — | Post-MVP Roadmap (Phases 8–15) | 🔮 Definitions finalized 2026-07-16 — needs spec + mockup per phase |
 | — | Phase 17 — Green Wave + Wave Blast + Onboarding Group CTA + Loop Stance Card | ✅ Spec 2026-07-23 (see "Phase 17" near EOF) · ✅ Mockup `mooves-phase17-wave-stance.html` · ✅ Code 2026-07-23 (`feat/phase17-green-wave`) |
+| — | Phase 18 — "This week" time chip (18.1) + group visibility label (18.2) | ✅ Spec 2026-07-27 (see "Phase 18" at EOF) · ✅ Mockup `mooves-phase18-week-chip-group-label.html` · ⬜ Code |
 
 ---
 
@@ -848,7 +849,7 @@ This sheet is deliberately minimal — get in, confirm, get out. The anti-engage
   - Optional — sheet can be submitted with no note
   - Keyboard appears automatically on sheet open
 - Group selector (only shown if user has ≥1 group set up):
-  - Section label: `Who can see you?`
+  - Section label: `Who can see this?` *(renamed from `Who can see you?` in Phase 18.2)*
   - Horizontally scrollable chip row
   - First chip: `Everyone` (default, pre-selected)
   - Subsequent chips: one per group (e.g. `Work`, `College`)
@@ -941,7 +942,7 @@ Note: `visible_to` requires a `jsonb` or array column on `users`. Add `visible_t
 |---|---|
 | Sheet note label | `What's the vibe?` |
 | Note placeholder | `up for anything, drinks?, etc.` |
-| Group label | `Who can see you?` |
+| Group label | `Who can see this?` *(renamed in Phase 18.2)* |
 | Default group chip | `Everyone` |
 | Sheet CTA | `I'm free` |
 | Action sheet title | `You're going dark and won't be visible` |
@@ -4088,3 +4089,83 @@ Progress indicator goes 4→**5** pips; `CARD_COUNT` 4→5; swipe/pip/arrow/Skip
 
 ### Open questions
 - iOS group-thread `sms:` behavior — shared POC with Phase 9.3, still open.
+
+---
+
+## Phase 18 — "This week" time chip + group visibility label (Spec) — *spec'd 2026-07-27* · SPEC ✅ · MOCKUP ✅ (`mooves-phase18-week-chip-group-label.html`, approved 2026-07-27) · CODE ⬜
+
+*Two independent amendments to the go-green flow (Screen 5) and the feed card (Screen 4). No dependency between them — either can build first.*
+
+### 18.1 — "This week" time chip (amendment to 9.1)
+
+**Purpose:** extend the coarse intent chip to the weekday window, which today falls between "tonight" and "this weekend" with nothing covering it.
+
+**Entry:** the go-green sheet, alongside the existing chips.
+
+**Behavior:** chip set becomes **Now · Tonight · This week · This weekend** (single-select, skippable, otherwise unchanged). "This week" is offered **only Mon–Thu** in the mover's local time; Fri/Sat/Sun show the existing three, since *Tonight* and *This weekend* already cover that span.
+
+**Expiry:** **3:00 AM Friday**, viewer-local — the next Friday 3am strictly after go-green. Because the chip is only offered Mon–Thu, the longest possible "this week" green is ~4.2 days (Monday just after 3am) and the shortest ~4 hours (Thursday 11pm). The chips tile the week with no overlap:
+
+| chip | covers | expires |
+|---|---|---|
+| Tonight | tonight | 3am that night |
+| **This week** | **Mon–Thu nights** | **3am Friday** |
+| This weekend | Fri–Sun nights | 3am Monday |
+
+**Green wave:** `week` is **excluded from waves entirely** — it never forms one, joins one, or triggers a wave push. Three friends free "sometime this week" are not free at the same time, and firing on that would recreate the loose trigger 17.1b was written to kill. Applies to both the push path and the in-app strip, via `wave_group_for_viewer`.
+
+**Enforcement boundary:** the Mon–Thu restriction and the expiry moment are both **client-side**, because the server doesn't know the mover's timezone — same architecture as the existing chips (9.5 Part A). The server accepts `week` on any day and only sanity-bounds the expiry it is handed. A hand-crafted request could set `week` on a Saturday; the blast radius is one over-long green, already capped by the existing ≤8-day bound. Server-side enforcement would require storing the mover's timezone — a separate spec, deliberately not taken on here.
+
+**Data:** `users.status_time` has a CHECK constraint pinned to `('now','tonight','weekend')`; adding `week` requires a migration. Blast body copy gains "this week" ("Jackson's free this week — who's in?").
+
+**Out of scope:** specific times/dates, calendars, multi-select, recurring. Retroactively re-bucketing existing greens.
+
+**Acceptance:**
+- [ ] "This week" appears in the chip row Mon–Thu only; Fri–Sun shows the original three.
+- [ ] Selecting it expires the green at 3:00 AM the coming Friday, viewer-local.
+- [ ] Chip renders on the mover's card and friends' feed cards, and carries into the blast body.
+- [ ] A `week` green never appears in a green wave, in-app or push.
+- [ ] Migration extends the `status_time` CHECK constraint; existing greens unaffected.
+- [ ] Chip clears on go-grey.
+
+### 18.2 — Group visibility label
+
+**Purpose:** let a mover show consuming users which of their groups a moove was shared with, so "who else is seeing this?" is answerable without asking.
+
+**Entry:** the go-green sheet, appearing **only when at least one group is selected** under "Who can see this?". Not offered when visibility is Everyone.
+
+**Copy change:** that section label is **renamed from "Who can see you?" to "Who can see this?"** (mockup 2026-07-27). The old wording scoped visibility to the person; the new one scopes it to the individual moove, which is what `visible_to` has always actually controlled. Applies to the section label in the go-green sheet.
+
+**Behavior:** a **per-moove toggle, default off** — ephemeral like the note, chip, and anchor, and cleared on go-grey. Proposed copy *"Show who this is shared with"*; exact wording to settle at mockup.
+
+**The privacy rule (the core of this spec):** the label lists only the groups the mover selected **AND** the viewer is a member of. If the mover goes green to `[Poker Crew, Work Friends]` and the viewer is only in Work Friends, the label reads "Work Friends" and the viewer never learns Poker Crew exists. This follows the rule already established in the SMS-feed-check edge-case table (Section 11): when `visible_to` excludes the requester, treat it as "nobody's free" and **do not reveal the existence of hidden green friends**.
+
+**Consequence, stated so it is not mistaken for a bug:** the same moove renders **different labels for different viewers**. A viewer in both groups sees both names; a viewer in one sees one.
+
+**States:**
+- **Toggle off** (default) — no label. Current behavior, unchanged.
+- **Toggle on, viewer shares one group** — label reads that group's name.
+- **Toggle on, viewer shares several** — all shared names, comma-separated, ellipsized on narrow cards.
+- **Mover's own card** — shows all selected groups. Their own data, so no filtering applies.
+
+**Data:** new ephemeral column on `users` (e.g. `status_show_groups BOOLEAN NOT NULL DEFAULT false`), cleared on go-grey alongside the other status fields. `get_feed` returns the **intersection** of the mover's `visible_to` and the viewer's group memberships, resolved to names, and only when the flag is set.
+
+> ⚠️ **`get_feed` is being redefined again.** It must carry the `status_expires_at` filter forward. Dropping it is exactly what caused the Phase 9.5 expiry regression (0008 rebuilt the function from 0005's body; expired greens rendered for five days until the 0009 fix). `CREATE OR REPLACE` overwrites, it does not merge — diff against the deployed definition, not against the newest migration file.
+
+**Layout note for the mockup:** the Phase 16 card layout fix moved the vibe note + time chip onto their own sub-row under the name. The group label is a third element competing for that row — decide at mockup whether it shares the row or takes its own line.
+
+**Out of scope:** showing group *membership* (who is in the group), per-group notes, editing visibility after going green, labels on grey users, labels when visibility is Everyone.
+
+**Acceptance:**
+- [ ] Toggle appears only when ≥1 group is selected; default off.
+- [ ] With it off, no label renders anywhere (current behavior unchanged).
+- [ ] A viewer sees only the names of groups they belong to; a group they are not in is never named or counted.
+- [ ] Multiple shared groups list all names, truncating gracefully on narrow cards.
+- [ ] Mover's own card shows all selected groups.
+- [ ] Flag and label clear on go-grey.
+- [ ] Group names are never truncated; the label wraps to as many lines as needed and the card grows to fit.
+- [ ] Go-green sheet section label reads "Who can see this?".
+- [ ] `get_feed` redefinition preserves the `status_expires_at` expiry filter.
+
+### Open questions
+None.
