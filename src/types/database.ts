@@ -440,20 +440,29 @@ export type Database = {
         ]
       }
       move_joins: {
+        // Phase 20: `id` is the surrogate PK (the old composite key could not
+        // survive plan joins, and dropping it outright would have broken
+        // realtime, which keys off the PK). `plan_id` NULL = a green join.
         Row: {
+          id: string
           created_at: string
           joiner_id: string
           mover_id: string
+          plan_id: string | null
         }
         Insert: {
+          id?: string
           created_at?: string
           joiner_id: string
           mover_id: string
+          plan_id?: string | null
         }
         Update: {
+          id?: string
           created_at?: string
           joiner_id?: string
           mover_id?: string
+          plan_id?: string | null
         }
         Relationships: [
           {
@@ -466,6 +475,59 @@ export type Database = {
           {
             foreignKeyName: "move_joins_mover_id_fkey"
             columns: ["mover_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plans: {
+        Row: {
+          id: string
+          author_id: string
+          title: string
+          start_at: string
+          has_time: boolean
+          expires_at: string
+          location_text: string | null
+          note: string | null
+          visible_to: string[] | null
+          created_at: string
+          updated_at: string
+          cancelled_at: string | null
+        }
+        Insert: {
+          id?: string
+          author_id: string
+          title: string
+          start_at: string
+          has_time?: boolean
+          expires_at: string
+          location_text?: string | null
+          note?: string | null
+          visible_to?: string[] | null
+          created_at?: string
+          updated_at?: string
+          cancelled_at?: string | null
+        }
+        Update: {
+          id?: string
+          author_id?: string
+          title?: string
+          start_at?: string
+          has_time?: boolean
+          expires_at?: string
+          location_text?: string | null
+          note?: string | null
+          visible_to?: string[] | null
+          created_at?: string
+          updated_at?: string
+          cancelled_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plans_author_id_fkey"
+            columns: ["author_id"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
@@ -602,6 +664,12 @@ export type Database = {
         Returns: { status: string; member_count: number; connected_count: number }[]
       }
       roundup_undo: { Args: { p_code: string; p_user: string }; Returns: number }
+      // Phase 20 — deliberately separate from get_feed, which has been broken
+      // twice by redefinition. Same visibility rules; joiner phones go only to
+      // the author.
+      get_plans: { Args: { viewer: string }; Returns: Json }
+      // Owner-implicit group membership: group_members never holds the owner.
+      viewer_group_ids: { Args: { p_user: string }; Returns: { group_id: string }[] }
     }
     Enums: {
       [_ in never]: never

@@ -105,8 +105,13 @@ export async function PATCH(req: Request) {
   }
 
   // Going grey ends the current move: clear any joins on it (9.2/9.4).
+  //
+  // ⚠ Phase 20: `plan_id IS NULL` is load-bearing, not tidiness. move_joins now
+  // carries plan joins too, and a plan join stores the PLAN'S AUTHOR in
+  // mover_id. Without this filter, going grey would delete every join on all of
+  // your planned Mooves — other people's commitments, silently destroyed.
   if (!body.isAvailable) {
-    await supabase.from('move_joins').delete().eq('mover_id', userId)
+    await supabase.from('move_joins').delete().eq('mover_id', userId).is('plan_id', null)
   }
 
   const { data, error } = await supabase

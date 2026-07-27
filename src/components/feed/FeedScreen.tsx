@@ -21,6 +21,13 @@ import WaveStrip from './WaveStrip'
 import TipJar from './TipJar'
 import AmbientTier from './AmbientTier'
 import RoundupJoinedSheet from './RoundupJoinedSheet'
+import GreenRail, { sortRail, type RailPerson } from './GreenRail'
+import PlanCard from './PlanCard'
+import PlanComposer from './PlanComposer'
+import MooveActionsSheet from './MooveActionsSheet'
+import FreeUntilSheet from './FreeUntilSheet'
+import JoinWhileGreenSheet from './JoinWhileGreenSheet'
+import type { Plan } from '@/lib/plans'
 import { type AnchoredMove } from './AnchoredMoveCard'
 import GoGreenSheet from '@/components/go-green/GoGreenSheet'
 import GoGreyConfirm from '@/components/go-green/GoGreyConfirm'
@@ -99,6 +106,20 @@ export default function FeedScreen() {
   const [roundupJoin, setRoundupJoin] = useState<{ code: string; connectedCount: number } | null>(
     null,
   )
+  // ── Phase 20 ──────────────────────────────────────────────────────────────
+  // Rail is people, feed is Mooves. `railSelected` is which green's card shows
+  // under the rail; it defaults to the most recent one so the feed still opens
+  // with a note and an "I'm in" visible, exactly as it did before the rail.
+  const [plans, setPlans] = useState<Plan[]>([])
+  const [railSelected, setRailSelected] = useState<string | null>(null)
+  const [composerOpen, setComposerOpen] = useState(false)
+  const [editingPlan, setEditingPlan] = useState<Plan | null>(null)
+  const [actionsPlan, setActionsPlan] = useState<Plan | null>(null)
+  const [freeUntilOpen, setFreeUntilOpen] = useState(false)
+  const [myStatusExpiresAt, setMyStatusExpiresAt] = useState<string | null>(null)
+  // 20.5 — never automatic; only offered when your green has zero joiners and
+  // the buckets match.
+  const [joinWhileGreen, setJoinWhileGreen] = useState<string | null>(null)
   // 17.1 in-app wave strip. `wave` is the resolved group from the feed; dismissal
   // persists across app opens keyed by the wave's signature (its members + time), so
   // a dismissed wave stays gone while that same group is green, but a genuinely new
@@ -319,12 +340,17 @@ export default function FeedScreen() {
       await resolveRoundup()
       if (!mountedRef.current) return
 
-      const [friendsRes, feedRes, groupsRes] = await Promise.all([
+      const [friendsRes, feedRes, groupsRes, plansRes] = await Promise.all([
         fetch('/api/friends').then(r => r.json()) as Promise<{ friends: { id: string }[] }>,
         fetch('/api/feed').then(r => r.json()) as Promise<{ friends: Friend[]; myJoiners: MyJoiner[]; ambient?: { activeNow: number; recentGreen: number }; wave?: Wave | null }>,
         fetch('/api/groups').then(r => r.json()) as Promise<{ groups: Group[] }>,
+        // Phase 20 — Mooves are their own query. get_plans is a separate RPC on
+        // purpose: get_feed has been broken twice by redefinition already.
+        fetch('/api/plans').then(r => r.json()) as Promise<{ plans?: Plan[] }>,
       ])
       if (!mountedRef.current) return
+      setPlans(plansRes.plans ?? [])
+      setMyStatusExpiresAt(greenExpired ? null : meData.statusExpiresAt ?? null)
 
       friendIdsRef.current = new Set(friendsRes.friends.map(f => f.id))
       setTotalFriendCount(friendIdsRef.current.size)
@@ -467,11 +493,89 @@ export default function FeedScreen() {
     })
       .then(res => {
         if (!res.ok) throw new Error('join failed')
+        // 20.5 — offer to drop your own green, but ONLY on a fresh join, only if
+        // your green has no joiners of its own, and only when the two greens
+        // describe the same window. Zero-joiners is the hard guard: going grey
+        // deletes move_joins, so prompting someone with joiners would invite
+        // them to destroy other people's commitments without realising.
+        if (!wantJoin) return
+        const mover = (friends ?? []).find(f => f.id === moverId)
+        const sameBucket = (mover?.statusTime ?? 'now') === (myStatusTime ?? 'now')
+        if (isAvailable && myJoiners.length === 0 && sameBucket) {
+          setJoinWhileGreen(mover?.displayName ?? 'them')
+        }
       })
       .catch(() => {
         setToastMessage("Couldn't update, try again.")
         void refetchFeed()
       })
+  }
+
+  // Phase 20 — joining a Moove. Same shape as a green join; the API keeps the
+  // two apart via plan_id so neither leaks into the other.
+  function handleTogglePlanJoin(planId: string, joined: boolean) {
+    const wantJoin = !joined
+    if (wantJoin) markValueMoment()
+    const meNow = me
+    setPlans(prev =>
+      prev.map(p => {
+        if (p.id !== planId) return p
+        const without = p.joiners.filter(j => j.id !== meNow?.id)
+        const joiners =
+          wantJoin && meNow
+            ? [...without, { id: meNow.id, displayName: meNow.displayName, avatarUrl: meNow.avatarUrl, phone: null }]
+            : without
+        return { ...p, joinedByMe: wantJoin, joiners }
+      }),
+    )
+    fetch(`/api/plans/${planId}/join`, { method: wantJoin ? 'POST' : 'DELETE' })
+      .then(res => {
+        if (!res.ok) throw new Error('plan join failed')
+      })
+      .catch(() => {
+        setToastMessage("Couldn't update, try again.")
+        void refetchPlans()
+      })
+  }
+
+  async function refetchPlans() {
+    try {
+      const res = (await fetch('/api/plans').then(r => r.json())) as { plans?: Plan[] }
+      if (mountedRef.current) setPlans(res.plans ?? [])
+    } catch {
+      // transient
+    }
+  }
+
+  /** Same 2+ gate as a green: never blast into silence. */
+  function handlePlanBlast(plan: Plan) {
+    const phones = plan.joiners.map(j => j.phone).filter((p): p is string => !!p)
+    if (phones.length === 0) return
+    markValueMoment()
+    posthog.capture('plan_blast_started', { joiners: plan.joiners.length })
+    window.location.href = buildBlastHref(phones)
+  }
+
+  /** 20.7 — moves the deadline only; the time bucket is untouched. */
+  async function handleSetFreeUntil(iso: string) {
+    setFreeUntilOpen(false)
+    setMyStatusExpiresAt(iso)
+    try {
+      await fetch('/api/status', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          isAvailable: true,
+          statusNote: myStatusNote,
+          statusTime: myStatusTime,
+          visibleTo: myVisibleGroupIds.length > 0 ? myVisibleGroupIds : null,
+          statusShowGroups: myShowGroups,
+          statusExpiresAt: iso,
+        }),
+      })
+    } catch {
+      setToastMessage("Couldn't update, try again.")
+    }
   }
 
   function handleBlast() {
@@ -538,6 +642,35 @@ export default function FeedScreen() {
 
   const loaded = friends !== null && totalFriendCount !== null && me !== null
 
+  // ── Phase 20 rail derivation ───────────────────────────────────────────────
+  // Every green goes in the rail, you first. The feed below is Mooves only.
+  const railPeople: RailPerson[] = [
+    ...(isAvailable && me
+      ? [{ id: me.id, displayName: me.displayName, avatarUrl: me.avatarUrl, statusTime: myStatusTime, isMe: true }]
+      : []),
+    ...(friends ?? []).map(f => ({
+      id: f.id,
+      displayName: f.displayName,
+      avatarUrl: f.avatarUrl,
+      statusTime: f.statusTime ?? null,
+      isMe: false,
+    })),
+  ]
+
+  // Default to the first rail entry so the feed still opens showing a note and
+  // an "I'm in" — a rail of bare avatars with nothing expanded would have hidden
+  // every note behind a tap, which is the regression the rail must not cause.
+  const sorted = sortRail(railPeople)
+  const effectiveRailSelection =
+    railSelected && railPeople.some(p => p.id === railSelected)
+      ? railSelected
+      : (sorted[0]?.id ?? null)
+
+  const selectedFriend =
+    effectiveRailSelection && effectiveRailSelection !== me?.id
+      ? (friends ?? []).find(f => f.id === effectiveRailSelection) ?? null
+      : null
+
   return (
     <div className="min-h-screen flex flex-col bg-purple-50">
       <header className="bg-gradient-to-b from-purple-500 via-[#9B7FE8] to-[#A98FF0] px-5 pt-7 pb-6 flex items-center justify-center shrink-0">
@@ -570,21 +703,35 @@ export default function FeedScreen() {
                 />
               )
             })()}
+            {/* 20.2 — the rail sits ABOVE the swipe: who is free comes first,
+                then your own action, then everything later. */}
+            <GreenRail
+              people={railPeople}
+              selectedId={effectiveRailSelection}
+              onSelect={id => setRailSelected(id)}
+            />
+
             {isAvailable ? (
-              <MyMoveCard
-                statusNote={myStatusNote}
-                statusTime={myStatusTime}
-                visibleGroups={
-                  myShowGroups
-                    ? groups.filter(g => myVisibleGroupIds.includes(g.id)).map(g => g.name)
-                    : []
-                }
-                anchoredMove={myAnchoredMove}
-                joiners={myJoiners}
-                meId={me.id}
-                onBlast={handleBlast}
-                onGoGrey={() => setGreyOpen(true)}
-              />
+              // Your own green is the expanded state of your rail avatar, so the
+              // card only renders when you are the one selected.
+              effectiveRailSelection === me.id && (
+                <MyMoveCard
+                  statusNote={myStatusNote}
+                  statusTime={myStatusTime}
+                  visibleGroups={
+                    myShowGroups
+                      ? groups.filter(g => myVisibleGroupIds.includes(g.id)).map(g => g.name)
+                      : []
+                  }
+                  anchoredMove={myAnchoredMove}
+                  joiners={myJoiners}
+                  meId={me.id}
+                  statusExpiresAt={myStatusExpiresAt}
+                  onEditExpiry={() => setFreeUntilOpen(true)}
+                  onBlast={handleBlast}
+                  onGoGrey={() => setGreyOpen(true)}
+                />
+              )
             ) : (
               <SwipeToGoGreen onActivate={handleSwipeActivate} />
             )}
@@ -603,33 +750,53 @@ export default function FeedScreen() {
                   Invite your friends
                 </button>
               </div>
-            ) : friends.length === 0 ? (
+            ) : friends.length === 0 && plans.length === 0 ? (
+              // 20.4 — the ambient tier only when BOTH surfaces are empty.
               <AmbientTier activeNow={ambient.activeNow} recentGreen={ambient.recentGreen} />
             ) : (
               <>
-                <p className="font-sans text-[11px] font-semibold text-ink-500 uppercase tracking-[0.08em] px-1 pb-3">
-                  Free right now
-                </p>
-                {friends.map(f => (
+                {/* 20.2 — one green card at a time, under the rail, above the
+                    Mooves. The rail itself is rendered further up so it sits
+                    above the swipe. */}
+                {selectedFriend && (
                   <FriendCard
-                    key={f.id}
-                    id={f.id}
-                    displayName={f.displayName}
-                    avatarUrl={f.avatarUrl}
-                    statusNote={f.statusNote}
-                    statusTime={f.statusTime}
-                    visibleGroups={f.visibleGroups}
-                    anchoredMove={f.anchoredMove}
-                    phone={f.phone}
-                    joiners={f.joiners}
-                    joinedByMe={f.joinedByMe}
+                    key={selectedFriend.id}
+                    id={selectedFriend.id}
+                    displayName={selectedFriend.displayName}
+                    avatarUrl={selectedFriend.avatarUrl}
+                    statusNote={selectedFriend.statusNote}
+                    statusTime={selectedFriend.statusTime}
+                    visibleGroups={selectedFriend.visibleGroups}
+                    anchoredMove={selectedFriend.anchoredMove}
+                    phone={selectedFriend.phone}
+                    joiners={selectedFriend.joiners}
+                    joinedByMe={selectedFriend.joinedByMe}
                     meId={me.id}
                     onToggleJoin={handleToggleJoin}
                   />
-                ))}
-                {/* Phase 14.1: tip jar at the very bottom, only when 3+ moves are live
-                    (friends' greens + the viewer's own green). Self-hides below 3. */}
-                <TipJar visible={friends.length + (isAvailable ? 1 : 0) >= 3} />
+                )}
+
+                {plans.length > 0 && (
+                  <>
+                    <p className="font-sans text-[10.5px] font-bold text-ink-500 uppercase tracking-[0.1em] px-0.5 pt-1 pb-2.5">
+                      Mooves
+                    </p>
+                    {plans.map(p => (
+                      <PlanCard
+                        key={p.id}
+                        plan={p}
+                        meId={me.id}
+                        onToggleJoin={handleTogglePlanJoin}
+                        onBlast={handlePlanBlast}
+                        onActions={setActionsPlan}
+                      />
+                    ))}
+                  </>
+                )}
+
+                {/* Phase 14.1: tip jar at the very bottom, only when 3+ moves are
+                    live (greens + Mooves + your own green). Self-hides below 3. */}
+                <TipJar visible={friends.length + plans.length + (isAvailable ? 1 : 0) >= 3} />
               </>
             )}
           </>
@@ -719,6 +886,74 @@ export default function FeedScreen() {
           Keep me green
         </button>
       </Sheet>
+
+      {/* 20.3 — the plan path. A floating control, deliberately far from the
+          swipe so the two creation gestures are never confused. */}
+      {loaded && (
+        <button
+          onClick={() => {
+            setEditingPlan(null)
+            setComposerOpen(true)
+          }}
+          aria-label="Plan a Moove"
+          className="fixed right-[15px] bottom-[74px] z-30 w-[58px] h-[58px] rounded-full bg-purple-500 border-[2.5px] border-purple-50 shadow-[0_8px_22px_rgba(124,92,219,0.5)] flex items-center justify-center"
+        >
+          <svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.2" strokeLinecap="round">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        </button>
+      )}
+
+      <PlanComposer
+        open={composerOpen}
+        onClose={() => {
+          setComposerOpen(false)
+          setEditingPlan(null)
+        }}
+        groups={groups}
+        editing={editingPlan}
+        onSaved={() => {
+          setToastMessage(editingPlan ? 'Moove updated.' : 'Moove posted.')
+          void refetchPlans()
+        }}
+      />
+
+      {actionsPlan && (
+        <MooveActionsSheet
+          plan={actionsPlan}
+          onEdit={() => {
+            setEditingPlan(actionsPlan)
+            setActionsPlan(null)
+            setComposerOpen(true)
+          }}
+          onCancelled={() => {
+            setActionsPlan(null)
+            setToastMessage('Moove cancelled.')
+            void refetchPlans()
+          }}
+          onClose={() => setActionsPlan(null)}
+        />
+      )}
+
+      {freeUntilOpen && (
+        <FreeUntilSheet
+          currentExpiresAt={myStatusExpiresAt}
+          onPick={iso => void handleSetFreeUntil(iso)}
+          onClose={() => setFreeUntilOpen(false)}
+        />
+      )}
+
+      {joinWhileGreen && (
+        <JoinWhileGreenSheet
+          friendName={joinWhileGreen}
+          onDropMine={() => {
+            setJoinWhileGreen(null)
+            void handleConfirmGrey()
+          }}
+          onKeepBoth={() => setJoinWhileGreen(null)}
+        />
+      )}
 
       {/* 19.1 — post-join confirmation. Undo lives here and nowhere else. */}
       {roundupJoin && (

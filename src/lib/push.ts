@@ -98,6 +98,125 @@ export async function sendGroupGreenPush(
   }
 }
 
+/** Shared token send + stale-token cleanup, used by the plan pushes below. */
+async function pushToUsers(
+  supabase: ReturnType<typeof createServiceClient>,
+  userIds: string[],
+  data: { title: string; body: string; url: string },
+): Promise<void> {
+  if (!userIds.length) return
+
+  const { data: subs } = await supabase
+    .from('push_subscriptions')
+    .select('id, fcm_token')
+    .in('user_id', userIds)
+  if (!subs?.length) return
+
+  const res = await firebaseMessaging.sendEachForMulticast({
+    tokens: subs.map(s => s.fcm_token),
+    data, // data-only: the service worker builds the notification
+  })
+
+  const stale: string[] = []
+  res.responses.forEach((r, i) => {
+    if (r.success) return
+    const code = r.error?.code
+    if (code === 'messaging/registration-token-not-registered' || code === 'messaging/invalid-argument') {
+      stale.push(subs[i].id)
+    }
+  })
+  if (stale.length) await supabase.from('push_subscriptions').delete().in('id', stale)
+}
+
+/**
+ * Phase 20.3 — a group-scoped Moove notifies that group, under the SAME 60-minute
+ * per-group floor as a group-scoped green. A dated plan is higher-signal than a
+ * green, so if anything earns a push it does, but it does not get its own budget.
+ * Best-effort; callers wrap in try/catch so a push failure never fails the write.
+ */
+export async function sendPlanPush(
+  authorId: string,
+  groupIds: string[],
+  title: string,
+  _kind: 'created',
+): Promise<void> {
+  if (!groupIds.length) return
+  const supabase = createServiceClient()
+
+  const { data: groups } = await supabase
+    .from('groups')
+    .select('id, name, last_notified_at')
+    .in('id', groupIds)
+  if (!groups?.length) return
+
+  const now = Date.now()
+  const eligible = groups.filter(
+    g => !g.last_notified_at || now - new Date(g.last_notified_at).getTime() >= RATE_LIMIT_MS,
+  )
+  if (!eligible.length) return
+
+  const alreadyTargeted = new Set<string>([authorId])
+  const notified: string[] = []
+
+  for (const group of eligible) {
+    notified.push(group.id)
+
+    const recipients = await groupRecipientIds(supabase, group.id)
+    const candidateIds = recipients.filter(id => !alreadyTargeted.has(id))
+    if (!candidateIds.length) continue
+
+    const { data: mutes } = await supabase
+      .from('group_notification_mutes')
+      .select('user_id')
+      .eq('group_id', group.id)
+      .in('user_id', candidateIds)
+    const muted = new Set((mutes ?? []).map(m => m.user_id))
+    const recipientIds = candidateIds.filter(id => !muted.has(id))
+    if (!recipientIds.length) continue
+
+    for (const id of recipientIds) alreadyTargeted.add(id)
+
+    await pushToUsers(supabase, recipientIds, {
+      title: `New Moove in ${group.name}`,
+      body: title,
+      url: '/feed',
+    })
+  }
+
+  if (notified.length) {
+    await supabase.from('groups').update({ last_notified_at: new Date().toISOString() }).in('id', notified)
+  }
+}
+
+/**
+ * Phase 20.9 — cancelling a Moove tells the people who were in it.
+ *
+ * Deliberately NOT rate-limited and NOT muteable: this is the one push in the
+ * app that carries bad news someone is relying on. A cancelled Moove silently
+ * vanishing on people who committed to it is exactly what this exists to stop.
+ */
+export async function sendPlanCancelledPush(
+  authorId: string,
+  joinerIds: string[],
+  title: string,
+): Promise<void> {
+  const recipients = joinerIds.filter(id => id !== authorId)
+  if (!recipients.length) return
+  const supabase = createServiceClient()
+
+  const { data: author } = await supabase
+    .from('users')
+    .select('display_name')
+    .eq('id', authorId)
+    .maybeSingle()
+
+  await pushToUsers(supabase, recipients, {
+    title: `${author?.display_name ?? 'A friend'} cancelled a Moove`,
+    body: title,
+    url: '/feed',
+  })
+}
+
 const WAVE_COOLDOWN_MS = 6 * 60 * 60 * 1000 // one wave push per viewer per 6h
 
 // "Sam, Alex, and Jordan" — names, never a bare count (17.1 reverses the
