@@ -24,13 +24,15 @@ interface GreenRailProps {
   selectedId: string | null
   onSelect: (id: string) => void
   /**
-   * Tapping the avatar that is ALREADY selected texts them.
+   * ONE tap on a friend's face opens Messages.
    *
-   * Added after device testing: the rail reads as "the people who are free", so
-   * tapping a face is expected to reach that person — the pre-Phase-20 muscle
-   * memory, where a green card was a text handoff. First tap opens their card
-   * (you need the note before you text), second tap sends you to Messages.
-   * Never fires for your own avatar.
+   * The two-tap version existed so you could read their vibe note first. Greens
+   * no longer carry a note — the go-green sheet is visibility, when, and free-
+   * until — so there was nothing left to read and the intermediate card was
+   * just a tax on the core loop.
+   *
+   * Your own face still selects rather than texting, because you cannot text
+   * yourself and your card is where Free-until and go-grey live.
    */
   onText?: (id: string) => void
 }
@@ -74,7 +76,7 @@ export default function GreenRail({ people, selectedId, onSelect, onText }: Gree
             <button
               key={p.id}
               onClick={() => {
-                if (selected && !p.isMe && onText) onText(p.id)
+                if (!p.isMe && onText) onText(p.id)
                 else onSelect(p.id)
               }}
               aria-pressed={selected}

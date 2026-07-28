@@ -18,6 +18,8 @@ import { sendPlanPush } from '@/lib/push'
 // attempt to park a row in the feed forever.
 const MAX_AHEAD_MS = 365 * 24 * 60 * 60 * 1000
 
+const TIME_MODES = ['tonight', 'week', 'weekend', 'date', 'datetime']
+
 function boundStartAt(value: unknown, now: Date): string | null {
   if (typeof value !== 'string') return null
   const t = new Date(value).getTime()
@@ -68,6 +70,8 @@ export async function POST(req: Request) {
     title?: string
     startAt?: string
     hasTime?: boolean
+    timeMode?: string
+    showGroups?: boolean
     expiresAt?: string
     locationText?: string | null
     note?: string | null
@@ -109,6 +113,10 @@ export async function POST(req: Request) {
       start_at: startAt,
       has_time: hasTime,
       expires_at: boundExpiresAt(body.expiresAt, startAt, now),
+      time_mode: TIME_MODES.includes(body.timeMode ?? '') ? body.timeMode! : 'datetime',
+      // 18.2 rule: only meaningful when scoped to groups, since with everyone-
+      // visibility there is no audience to name.
+      show_groups: body.showGroups === true && !!visibleTo,
       location_text: trimmed(body.locationText, PLAN_LOCATION_MAX),
       note: trimmed(body.note, PLAN_NOTE_MAX),
       visible_to: visibleTo,

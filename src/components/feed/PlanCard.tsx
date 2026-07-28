@@ -26,8 +26,8 @@ interface PlanCardProps {
 
 export default function PlanCard({ plan, meId, onToggleJoin, onBlast, onActions }: PlanCardProps) {
   const start = new Date(plan.startAt)
-  const tile = planTile(start, plan.hasTime)
-  const when = planWhenLine(start, plan.hasTime, plan.locationText)
+  const tile = planTile(start, plan.hasTime, plan.timeMode)
+  const when = planWhenLine(start, plan.hasTime, plan.locationText, new Date(), plan.timeMode)
 
   // Same 2+ gate as a green: never blast into silence (Phase 9).
   const canBlast = plan.isMine && plan.joiners.length >= 2
@@ -46,11 +46,11 @@ export default function PlanCard({ plan, meId, onToggleJoin, onBlast, onActions 
       <div className="flex items-center gap-3">
         {/* Lead tile: time when there is one, otherwise the date. A date-only
             Moove should read as deliberate, not as a Moove missing its time. */}
-        <div className="w-[46px] h-[46px] shrink-0 rounded-[13px] bg-purple-100 flex flex-col items-center justify-center gap-px">
-          <span className="font-display font-extrabold text-[14px] leading-none tracking-tight text-purple-700">
+        <div className="w-[46px] h-[46px] shrink-0 rounded-[13px] bg-purple-100 flex flex-col items-center justify-center gap-px px-0.5">
+          <span className="font-display font-extrabold text-[13px] leading-none tracking-tight text-purple-700">
             {tile.top}
           </span>
-          <span className="font-sans text-[9px] font-bold tracking-[0.08em] leading-none text-purple-700/75">
+          <span className="font-sans text-[8.5px] font-bold tracking-[0.04em] leading-none text-purple-700/75 text-center">
             {tile.bottom}
           </span>
         </div>

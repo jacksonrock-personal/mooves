@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mooves — Phase 20 refinements</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet" />
+<style>
+  :root{--bg:#1C1730;--app-bg:#F8F6FF;--white:#FFF;--purple:#7C5CDB;--purple-100:#EDE9FF;--purple-700:#5F3FC4;
+    --green:#2ECC71;--green-700:#167A43;--grey:#BDB5D4;--grey-100:#F1EEFA;--ink:#1C1730;--ink-2:#6B628A;--border:#E8E4F5;--red:#E8405A;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);font-family:'Inter',sans-serif;color:#fff;min-height:100vh;padding:40px 20px 90px;-webkit-font-smoothing:antialiased}
+  .page-title{text-align:center;font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:22px;letter-spacing:-.02em;margin-bottom:5px}
+  .page-sub{text-align:center;color:#8B82AE;font-size:13px;margin-bottom:26px}
+  .toggles{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center;max-width:860px;margin:0 auto 30px}
+  .grp-lbl{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.32);margin:0 4px}
+  .toggle{background:#2A2340;color:#C9C1E4;border:1px solid #3A3355;font-weight:600;font-size:12.5px;padding:9px 15px;border-radius:999px;cursor:pointer}
+  .toggle:hover{border-color:var(--purple)} .toggle.active{background:var(--purple);color:#fff;border-color:var(--purple)}
+  .state{display:none} .state.active{display:flex;flex-direction:column;align-items:center;gap:15px}
+  .phone{width:320px;height:680px;border-radius:44px;background:var(--app-bg);overflow:hidden;position:relative;box-shadow:0 30px 70px rgba(0,0,0,.45);border:1px solid #2E2748;display:flex;flex-direction:column}
+  .caption{max-width:400px;text-align:center;font-size:12.5px;line-height:1.55;color:#9990BC} .caption b{color:#C9C1E4;font-weight:600}
+  .screen-label{text-align:center;color:#6E6690;font-size:12px}
+  .note{max-width:700px;margin:4px auto 0;background:#241E3A;border:1px solid #342D52;border-radius:14px;padding:14px 18px;font-size:12.5px;color:#B3AAD2;line-height:1.65}
+  .note b{color:#E6DEFF}
+
+  .fhead{background:linear-gradient(160deg,#7C5CDB 0%,#9B7FE8 70%,#A98FF0 100%);padding:26px 16px 20px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .wm{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:23px;color:#fff;letter-spacing:-.02em;display:flex;align-items:center}
+  .wm .oo{display:inline-flex;align-items:center;gap:2px;margin:0 1px;position:relative;top:1px}
+  .wm .d1{width:12px;height:12px;background:var(--green);border-radius:50%}
+  .wm .d2{width:12px;height:12px;background:rgba(255,255,255,.35);border-radius:50%}
+  .fbody{flex:1;overflow-y:auto;padding:14px}
+  .scrim{position:absolute;inset:0;background:rgba(28,23,48,.5);z-index:6}
+  .sheet{position:absolute;left:0;right:0;bottom:0;z-index:7;background:var(--white);border-radius:26px 26px 0 0;padding:11px 18px 26px;max-height:92%;overflow-y:auto}
+  .grab{width:38px;height:4px;border-radius:100px;background:var(--border);margin:0 auto 14px}
+  .sh-head{display:flex;align-items:flex-start;gap:12px;margin-bottom:16px}
+  .sh-title{flex:1;font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:18px;color:var(--ink);letter-spacing:-.02em}
+  .sh-cancel{font-size:14px;font-weight:600;color:var(--ink-2)}
+  .flabel{font-size:11px;font-weight:600;color:var(--ink-2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
+  .opt{text-transform:none;letter-spacing:0;font-weight:400;color:var(--grey)}
+  .chips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px}
+  .chip{font-size:12.5px;font-weight:600;padding:8px 13px;border-radius:100px;border:1.5px solid var(--border);background:var(--white);color:var(--ink-2);cursor:pointer}
+  .chip.on{background:var(--purple-100);border-color:var(--purple);color:var(--purple-700)}
+  .finput{width:100%;min-height:46px;border-radius:14px;border:1.5px solid var(--border);background:var(--app-bg);padding:12px 14px;font-size:14.5px;color:var(--ink);display:flex;align-items:center;margin-bottom:14px}
+  .finput.ph{color:var(--grey)}
+  .frow2{display:flex;gap:9px}.frow2 .finput{flex:1}
+  .btn{width:100%;padding:15px;border-radius:16px;background:var(--purple);color:#fff;font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:15.5px;border:none;box-shadow:0 6px 18px rgba(124,92,219,.3)}
+  .btn.off{opacity:.4;box-shadow:none}
+  .disc{display:flex;align-items:center;gap:9px;border:1px solid var(--border);background:var(--app-bg);border-radius:14px;padding:11px 13px;margin-bottom:18px}
+  .disc .t{flex:1}.disc .t b{display:block;font-size:13px;color:var(--ink);font-weight:600}
+  .disc .t span{font-size:11.5px;color:var(--ink-2)}
+  .sw{width:44px;height:26px;border-radius:100px;background:var(--grey);position:relative;flex-shrink:0}
+  .sw.on{background:var(--green-700)}
+  .sw i{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.15s}
+  .sw.on i{left:21px}
+  .expand{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--purple);margin-bottom:18px;cursor:pointer}
+
+  .card{border-radius:16px;border:1.5px solid var(--border);background:var(--white);padding:11px 12px;margin-bottom:8px}
+  .crow{display:flex;align-items:center;gap:11px}
+  .tile{width:46px;height:46px;border-radius:13px;background:var(--purple-100);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;flex-shrink:0}
+  .tile .t1{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:13px;color:var(--purple-700);line-height:1;letter-spacing:-.02em}
+  .tile .t2{font-size:8.5px;font-weight:700;letter-spacing:.06em;color:var(--purple-700);opacity:.75;line-height:1}
+  .cb{flex:1;min-width:0}
+  .ct{font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:15px;color:var(--ink);line-height:1.25}
+  .cs{font-size:12.5px;color:var(--ink-2);margin-top:2px}
+  .cmeta{display:flex;align-items:center;gap:5px;margin-top:5px;flex-wrap:wrap}
+  .pill{font-size:10.5px;font-weight:700;color:var(--purple-700);background:var(--purple-100);padding:2px 7px;border-radius:100px}
+  .glabel{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--border);background:var(--white);border-radius:13px;padding:3px 8px}
+  .glabel span{font-size:11px;font-weight:600;color:var(--ink-2)}
+  .join{flex-shrink:0;padding:8px 13px;border-radius:100px;font-weight:700;font-size:12.5px;border:none;background:var(--purple);color:#fff}
+
+  /* onboarding */
+  .ob{flex:1;display:flex;flex-direction:column;background:var(--app-bg);padding:26px 22px 20px}
+  .dots{display:flex;gap:6px;justify-content:center;margin-bottom:24px}
+  .dots i{width:6px;height:6px;border-radius:50%;background:var(--grey)}
+  .dots i.on{background:var(--purple);width:18px;border-radius:100px}
+  .ob-art{flex:1;display:flex;align-items:center;justify-content:center;padding:8px 0 18px}
+  .ob-h{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:23px;color:var(--ink);letter-spacing:-.02em;line-height:1.2;margin-bottom:10px}
+  .ob-p{font-size:14.5px;color:var(--ink-2);line-height:1.55;margin-bottom:22px}
+  .swipe{position:relative;width:100%;height:56px;border-radius:100px;overflow:hidden;display:flex;align-items:center;background:rgba(22,122,67,.1);border:1.5px solid rgba(22,122,67,.2)}
+  .swipe .th{position:absolute;left:4px;top:4px;width:48px;height:48px;border-radius:50%;background:var(--green-700);display:flex;align-items:center;justify-content:center}
+  .swipe .lb{width:100%;text-align:center;padding-left:44px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:15.5px;color:var(--green-700)}
+  .mini-rail{display:flex;gap:10px;justify-content:center}
+  .mini-rail .m{display:flex;flex-direction:column;align-items:center;gap:4px}
+  .mini-rail .av{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:18px;position:relative}
+  .mini-rail .av::after{content:'';position:absolute;inset:-4px;border-radius:50%;border:2.5px solid var(--green)}
+  .mini-rail .av.later::after{border-color:rgba(46,204,113,.42)}
+  .mini-rail .n{font-size:10.5px;font-weight:600;color:var(--ink-2)}
+  .mini-rail .w{font-size:9px;font-weight:700;text-transform:uppercase;color:var(--green-700)}
+  .mini-rail .w.later{color:var(--ink-2)}
+</style>
+</head>
+<body>
+  <div class="page-title">Phase 20 — refinements</div>
+  <div class="page-sub">Go-green minimal · coarse Moove timing · group label · onboarding</div>
+
+  <div class="toggles">
+    <span class="grp-lbl">Go green</span>
+    <button class="toggle active" data-state="gogreen">Minimal sheet</button>
+    <span class="grp-lbl">Moove</span>
+    <button class="toggle" data-state="coarse">Coarse (default)</button>
+    <button class="toggle" data-state="specific">Specific date/time</button>
+    <button class="toggle" data-state="grouplabel">Group + label toggle</button>
+    <button class="toggle" data-state="cards">Cards in feed</button>
+    <span class="grp-lbl">Onboarding</span>
+    <button class="toggle" data-state="ob1">1 · Go free</button>
+    <button class="toggle" data-state="ob2">2 · The rail</button>
+    <button class="toggle" data-state="ob3">3 · Mooves</button>
+  </div>
+
+  <!-- ══ GO GREEN, MINIMAL ══ -->
+  <div class="state active" data-state="gogreen">
+    <div class="phone">
+      <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+      <div class="fbody"></div>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="sh-head"><span class="sh-title">You're free</span><span class="sh-cancel">Cancel</span></div>
+
+        <div class="flabel">Who can see this?</div>
+        <div class="chips">
+          <span class="chip on">Everyone</span><span class="chip">🧗 Climbing crew</span><span class="chip">💬 Group Chat</span>
+        </div>
+
+        <div class="flabel">When</div>
+        <div class="chips">
+          <span class="chip on">Now</span><span class="chip">Tonight</span><span class="chip">This week</span><span class="chip">This weekend</span>
+        </div>
+
+        <div class="flabel">Free until</div>
+        <div class="chips">
+          <span class="chip">1 hour</span><span class="chip on">11:00 PM</span><span class="chip">3:00 AM</span><span class="chip">Pick a time</span>
+        </div>
+
+        <button class="btn">Go free</button>
+      </div>
+    </div>
+    <div class="caption"><b>Three controls, nothing else.</b> The vibe note is gone from this sheet, it belongs on your own card afterwards. Everything here is a decision you want to make <b>before</b> friends see you, which is exactly why it earns the interruption.</div>
+    <div class="screen-label">Screen 5 — Go free</div>
+  </div>
+
+  <!-- ══ MOOVE, COARSE ══ -->
+  <div class="state" data-state="coarse">
+    <div class="phone">
+      <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+      <div class="fbody"></div>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="sh-head"><span class="sh-title">Plan a Moove</span><span class="sh-cancel">Cancel</span></div>
+
+        <div class="flabel">What is it</div>
+        <div class="finput ph">Climbing, dinner, trivia night</div>
+
+        <div class="flabel">When</div>
+        <div class="chips">
+          <span class="chip">Tonight</span><span class="chip">This week</span><span class="chip on">This weekend</span>
+        </div>
+        <div class="expand">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add an exact date and time
+        </div>
+
+        <div class="flabel">Where <span class="opt">— optional</span></div>
+        <div class="finput ph">First Ascent, Avondale</div>
+
+        <div class="flabel">Anything else <span class="opt">— optional</span></div>
+        <div class="finput ph">Bring shoes if you have them</div>
+
+        <button class="btn">Post this Moove</button>
+      </div>
+    </div>
+    <div class="caption"><b>Coarse by default.</b> "Climbing this weekend" is a complete Moove. The exact date and time are behind a <b>"+"</b>, so they read as an upgrade rather than two blank boxes you failed to fill in.</div>
+    <div class="screen-label">Screen 4 — Plan a Moove (coarse)</div>
+  </div>
+
+  <!-- ══ MOOVE, SPECIFIC ══ -->
+  <div class="state" data-state="specific">
+    <div class="phone">
+      <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+      <div class="fbody"></div>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="sh-head"><span class="sh-title">Plan a Moove</span><span class="sh-cancel">Cancel</span></div>
+
+        <div class="flabel">What is it</div>
+        <div class="finput">Climbing at First Ascent</div>
+
+        <div class="flabel">When</div>
+        <div class="chips">
+          <span class="chip">Tonight</span><span class="chip">This week</span><span class="chip">This weekend</span>
+        </div>
+        <div class="frow2">
+          <div class="finput">Sat, Aug 1</div>
+          <div class="finput">9:00 AM</div>
+        </div>
+        <div class="expand" style="color:var(--ink-2);">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Use a rough time instead
+        </div>
+
+        <div class="flabel">Where <span class="opt">— optional</span></div>
+        <div class="finput">Avondale, front desk</div>
+
+        <button class="btn">Post this Moove</button>
+      </div>
+    </div>
+    <div class="caption">Expanded, the chips clear and the exact date and time take over. <b>One or the other, never both</b>, so the card always knows which to render.</div>
+    <div class="screen-label">Screen 4 — Plan a Moove (specific)</div>
+  </div>
+
+  <!-- ══ GROUP LABEL TOGGLE ══ -->
+  <div class="state" data-state="grouplabel">
+    <div class="phone">
+      <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+      <div class="fbody"></div>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="sh-head"><span class="sh-title">Plan a Moove</span><span class="sh-cancel">Cancel</span></div>
+
+        <div class="flabel">What is it</div>
+        <div class="finput">Climbing at First Ascent</div>
+
+        <div class="flabel">Who can see this?</div>
+        <div class="chips">
+          <span class="chip">Everyone</span><span class="chip on">🧗 Climbing crew</span><span class="chip">💬 Group Chat</span>
+        </div>
+
+        <div class="disc">
+          <span class="t"><b>Show who this is shared with</b><span>Climbing crew appears on the card</span></span>
+          <span class="sw on"><i></i></span>
+        </div>
+
+        <button class="btn">Post this Moove</button>
+      </div>
+    </div>
+    <div class="caption"><b>The 18.2 toggle, reused exactly.</b> It appears only once a group is picked, defaults off, and follows the same privacy rule as greens: a viewer only ever sees the names of groups <b>they are in</b>. Right now Moove cards label groups with no opt-in at all, which is inconsistent with how greens behave.</div>
+    <div class="screen-label">Screen 4 — Group label toggle</div>
+  </div>
+
+  <!-- ══ CARDS ══ -->
+  <div class="state" data-state="cards">
+    <div class="phone">
+      <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+      <div class="fbody">
+        <p style="font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);padding:2px 2px 10px;">Mooves</p>
+
+        <div class="card">
+          <div class="crow">
+            <span class="tile"><span class="t1">THIS</span><span class="t2">WEEKEND</span></span>
+            <span class="cb">
+              <span class="ct">Climbing at First Ascent</span>
+              <span class="cs">This weekend, Avondale</span>
+              <span class="cmeta"><span class="pill">Priya</span>
+                <span class="glabel"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#BDB5D4" stroke-width="2.4"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><span>Climbing crew</span></span>
+              </span>
+            </span>
+            <button class="join">I'm in</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="crow">
+            <span class="tile"><span class="t1">9:00</span><span class="t2">AM</span></span>
+            <span class="cb">
+              <span class="ct">Climbing at First Ascent</span>
+              <span class="cs">Saturday Aug 1, Avondale</span>
+              <span class="cmeta"><span class="pill">Priya</span></span>
+            </span>
+            <button class="join">I'm in</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="crow">
+            <span class="tile"><span class="t1">THIS</span><span class="t2">WEEK</span></span>
+            <span class="cb">
+              <span class="ct">Dinner somewhere new</span>
+              <span class="cs">This week, no place yet</span>
+              <span class="cmeta"><span class="pill">Tom</span></span>
+            </span>
+            <button class="join">I'm in</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="caption">The tile carries whichever precision the author chose: <b>THIS / WEEKEND</b>, a clock time, or a date. Coarse and exact Mooves sort together, with coarse ones ordered at the <b>end</b> of their window so a Saturday 9am plan sits above "sometime this weekend".</div>
+    <div class="screen-label">Screen 4 — Moove cards</div>
+  </div>
+
+  <!-- ══ ONBOARDING 1 ══ -->
+  <div class="state" data-state="ob1">
+    <div class="phone">
+      <div class="ob">
+        <div class="dots"><i class="on"></i><i></i><i></i><i></i><i></i></div>
+        <div class="ob-art">
+          <div style="width:100%"><div class="swipe"><div class="th"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div><div class="lb">Slide to go free</div></div></div>
+        </div>
+        <div class="ob-h">Slide when you're<br>up for something.</div>
+        <div class="ob-p">That's it. No plan needed, no message to write. Your friends just see you're around.</div>
+        <button class="btn">Next</button>
+      </div>
+    </div>
+    <div class="caption">Card 1 unchanged. It matches the real control, which is why it teaches.</div>
+    <div class="screen-label">Screen 3 — Loop card 1</div>
+  </div>
+
+  <!-- ══ ONBOARDING 2 ══ -->
+  <div class="state" data-state="ob2">
+    <div class="phone">
+      <div class="ob">
+        <div class="dots"><i></i><i class="on"></i><i></i><i></i><i></i></div>
+        <div class="ob-art">
+          <div class="mini-rail">
+            <div class="m"><span class="av" style="background:#E8A0B4;">M</span><span class="n">Maya</span><span class="w">Now</span></div>
+            <div class="m"><span class="av" style="background:#7FA8E8;">T</span><span class="n">Tom</span><span class="w">Now</span></div>
+            <div class="m"><span class="av later" style="background:#C9A87C;">P</span><span class="n">Priya</span><span class="w later">Wknd</span></div>
+          </div>
+        </div>
+        <div class="ob-h">Whoever's free<br>sits up top.</div>
+        <div class="ob-p">Tap a face to see what they're up for, then tap again to text them. The whole point is getting out of the app.</div>
+        <button class="btn">Next</button>
+      </div>
+    </div>
+    <div class="caption"><b>Replaces "friends see it".</b> Teaches the rail and the two-tap text handoff in one card, and shows a later green so the time labels aren't a surprise.</div>
+    <div class="screen-label">Screen 3 — Loop card 2 (NEW)</div>
+  </div>
+
+  <!-- ══ ONBOARDING 3 ══ -->
+  <div class="state" data-state="ob3">
+    <div class="phone">
+      <div class="ob">
+        <div class="dots"><i></i><i></i><i class="on"></i><i></i><i></i></div>
+        <div class="ob-art">
+          <div style="width:100%">
+            <div class="card" style="margin:0;">
+              <div class="crow">
+                <span class="tile"><span class="t1">THIS</span><span class="t2">WEEKEND</span></span>
+                <span class="cb"><span class="ct">Climbing, anyone?</span><span class="cs">This weekend, Avondale</span></span>
+                <button class="join">I'm in</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="ob-h">Got an actual<br>idea? Post it.</div>
+        <div class="ob-p">A Moove is a thing you want to do. Rough as "this weekend" or exact as Saturday at 9. Friends tap in, and you text from there.</div>
+        <button class="btn">Next</button>
+      </div>
+    </div>
+    <div class="caption"><b>Replaces "plan over text".</b> The second object has to be taught, or the "+" is a mystery button. The text handoff moved into cards 2 and 3, since it's now the payoff of both objects rather than a step of its own.</div>
+    <div class="screen-label">Screen 3 — Loop card 3 (NEW)</div>
+  </div>
+
+  <div class="note">
+    <b>The definition that changes.</b> The spec currently says "a Moove has a day, a green does not". A "this weekend" Moove has no day, so that line dies. The replacement is stronger: <b>a green is you being free, a Moove is a thing you're doing</b> — availability versus content. Under that rule a coarse Moove is obviously coherent.<br><br>
+    <b>What this costs in data.</b> `plans.start_at` stops being a real start time and becomes a <b>sort key</b> for coarse Mooves, so precision needs its own column. Coarse Mooves sort to the END of their window, so an exact Saturday 9am plan sits above "sometime this weekend".<br><br>
+    <b>Correction owed:</b> 20.1 was specced, mocked and approved but never built — the deployed swipe still opens the old sheet with the vibe note, and "Add a note" never landed on your own card. The minimal sheet above supersedes 20.1 entirely, including the "Seen by" chip idea, which is no longer needed.<br><br>
+    <b>Onboarding stays at five cards.</b> Cards 4 (the stance) and 5 (start your group) are untouched — only 2 and 3 are replaced. Growing onboarding to teach a second object would cost more than it teaches.
+  </div>
+
+<script>
+  document.querySelectorAll('.toggle').forEach(function(b){
+    b.addEventListener('click',function(){
+      var s=b.dataset.state;
+      document.querySelectorAll('.toggle').forEach(function(x){x.classList.toggle('active',x===b)});
+      document.querySelectorAll('.state').forEach(function(x){x.classList.toggle('active',x.dataset.state===s)});
+    });
+  });
+</script>
+</body>
+</html>

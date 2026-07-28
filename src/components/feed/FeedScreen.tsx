@@ -14,7 +14,6 @@ import { initPostHog, posthog } from '@/lib/posthog'
 import { buildBlastHref, type WaveTime } from '@/lib/blast'
 import { isGreenExpired } from '@/lib/greenExpiry'
 import { markValueMoment } from '@/lib/pwa'
-import FriendCard from './FriendCard'
 import MyMoveCard from './MyMoveCard'
 import SwipeToGoGreen from './SwipeToGoGreen'
 import WaveStrip from './WaveStrip'
@@ -26,7 +25,6 @@ import PlanCard from './PlanCard'
 import PlanComposer, { type PlanPrefill } from './PlanComposer'
 import MooveActionsSheet from './MooveActionsSheet'
 import FreeUntilSheet from './FreeUntilSheet'
-import JoinWhileGreenSheet from './JoinWhileGreenSheet'
 import type { Plan } from '@/lib/plans'
 import { type AnchoredMove } from './AnchoredMoveCard'
 import GoGreenSheet from '@/components/go-green/GoGreenSheet'
@@ -118,9 +116,6 @@ export default function FeedScreen() {
   const [planPrefill, setPlanPrefill] = useState<PlanPrefill | null>(null)
   const [freeUntilOpen, setFreeUntilOpen] = useState(false)
   const [myStatusExpiresAt, setMyStatusExpiresAt] = useState<string | null>(null)
-  // 20.5 — never automatic; only offered when your green has zero joiners and
-  // the buckets match.
-  const [joinWhileGreen, setJoinWhileGreen] = useState<string | null>(null)
   // 17.1 in-app wave strip. `wave` is the resolved group from the feed; dismissal
   // persists across app opens keyed by the wave's signature (its members + time), so
   // a dismissed wave stays gone while that same group is green, but a genuinely new
@@ -483,46 +478,16 @@ export default function FeedScreen() {
     void refetchFeed()
   }
 
-  function handleToggleJoin(moverId: string, joined: boolean) {
-    const wantJoin = !joined
-    if (wantJoin) markValueMoment() // Phase 15.4: joining is a value moment → may nudge to install
-    const meNow = me
-    // Optimistic update; realtime refetch reconciles authoritative joiners.
-    setFriends(prev =>
-      (prev ?? []).map(f => {
-        if (f.id !== moverId) return f
-        const without = f.joiners.filter(j => j.id !== meNow?.id)
-        const joiners =
-          wantJoin && meNow
-            ? [...without, { id: meNow.id, displayName: meNow.displayName, avatarUrl: meNow.avatarUrl }]
-            : without
-        return { ...f, joinedByMe: wantJoin, joiners }
-      }),
-    )
-    fetch('/api/moves/join', {
-      method: wantJoin ? 'POST' : 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ moverId }),
-    })
-      .then(res => {
-        if (!res.ok) throw new Error('join failed')
-        // 20.5 — offer to drop your own green, but ONLY on a fresh join, only if
-        // your green has no joiners of its own, and only when the two greens
-        // describe the same window. Zero-joiners is the hard guard: going grey
-        // deletes move_joins, so prompting someone with joiners would invite
-        // them to destroy other people's commitments without realising.
-        if (!wantJoin) return
-        const mover = (friends ?? []).find(f => f.id === moverId)
-        const sameBucket = (mover?.statusTime ?? 'now') === (myStatusTime ?? 'now')
-        if (isAvailable && myJoiners.length === 0 && sameBucket) {
-          setJoinWhileGreen(mover?.displayName ?? 'them')
-        }
-      })
-      .catch(() => {
-        setToastMessage("Couldn't update, try again.")
-        void refetchFeed()
-      })
-  }
+  // Green joins are retired. A green is availability, so the response to one is
+  // a text, not a commitment — tapping a face in the rail goes straight to
+  // Messages. "I'm in", rosters and the 2+ group blast now live only on Mooves,
+  // which are the object you can actually commit to. The 20.5 join-while-green
+  // prompt went with them: there is no longer a join that could conflict.
+  //
+  // Left deliberately in place: get_feed still returns `joiners`/`joinedByMe`
+  // for greens and move_joins still allows plan_id NULL rows. Both are inert.
+  // Rewriting get_feed to drop them would be a sixth redefinition of a function
+  // that has been silently broken twice, for no user-visible gain.
 
   // Phase 20 — joining a Moove. Same shape as a green join; the API keeps the
   // two apart via plan_id so neither leaks into the other.
@@ -774,27 +739,10 @@ export default function FeedScreen() {
               <AmbientTier activeNow={ambient.activeNow} recentGreen={ambient.recentGreen} />
             ) : (
               <>
-                {/* 20.2 — one green card at a time, under the rail, above the
-                    Mooves. The rail itself is rendered further up so it sits
-                    above the swipe. */}
-                {selectedFriend && (
-                  <FriendCard
-                    key={selectedFriend.id}
-                    id={selectedFriend.id}
-                    displayName={selectedFriend.displayName}
-                    avatarUrl={selectedFriend.avatarUrl}
-                    statusNote={selectedFriend.statusNote}
-                    statusTime={selectedFriend.statusTime}
-                    visibleGroups={selectedFriend.visibleGroups}
-                    anchoredMove={selectedFriend.anchoredMove}
-                    phone={selectedFriend.phone}
-                    joiners={selectedFriend.joiners}
-                    joinedByMe={selectedFriend.joinedByMe}
-                    meId={me.id}
-                    onToggleJoin={handleToggleJoin}
-                  />
-                )}
-
+                {/* Green cards for friends are gone: a friend's face in the rail
+                    goes straight to Messages. Greens carry availability,
+                    Mooves carry commitment — so "I'm in", rosters and the group
+                    blast now live only on Mooves. */}
                 {plans.length > 0 && (
                   <>
                     <p className="font-sans text-[10.5px] font-bold text-ink-500 uppercase tracking-[0.1em] px-0.5 pt-1 pb-2.5">
@@ -965,16 +913,6 @@ export default function FeedScreen() {
         />
       )}
 
-      {joinWhileGreen && (
-        <JoinWhileGreenSheet
-          friendName={joinWhileGreen}
-          onDropMine={() => {
-            setJoinWhileGreen(null)
-            void handleConfirmGrey()
-          }}
-          onKeepBoth={() => setJoinWhileGreen(null)}
-        />
-      )}
 
       {/* 19.1 — post-join confirmation. Undo lives here and nowhere else. */}
       {roundupJoin && (

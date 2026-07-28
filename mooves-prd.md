@@ -4341,7 +4341,19 @@ State-based throughout, **no coined noun anywhere**:
 
 ## Phase 20 — Greens & Planned Mooves (Spec) — *spec'd 2026-07-27* · SPEC ✅ (**revised at mockup, see "Revision" below**) · MOCKUP ✅ (`mooves-phase20-greens-plans.html`, approved 2026-07-27) · CODE ⬜
 
-> ### ⚠️ Revision at mockup approval (2026-07-27) — read this before the sections below
+> ### ⚠️ SECOND revision, post-deployment (2026-07-27) — this wins over everything below, including the first revision block
+>
+> Mockup: `mooves-phase20-refinements.html` + `mooves-rail-tap-options.html`. Both approved.
+>
+> 1. **THE DEFINING LINE CHANGED.** ~~"A Moove has a day, a green does not."~~ Dead — a coarse Moove ("this weekend") has no day. The replacement, which every later decision should be reasoned from: **a green is *you being free*; a Moove is *a thing you're doing*.** Availability versus content.
+> 2. **Mooves can be scheduled roughly OR exactly.** Coarse chips (*Tonight · This week · This weekend*, reusing the green vocabulary) are the **default**; an exact date and time hide behind a "+". One or the other, never both. `plans.time_mode` records which. `start_at` stops being a real start for coarse Mooves and becomes a **sort key stamped at the END of the window**, so "Saturday 9am" outranks "sometime this weekend" — concrete before vague.
+> 3. **The go-green sheet is three controls: visibility, when, free-until.** The vibe note is **removed** from it. This supersedes 20.1's "posts immediately + Seen-by chip", **which was specced, mocked, approved and never actually built** — the deployed swipe was still opening the old four-control sheet.
+> 4. **GREEN JOINS ARE RETIRED (Option A).** With no note on a green there was nothing left to read, so **one tap on a friend's face in the rail opens Messages**. Removed: friend green cards, "I'm in" on greens, who's-in on greens, the 2+ green blast, joiners on your own move card, and **20.5's join-while-green prompt**. `/api/moves/join` and `JoinWhileGreenSheet` are deleted. Your own face still opens a card, since you cannot text yourself and Free-until and go-grey live there. **Green waves are untouched** — they detect concurrency, not joins. Joining did not leave the app, it left *greens*: every Moove keeps "I'm in", its roster and its group text.
+>    - *Deliberately NOT cleaned up:* `get_feed` still returns `joiners`/`joinedByMe` for greens and `move_joins` still permits `plan_id IS NULL` rows. Both are inert. A sixth redefinition of a function that has been silently broken twice, for zero user-visible gain, is not worth the risk.
+> 5. **`plans.show_groups`** — 18.2's label opt-in now applies to Mooves. Before this, Moove cards labelled groups with **no opt-in at all**, contradicting greens. Same viewer-side rule: you are never told about a group you are not in.
+> 6. **Onboarding cards 2 and 3 replaced** (still five cards). Card 2 teaches the rail and the one-tap text; card 3 teaches Mooves with a coarse example. The text handoff no longer owns a card — it is the payoff of both objects.
+>
+> ### ⚠️ Revision at mockup approval (2026-07-27) — superseded in part by the block above
 >
 > Three passes of mockup changed the structure. **Where this block and the original sections disagree, this block wins.**
 >

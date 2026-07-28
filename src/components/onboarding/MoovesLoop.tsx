@@ -145,28 +145,41 @@ export default function MoovesLoop() {
               </div>
             </div>
             <div className="font-sans text-[12px] font-bold tracking-[0.12em] uppercase text-mooves-purple mb-2.5">The Mooves Loop · 2</div>
-            <h1 className="font-display font-extrabold text-[27px] text-text-primary tracking-tight mb-3 leading-[1.1]">Friends see it</h1>
+            <h1 className="font-display font-extrabold text-[27px] text-text-primary tracking-tight mb-3 leading-[1.1]">
+              Whoever&apos;s free<br />sits up top
+            </h1>
             <p className="font-sans text-[15px] leading-relaxed text-text-secondary max-w-[250px]">
-              The friends you added see you&apos;re free. No public feed, no strangers, nobody else.
+              Tap a face to text them. No public feed, no strangers, and no reason to hang around in
+              here.
             </p>
           </div>
 
-          {/* Card 3 — Plan over text (bubbles) */}
+          {/* Card 3 — Mooves. Replaces "Plan over text": the second object has
+              to be taught or the "+" is a mystery button. The text handoff moved
+              into cards 2 and 3, since it is now the payoff of both objects
+              rather than a step of its own. */}
           <div className="w-1/5 h-full flex flex-col items-center justify-center px-8 text-center">
             <div className="w-[200px] h-[168px] rounded-[28px] bg-purple-tint flex items-center justify-center mb-8">
-              <div className="flex flex-col gap-2 w-[168px]">
-                <div className="self-end max-w-[130px] px-3 py-2.5 rounded-[15px_15px_4px_15px] bg-purple-500 text-white text-left text-[13px] font-medium leading-tight">
-                  wanna grab food?
+              <div className="w-[168px] rounded-2xl bg-white border-[1.5px] border-[#E8E4F5] p-2.5 flex items-center gap-2.5 shadow-[0_1px_3px_rgba(28,23,48,0.08)]">
+                <div className="w-[38px] h-[38px] shrink-0 rounded-[11px] bg-purple-100 flex flex-col items-center justify-center">
+                  <span className="font-display font-extrabold text-[11px] leading-none text-purple-700">THIS</span>
+                  <span className="font-sans text-[7px] font-bold tracking-[0.04em] leading-none text-purple-700/75 mt-px">
+                    WEEKEND
+                  </span>
                 </div>
-                <div className="self-start max-w-[130px] px-3 py-2.5 rounded-[15px_15px_15px_4px] bg-white text-text-primary text-left text-[13px] font-medium leading-tight shadow-[0_1px_3px_rgba(28,23,48,0.08)]">
-                  yes omw
+                <div className="min-w-0 text-left">
+                  <div className="font-display font-bold text-[12px] text-ink-900 truncate">Climbing, anyone?</div>
+                  <div className="font-sans text-[10px] text-ink-500 truncate">This weekend, Avondale</div>
                 </div>
               </div>
             </div>
             <div className="font-sans text-[12px] font-bold tracking-[0.12em] uppercase text-mooves-purple mb-2.5">The Mooves Loop · 3</div>
-            <h1 className="font-display font-extrabold text-[27px] text-text-primary tracking-tight mb-3 leading-[1.1]">Plan over text</h1>
+            <h1 className="font-display font-extrabold text-[27px] text-text-primary tracking-tight mb-3 leading-[1.1]">
+              Got an idea?<br />Post it
+            </h1>
             <p className="font-sans text-[15px] leading-relaxed text-text-secondary max-w-[250px]">
-              Tap a free friend to text them. The plan happens where it always has, in your messages.
+              A Moove is a thing you want to do. Rough as &quot;this weekend&quot;, or exact as
+              Saturday at 9. Friends tap in, and you text from there.
             </p>
           </div>
 
