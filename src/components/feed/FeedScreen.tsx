@@ -29,6 +29,10 @@ import type { Plan } from '@/lib/plans'
 import { type AnchoredMove } from './AnchoredMoveCard'
 import GoGreenSheet from '@/components/go-green/GoGreenSheet'
 import GoGreyConfirm from '@/components/go-green/GoGreyConfirm'
+import WeekRitualSheet from '@/components/availability/WeekRitualSheet'
+import ConfirmFreeSheet from '@/components/availability/ConfirmFreeSheet'
+import { syncTimezone } from '@/lib/timezone'
+import { isSlotPart, toLocalDateStr, weekDates, type SlotPart } from '@/lib/availability'
 import Sheet from '@/components/ui/Sheet'
 import BottomNav from '@/components/ui/BottomNav'
 import CowIllustration from '@/components/ui/CowIllustration'
@@ -120,6 +124,16 @@ export default function FeedScreen() {
   // persists across app opens keyed by the wave's signature (its members + time), so
   // a dismissed wave stays gone while that same group is green, but a genuinely new
   // wave can still surface. (0008 amendment.)
+  // ── Phase 22 ──────────────────────────────────────────────────────────────
+  // The ritual launches on ARRIVAL on your chosen day, which is what keeps it
+  // clear of 17.3: it meets you in a session you already started rather than
+  // asking for one. The confirm sheet opens ONLY from the 9am push (?confirm=1)
+  // — never on a later arrival, because "an unconfirmed slot does nothing,
+  // ever" would not survive an in-app card waiting for you afterwards.
+  const [ritualOpen, setRitualOpen] = useState(false)
+  const [ritualSource, setRitualSource] = useState<'arrival' | 'push' | 'settings'>('arrival')
+  const [ritualDay, setRitualDay] = useState(1)
+  const [confirmParts, setConfirmParts] = useState<SlotPart[] | null>(null)
   const [wave, setWave] = useState<Wave | null>(null)
   const [dismissedWaveSigs, setDismissedWaveSigs] = useState<string[]>(() => {
     if (typeof window === 'undefined') return []
@@ -299,6 +313,8 @@ export default function FeedScreen() {
         statusShowGroups?: boolean
         anchoredMove?: AnchoredMove | null
         referralCode?: string
+        timezone?: string | null
+        weekRitualDay?: number
       }
       if (!mountedRef.current) return
       if (meData.onboardingComplete === false) {
@@ -401,6 +417,63 @@ export default function FeedScreen() {
         } catch {
           // ignore — bad/expired anchor just leaves the feed as it was
         }
+      }
+
+      // ── Phase 22 — timezone capture and the ritual trigger ────────────────
+      //
+      // The zone is captured silently here, on app open. It is the only reason
+      // this app stores one: a 9am-local job cannot run on a sleeping client.
+      // Nothing on this screen computes from it — every local time on the
+      // client is still computed on the client's own clock, as it always was.
+      void syncTimezone(meData.timezone ?? null)
+
+      const myRitualDay = meData.weekRitualDay ?? 1
+      setRitualDay(myRitualDay)
+
+      try {
+        const days = weekDates(myRitualDay)
+        const weekStart = toLocalDateStr(days[0])
+        const weekEnd = toLocalDateStr(days[6])
+        const todayStr = toLocalDateStr(new Date())
+
+        const av = (await fetch(`/api/availability?from=${weekStart}&to=${weekEnd}`).then(r =>
+          r.json(),
+        )) as { slots?: { date: string; part: string }[] }
+        if (!mountedRef.current) return
+        const slots = av.slots ?? []
+
+        // The push landing (?week=1) always opens it, whatever day it is.
+        if (searchParams.get('week') === '1') {
+          setRitualSource('push')
+          setRitualOpen(true)
+          if (typeof window !== 'undefined') window.history.replaceState({}, '', '/feed')
+        } else {
+          // Arrival: your ritual day, or the day after if you missed it. Two
+          // arrivals and then it stops — it does not follow you through the
+          // week. Dismissal is per-device and expires on its own at the next
+          // ritual day, which is why it lives in localStorage rather than a
+          // column: it is a dismissed sheet, not data anyone needs.
+          const dayIndex = days.findIndex(d => toLocalDateStr(d) === todayStr)
+          const dismissed =
+            typeof window !== 'undefined' &&
+            localStorage.getItem('mooves.weekRitualDismissed') === weekStart
+          if (dayIndex >= 0 && dayIndex <= 1 && !dismissed && slots.length === 0) {
+            setRitualSource('arrival')
+            setRitualOpen(true)
+          }
+        }
+
+        // The confirm, reached only from its own push.
+        if (searchParams.get('confirm') === '1') {
+          const todays = slots
+            .filter(s => s.date === todayStr)
+            .map(s => s.part)
+            .filter(isSlotPart)
+          if (todays.length > 0 && !meData.isAvailable) setConfirmParts([...new Set(todays)])
+          if (typeof window !== 'undefined') window.history.replaceState({}, '', '/feed')
+        }
+      } catch {
+        // The ritual is additive: if this fails the feed is exactly as it was.
       }
 
       // Arriving from the onboarding launchpad "Go green" (Screen 3 loop):
@@ -927,6 +1000,50 @@ export default function FeedScreen() {
                 ? 'Undone.'
                 : `Removed ${removed} ${removed === 1 ? 'person' : 'people'}.`,
             )
+            scheduleRefetch()
+          }}
+        />
+      )}
+
+      {/* 22.3 — the weekly ritual. */}
+      <WeekRitualSheet
+        open={ritualOpen}
+        ritualDay={ritualDay}
+        source={ritualSource}
+        onClose={() => setRitualOpen(false)}
+        onDismiss={() => {
+          // Silences it until the next ritual day, and nothing else happens:
+          // no banner, no card in the feed, nothing that keeps asking.
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('mooves.weekRitualDismissed', toLocalDateStr(weekDates(ritualDay)[0]))
+          }
+          setRitualOpen(false)
+        }}
+        onSaved={count => {
+          setRitualOpen(false)
+          setToastMessage(count === 0 ? 'Nothing set this week.' : 'Your week is set.')
+        }}
+      />
+
+      {/* 22.4 — the confirm, and the ordinary green it makes. */}
+      {confirmParts && (
+        <ConfirmFreeSheet
+          open
+          parts={confirmParts}
+          ritualDay={ritualDay}
+          onClose={() => setConfirmParts(null)}
+          onConfirmed={(statusTime, expiresAt) => {
+            setConfirmParts(null)
+            // Straight into the same state the swipe produces — no separate
+            // "scheduled" flag anywhere, because it is just a green.
+            setIsAvailable(true)
+            setMyStatusTime(statusTime)
+            setMyStatusExpiresAt(expiresAt)
+            setMyStatusNote(null)
+            setMyVisibleGroupIds([])
+            setMyShowGroups(false)
+            markValueMoment()
+            setToastMessage("You're free.")
             scheduleRefetch()
           }}
         />

@@ -14,7 +14,7 @@ export async function GET(req: Request) {
   const supabase = createServiceClient()
   const { data, error } = await supabase
     .from('users')
-    .select('id, phone, display_name, avatar_url, referral_code, is_available, is_admin, status_note, status_time, status_move_id, status_set_at, status_expires_at, status_show_groups, visible_to, onboarding_complete, area_zip, interests, wave_push_enabled')
+    .select('id, phone, display_name, avatar_url, referral_code, is_available, is_admin, status_note, status_time, status_move_id, status_set_at, status_expires_at, status_show_groups, visible_to, onboarding_complete, area_zip, interests, wave_push_enabled, timezone, week_ritual_day, week_push_enabled')
     .eq('id', userId)
     .single()
 
@@ -66,6 +66,12 @@ export async function GET(req: Request) {
     areaState: area?.state ?? null,
     interests: (data.interests ?? []).filter(s => INTEREST_SLUGS.includes(s)),
     wavePushEnabled: data.wave_push_enabled,
+    // Phase 22. `timezone` is disclosure only — Settings shows it read-only so
+    // the one location-shaped fact this app stores is visible to the person it
+    // describes. Nothing on the client computes from it; the cron route does.
+    timezone: data.timezone,
+    weekRitualDay: data.week_ritual_day,
+    weekPushEnabled: data.week_push_enabled,
   })
 }
 
@@ -79,6 +85,9 @@ export async function PATCH(req: Request) {
     onboardingComplete?: boolean
     interests?: string[]
     wavePushEnabled?: boolean
+    timezone?: string
+    weekRitualDay?: number
+    weekPushEnabled?: boolean
   }
 
   type UserUpdate = {
@@ -87,6 +96,9 @@ export async function PATCH(req: Request) {
     onboarding_complete?: boolean
     interests?: string[]
     wave_push_enabled?: boolean
+    timezone?: string
+    week_ritual_day?: number
+    week_push_enabled?: boolean
   }
   const updates: UserUpdate = {}
 
@@ -103,6 +115,32 @@ export async function PATCH(req: Request) {
     updates.interests = [...new Set(body.interests.filter(s => INTEREST_SLUGS.includes(s)))]
   }
   if (body.wavePushEnabled !== undefined) updates.wave_push_enabled = body.wavePushEnabled
+
+  // ── Phase 22 ──────────────────────────────────────────────────────────────
+  // Captured silently from the browser on app open, rewritten whenever it
+  // changes. Validated against the runtime's own zone table rather than a
+  // regex, because an unrecognised zone would make the scheduler skip this user
+  // forever and do it quietly.
+  if (body.timezone !== undefined) {
+    const tz = body.timezone.trim()
+    let valid = false
+    try {
+      new Intl.DateTimeFormat('en-US', { timeZone: tz })
+      valid = tz.length > 0 && tz.length <= 64
+    } catch {
+      valid = false
+    }
+    if (!valid) return NextResponse.json({ error: 'Invalid timezone' }, { status: 400 })
+    updates.timezone = tz
+  }
+  if (body.weekRitualDay !== undefined) {
+    const d = body.weekRitualDay
+    if (!Number.isInteger(d) || d < 0 || d > 6) {
+      return NextResponse.json({ error: 'Invalid day' }, { status: 400 })
+    }
+    updates.week_ritual_day = d
+  }
+  if (body.weekPushEnabled !== undefined) updates.week_push_enabled = body.weekPushEnabled
 
   const supabase = createServiceClient()
   const { data, error } = await supabase

@@ -16,6 +16,8 @@ import Wordmark from '@/components/ui/Wordmark'
 import ProfileCard from './ProfileCard'
 import AreaControl from './AreaControl'
 import NotificationSettings from './NotificationSettings'
+import AvailabilitySettings from './AvailabilitySettings'
+import { syncTimezone } from '@/lib/timezone'
 import InterestPicker from '@/components/discover/InterestPicker'
 import LogoutSheet from './LogoutSheet'
 import DeleteSheet from './DeleteSheet'
@@ -28,6 +30,10 @@ interface Me {
   areaCity: string | null
   areaState: string | null
   interests: string[]
+  // Phase 22 — timezone is shown read-only; the other two drive the nudge.
+  timezone: string | null
+  weekRitualDay: number
+  weekPushEnabled: boolean
 }
 
 export default function SettingsScreen() {
@@ -62,6 +68,9 @@ export default function SettingsScreen() {
           areaCity: string | null
           areaState: string | null
           interests: string[]
+          timezone: string | null
+          weekRitualDay: number
+          weekPushEnabled: boolean
         }>,
         fetch('/api/auth/supabase-token').then(r => r.json()) as Promise<{
           token: string | null
@@ -78,9 +87,16 @@ export default function SettingsScreen() {
         areaCity: profile.areaCity,
         areaState: profile.areaState,
         interests: profile.interests ?? [],
+        timezone: profile.timezone ?? null,
+        weekRitualDay: profile.weekRitualDay ?? 1,
+        weekPushEnabled: profile.weekPushEnabled ?? true,
       })
       setSupabaseToken(token.token)
       setUserId(token.userId ?? null)
+
+      // Phase 22 — Settings is a second app-open surface, so the zone is
+      // refreshed here too. Fire and forget; nothing on this screen waits on it.
+      void syncTimezone(profile.timezone ?? null)
     }
 
     void init()
@@ -289,6 +305,14 @@ export default function SettingsScreen() {
                 <polyline points="9 18 15 12 9 6" />
               </svg>
             </button>
+
+            <div className="h-6" />
+
+            <AvailabilitySettings
+              timezone={me.timezone}
+              weekRitualDay={me.weekRitualDay}
+              weekPushEnabled={me.weekPushEnabled}
+            />
 
             <div className="h-6" />
 

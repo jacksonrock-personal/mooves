@@ -115,6 +115,38 @@ export type Database = {
           },
         ]
       }
+      availability_slots: {
+        Row: {
+          id: string
+          user_id: string
+          slot_date: string
+          part: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          slot_date: string
+          part: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          slot_date?: string
+          part?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "availability_slots_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users: {
         Row: {
           area_zip: string | null
@@ -139,6 +171,11 @@ export type Database = {
           status_time: string | null
           visible_to: string[] | null
           wave_push_enabled: boolean
+          timezone: string | null
+          week_ritual_day: number
+          week_push_enabled: boolean
+          last_week_push_on: string | null
+          last_confirm_push_on: string | null
         }
         Insert: {
           area_zip?: string | null
@@ -163,6 +200,11 @@ export type Database = {
           status_time?: string | null
           visible_to?: string[] | null
           wave_push_enabled?: boolean
+          timezone?: string | null
+          week_ritual_day?: number
+          week_push_enabled?: boolean
+          last_week_push_on?: string | null
+          last_confirm_push_on?: string | null
         }
         Update: {
           area_zip?: string | null
@@ -187,6 +229,11 @@ export type Database = {
           status_time?: string | null
           visible_to?: string[] | null
           wave_push_enabled?: boolean
+          timezone?: string | null
+          week_ritual_day?: number
+          week_push_enabled?: boolean
+          last_week_push_on?: string | null
+          last_confirm_push_on?: string | null
         }
         Relationships: [
           {
