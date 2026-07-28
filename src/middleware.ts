@@ -15,6 +15,9 @@ const PUBLIC_PREFIXES = [
   '/api/auth/verify',
   '/api/sms/inbound',
   '/api/stripe/webhook', // Stripe calls this unauthenticated; gated by signature
+  '/api/cron/',     // Phase 22: pg_cron calls these from Postgres, so there is no
+                    // session cookie to check. Each self-gates on CRON_SECRET and
+                    // answers 404 — not 401 — when it is wrong.
 
     // PWA assets (Phase 15) — must be served directly, never redirected. ...
   '/sw.js',

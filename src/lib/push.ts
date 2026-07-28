@@ -379,3 +379,60 @@ export async function sendCommentPush(
     url: '/feed',
   })
 }
+
+/**
+ * Phase 22 — the weekly nudge.
+ *
+ * Named honestly: this is the ONE push in this app whose destination is the app
+ * itself. Every other one points you out the door — text the group, go meet
+ * someone, a Moove got cancelled. 17.3 ships "we don't want your attention" to
+ * every invite-link user, and this is the cost being paid against that, in the
+ * open rather than absorbed quietly.
+ *
+ * What makes it payable: it is about YOUR OWN week and never another person's
+ * availability (so 15.3 is untouched), it is once a week on a day you picked,
+ * it is off in one tap, and the caller suppresses it entirely once a week is set.
+ *
+ * Recipient selection, the local-9am window and the once-per-day stamp all live
+ * in the cron route. This function only sends.
+ */
+export async function sendWeekNudgePush(userIds: string[]): Promise<void> {
+  if (!userIds.length) return
+  const supabase = createServiceClient()
+  await pushToUsers(supabase, userIds, {
+    title: 'Set your week',
+    body: 'When are you free this week?',
+    url: '/feed?week=1',
+  })
+}
+
+/**
+ * Phase 22 — the 9am confirm.
+ *
+ * One push per user per day covering ALL of that day's slots, never one per
+ * slot. The body names the parts of the day you marked and nothing else: no
+ * other person, no count of anyone going, nothing to reject.
+ *
+ * Sent per user because the body differs per user, unlike the group pushes
+ * above which batch by group.
+ */
+export async function sendConfirmPush(
+  recipients: { userId: string; slotLabels: string[] }[],
+): Promise<void> {
+  if (!recipients.length) return
+  const supabase = createServiceClient()
+
+  for (const r of recipients) {
+    const labels = r.slotLabels
+    const body =
+      labels.length === 1
+        ? `You marked ${labels[0]}.`
+        : `You marked ${labels.slice(0, -1).join(', ')} and ${labels[labels.length - 1]}.`
+
+    await pushToUsers(supabase, [r.userId], {
+      title: 'Free today?',
+      body,
+      url: '/feed?confirm=1',
+    })
+  }
+}

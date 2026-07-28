@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mooves — Phase 22 scheduled availability</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg:#1C1730; --app-bg:#F8F6FF; --white:#FFFFFF;
+    --purple:#7C5CDB; --purple-100:#EDE9FF; --purple-700:#5F3FC4;
+    --green:#2ECC71; --green-700:#167A43; --green-100:#E3F9EC;
+    --grey:#BDB5D4; --grey-100:#F1EEFA;
+    --ink:#1C1730; --ink-2:#6B628A; --border:#E8E4F5; --red:#E8405A;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); font-family:'Inter',sans-serif; color:#fff; min-height:100vh; padding:40px 20px 90px; -webkit-font-smoothing:antialiased; }
+  .page-title { text-align:center; font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:22px; letter-spacing:-.02em; margin-bottom:5px; }
+  .page-sub { text-align:center; color:#8B82AE; font-size:13px; margin-bottom:26px; }
+  .toggles { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; align-items:center; max-width:900px; margin:0 auto 30px; }
+  .grp-lbl { font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:rgba(255,255,255,.32); margin:0 4px; }
+  .toggle { background:#2A2340; color:#C9C1E4; border:1px solid #3A3355; font-weight:600; font-size:12.5px; padding:9px 15px; border-radius:999px; cursor:pointer; transition:all .15s; }
+  .toggle:hover { border-color:var(--purple); }
+  .toggle.active { background:var(--purple); color:#fff; border-color:var(--purple); }
+  .state { display:none; }
+  .state.active { display:flex; flex-direction:column; align-items:center; gap:15px; }
+
+  .phone { width:320px; height:680px; border-radius:44px; background:var(--app-bg); overflow:hidden; position:relative; box-shadow:0 30px 70px rgba(0,0,0,.45); border:1px solid #2E2748; display:flex; flex-direction:column; }
+  .caption { max-width:430px; text-align:center; font-size:12.5px; line-height:1.55; color:#9990BC; }
+  .caption b { color:#C9C1E4; font-weight:600; }
+  .screen-label { text-align:center; color:#6E6690; font-size:12px; letter-spacing:.04em; }
+  .note-box { max-width:760px; margin:26px auto 0; background:#241E3A; border:1px solid #342D52; border-radius:14px; padding:16px 20px; font-size:12.5px; color:#B3AAD2; line-height:1.7; }
+  .note-box b { color:#E6DEFF; }
+  .note-box h4 { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:13.5px; color:#fff; margin-bottom:8px; letter-spacing:.01em; }
+  .note-box + .note-box { margin-top:12px; }
+
+  /* ══ chrome ══ */
+  .fhead { background:linear-gradient(160deg,#7C5CDB 0%,#9B7FE8 70%,#A98FF0 100%); padding:26px 16px 20px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .wm { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:23px; color:#fff; letter-spacing:-.02em; display:flex; align-items:center; }
+  .wm .oo { display:inline-flex; align-items:center; gap:2px; margin:0 1px; position:relative; top:1px; }
+  .wm .d1 { width:12px; height:12px; background:var(--green); border-radius:50%; box-shadow:0 0 6px rgba(46,204,113,.6); }
+  .wm .d2 { width:12px; height:12px; background:rgba(255,255,255,.35); border-radius:50%; }
+  .fbody { flex:1; overflow-y:auto; padding:13px 14px 96px; display:flex; flex-direction:column; }
+  .fab { position:absolute; right:15px; bottom:74px; width:58px; height:58px; border-radius:50%; background:var(--purple); display:flex; align-items:center; justify-content:center; box-shadow:0 8px 22px rgba(124,92,219,.5); z-index:6; border:2.5px solid var(--app-bg); }
+  .nav { position:absolute; bottom:0; left:0; right:0; background:var(--white); border-top:1px solid var(--border); display:flex; z-index:5; }
+  .nav a { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:9px 0 10px; font-size:10px; font-weight:600; color:var(--grey); text-decoration:none; }
+  .nav a.on { color:var(--purple); }
+  .seclbl { font-size:10.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-2); padding:2px 2px 9px; }
+
+  /* ══ the rail (Phase 20) ══ */
+  .rail { display:flex; gap:10px; padding:1px 0 13px; }
+  .rz { display:flex; flex-direction:column; align-items:center; gap:4px; width:54px; flex-shrink:0; }
+  .rav { width:50px; height:50px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff; font-size:17px; box-shadow:0 0 0 2.5px var(--green), 0 0 0 5px var(--app-bg); }
+  .rav.soft { box-shadow:0 0 0 2.5px rgba(46,204,113,.38), 0 0 0 5px var(--app-bg); }
+  .rz .nm { font-size:10.5px; font-weight:600; color:var(--ink); max-width:54px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .rz .tl { font-size:8.5px; font-weight:700; color:var(--ink-2); letter-spacing:.05em; text-transform:uppercase; }
+
+  /* ══ swipe + cards ══ */
+  .swipe { background:var(--white); border:1.5px solid var(--border); border-radius:100px; padding:6px 6px 6px 7px; display:flex; align-items:center; gap:10px; margin-bottom:13px; }
+  .swipe .knob { width:38px; height:38px; border-radius:50%; background:var(--green); flex-shrink:0; display:flex; align-items:center; justify-content:center; }
+  .swipe .lbl { font-size:14px; font-weight:700; color:var(--ink); }
+  .card { border-radius:16px; padding:11px 12px; margin-bottom:8px; }
+  .card.plan { border:1.5px solid var(--border); background:var(--white); }
+  .crow { display:flex; align-items:center; gap:11px; }
+  .lead.tile { width:46px; height:46px; flex-shrink:0; border-radius:13px; background:var(--purple-100); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; }
+  .lead.tile .t1 { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:14px; color:var(--purple-700); line-height:1; letter-spacing:-.02em; }
+  .lead.tile .t2 { font-size:9px; font-weight:700; letter-spacing:.08em; color:var(--purple-700); opacity:.75; line-height:1; }
+  .cbody { flex:1; min-width:0; }
+  .ctitle { font-family:'Plus Jakarta Sans',sans-serif; font-weight:700; font-size:15px; color:var(--ink); line-height:1.25; letter-spacing:-.01em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .csub { font-size:12.5px; color:var(--ink-2); line-height:1.35; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .btn-join { flex-shrink:0; padding:8px 13px; border-radius:100px; font-weight:700; font-size:12.5px; border:none; background:var(--purple); color:#fff; cursor:pointer; }
+
+  /* your own green card */
+  .mine-card { background:var(--white); border:1.5px solid rgba(46,204,113,.5); border-radius:16px; padding:12px; margin-bottom:9px; }
+  .mine-hd { display:flex; align-items:center; gap:9px; }
+  .mine-dot { width:9px; height:9px; border-radius:50%; background:var(--green); flex-shrink:0; }
+  .mine-t { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:15px; color:var(--ink); letter-spacing:-.01em; }
+  .chip-g { margin-left:auto; font-size:10.5px; font-weight:700; color:var(--green-700); background:var(--green-100); padding:3px 9px; border-radius:100px; }
+  .mine-row { display:flex; align-items:center; gap:8px; margin-top:10px; padding-top:9px; border-top:1px solid rgba(28,23,48,.07); }
+  .mine-row .k { font-size:12.5px; color:var(--ink-2); font-weight:600; }
+  .mine-row .v { margin-left:auto; font-size:12.5px; color:var(--ink); font-weight:700; }
+
+  /* ══ THE RITUAL SHEET ══ */
+  .scrim { position:absolute; inset:0; background:rgba(28,23,48,.5); z-index:7; }
+  .sheet { position:absolute; left:0; right:0; bottom:0; z-index:8; background:var(--app-bg); border-radius:24px 24px 0 0; padding:0 15px 18px; display:flex; flex-direction:column; }
+  .sheet.tall { height:88%; }
+  .grab { width:38px; height:4.5px; border-radius:3px; background:var(--grey); margin:9px auto 13px; flex-shrink:0; cursor:pointer; }
+  .sh-title { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:20px; letter-spacing:-.025em; color:var(--ink); }
+  .sh-sub { font-size:12.5px; color:var(--ink-2); margin-top:5px; line-height:1.5; }
+  .sh-priv { display:inline-flex; align-items:center; gap:5px; margin-top:9px; font-size:11px; font-weight:600; color:var(--ink-2); background:var(--grey-100); border-radius:100px; padding:5px 10px 5px 8px; }
+  .sh-actions { margin-top:auto; padding-top:14px; display:flex; flex-direction:column; gap:6px; flex-shrink:0; }
+  .btn-p { width:100%; padding:14px; border-radius:15px; background:var(--purple); color:#fff; font-weight:700; font-size:15px; border:none; cursor:pointer; }
+  .btn-p.quiet { background:var(--grey-100); color:var(--ink-2); }
+  .btn-s { width:100%; padding:11px; border-radius:15px; background:none; border:none; color:var(--ink-2); font-weight:600; font-size:13.5px; cursor:pointer; }
+
+  /* the 16-cell grid */
+  .wk { display:flex; flex-direction:column; gap:6px; margin-top:15px; }
+  .wk-row { display:flex; align-items:center; gap:6px; }
+  .wk-day { width:42px; flex-shrink:0; }
+  .wk-day .dn { font-size:12.5px; font-weight:700; color:var(--ink); line-height:1.15; }
+  .wk-day .dd { font-size:10px; font-weight:600; color:var(--grey); line-height:1.15; }
+  .wk-row.wknd .wk-day .dn { color:var(--purple-700); }
+  .slot { width:74px; height:38px; border-radius:11px; border:1.5px solid var(--border); background:var(--white); font-size:11.5px; font-weight:600; color:var(--ink-2); display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; transition:all .12s; font-family:'Inter',sans-serif; }
+  .slot:hover { border-color:var(--purple); }
+  .slot.on { background:var(--purple-100); border-color:var(--purple); color:var(--purple-700); font-weight:700; }
+  .slot.void { visibility:hidden; pointer-events:none; }
+
+  /* confirm sheet slot chips */
+  .cf-chips { display:flex; gap:7px; margin-top:14px; margin-bottom:4px; }
+  .cf-chip { padding:7px 13px; border-radius:11px; background:var(--purple-100); color:var(--purple-700); font-size:12.5px; font-weight:700; }
+
+  /* ══ settings ══ */
+  .shead { background:var(--white); border-bottom:1px solid var(--border); padding:20px 15px 14px; display:flex; align-items:center; gap:11px; flex-shrink:0; }
+  .shead .ttl { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:19px; color:var(--ink); letter-spacing:-.02em; }
+  .st-lbl { font-size:10.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-2); padding:16px 4px 8px; }
+  .st-lbl:first-child { padding-top:2px; }
+  .st-card { background:var(--white); border:1.5px solid var(--border); border-radius:16px; overflow:hidden; }
+  .st-row { display:flex; align-items:center; gap:10px; padding:13px 14px; }
+  .st-row + .st-row { border-top:1px solid var(--border); }
+  .st-row .kb { min-width:0; }
+  .st-row .k { font-size:14px; font-weight:600; color:var(--ink); display:block; }
+  .st-row .sub { font-size:11.5px; color:var(--ink-2); margin-top:2px; line-height:1.4; display:block; }
+  .st-row .v { margin-left:auto; font-size:13px; color:var(--ink-2); font-weight:600; flex-shrink:0; }
+  .st-row .v.dim { color:var(--grey); font-weight:500; }
+  .st-row .chev { color:var(--grey); flex-shrink:0; margin-left:auto; }
+  .st-row .v + .chev { margin-left:6px; }
+  .sw { width:44px; height:26px; border-radius:100px; background:var(--grey); position:relative; flex-shrink:0; margin-left:auto; cursor:pointer; transition:background .15s; }
+  .sw i { position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%; background:#fff; transition:left .15s; box-shadow:0 1px 3px rgba(0,0,0,.2); }
+  .sw.on { background:var(--purple); }
+  .sw.on i { left:21px; }
+
+  /* action sheet */
+  .act-sheet { position:absolute; left:0; right:0; bottom:0; z-index:8; padding:0 8px 26px; display:flex; flex-direction:column; gap:8px; }
+  .act-grp { border-radius:16px; overflow:hidden; border:1px solid var(--border); background:rgba(248,246,255,.97); }
+  .act-grp .hd { font-size:12px; font-weight:500; color:var(--ink-2); text-align:center; padding:11px 14px 9px; border-bottom:1px solid var(--border); line-height:1.45; }
+  .act-grp button { width:100%; padding:14px; font-size:17px; font-weight:600; background:none; border:none; cursor:pointer; color:var(--purple); }
+  .act-grp button+button { border-top:1px solid var(--border); }
+  .act-grp button.sel { font-weight:800; }
+  .act-cancel { width:100%; padding:15px; border-radius:16px; border:1px solid var(--border); background:rgba(248,246,255,.97); font-size:17px; font-weight:700; color:var(--ink); cursor:pointer; }
+
+  /* lock screen push */
+  .lock { flex:1; background:linear-gradient(165deg,#2A2340 0%,#1C1730 60%,#241E3A 100%); display:flex; flex-direction:column; align-items:center; padding:52px 14px 0; }
+  .lk-time { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:56px; color:#fff; letter-spacing:-.03em; line-height:1; }
+  .lk-date { font-size:13px; color:rgba(255,255,255,.65); margin-top:6px; margin-bottom:34px; font-weight:500; }
+  .push { width:100%; background:rgba(255,255,255,.93); border-radius:18px; padding:12px 13px; display:flex; gap:10px; align-items:flex-start; box-shadow:0 8px 26px rgba(0,0,0,.3); }
+  .push-icon { width:34px; height:34px; border-radius:9px; background:linear-gradient(160deg,#7C5CDB,#A98FF0); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .push-icon span { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:15px; color:#fff; }
+  .push-b { flex:1; min-width:0; }
+  .push-app { font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-2); }
+  .push-t { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:14px; color:var(--ink); margin-top:2px; letter-spacing:-.01em; }
+  .push-x { font-size:13px; color:var(--ink-2); margin-top:1px; line-height:1.35; }
+  .push-when { font-size:10.5px; color:var(--grey); flex-shrink:0; }
+
+  /* these wrappers are flex ITEMS, not flex containers, so their spans need stacking */
+  .push-b > span, .cbody > span, .wk-day > span, .st-row .kb > span { display:block; }
+</style>
+</head>
+<body>
+  <div class="page-title">Phase 22 — Scheduled availability</div>
+  <div class="page-sub">A weekly ritual, not a preset. Private until you go green.</div>
+
+  <div class="toggles">
+    <span class="grp-lbl">The ritual</span>
+    <button class="toggle active" data-state="unset">Monday, unset</button>
+    <button class="toggle" data-state="picking">Picking</button>
+    <button class="toggle" data-state="set">Already set</button>
+    <button class="toggle" data-state="missed">Missed, Tuesday</button>
+    <button class="toggle" data-state="dismissed">Not this week</button>
+    <span class="grp-lbl">Away</span>
+    <button class="toggle" data-state="nudgepush">Weekly nudge</button>
+    <button class="toggle" data-state="confirmpush">9am confirm</button>
+    <span class="grp-lbl">The confirm</span>
+    <button class="toggle" data-state="confirm">Confirm sheet</button>
+    <button class="toggle" data-state="green">The green it makes</button>
+    <span class="grp-lbl">Settings</span>
+    <button class="toggle" data-state="settings">Availability</button>
+    <button class="toggle" data-state="daypicker">Reminder day</button>
+  </div>
+
+  <!-- ══════ 1. MONDAY, UNSET ══════ -->
+  <div class="state active" data-state="unset">
+    <div class="phone">
+      <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+      <div class="fbody">
+        <div class="swipe"><span class="knob"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span><span class="lbl">Swipe, you're free</span></div>
+        <div class="seclbl">Mooves</div>
+        <div class="card plan"><div class="crow"><span class="lead tile"><span class="t1">SAT</span><span class="t2">AUG 1</span></span><span class="cbody"><span class="ctitle">Climbing at First Ascent</span><span class="csub">Saturday morning, Avondale</span></span><button class="btn-join">I'm in</button></div></div>
+      </div>
+      <div class="nav">
+        <a class="on"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Feed</a>
+        <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M16.2 7.8l-2.9 6.4-6.4 2.9 2.9-6.4z"/></svg>Discover</a>
+        <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>People</a>
+        <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+      </div>
+      <div class="scrim"></div>
+      <div class="sheet tall">
+        <div class="grab"></div>
+        <div class="sh-title">Set your week</div>
+        <div class="sh-sub">Tap the times you might be free. You can change any of it later.</div>
+        <span class="sh-priv"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Only you can see this</span>
+        <div class="wk">
+          <div class="wk-row"><span class="wk-day"><span class="dn">Mon</span><span class="dd">27</span></span><button class="slot void">Morning</button><button class="slot">Day</button><button class="slot">Evening</button></div>
+          <div class="wk-row"><span class="wk-day"><span class="dn">Tue</span><span class="dd">28</span></span><button class="slot void">Morning</button><button class="slot">Day</button><button class="slot">Evening</button></div>
+          <div class="wk-row"><span class="wk-day"><span class="dn">Wed</span><span class="dd">29</span></span><button class="slot void">Morning</button><button class="slot">Day</button><button class="slot">Evening</button></div>
+          <div class="wk-row"><span class="wk-day"><span class="dn">Thu</span><span class="dd">30</span></span><button class="slot void">Morning</button><button class="slot">Day</button><button class="slot">Evening</button></div>
+          <div class="wk-row"><span class="wk-day"><span class="dn">Fri</span><span class="dd">31</span></span><button class="slot void">Morning</button><button class="slot">Day</button><button class="slot">Evening</button></div>
+          <div class="wk-row wknd"><span class="wk-day"><span class="dn">Sat</span><span class="dd">1</span></span><button class="slot">Morning</button><button class="slot">Afternoon</button><button class="slot">Evening</button></div>
+          <div class="wk-row wknd"><span class="wk-day"><span class="dn">Sun</span><span class="dd">2</span></span><button class="slot">Morning</button><button class="slot">Afternoon</button><button class="slot">Evening</button></div>
+        </div>
+        <div class="sh-actions">
+          <button class="btn-p">Save your week</button>
+          <button class="btn-s">Not this week</button>
+        </div>
+      </div>
+    </div>
+    <div class="caption"><b>Monday, and you have just opened Mooves.</b> The ritual comes to you, it does not wait behind a menu. Nothing is selected, and <b>saving with nothing selected is a real answer</b>, not an error. The grid is tappable here, try it.</div>
+    <div class="screen-label">Phase 22 — The weekly ritual, unset</div>
+  </div>
+
+  <!-- ══════ 2. PICKING ══════ -->
+  <div class="state" data-state="picking">
+    <div class="phone">
+      <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+      <div class="fbody"></div>
+      <div class="scrim"></div>
+      <div class="sheet tall">
+        <div class="grab"></div>
+        <div class="sh-title">Set your week</div>
+        <div class="sh-sub">Tap the times you might be free. You can change any of it later.</div>
+        <span class="sh-priv"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Only you can see this</span>
+        <div class="wk">
+          <div class="wk-row"><span class="wk-day"><span class="dn">Mon</span><span class="dd">27</span></span><button class="slot void">Morning</button><button class="slot">Day</button><button class="slot">Evening</button></div>
+          <div class="wk-row"><span class="wk-day"><span class="dn">Tue</span><span class="dd">28</span></span><button class="slot void">Morning</button><button class="slot">Day</button><button class="slot on">Evening</button></div>
+          <div class="wk-row"><span class="wk-day"><span class="dn">Wed</span><span class="dd">29</span></span><button class="slot void">Morning</button><button class="slot">Day</button><button class="slot">Evening</button></div>
+          <div class="wk-row"><span class="wk-day"><span class="dn">Thu</span><span class="dd">30</span></span><button class="slot void">Morning</button><button class="slot on">Day</button><button class="slot on">Evening</button></div>
+          <div class="wk-row"><span class="wk-day"><span class="dn">Fri</span><span class="dd">31</span></span><button class="slot void">Morning</button><button class="slot">Day</button><button class="slot on">Evening</button></div>
+          <div class="wk-row wknd"><span class="wk-day"><span class="dn">Sat</span><span class="dd">1</span></span><button class="slot on">Morning</button><button class="slot">Afternoon</button><button class="slot">Evening</button></div>
+          <div class="wk-row wknd"><span class="wk-day"><span class="dn">Sun</span><span class="dd">2</span></span><button class="slot">Morning</button><button class="slot on">Afternoon</button><button class="slot">Evening</button></div>
+        </div>
+        <div class="sh-actions">
+          <button class="btn-p">Save your week</button>
+          <button class="btn-s">Not this week</button>
+        </div>
+      </div>
+    </div>
+    <div class="caption">Six taps and the week is set. <b>Selected slots are purple, never green.</b> Green in this app means free now and visible to friends, and none of this is either of those things yet. Using green here would quietly make a second, weaker kind of green.</div>
+    <div class="screen-label">Phase 22 — The weekly ritual, picking</div>
+  </div>
+
+  <!-- ══════ 3. ALREADY SET ══════ -->
+  <div class="state" data-state="set">
+    <div class="phone">
+      <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+      <div class="fbody"></div>
+      <div class="scrim"></div>
+      <div class="sheet tall">
+        <div class="grab"></div>
+        <div class="sh-title">Your week</div>
+        <div class="sh-sub">Thursday, Friday and the weekend. Tap to change anything.</div>
+        <span class="sh-priv"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Only you can see this</span>
+        <div class="wk">
+          <div class="wk-row"><span class="wk-day"><span class="dn">Mon</span><span class="dd">27</span></span><button class="slot void">Morning</button><button class="slot">Day</button><button class="slot">Evening</button></div>
+          <div class="wk-row"><span class="wk-day"><span class="dn">Tue</span><span class="dd">28</span></span><button class="slot void">Morning</button><button class="slot">Day</button><button class="slot on">Evening</button></div>
+          <div class="wk-row"><span class="wk-day"><span class="dn">Wed</span><span class="dd">29</span></span><button class="slot void">Morning</button><button class="slot">Day</button><button class="slot">Evening</button></div>
+          <div class="wk-row"><span class="wk-day"><span class="dn">Thu</span><span class="dd">30</span></span><button class="slot void">Morning</button><button class="slot on">Day</button><button class="slot on">Evening</button></div>
+          <div class="wk-row"><span class="wk-day"><span class="dn">Fri</span><span class="dd">31</span></span><button class="slot void">Morning</button><button class="slot">Day</button><button class="slot on">Evening</button></div>
+          <div class="wk-row wknd"><span class="wk-day"><span class="dn">Sat</span><span class="dd">1</span></span><button class="slot on">Morning</button><button class="slot">Afternoon</button><button class="slot">Evening</button></div>
+          <div class="wk-row wknd"><span class="wk-day"><span class="dn">Sun</span><span class="dd">2</span></span><button class="slot">Morning</button><button class="slot on">Afternoon</button><button class="slot">Evening</button></div>
+        </div>
+        <div class="sh-actions">
+          <button class="btn-p">Save changes</button>
+          <button class="btn-s">Clear the week</button>
+        </div>
+      </div>
+    </div>
+    <div class="caption"><b>Re-entry, from Settings or mid week.</b> Same grid, your marks in place. The title and the actions are the only difference, because a week you have already set is edited, not created. <b>No streak, no "3 weeks in a row", no history</b>, and there never will be.</div>
+    <div class="screen-label">Phase 22 — The weekly ritual, already set</div>
+  </div>
+
+  <!-- ══════ 4. MISSED, TUESDAY ══════ -->
+  <div class="state" data-state="missed">
+    <div class="phone">
+      <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+      <div class="fbody"></div>
+      <div class="scrim"></div>
+      <div class="sheet tall">
+        <div class="grab"></div>
+        <div class="sh-title">Set your week</div>
+        <div class="sh-sub">Six days left in it. Tap the times you might be free.</div>
+        <span class="sh-priv"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Only you can see this</span>
+        <div class="wk">
+          <div class="wk-row" style="opacity:.32;"><span class="wk-day"><span class="dn">Mon</span><span class="dd">27</span></span><button class="slot void">Morning</button><button class="slot" disabled>Day</button><button class="slot" disabled>Evening</button></div>
+          <div class="wk-row"><span class="wk-day"><span class="dn">Tue</span><span class="dd">28</span></span><button class="slot void">Morning</button><button class="slot">Day</button><button class="slot">Evening</button></div>
+          <div class="wk-row"><span class="wk-day"><span class="dn">Wed</span><span class="dd">29</span></span><button class="slot void">Morning</button><button class="slot">Day</button><button class="slot">Evening</button></div>
+          <div class="wk-row"><span class="wk-day"><span class="dn">Thu</span><span class="dd">30</span></span><button class="slot void">Morning</button><button class="slot">Day</button><button class="slot">Evening</button></div>
+          <div class="wk-row"><span class="wk-day"><span class="dn">Fri</span><span class="dd">31</span></span><button class="slot void">Morning</button><button class="slot">Day</button><button class="slot">Evening</button></div>
+          <div class="wk-row wknd"><span class="wk-day"><span class="dn">Sat</span><span class="dd">1</span></span><button class="slot">Morning</button><button class="slot">Afternoon</button><button class="slot">Evening</button></div>
+          <div class="wk-row wknd"><span class="wk-day"><span class="dn">Sun</span><span class="dd">2</span></span><button class="slot">Morning</button><button class="slot">Afternoon</button><button class="slot">Evening</button></div>
+        </div>
+        <div class="sh-actions">
+          <button class="btn-p">Save your week</button>
+          <button class="btn-s">Not this week</button>
+        </div>
+      </div>
+    </div>
+    <div class="caption"><b>You did not open Mooves on Monday.</b> The ritual gets one more arrival, on Tuesday, then stops for the week, it does not follow you around. Monday's row is dimmed and untappable because that day is spent. <b>No guilt copy</b>, no "you missed it", just a shorter week.</div>
+    <div class="screen-label">Phase 22 — The weekly ritual, missed by a day</div>
+  </div>
+
+  <!-- ══════ 5. NOT THIS WEEK ══════ -->
+  <div class="state" data-state="dismissed">
+    <div class="phone">
+      <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+      <div class="fbody">
+        <div class="rail">
+          <div class="rz"><span class="rav" style="background:#C9A87C;">P</span><span class="nm">Priya</span><span class="tl">Now</span></div>
+          <div class="rz"><span class="rav soft" style="background:#7FA8E8;">T</span><span class="nm">Tom</span><span class="tl">Tonight</span></div>
+        </div>
+        <div class="swipe"><span class="knob"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span><span class="lbl">Swipe, you're free</span></div>
+        <div class="seclbl">Mooves</div>
+        <div class="card plan"><div class="crow"><span class="lead tile"><span class="t1">SAT</span><span class="t2">AUG 1</span></span><span class="cbody"><span class="ctitle">Climbing at First Ascent</span><span class="csub">Saturday morning, Avondale</span></span><button class="btn-join">I'm in</button></div></div>
+      </div>
+      <div class="fab"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+      <div class="nav">
+        <a class="on"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Feed</a>
+        <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M16.2 7.8l-2.9 6.4-6.4 2.9 2.9-6.4z"/></svg>Discover</a>
+        <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>People</a>
+        <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+      </div>
+    </div>
+    <div class="caption"><b>You tapped "Not this week", and this is the whole result.</b> The feed exactly as it ships today. No banner, no card in the feed, no badge on Settings, nothing that keeps asking. It returns on your next reminder day and not before.</div>
+    <div class="screen-label">Phase 22 — Dismissed for the week</div>
+  </div>
+
+  <!-- ══════ 6. WEEKLY NUDGE PUSH ══════ -->
+  <div class="state" data-state="nudgepush">
+    <div class="phone">
+      <div class="lock">
+        <div class="lk-time">9:00</div>
+        <div class="lk-date">Monday, July 27</div>
+        <div class="push">
+          <span class="push-icon"><span>M</span></span>
+          <span class="push-b"><span class="push-app">Mooves</span><span class="push-t">Set your week</span><span class="push-x">When are you free this week?</span></span>
+          <span class="push-when">now</span>
+        </div>
+      </div>
+    </div>
+    <div class="caption"><b>The only push in this app that points back into it.</b> Every other one sends you out the door, to a group text or to meet someone. This one asks you to come in and spend two minutes. Once a week, on a day you picked, off in one tap in Settings, and it stops firing the moment your week is set.</div>
+    <div class="screen-label">Phase 22 — The weekly nudge</div>
+  </div>
+
+  <!-- ══════ 7. 9AM CONFIRM PUSH ══════ -->
+  <div class="state" data-state="confirmpush">
+    <div class="phone">
+      <div class="lock">
+        <div class="lk-time">9:00</div>
+        <div class="lk-date">Thursday, July 30</div>
+        <div class="push">
+          <span class="push-icon"><span>M</span></span>
+          <span class="push-b"><span class="push-app">Mooves</span><span class="push-t">Free today?</span><span class="push-x">You marked Day and Evening.</span></span>
+          <span class="push-when">now</span>
+        </div>
+      </div>
+    </div>
+    <div class="caption"><b>9:00 in your time, which is the reason this phase stores time zones at all.</b> One push for the whole day, never one per slot, and it names your own week rather than any other person. If you ignore it, nothing happens, no second push and no card waiting for you later.</div>
+    <div class="screen-label">Phase 22 — The confirm push</div>
+  </div>
+
+  <!-- ══════ 8. CONFIRM SHEET ══════ -->
+  <div class="state" data-state="confirm">
+    <div class="phone">
+      <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+      <div class="fbody">
+        <div class="rail">
+          <div class="rz"><span class="rav" style="background:#C9A87C;">P</span><span class="nm">Priya</span><span class="tl">Now</span></div>
+        </div>
+        <div class="swipe"><span class="knob"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span><span class="lbl">Swipe, you're free</span></div>
+        <div class="seclbl">Mooves</div>
+      </div>
+      <div class="nav">
+        <a class="on"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Feed</a>
+        <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M16.2 7.8l-2.9 6.4-6.4 2.9 2.9-6.4z"/></svg>Discover</a>
+        <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>People</a>
+        <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+      </div>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="sh-title">Free today?</div>
+        <div class="sh-sub">On Monday you marked Thursday as a day you might be around.</div>
+        <div class="cf-chips"><span class="cf-chip">Day</span><span class="cf-chip">Evening</span></div>
+        <div class="sh-actions">
+          <button class="btn-p">Yes, I'm free</button>
+          <button class="btn-s">Not today</button>
+        </div>
+      </div>
+    </div>
+    <div class="caption"><b>This is the whole point of the phase.</b> Nothing was broadcast when you set your week, and nothing is broadcast now until you tap. "Not today" is a plain dismiss, it costs nothing and it is never asked again. Silence does the same thing as "Not today".</div>
+    <div class="screen-label">Phase 22 — The confirm</div>
+  </div>
+
+  <!-- ══════ 9. THE GREEN IT MAKES ══════ -->
+  <div class="state" data-state="green">
+    <div class="phone">
+      <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+      <div class="fbody">
+        <div class="rail">
+          <div class="rz"><span class="rav" style="background:var(--purple);">Y</span><span class="nm">You</span><span class="tl">Now</span></div>
+          <div class="rz"><span class="rav" style="background:#C9A87C;">P</span><span class="nm">Priya</span><span class="tl">Now</span></div>
+          <div class="rz"><span class="rav soft" style="background:#7FA8E8;">T</span><span class="nm">Tom</span><span class="tl">Tonight</span></div>
+        </div>
+        <div class="mine-card">
+          <div class="mine-hd"><span class="mine-dot"></span><span class="mine-t">You're free</span><span class="chip-g">Now</span></div>
+          <div class="mine-row"><span class="k">Free until</span><span class="v">11:00 PM</span></div>
+          <div class="mine-row"><span class="k">Seen by</span><span class="v">Poker Crew</span></div>
+        </div>
+        <div class="seclbl">Mooves</div>
+        <div class="card plan"><div class="crow"><span class="lead tile"><span class="t1">SAT</span><span class="t2">AUG 1</span></span><span class="cbody"><span class="ctitle">Climbing at First Ascent</span><span class="csub">Saturday morning, Avondale</span></span><button class="btn-join">I'm in</button></div></div>
+      </div>
+      <div class="fab"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+      <div class="nav">
+        <a class="on"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Feed</a>
+        <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M16.2 7.8l-2.9 6.4-6.4 2.9 2.9-6.4z"/></svg>Discover</a>
+        <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>People</a>
+        <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+      </div>
+    </div>
+    <div class="caption"><b>An ordinary green, and that is deliberate.</b> You are first in the rail, the chip reads Now because your earliest slot was Day, and Free until is 11:00 PM because Evening was your last one. Friends cannot tell this came from a schedule, there is <b>no "scheduled" badge anywhere</b>, and the group push and the green wave fire exactly as they always do.</div>
+    <div class="screen-label">Phase 22 — The green a confirm makes</div>
+  </div>
+
+  <!-- ══════ 10. SETTINGS ══════ -->
+  <div class="state" data-state="settings">
+    <div class="phone">
+      <div class="shead"><span class="ttl">Settings</span></div>
+      <div class="fbody" style="padding:14px 14px 96px;">
+        <div class="st-lbl">Availability</div>
+        <div class="st-card">
+          <div class="st-row"><span class="kb"><span class="k">Set your week</span><span class="sub">Thursday, Friday and the weekend</span></span><span class="chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></span></div>
+          <div class="st-row"><span class="kb"><span class="k">Weekly reminder</span><span class="sub">A nudge to set your week</span></span><span class="sw on"><i></i></span></div>
+          <div class="st-row"><span class="kb"><span class="k">Reminder day</span></span><span class="v">Monday</span><span class="chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></span></div>
+          <div class="st-row"><span class="kb"><span class="k">Time zone</span><span class="sub">Set by your phone</span></span><span class="v dim">America/Chicago</span></div>
+        </div>
+        <div class="st-lbl">Notifications</div>
+        <div class="st-card">
+          <div class="st-row"><span class="kb"><span class="k">Push notifications</span></span><span class="sw on"><i></i></span></div>
+          <div class="st-row"><span class="kb"><span class="k">Green waves</span><span class="sub">When a few friends are free at once</span></span><span class="sw on"><i></i></span></div>
+        </div>
+      </div>
+      <div class="nav">
+        <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Feed</a>
+        <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M16.2 7.8l-2.9 6.4-6.4 2.9 2.9-6.4z"/></svg>Discover</a>
+        <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>People</a>
+        <a class="on"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+      </div>
+    </div>
+    <div class="caption"><b>Four rows, and one of them is not a control.</b> Time zone is read only, because the app now keeps a location shaped fact about you and the least it can do is show you. <b>The reminder toggle and the ritual are separate</b>, turning the push off never turns the feature off. Confirm pushes get no switch, they only exist because you set slots.</div>
+    <div class="screen-label">Phase 22 — Settings, Availability</div>
+  </div>
+
+  <!-- ══════ 11. DAY PICKER ══════ -->
+  <div class="state" data-state="daypicker">
+    <div class="phone">
+      <div class="shead"><span class="ttl">Settings</span></div>
+      <div class="fbody" style="padding:14px 14px 96px;">
+        <div class="st-lbl">Availability</div>
+        <div class="st-card">
+          <div class="st-row"><span class="kb"><span class="k">Set your week</span><span class="sub">Thursday, Friday and the weekend</span></span><span class="chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></span></div>
+          <div class="st-row"><span class="kb"><span class="k">Weekly reminder</span><span class="sub">A nudge to set your week</span></span><span class="sw on"><i></i></span></div>
+          <div class="st-row"><span class="kb"><span class="k">Reminder day</span></span><span class="v">Monday</span><span class="chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></span></div>
+          <div class="st-row"><span class="kb"><span class="k">Time zone</span><span class="sub">Set by your phone</span></span><span class="v dim">America/Chicago</span></div>
+        </div>
+      </div>
+      <div class="scrim"></div>
+      <div class="act-sheet">
+        <div class="act-grp">
+          <div class="hd">Which day should the reminder land, and the week start?</div>
+          <button class="sel">Monday</button>
+          <button>Tuesday</button>
+          <button>Wednesday</button>
+          <button>Thursday</button>
+          <button>Friday</button>
+          <button>Saturday</button>
+          <button>Sunday</button>
+        </div>
+        <button class="act-cancel">Never mind</button>
+      </div>
+    </div>
+    <div class="caption">The same native action sheet the app already uses for go grey, for leaving a move and for a Moove's own menu. <b>The day you pick moves both things at once</b>, the reminder and the start of the week grid, because a week that begins on a different day than the nudge would be two settings pretending to be one.</div>
+    <div class="screen-label">Phase 22 — Reminder day</div>
+  </div>
+
+  <div class="note-box">
+    <h4>The decision I made that you should look hardest at: selected slots are purple, not green</h4>
+    Green in this app has meant one thing since Screen 4, <b>free now, and visible to your friends</b>. A set slot is neither, it is private and it is in the future. Colouring it green would create a quieter second kind of green and undo the work Phase 20 did collapsing exactly that sort of ambiguity. Green appears in this whole phase only once, on the last screen, <b>after you have confirmed</b>. If you want the grid greener, that is the thing being traded away.
+  </div>
+
+  <div class="note-box">
+    <h4>Why there is no screen for "no time zone yet"</h4>
+    The spec lists it as a state, and it is a real one, an existing user who has not opened the app since this shipped has no stored zone and gets no pushes. But it is <b>invisible by design</b>, the ritual works, the grid saves, and the zone is captured silently on that same app open. The only honest mockup of it is the screens above, unchanged. Inventing a banner for it would be inventing UI the spec deliberately does not have.
+  </div>
+
+  <div class="note-box">
+    <h4>What the mockup cannot show, and where the risk actually lives</h4>
+    Roughly half this phase has no pixels, <b>pg_cron ticking every fifteen minutes, pg_net calling an authed route, the 9am local window with its one hour of grace, the two idempotency stamps that stop a pocket buzzing twice</b>. Phase 15's push pipeline had the same shape and the PRD called it invisible plumbing. Worth deciding whether that half gets reviewed some other way before the build starts, because it is where this phase can actually go wrong.
+  </div>
+
+  <div class="note-box">
+    <h4>Deliberately absent</h4>
+    No streak, no count of weeks set, no "you have not set a week in a while", no completion meter on the grid, no badge on the Settings tab, no dot on the Feed tab, no second reminder for a slot you ignored, and nothing anywhere that tells a friend what you might be doing on Thursday.
+  </div>
+
+<script>
+  var toggles = document.querySelectorAll('.toggle');
+  var states = document.querySelectorAll('.state');
+  toggles.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      toggles.forEach(function (b) { b.classList.remove('active'); });
+      states.forEach(function (s) { s.classList.remove('active'); });
+      btn.classList.add('active');
+      document.querySelector('.state[data-state="' + btn.dataset.state + '"]').classList.add('active');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+
+  // the grid really toggles, so the tap count is felt rather than described
+  document.querySelectorAll('.slot').forEach(function (s) {
+    if (s.classList.contains('void') || s.disabled) return;
+    s.addEventListener('click', function () { s.classList.toggle('on'); });
+  });
+
+  // switches flip, so "off does not disable the feature" is checkable
+  document.querySelectorAll('.sw').forEach(function (w) {
+    w.addEventListener('click', function () { w.classList.toggle('on'); });
+  });
+</script>
+</body>
+</html>

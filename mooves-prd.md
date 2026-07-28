@@ -38,8 +38,8 @@
 | — | Phase 18 — "This week" time chip (18.1) + group visibility label (18.2) | ✅ Spec 2026-07-27 (see "Phase 18" at EOF) · ✅ Mockup `mooves-phase18-week-chip-group-label.html` · ✅ Code 2026-07-27 (`feat/phase18-week-chip-group-label`) |
 | — | Phase 19 — In-person adds: "Add everyone here" (19.1) + personal QR (19.2) | ✅ Spec 2026-07-27 (see "Phase 19" at EOF) · ✅ Mockup `mooves-phase19-in-person-adds.html` (approved 2026-07-27) · ✅ Code 2026-07-27 (`feat/phase19-in-person-adds`, merged PR #42) |
 | — | Phase 20 — Greens & Planned Mooves: lighter swipe (20.1) · rail of all greens + wave fold-in (20.2) · planned Mooves (20.3) · Mooves-only feed (20.4) · join-while-green (20.5) · who's-in (20.6) · Free until (20.7) · reactions (20.8) | ✅ Spec 2026-07-27, **revised at mockup** (see "Phase 20" at EOF) · ✅ Mockup `mooves-phase20-greens-plans.html` (approved 2026-07-27) · ✅ Code 2026-07-27 (`feat/phase20-greens-plans`, merged PR #44; **second revision** `294524e` — coarse timing, minimal go-green, green joins retired) |
-| — | Phase 21 — **Comments on a Moove**: the amendment (21.0) · access & lifetime (21.1) · the comment area (21.2) · notifications (21.3) · moderation (21.4) | ✅ Spec 2026-07-27 (see "Phase 21" at EOF) — **amends the "no in-app messaging, ever" rule in daylight; four walls, all load-bearing** · ✅ Mockup `mooves-phase21-comments.html` (approved 2026-07-27, **revised at mockup — see the revision block**) · ✅ Code 2026-07-27 (`tsc --noEmit` + `next build` clean; **migration `20260728012000_phase21_plan_comments.sql` pending Jackson's `npm run db:push`**; **`SKILL.md:72` amended** — "No in-app messaging. Ever." replaced with the four-wall exception) |
-| — | Phase 22 — Scheduled availability (preset green times + confirm-push + Monday nudge) | 🔮 Deferred from Phase 20 · **requires storing user timezones**, which the app has never done |
+| — | Phase 21 — **Comments on a Moove**: the amendment (21.0) · access & lifetime (21.1) · the comment area (21.2) · notifications (21.3) · moderation (21.4) | ✅ Spec 2026-07-27 (see "Phase 21" at EOF) — **amends the "no in-app messaging, ever" rule in daylight; four walls, all load-bearing** · ✅ Mockup `mooves-phase21-comments.html` (approved 2026-07-27, **revised at mockup — see the revision block**) · ✅ Code 2026-07-27 (`tsc --noEmit` + `next build` clean; migration `20260728012000_phase21_plan_comments.sql` **applied to prod**; **merged to `main` via PR #47** (`674ffa8`); **`SKILL.md:72` amended** — "No in-app messaging. Ever." replaced with the four-wall exception) |
+| — | Phase 22 — **Scheduled availability**: the reframing (22.0) · stance-card tension (22.0a) · timezones (22.1) · the scheduler (22.2) · the weekly ritual (22.3) · the confirm (22.4) · private until green (22.5) · Settings (22.6) | ✅ Spec 2026-07-27 (see "Phase 22" at EOF) — **not preset recurring times: a weekly ritual, set fresh each week**. First server-side scheduler in the app (`pg_cron` + `pg_net` → one authed route); first stored user timezones, reversing 18.1's punt · ✅ Mockup `mooves-phase22-scheduled-availability.html` (approved 2026-07-27, 11 states) · ✅ Code 2026-07-27 (`feat/phase22-scheduled-availability`; `tsc --noEmit` + `next build` clean; **migration `20260728030000` applied by Jackson**, both cron jobs registered and active, Vault secrets set — verified via `cron.job` + a manual `availability_cron_tick()` that reached the app) |
 | — | Phase 23 — 30-day friend-availability calendar | 🔮 Gated on Phase 22 · pointless until future availability data exists |
 
 ---
@@ -4367,7 +4367,7 @@ State-based throughout, **no coined noun anywhere**:
 ### Deferred out of this phase, with reasons
 
 - **Real comments on a Moove → PHASE 21** *(promoted 2026-07-27, was behind scheduled availability)*. Jackson chose "its own phase" over reactions-only, then cut reactions entirely — which left Phase 20 with no expressive layer at all. Rather than leave "let people be clever and enjoy their experience" unserved indefinitely, comments move to the **front of the queue**. Its phase must **consciously amend** the "no in-app messaging, ever" rule in the build skill, and reconcile with the shipped stance card (17.3): comments create a reason to come back and check, which is the loop this app is deliberately built against. That trade-off gets made explicitly, in daylight, not eroded sideways.
-- **Scheduled availability — preset weekly/monthly green times, a confirm-push when one arrives, and a Monday nudge to set the week** (Jackson's #3/#4/#7) → **PHASE 22** *(was 21)*. Strong idea, attacks cold start directly, and his instinct to **confirm rather than auto-broadcast** is right. Requires **storing each user's timezone — which this app has deliberately never done** (Phase 18 explicitly punted: every time chip today is computed client-side for exactly this reason). A scheduler firing at "Thursday 6pm your time" cannot be client-side. Jackson confirmed the direction at spec time.
+- **Scheduled availability — preset weekly/monthly green times, a confirm-push when one arrives, and a Monday nudge to set the week** (Jackson's #3/#4/#7) → **PHASE 22** *(was 21)*. Strong idea, attacks cold start directly, and his instinct to **confirm rather than auto-broadcast** is right. Requires **storing each user's timezone — which this app has deliberately never done** (Phase 18 explicitly punted: every time chip today is computed client-side for exactly this reason). A scheduler firing at "Thursday 6pm your time" cannot be client-side. Jackson confirmed the direction at spec time. **⚠ The object described here was wrong — corrected at the Phase 22 spec (2026-07-27), see 22.0.** There is no preset and nothing recurring: it is a **weekly ritual**, set fresh each week and carrying nothing into the next. The nudge is a push on a day you choose **plus** an experience that launches when you arrive.
 - **30-day calendar of friend availability** (#8) → **PHASE 23, gated on Phase 22.** Greens are ephemeral today, so the view would render almost entirely empty until scheduled availability exists. The aggregate heat-map framing then fits the existing "never name individuals" rule.
 - **Pivoting from the swipe into the plan flow** (part of #6) — **rejected.** This phase exists to make the swipe a zero-decision gesture; asking "now or later?" mid-swipe puts the decision straight back and undoes 20.1. The FAB is the plan path and is one tap away.
 
@@ -4642,3 +4642,180 @@ None open.
 - [ ] With zero comments the section is the compose field alone, placeholder **"Add a comment"** — no explanatory copy, no label, no cow.
 - [ ] A visible **"···"** sits on your own comments (Edit / Delete) and on **every** comment of a Moove you host (Remove comment). Edit and delete are never long-press-only.
 - [ ] The counter appears at **50 characters left** and counts **down**; it is absent before that.
+
+---
+
+## Phase 22 — Scheduled availability (Spec) — *spec'd 2026-07-27* · SPEC ✅ · MOCKUP ✅ (`mooves-phase22-scheduled-availability.html`, approved 2026-07-27, no revisions) · CODE ✅ 2026-07-27 (`feat/phase22-scheduled-availability`)
+
+*The first server-side scheduler in the app. The UI is the small half.*
+
+### 22.0 — The reframing (read this before the rest)
+
+**The roadmap row and Phase 20's deferral paragraph both describe the wrong object.** They say "preset weekly/monthly green times" — a recurring template you set once and forget. That is not what this is, and the spec records the correction the way `294524e` recorded the defining line changing.
+
+**What it actually is: a weekly ritual.** Each week you set *that week's* availability, fresh, in coarse slots. Nothing carries into the following week. There is no template, no "usually," nothing to forget you configured. On your chosen day the ritual comes to you; when a slot arrives, you confirm; confirming makes you green.
+
+**Why that distinction is load-bearing:** a saved preset drifts out of true silently — it keeps asserting you're free Thursday evenings long after Thursdays changed, and every green it produces is a little less honest than the last. A week you set this week cannot drift. It also means a lapsed user emits nothing at all rather than a slow trickle of stale availability.
+
+### 22.0a — The stance-card tension, recorded rather than explained away
+
+17.3 ships this to every invite-link user at the trust moment: *"We don't want your attention. We want you off the app and out the door."*
+
+**The ritual itself does not violate that** — it launches when you come into Mooves, in a session you already chose to start. A thing that meets you when you arrive is the opposite of an attention bid.
+
+**The weekly push does.** It is the **first push in this app whose destination is the app itself.** Every other one points you out the door: text the group, go meet someone, a Moove got cancelled. This one asks you to come in and do something here. That is a real cost and it is being paid deliberately, not absorbed quietly.
+
+What makes it payable: it is about **your own week**, never anyone else's availability (so 15.3 is untouched); it is **once per week**, on a day you picked; and it is **opt-out in one tap** in Settings.
+
+> **Tripwire, to be checked before this is considered settled.** If the nudge's *open* rate is healthy but its *set-a-week* rate is low, it is not doing the job described here — it is functioning as a retention ping wearing a ritual's clothes, and it should be cut. `week_nudge_opened` and `week_ritual_set` exist to answer exactly that question. This is the one number in the phase that can retire the feature.
+
+**Hard wall against `SKILL.md:79`** (*"No engagement patterns: no unread counts, no red notification dots, no streak UI"*): the ritual shows **no streak, no count of weeks set, no history, and no "you haven't set a week in a while."** A weekly recurring habit is the single most natural place in this app for a streak to grow, and it does not get one. Nothing anywhere renders how many weeks you have or haven't set.
+
+### 22.1 — Timezones: the inversion
+
+Every local-time computation in this app is client-side, and that is architecture, not accident — stated in `greenExpiry.ts:1`, in `boundExpiresAt` (`src/app/api/status/route.ts:16`), in the `plans.start_at` migration comment, and explicitly punted in 18.1: *"Server-side enforcement would require storing the mover's timezone — a separate spec, deliberately not taken on here."*
+
+This is that spec. **A scheduler firing at 9am local cannot be client-side**, because the client is asleep.
+
+- **`users.timezone`** — an **IANA zone name** (`America/New_York`), never a UTC offset. Offsets are wrong twice a year; the zone name makes DST the database's problem instead of ours.
+- **Captured silently** from `Intl.DateTimeFormat().resolvedOptions().timeZone` on app open, rewritten whenever it changes. No prompt, no picker.
+- **Shown in Settings** as one read-only line. Disclosure, not configuration — the app now stores a location-shaped fact about you, and the person it describes can see it.
+- **Nullable, and that is the rollout.** A user with no timezone is skipped by the scheduler entirely. Every existing user gets one on their next app open, so the population fills in on its own with no backfill and no migration guesswork.
+
+**Scope wall, so this doesn't spread:** storing a timezone does **not** move any existing computation server-side. `greenExpiry.ts`, the go-green expiry, the Mon–Thu week-chip rule and `plans.start_at` all stay exactly as they are. The stored zone is read by **the cron route and nothing else.** Rewriting shipped, working client-side time math is a separate decision nobody has asked for.
+
+### 22.2 — The scheduler (the real work)
+
+**Clock:** `pg_cron`, **every 15 minutes**. Not hourly — India is +5:30, Nepal +5:45, Chatham +12:45, and "9am local" is wrong for those users at hourly granularity.
+
+**Shape:** `pg_cron` fires `pg_net` → `POST /api/cron/availability` with a shared secret header. The clock is the *only* thing in Postgres. All logic — timezone math, recipient selection, FCM — stays in the route, next to the pipeline that already exists in `src/lib/push.ts`.
+
+> **This is the first time the database calls out to the app** rather than the app reaching in. That inverts the trust direction, so the route needs its own auth: a `CRON_SECRET` compared in constant time, returning 404 (not 401) on mismatch so the endpoint doesn't advertise itself. Without it this is an unauthenticated push-firing endpoint on a public domain.
+
+**Both extensions are available but not installed** on the project (`pg_cron` 1.6.4, `pg_net` 0.20.3) — enabling them is part of the migration.
+
+**Each tick does two passes.** Both select on "the user's local time is inside the 9:00–10:00 window," which is a **one-hour grace window, not a one-tick instant** — that's what makes the job self-healing.
+
+1. **Weekly nudge** — local weekday = `week_ritual_day`, `week_push_enabled`, `last_week_push_on` ≠ today-local, **and no slots already set for the coming week** (setting your week early on Sunday suppresses Monday's push).
+2. **Confirm** — ≥1 slot on today-local, `last_confirm_push_on` ≠ today-local, **not already green** (you don't need "free tonight?" when you're already free), and **today is not your ritual day** (slots you set at 9:10 do not need confirming at 9:15).
+
+**One confirm push per user per day**, covering all of that day's slots — never one per slot.
+
+**Idempotency and failure.** The `last_*_push_on` stamps hold the user's **local** date and are written only after a successful send. A tick that fails is retried by the next tick, up to four times inside the grace window. If the whole hour is missed, **the day's push is missed — there is no backfill.** A confirm push arriving at 2pm for a 9am window is noise, and noise from a scheduler is how people turn pushes off entirely.
+
+**Also on the schedule:** a nightly purge of `availability_slots` older than 7 days. Trivial once a scheduler exists, and it keeps the cron's daily scan reading a table that stays small.
+
+### 22.3 — The weekly ritual
+
+**Entry points:** (1) launches on arrival at the feed on your ritual day; (2) the weekly push, which lands on the same surface; (3) **Settings → Set your week**, any time, so mid-week edits and re-runs don't depend on the ritual firing.
+
+**The grid — 16 cells:**
+
+| | Mon–Fri | Sat–Sun |
+|---|---|---|
+| Morning | — | ✓ (8:00–12:00) |
+| Day / Afternoon | ✓ Day (9:00–17:00) | ✓ Afternoon (12:00–17:00) |
+| Evening | ✓ (17:00–23:00) | ✓ (17:00–23:00) |
+
+5 × 2 + 2 × 3. **Weekday mornings are not offered** — not an oversight. A weekday morning is not a slot this app's model has anything to do with, and 16 cells is already the ceiling for something that has to stay a few taps.
+
+**The week runs from your ritual day**, 7 days forward. Multi-select, all optional, and **setting nothing is a valid outcome** — the ritual must be as easy to decline as to complete.
+
+**States:**
+
+- **Ritual (unset)** — the grid, empty. Primary action sets the week; secondary is **"Not this week,"** which silences it until the next ritual day.
+- **Ritual (already set)** — same grid, your marks in place, editable. This is what Settings and mid-week re-entry show.
+- **Dismissed** — nothing renders until the next ritual day.
+- **Missed** — if neither set nor dismissed, it reappears on your next arrival through the **end of the day after** your ritual day, then stops. It does not follow you through the week.
+- **No timezone yet** — the ritual still works (it writes local dates), but no pushes fire until a zone lands, which happens on that same app open.
+
+### 22.4 — The confirm
+
+**9:00am local**, once, for all of that day's slots. Copy settles at mockup; it names the day's slots and asks one question. It **never names another person** — 15.3 stands untouched.
+
+**Confirming produces an ordinary green.** No new object, no "scheduled green" type, nothing in the rail that renders differently. Specifically:
+
+- **Chip** — `tonight` if the earliest confirmed slot is an evening, otherwise `now`. Both are shipped states the rail already renders correctly, evening greens included (Phase 20 gives non-`now` greens a softer ring and their own label).
+- **Free-until** — the end of the **latest** confirmed slot that day, which is exactly the 20.7 model: the deadline moves, the time bucket doesn't.
+- **Visibility** — last-used scope, same as the swipe.
+- **Group push and green wave fire normally.** A confirmed green is a green; special-casing it would create two kinds, and the last three phases have been spent collapsing distinctions like that.
+
+**Silence means grey.** An unconfirmed slot does nothing, ever. No second push, no reminder, no in-app card the next time you open. The slot passes and that is the whole story — this is what "confirms rather than auto-broadcasts" has to mean if it means anything.
+
+### 22.5 — Private until green
+
+**Your set week is visible to nobody but you, in any form, until you confirm a slot and go green.** Not to friends, not aggregated, not as a count, not as a hint.
+
+Three reasons, in order of weight:
+
+1. **It's what makes the confirm real.** If friends could see Thursday evening the moment you tapped it, you'd already have broadcast — and the one thing locked from the start is that this confirms rather than auto-broadcasts.
+2. **It keeps green meaning one thing.** Green is *free, roughly now*. A surface showing future availability is a second, quieter kind of green, and the app just spent two phases collapsing exactly that sort of ambiguity.
+3. **It hands Phase 23 its own hardest question instead of answering it by accident.** Phase 23 is the 30-day friend-availability calendar, gated on this phase for data. It has an agreed framing — aggregate, never name individuals. Leaking slots here would ship a worse version of that decision without anyone making it.
+
+> **The best structural consequence of this whole phase.** Because slots are private, **`get_feed` and `get_plans` are not touched at all.** No sixth redefinition of a function that has been silently broken twice (0008 dropped the expiry filter; expired greens rendered for five days). The riskiest file in the repo stays closed.
+>
+> *Forward note for Phase 23:* it will need to open this, and that is where the visibility decision gets made in the open.
+
+### 22.6 — Settings
+
+A new **Availability** section:
+
+- **Set your week** → the ritual, any time.
+- **Weekly reminder** — toggle (default on) and a **day picker**, default Monday. Off means no weekly push; the ritual still launches on arrival on your chosen day. The two are separate, and turning off a notification must never disable a feature.
+- **Time zone** — one read-only line showing the stored zone.
+
+Confirm pushes get **no toggle**. They are a direct consequence of slots you set this week; not setting slots is the off switch, and a toggle would let someone silently break their own week.
+
+### Data
+
+**`users`** gains: `timezone TEXT` · `week_ritual_day SMALLINT NOT NULL DEFAULT 1` (0=Sun…6=Sat) · `week_push_enabled BOOLEAN NOT NULL DEFAULT true` (mirrors `wave_push_enabled`) · `last_week_push_on DATE` · `last_confirm_push_on DATE`.
+
+**New `availability_slots`:** `id` · `user_id` (FK → `users`, cascade) · `slot_date DATE` · `part TEXT CHECK (part IN ('morning','day','afternoon','evening'))` · `created_at`. `UNIQUE (user_id, slot_date, part)`, index on `(user_id, slot_date)` and on `(slot_date)` for the cron scan.
+
+**RLS enabled, no policies — service-role only**, matching `plans` and `plan_comments`. **Not** in the realtime publication.
+
+**Extensions:** `pg_cron` and `pg_net` enabled by migration; two jobs registered (15-minute tick, nightly purge).
+
+**Writes:** the ritual replaces that user's slots for the week in one transaction. **No new read path is added to any feed function.**
+
+**Analytics:** `week_nudge_pushed`, `week_nudge_opened`, `week_ritual_opened`, `week_ritual_set` (with slot count), `week_ritual_dismissed`, `availability_confirm_pushed`, `availability_confirmed`. No counts surfaced to users.
+
+### Out of scope
+
+Recurring or persistent presets · monthly patterns · exact clock times · weekday mornings · any friend-visible view of future availability (**Phase 23**) · quiet hours (cut at Phase 15 and still cut — 9am local is inside waking hours by construction) · backfilling missed pushes · moving any existing client-side time computation to the server · streaks, week counts, or completion history of any kind.
+
+### Open questions
+
+None. Both open items were settled at mockup approval (2026-07-27, approved with no revisions):
+
+1. ~~The ritual's form.~~ **A sheet at 88% height over the feed**, with a grabber, a real scrim strip and an explicit "Not this week" — three ways out. Straight from the PR #45 device-test finding that the Moove composer shipped at ~90% with almost no scrim left to tap and could not be dismissed.
+2. ~~All copy.~~ Set in the mockup. Ritual: **"Set your week" / "Tap the times you might be free. You can change any of it later."** with a **"Only you can see this"** lock chip. Weekly nudge push: **"Set your week" / "When are you free this week?"** Confirm push: **"Free today?" / "You marked Day and Evening."** Confirm sheet actions: **"Yes, I'm free" / "Not today."**
+
+**Also settled at mockup, and it is a rule rather than a style choice — record it before it gets re-litigated at build:**
+
+- **Selected slots render PURPLE, never green.** Green in this app has meant one thing since Screen 4: *free now, and visible to your friends*. A set slot is neither — it is private (22.5) and it is in the future. Colouring it green would mint a second, weaker kind of green and undo what the Phase 20 second revision did collapsing exactly that ambiguity. **Green appears exactly once in this phase: on the card produced after a confirm.**
+- **The 16 cells align by time of day, so a weekday morning is an empty gap, not a disabled control.** Evening is always the last column. A greyed-out button invites "why can't I tap this"; empty space reads as nothing there.
+- **The missed-by-a-day state dims the spent day's row and carries no guilt copy.** A shorter week, not a scolding.
+
+### Acceptance criteria
+
+- [ ] `pg_cron` + `pg_net` enabled; a 15-minute job and a nightly purge job are registered and visible in `cron.job`.
+- [ ] `/api/cron/availability` rejects any request without a valid `CRON_SECRET` with a **404**, and is unreachable from a browser.
+- [ ] A user with a slot today and a stored timezone gets exactly **one** confirm push, in the 9:00–10:00 local window, regardless of how many slots that day.
+- [ ] The same user gets **no second push** that day, even across many cron ticks.
+- [ ] A user with **no** `timezone` is skipped entirely and no error is raised; they are picked up automatically after their next app open.
+- [ ] A user already green receives no confirm push.
+- [ ] No confirm push fires on a user's own ritual day.
+- [ ] The weekly nudge fires once, on the chosen day, only when `week_push_enabled` and no week is set; changing the day in Settings moves it.
+- [ ] Turning the weekly reminder off stops the push and **does not** stop the ritual launching on arrival.
+- [ ] A failed send inside the grace window is retried by a later tick; a fully missed window is **not** backfilled.
+- [ ] Timezone is captured silently on app open, stored as an IANA name, updated when it changes, and shown read-only in Settings.
+- [ ] DST: a slot set before a transition still fires at 9:00 local after it.
+- [ ] The grid offers exactly 16 cells — no weekday morning anywhere.
+- [ ] Setting no slots is a completed ritual, not an error.
+- [ ] Confirming produces an ordinary green: correct chip, Free-until at the last slot's end, last-used visibility, group push and wave firing normally.
+- [ ] An ignored slot produces nothing — no second push, no in-app reminder, no trace.
+- [ ] **No friend can see, count, or infer another user's future slots through any surface or API response.**
+- [ ] `get_feed` and `get_plans` are **byte-identical** to their currently deployed definitions.
+- [ ] `availability_slots` is service-role-only and absent from the realtime publication.
+- [ ] No streak, week count, or ritual history renders anywhere.
