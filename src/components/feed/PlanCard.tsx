@@ -15,6 +15,7 @@ import { posthog } from '@/lib/posthog'
 import { planTile, planWhenLine, type Plan } from '@/lib/plans'
 import WhosIn from './WhosIn'
 import GroupLabel from './GroupLabel'
+import PlanComments from './PlanComments'
 
 interface PlanCardProps {
   plan: Plan
@@ -105,11 +106,24 @@ export default function PlanCard({ plan, meId, onToggleJoin, onBlast, onActions 
         </p>
       )}
 
+      {/* Phase 21 — comments ride inside the who's-in disclosure, so the card
+          keeps exactly ONE expand control.
+
+          Wall 3: a viewer who has not joined gets `undefined` here, which means
+          no thread, no count, no greyed-out row, no hint of any kind. Not
+          "hidden" — absent. If you could tell comments existed, they would
+          become a reason to join, and the count would be an unread badge in a
+          different hat. */}
       <WhosIn
         people={plan.joiners}
         meId={meId}
         hostId={plan.authorId}
         hostLabel="Host"
+        footer={
+          plan.isMine || plan.joinedByMe ? (
+            <PlanComments planId={plan.id} meId={meId} isHost={plan.isMine} />
+          ) : undefined
+        }
       />
 
       {canBlast && (

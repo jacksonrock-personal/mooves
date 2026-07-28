@@ -9,7 +9,7 @@
 // Collapsed by default so cards stay short. Shared by green cards and Moove
 // cards, because they should answer "who's in?" identically.
 
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import Avatar from '@/components/ui/Avatar'
 import { posthog } from '@/lib/posthog'
 
@@ -27,6 +27,17 @@ interface WhosInProps {
   hostLabel?: string
   /** Tints the divider to match a green card. */
   tone?: 'green' | 'plain'
+  /**
+   * Phase 21 — rendered inside this disclosure, below the people.
+   *
+   * Comments live here and nowhere else. Passing them through THIS slot is what
+   * makes the "one arrow per card" rule structural: there is exactly one control,
+   * and it opens who is going and then what they said about getting there.
+   *
+   * Green cards pass nothing, which is why a comment on a green is not merely
+   * absent but impossible — the green card has no way to put anything here.
+   */
+  footer?: ReactNode
 }
 
 export default function WhosIn({
@@ -35,9 +46,13 @@ export default function WhosIn({
   hostId,
   hostLabel = 'Host',
   tone = 'plain',
+  footer,
 }: WhosInProps) {
   const [open, setOpen] = useState(false)
-  if (people.length === 0) return null
+  // With a footer the disclosure still has something to reveal, so it stays —
+  // otherwise the author of a Moove nobody has joined could never reach their
+  // own comments.
+  if (people.length === 0 && !footer) return null
 
   // Host first, then join order as given.
   const ordered = hostId
@@ -68,7 +83,7 @@ export default function WhosIn({
           ))}
         </div>
         <span className="flex-1 font-sans text-[11.5px] font-semibold text-ink-500">
-          {people.length} in
+          {people.length === 0 ? 'Nobody in yet' : `${people.length} in`}
         </span>
         <svg
           width="13"
@@ -85,21 +100,31 @@ export default function WhosIn({
       </button>
 
       {open && (
-        <ul className="mt-2">
-          {ordered.map(p => (
-            <li key={p.id} className="flex items-center gap-2.5 py-1.5">
-              <Avatar src={p.avatarUrl} name={p.displayName ?? '?'} size={26} className="shrink-0" />
-              <span className="flex-1 min-w-0 font-sans text-[13px] text-ink-900 truncate">
-                {meId && p.id === meId ? 'You' : (p.displayName ?? 'Someone')}
-              </span>
-              {hostId && p.id === hostId && (
-                <span className="shrink-0 font-sans text-[10px] font-bold uppercase tracking-[0.06em] text-ink-500">
-                  {hostLabel}
-                </span>
-              )}
-            </li>
-          ))}
-        </ul>
+        <>
+          {ordered.length > 0 && (
+            <ul className="mt-2">
+              {ordered.map(p => (
+                <li key={p.id} className="flex items-center gap-2.5 py-1.5">
+                  <Avatar
+                    src={p.avatarUrl}
+                    name={p.displayName ?? '?'}
+                    size={26}
+                    className="shrink-0"
+                  />
+                  <span className="flex-1 min-w-0 font-sans text-[13px] text-ink-900 truncate">
+                    {meId && p.id === meId ? 'You' : (p.displayName ?? 'Someone')}
+                  </span>
+                  {hostId && p.id === hostId && (
+                    <span className="shrink-0 font-sans text-[10px] font-bold uppercase tracking-[0.06em] text-ink-500">
+                      {hostLabel}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+          {footer}
+        </>
       )}
     </div>
   )

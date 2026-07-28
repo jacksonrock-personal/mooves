@@ -8,6 +8,8 @@ import { createServiceClient } from '@/lib/supabase/server'
 import { groupRecipientIds } from '@/lib/groups'
 import { firebaseMessaging } from '@/lib/firebase/admin'
 import { WAVE_TIME_PHRASE, type WaveTime } from '@/lib/blast'
+import { checkRateLimit } from '@/lib/ratelimit'
+import { COMMENT_PUSH_COOLDOWN_SECONDS } from '@/lib/comments'
 
 const RATE_LIMIT_MS = 60 * 60 * 1000 // one push per group per hour
 
@@ -312,4 +314,68 @@ export async function sendGreenWave(moverId: string): Promise<Set<string>> {
     await supabase.from('push_subscriptions').delete().in('id', staleSubIds)
   }
   return sent
+}
+
+/**
+ * Phase 21 — a new comment landed on a Moove.
+ *
+ * Recipients are the author plus everyone who is IN, minus the commenter. That
+ * is the distinction that lets this through 15.3's ban on per-person pushes:
+ * 15.3 forbade notifications ABOUT A PERSON'S AVAILABILITY ("friend X is
+ * green"). This one is about AN OBJECT YOU PERSONALLY COMMITTED TO, it is
+ * aggregate, and it is rate-limited by the same infrastructure.
+ *
+ * The copy never carries the comment text, never names who wrote it, and never
+ * says how many people are going.
+ *
+ * On batching, honestly: this app has no scheduler, so there is no true batching
+ * to be had. The first comment pushes and everything for the next hour is
+ * SILENT rather than queued. To keep the wording true, the count is taken over
+ * the trailing cooldown window, so it reads "1 new comment." when one landed and
+ * "3 new comments." when three did. Real batching wants the Phase 22 scheduler.
+ */
+export async function sendCommentPush(
+  planId: string,
+  authorId: string,
+  title: string,
+  commenterId: string,
+): Promise<void> {
+  const supabase = createServiceClient()
+
+  // plan_id is matched explicitly: a green join carries plan_id IS NULL and must
+  // never be read as membership of a Moove.
+  const { data: joins } = await supabase
+    .from('move_joins')
+    .select('joiner_id')
+    .eq('plan_id', planId)
+
+  const recipientIds = [...new Set([authorId, ...(joins ?? []).map(j => j.joiner_id)])].filter(
+    id => id !== commenterId,
+  )
+  if (!recipientIds.length) return
+
+  // One push per Moove per recipient per hour. Anyone inside their own cooldown
+  // is dropped here, so a busy Moove cannot buzz a pocket more than once.
+  const eligible: string[] = []
+  for (const id of recipientIds) {
+    if (await checkRateLimit(`comments:push:${planId}:${id}`, 1, COMMENT_PUSH_COOLDOWN_SECONDS)) {
+      eligible.push(id)
+    }
+  }
+  if (!eligible.length) return
+
+  const since = new Date(Date.now() - COMMENT_PUSH_COOLDOWN_SECONDS * 1000).toISOString()
+  const { count } = await supabase
+    .from('plan_comments')
+    .select('id', { count: 'exact', head: true })
+    .eq('plan_id', planId)
+    .gte('created_at', since)
+
+  const n = count && count > 0 ? count : 1
+
+  await pushToUsers(supabase, eligible, {
+    title,
+    body: n === 1 ? '1 new comment.' : `${n} new comments.`,
+    url: '/feed',
+  })
 }

@@ -543,6 +543,48 @@ export type Database = {
           },
         ]
       }
+      plan_comments: {
+        Row: {
+          id: string
+          plan_id: string
+          author_id: string
+          body: string
+          created_at: string
+          edited_at: string | null
+        }
+        Insert: {
+          id?: string
+          plan_id: string
+          author_id: string
+          body: string
+          created_at?: string
+          edited_at?: string | null
+        }
+        Update: {
+          id?: string
+          plan_id?: string
+          author_id?: string
+          body?: string
+          created_at?: string
+          edited_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_comments_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_comments_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       roundups: {
         Row: {
           id: string
