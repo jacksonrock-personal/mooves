@@ -802,6 +802,12 @@ export type Database = {
       // twice by redefinition. Same visibility rules; joiner phones go only to
       // the author.
       get_plans: { Args: { viewer: string }; Returns: Json }
+      // Who may be tagged in a comment without already being in the Moove: the
+      // tagger's own friends who already have this Moove in their feed.
+      plan_taggable_friends: {
+        Args: { p_plan: string; p_viewer: string }
+        Returns: { id: string; display_name: string | null; avatar_url: string | null }[]
+      }
       // Owner-implicit group membership: group_members never holds the owner.
       viewer_group_ids: { Args: { p_user: string }; Returns: { group_id: string }[] }
     }

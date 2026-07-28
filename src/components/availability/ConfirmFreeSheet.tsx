@@ -20,6 +20,7 @@
 import { useState } from 'react'
 import { posthog } from '@/lib/posthog'
 import { useSheetDrag } from '@/lib/useSheetDrag'
+import SheetGrabber from '@/components/ui/SheetGrabber'
 import { SLOT_LABEL, greenForSlots, type SlotPart } from '@/lib/availability'
 
 interface ConfirmFreeSheetProps {
@@ -101,11 +102,11 @@ export default function ConfirmFreeSheet({
         aria-label="Free today?"
         {...drag.sheetProps}
       >
-        <button
-          onClick={onClose}
-          aria-label="Close"
-          className="mx-auto mb-3 mt-2.5 h-1 w-9 cursor-grab rounded-full bg-grey-300"
-          {...drag.handleProps}
+        <SheetGrabber
+          drag={drag}
+          onClose={onClose}
+          className="mb-[18px] mt-[22px]"
+          pillClassName="h-1 w-9 rounded-full bg-grey-300"
         />
 
         <h2 className="font-display text-[20px] font-extrabold tracking-tight text-ink-900">

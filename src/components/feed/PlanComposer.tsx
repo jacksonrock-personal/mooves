@@ -13,6 +13,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { posthog } from '@/lib/posthog'
 import { useSheetDrag } from '@/lib/useSheetDrag'
+import SheetGrabber from '@/components/ui/SheetGrabber'
 import { combineStartAt, splitStartAt } from '@/lib/movetime'
 import {
   computePlanExpiry,
@@ -115,8 +116,14 @@ export default function PlanComposer({
       setTime(coarse || !editing.hasTime ? '' : parts.time)
       setLocation(editing.locationText ?? '')
       setNote(editing.note ?? '')
-      setVisibleTo([])
-      setShowGroups(false)
+      // Restore what the Moove is ACTUALLY scoped to. This used to reset to []
+      // unconditionally, because get_plans only returned group NAMES and there
+      // was nothing to restore from — so every edit opened on "Everyone" and
+      // then saved that over the truth, quietly widening a group-scoped Moove
+      // to all of the author's friends. `visibleTo` is now returned to the
+      // author for exactly this.
+      setVisibleTo(editing.visibleTo ?? [])
+      setShowGroups(editing.showGroups)
     } else if (prefill) {
       // A dated sponsored move already has everything the composer asks for.
       // A sponsored move already has a real date and time, so it opens exact.
@@ -250,21 +257,31 @@ export default function PlanComposer({
         onClick={onClose}
         aria-hidden="true"
       />
+      {/* ONE HEIGHT, always. It was max-h-[90%] over a form that mounted and
+          unmounted its own steps, so the sheet's top edge and the Post button
+          jumped every time a step unlocked — the sheet grew under your thumb
+          while you were still typing. 86% is sized to hold the fully expanded
+          form (title, When in its taller exact-picker state, visibility with
+          the group toggle showing, Where, Anything else) on a modern phone;
+          anything past that scrolls inside the frame. Nothing rendered inside
+          can move this number. */}
       <div
-        className="fixed bottom-0 left-0 right-0 z-50 bg-card-white rounded-t-3xl flex flex-col max-h-[90%]"
+        className="fixed bottom-0 left-0 right-0 z-50 bg-card-white rounded-t-3xl flex flex-col h-[86%]"
         role="dialog"
         aria-modal="true"
         {...drag.sheetProps}
       >
-        {/* Escaping this sheet was impossible on device: it fills ~90% of the
-            screen, so there was almost no scrim left to tap. Three ways out —
-            drag the grabber down, tap Cancel, or tap what scrim there is.
-            R6 moved the bespoke drag handler here onto the shared hook, so the
-            other eight grabber sheets behave identically. */}
-        <div className="shrink-0 pt-3 cursor-grab" {...drag.handleProps}>
-          <div className="w-9 h-1 rounded-full bg-[#E8E4F5] mx-auto" />
-        </div>
-        <div className="shrink-0 px-5 pt-3">
+        {/* Escaping this sheet was impossible on device: it fills ~86% of the
+            screen, so there is almost no scrim left to tap. Three ways out —
+            drag it down, tap Cancel, or tap what scrim there is.
+
+            The drag target is no longer the 9x4px pill. It is the grabber's
+            36px band PLUS the whole header below, so the top ~130px of this
+            sheet dismisses it. The heading and its blurb have nothing else to
+            do with a touch, and this is the sheet where being trapped hurt
+            most. */}
+        <SheetGrabber drag={drag} className="mt-[18px]" />
+        <div className="shrink-0 px-5 pt-3" {...drag.headerProps}>
           <div className="flex items-start gap-3 mb-1.5">
             <h2 className="flex-1 font-display font-extrabold text-[18px] text-text-primary tracking-tight">
               {editing ? 'Edit your Moove' : 'Plan a Moove'}
@@ -283,8 +300,11 @@ export default function PlanComposer({
           </p>
         </div>
 
-        {/* The form scrolls; the commit button never does. */}
-        <div className="flex-1 min-h-0 overflow-y-auto px-5">
+        {/* The form scrolls; the commit button never does. It is also the third
+            drag target — but only from the very top of the scroll and only
+            downward, so scrolling back up through the form never yanks the
+            sheet away underneath you. */}
+        <div className="flex-1 min-h-0 overflow-y-auto px-5" {...drag.contentProps}>
           <Label>What is it</Label>
           <input
             value={title}
@@ -297,8 +317,8 @@ export default function PlanComposer({
               the exact date and time hide behind a "+" rather than sitting there
               as two blank boxes that look required. One or the other, never
               both, so the card always knows which to render. */}
-          {showWhen && (
-            <div className={gated ? 'animate-[rise_.28s_cubic-bezier(.22,.9,.3,1)_both]' : ''}>
+          <Step shown={showWhen}>
+            <div>
               <Label>When</Label>
               {!exact && (
                 <>
@@ -389,13 +409,13 @@ export default function PlanComposer({
                 </>
               )}
             </div>
-          )}
+          </Step>
 
           {/* R4 — visibility sits directly under When, ahead of the two optional
               fields. It is the only one of the three that changes who the Moove
               reaches; under Where and Anything else it read as an afterthought. */}
-          {showRest && (
-            <div className={gated ? 'animate-[rise_.28s_cubic-bezier(.22,.9,.3,1)_both]' : ''}>
+          <Step shown={showRest} stagger>
+            <div>
               <Label>Who can see this?</Label>
               <div className="flex gap-2 flex-wrap mb-4">
                 <Chip on={visibleTo.length === 0} onClick={() => setVisibleTo([])}>
@@ -461,7 +481,7 @@ export default function PlanComposer({
                 className="w-full min-h-[46px] rounded-2xl border-[1.5px] border-[#E8E4F5] bg-surface-bg px-3.5 py-3 font-sans text-[16px] text-ink-900 outline-none mb-4 focus:border-purple-500"
               />
             </div>
-          )}
+          </Step>
 
           {error && <p className="font-sans text-[13px] text-[#E8405A] mb-3">{error}</p>}
         </div>
@@ -477,6 +497,48 @@ export default function PlanComposer({
         </div>
       </div>
     </>
+  )
+}
+
+/**
+ * A gated step in the create form.
+ *
+ * The point is what it does NOT do: unmount. R2 shipped these as `{show && …}`
+ * with a `rise` keyframe, so unlocking a step inserted a block of layout and
+ * shoved everything below it — including the sheet's own edges — at the same
+ * moment the animation was trying to be pretty about it. That reflow was the
+ * jarring part, not the duration.
+ *
+ * A locked step keeps its space and is only made invisible and inert, so
+ * unlocking animates opacity, a 16px lift and a small defocus, and moves
+ * nothing. That leaves the duration free to be a taste decision: 560ms, twice
+ * R2's 280ms. Slow enough to read as the form opening up, still under the
+ * threshold where a fast typer would be waiting on it.
+ *
+ * `aria-hidden` + `inert`-by-pointer-events keeps a locked step off the tab
+ * order, since it is now in the DOM whether you have reached it or not.
+ */
+function Step({
+  shown,
+  stagger,
+  children,
+}: {
+  shown: boolean
+  /** A whisper behind the step above it, so the two do not arrive as one slab. */
+  stagger?: boolean
+  children: React.ReactNode
+}) {
+  return (
+    <div
+      aria-hidden={!shown}
+      className={`transition-[opacity,transform,filter] duration-[560ms] ease-[cubic-bezier(.22,.9,.3,1)] ${
+        shown
+          ? `opacity-100 translate-y-0 blur-0 ${stagger ? 'delay-[80ms]' : ''}`
+          : 'opacity-0 translate-y-4 blur-[3px] pointer-events-none'
+      }`}
+    >
+      {children}
+    </div>
   )
 }
 

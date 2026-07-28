@@ -12,6 +12,9 @@ import { sendPlanCancelledPush } from '@/lib/push'
 
 const MAX_AHEAD_MS = 365 * 24 * 60 * 60 * 1000
 
+/** Same whitelist the create route enforces. */
+const TIME_MODES = ['tonight', 'week', 'weekend', 'date', 'datetime']
+
 function trimmed(value: unknown, max: number): string | null {
   if (typeof value !== 'string') return null
   const s = value.trim()
@@ -46,6 +49,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     title?: string
     startAt?: string
     hasTime?: boolean
+    timeMode?: string
+    showGroups?: boolean
     expiresAt?: string
     locationText?: string | null
     note?: string | null
@@ -73,11 +78,26 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     }
   }
 
+  // THE EDIT BUG. This route predates Phase 20's coarse timing and never caught
+  // up: the composer has always sent `timeMode`, and this route has always
+  // thrown it away. So changing a Moove from "this weekend" to Saturday 9am
+  // wrote the new start_at, answered 200, and left time_mode reading 'weekend' —
+  // the card kept rendering THIS WEEKEND and the edit looked like it did nothing.
+  if (typeof body.timeMode === 'string' && TIME_MODES.includes(body.timeMode)) {
+    updates.time_mode = body.timeMode
+  }
+
   if ('locationText' in body) updates.location_text = trimmed(body.locationText, PLAN_LOCATION_MAX)
   if ('note' in body) updates.note = trimmed(body.note, PLAN_NOTE_MAX)
   if ('visibleTo' in body) {
-    updates.visible_to =
+    const visibleTo =
       Array.isArray(body.visibleTo) && body.visibleTo.length > 0 ? body.visibleTo : null
+    updates.visible_to = visibleTo
+    // 18.2's rule, matched to the create route: only meaningful when scoped to
+    // groups, since with everyone-visibility there is no audience to name. Kept
+    // in the same branch as visible_to so the pair can never drift apart —
+    // show_groups true with visible_to null was reachable before this.
+    updates.show_groups = body.showGroups === true && !!visibleTo
   }
 
   const { error } = await supabase.from('plans').update(updates).eq('id', id)

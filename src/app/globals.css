@@ -30,12 +30,11 @@
   60% { opacity: 1; transform: translateY(0) scale(1.03); }
   100% { opacity: 1; transform: translateY(0) scale(1); }
 }
-/* R2 — each composer step rises into place as the one above it is satisfied.
-   Short on purpose: a fast typer must never be waiting on the form. */
-@keyframes rise {
-  from { opacity: 0; transform: translateY(14px); }
-  to { opacity: 1; transform: translateY(0); }
-}
+/* R2's `rise` keyframe is gone. Composer steps no longer mount on unlock — they
+   sit in the layout from the start and transition opacity/offset in place (see
+   the Step component in PlanComposer), because the reflow from mounting them
+   was the jarring part, not the timing. A keyframe cannot express "animate from
+   whatever state you are in", which is what a transition is for. */
 
 /* Phase 10 — grey "activity" pulse on the ambient feed tier (not availability). */
 @keyframes ambient-pulse {

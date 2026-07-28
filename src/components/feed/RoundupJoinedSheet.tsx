@@ -13,6 +13,7 @@
 import { useState } from 'react'
 import { posthog } from '@/lib/posthog'
 import { useSheetDrag } from '@/lib/useSheetDrag'
+import SheetGrabber from '@/components/ui/SheetGrabber'
 
 interface RoundupJoinedSheetProps {
   code: string
@@ -59,7 +60,7 @@ export default function RoundupJoinedSheet({
         aria-modal="true"
         {...drag.sheetProps}
       >
-        <div className="w-9 h-1 rounded-full bg-[#E8E4F5] mx-auto mb-[18px] cursor-grab" {...drag.handleProps} />
+        <SheetGrabber drag={drag} className="mb-6" />
 
         <div className="text-center">
           <div className="w-14 h-14 mx-auto mb-3.5 rounded-full bg-purple-100 flex items-center justify-center">

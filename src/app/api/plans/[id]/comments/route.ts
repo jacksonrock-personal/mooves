@@ -18,7 +18,7 @@ import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { checkRateLimit, tooManyRequests } from '@/lib/ratelimit'
 import { COMMENT_MAX, type PlanComment } from '@/lib/comments'
-import { sendCommentPush } from '@/lib/push'
+import { sendCommentPush, sendTagPush } from '@/lib/push'
 
 type Supabase = ReturnType<typeof createServiceClient>
 
@@ -70,22 +70,42 @@ async function access(
 }
 
 /**
- * R8 — narrow a claimed mention list down to people actually in this Moove.
+ * Narrow a claimed mention list down to people who may actually be named.
  *
- * Returns only ids that are the author or hold a plan join. Anything else is
- * dropped silently: the comment still posts, the tag simply does not become a
- * tag. Failing the whole write would turn a cosmetic overreach into a lost
- * comment, which is the worse outcome for a coordination surface.
+ * TWO groups qualify now, where R8 allowed only the first:
+ *
+ *   in-room  — the author, or anyone holding a join for THIS plan.
+ *   outsider — one of the COMMENTER's own friends who can already see this
+ *              Moove in their own feed. `plan_taggable_friends` is the rule and
+ *              it is re-derived here on every write: the picker is convenience,
+ *              this is the gate. A hand-built request naming somebody who
+ *              cannot see the Moove still has that id dropped.
+ *
+ * That second group is the bounded amendment to wall 2. The wall said you
+ * cannot pull someone into a room they were never in; the bound is that a tag
+ * can only reach somebody the room was already visible to, so tagging never
+ * discloses a Moove to anyone new.
+ *
+ * Anything else is dropped silently: the comment still posts, the tag simply
+ * does not become a tag. Failing the whole write would turn a cosmetic
+ * overreach into a lost comment, which is the worse outcome for a coordination
+ * surface.
+ *
+ * Returns the two groups apart, because only the outsiders get pushed — the
+ * people already in this Moove are covered by the ordinary comment push and
+ * must not be buzzed twice for one comment.
  */
 async function validMentions(
   supabase: Supabase,
   planId: string,
   authorId: string,
+  commenterId: string,
   claimed: unknown,
-): Promise<string[]> {
-  if (!Array.isArray(claimed) || claimed.length === 0) return []
+): Promise<{ all: string[]; outsiders: string[] }> {
+  const none = { all: [], outsiders: [] }
+  if (!Array.isArray(claimed) || claimed.length === 0) return none
   const wanted = [...new Set(claimed.filter((v): v is string => typeof v === 'string'))].slice(0, 20)
-  if (wanted.length === 0) return []
+  if (wanted.length === 0) return none
 
   const { data: joins } = await supabase
     .from('move_joins')
@@ -93,9 +113,24 @@ async function validMentions(
     .eq('plan_id', planId)
     .in('joiner_id', wanted)
 
-  const allowed = new Set<string>([...(joins ?? []).map(j => j.joiner_id)])
-  if (wanted.includes(authorId)) allowed.add(authorId)
-  return wanted.filter(id => allowed.has(id))
+  const inRoom = new Set<string>([...(joins ?? []).map(j => j.joiner_id)])
+  if (wanted.includes(authorId)) inRoom.add(authorId)
+
+  const outside = wanted.filter(id => !inRoom.has(id) && id !== commenterId)
+  const allowedOutside = new Set<string>()
+  if (outside.length > 0) {
+    const { data: taggable } = await supabase.rpc('plan_taggable_friends', {
+      p_plan: planId,
+      p_viewer: commenterId,
+    })
+    const eligible = new Set((taggable ?? []).map(t => t.id))
+    for (const id of outside) if (eligible.has(id)) allowedOutside.add(id)
+  }
+
+  return {
+    all: wanted.filter(id => inRoom.has(id) || allowedOutside.has(id)),
+    outsiders: [...allowedOutside],
+  }
 }
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -184,15 +219,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ error: 'That is too long' }, { status: 400 })
   }
 
-  // R8 — a tag may only ever name someone who is IN this Moove. Enforced here,
-  // not just in the picker: a hand-built request naming an outsider has that id
-  // dropped rather than stored. This is wall 2 applied to mentions — you cannot
-  // pull someone into a room they were never in.
-  const mentions = await validMentions(supabase, id, gate.authorId, payload.mentions)
+  // Enforced here, not just in the picker: a hand-built request naming somebody
+  // who cannot see this Moove has that id dropped rather than stored.
+  const mentions = await validMentions(supabase, id, gate.authorId, userId, payload.mentions)
 
   const { data, error } = await supabase
     .from('plan_comments')
-    .insert({ plan_id: id, author_id: userId, body, mentions })
+    .insert({ plan_id: id, author_id: userId, body, mentions: mentions.all })
     .select('id, created_at')
     .single()
 
@@ -203,6 +236,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   // Never allowed to fail the write, same as every other push in the app.
   try {
+    // Order matters. The tag push goes first and claims its recipients, so
+    // somebody who is BOTH tagged and in the Moove gets the directed
+    // notification rather than the generic "1 new comment" — and only one of
+    // the two. `outsiders` is disjoint from the comment push's audience by
+    // construction (it excludes the author and every joiner), so in practice
+    // these two never overlap; the ordering is belt and braces.
+    await sendTagPush(id, mentions.outsiders, gate.title, userId)
     await sendCommentPush(id, gate.authorId, gate.title, userId)
   } catch {
     // best effort

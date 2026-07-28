@@ -12,6 +12,7 @@
 import { useState } from 'react'
 import { posthog } from '@/lib/posthog'
 import { useSheetDrag } from '@/lib/useSheetDrag'
+import SheetGrabber from '@/components/ui/SheetGrabber'
 import type { Plan } from '@/lib/plans'
 
 interface MooveActionsSheetProps {
@@ -72,7 +73,7 @@ export default function MooveActionsSheet({
           {/* R6 — this file has TWO shapes. The action LIST below is a Cancel-row
               action sheet with no grabber, so it does not drag. This confirm
               variant does draw a grabber, so it does. */}
-          <div className="w-9 h-1 rounded-full bg-[#E8E4F5] mx-auto mb-4 cursor-grab" {...confirmDrag.handleProps} />
+          <SheetGrabber drag={confirmDrag} className="mb-[22px]" />
           <h2 className="font-display font-extrabold text-[18px] text-text-primary tracking-tight mb-1.5">
             Cancel this Moove?
           </h2>

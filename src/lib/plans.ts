@@ -54,6 +54,19 @@ export interface Plan {
   /** 13.8 — set when this Moove was brought over from a sponsored move. */
   sponsorBrand: string | null
   visibleGroups: string[]
+  /**
+   * The raw group ids this Moove is scoped to — AUTHOR ONLY, null for everyone
+   * else and null when it is unscoped.
+   *
+   * `visibleGroups` above is group NAMES, filtered to the ones the viewer shares
+   * and only when show_groups is on: a display string, useless for reopening the
+   * edit form. Without these ids the composer had nothing to prefill from, so it
+   * opened every edit on "Everyone" and then wrote that back — silently widening
+   * a group-scoped Moove to all of the author's friends.
+   */
+  visibleTo: string[] | null
+  /** Author only. Pairs with `visibleTo` so an edit round-trips both. */
+  showGroups: boolean
   joiners: PlanJoiner[]
   joinedByMe: boolean
   /**
