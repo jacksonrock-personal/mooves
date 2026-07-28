@@ -40,6 +40,7 @@
 | — | Phase 20 — Greens & Planned Mooves: lighter swipe (20.1) · rail of all greens + wave fold-in (20.2) · planned Mooves (20.3) · Mooves-only feed (20.4) · join-while-green (20.5) · who's-in (20.6) · Free until (20.7) · reactions (20.8) | ✅ Spec 2026-07-27, **revised at mockup** (see "Phase 20" at EOF) · ✅ Mockup `mooves-phase20-greens-plans.html` (approved 2026-07-27) · ✅ Code 2026-07-27 (`feat/phase20-greens-plans`, merged PR #44; **second revision** `294524e` — coarse timing, minimal go-green, green joins retired) |
 | — | Phase 21 — **Comments on a Moove**: the amendment (21.0) · access & lifetime (21.1) · the comment area (21.2) · notifications (21.3) · moderation (21.4) | ✅ Spec 2026-07-27 (see "Phase 21" at EOF) — **amends the "no in-app messaging, ever" rule in daylight; four walls, all load-bearing** · ✅ Mockup **`mooves-phase21-comments-sheets-v2.html`** (bottom sheet, approved 2026-07-27 — **supersedes** `mooves-phase21-comments.html`, the inline version that shipped first) · ✅ Code 2026-07-27 (inline version: migration `20260728012000` **applied to prod**, **merged via PR #47** `674ffa8`; **`SKILL.md:72` amended** — "No in-app messaging. Ever." replaced with the four-wall exception) · 🔁 **Sheet rebuild** on `feat/phase21-comments-sheet` — UI only, `plan_comments` schema and all four API routes unchanged, `get_plans` gains `commentCount` |
 | — | Phase 22 — **Scheduled availability**: the reframing (22.0) · stance-card tension (22.0a) · timezones (22.1) · the scheduler (22.2) · the weekly ritual (22.3) · the confirm (22.4) · private until green (22.5) · Settings (22.6) | ✅ Spec 2026-07-27 (see "Phase 22" at EOF) — **not preset recurring times: a weekly ritual, set fresh each week**. First server-side scheduler in the app (`pg_cron` + `pg_net` → one authed route); first stored user timezones, reversing 18.1's punt · ✅ Mockup `mooves-phase22-scheduled-availability.html` (approved 2026-07-27, 11 states) · ✅ Code 2026-07-27 (`feat/phase22-scheduled-availability`; `tsc --noEmit` + `next build` clean; **migration `20260728030000` applied by Jackson**, both cron jobs registered and active, Vault secrets set — verified via `cron.job` + a manual `availability_cron_tick()` that reached the app) |
+| — | **Refinements R1–R8** — nav "Plan a Moove" button (R1) · composer step gating (R2) · When defaults + real date/time hints (R3) · visibility moves up (R4) · Moove sheet header removed (R5) · swipe-to-close everywhere (R6) · copy (R7) · **likes + roster-only tagging (R8)** | ✅ Spec 2026-07-28 (see "Refinements R1–R8" at EOF) — **R8 amends Phase 21's "no @mentions, no reactions on comments" in daylight** · ✅ Mockup `mooves-nav-composer-refinements.html` (11 states, approved 2026-07-28) · ✅ Code 2026-07-28 (`fix/nav-composer-comments`; `tsc --noEmit` + `next build` clean; **migration `20260728050000` applied by Jackson** — `plan_comment_likes` verified RLS-on with zero policies, `plan_comments.mentions` present; **R6 corrected at build**, see the ⚠ note in R6) |
 | — | Phase 23 — 30-day friend-availability calendar | 🔮 Gated on Phase 22 · pointless until future availability data exists |
 
 ---
@@ -4832,3 +4833,137 @@ None. Both open items were settled at mockup approval (2026-07-27, approved with
 - [ ] `get_feed` and `get_plans` are **byte-identical** to their currently deployed definitions.
 - [ ] `availability_slots` is service-role-only and absent from the realtime publication.
 - [ ] No streak, week count, or ritual history renders anywhere.
+
+---
+
+## Refinements R1–R8 — Nav, composer, comments (Spec) — *spec'd 2026-07-28* · SPEC ✅ · MOCKUP ✅ (`mooves-nav-composer-refinements.html`, 11 states, approved 2026-07-28) · CODE ⬜
+
+*A cross-cutting batch from device use, not a phase. One branch, one PR.*
+
+### R1 — "Plan a Moove" moves into the nav
+
+**Problem, observed:** the floating "+" sits on top of feed content — in the reported screenshot it covers the "5 in" roster row and the comment control of the card beneath it. It also never says what it does.
+
+**Behavior:** the FAB is removed. The bottom nav goes from four slots to five: **Feed · Discover · Plan a Moove · People · Settings**. The centre slot is a raised circular button carrying the **shipped cow mark** (`cow-icon.svg` artwork, the same as the header lockup) on a purple disc, with a small white **"+" badge** on its lower-right edge, and the label **"Plan a Moove"**.
+
+- **It is not a tab.** It never takes the active-page colour, has no route, and is excluded from the active-state logic. A nav item that lights up and leaves you on the same page is a small lie.
+- **The cow says whose button it is; the "+" says what it does.** Neither carries it alone — which is why the nostril-"+" variant was rejected at mockup: at 52px its plus is ~4px wide and turns to mush.
+- **From `/feed`** it opens the composer in place. **From Discover, People or Settings** it navigates to `/feed?compose=1`, which opens it on arrival — the same deep-link pattern as `?gogreen=1` and `?week=1`. Posting a Moove should land you where the Moove appears.
+- Feed content no longer needs bottom padding to clear a floating button.
+
+### R2 — The composer arrives a step at a time
+
+**Problem:** six fields and a scrollbar the moment the sheet opens reads as paperwork.
+
+Three steps, revealed downward, each on a ~280ms rise-and-fade:
+
+1. **What is it** (required)
+2. → **When** (required)
+3. → **Who can see this?**, **Where**, **Anything else** — together
+
+- **Earlier steps stay on screen and stay editable.** This is one form that grows, not a wizard: no progress dots, no "step 1 of 3", no back button.
+- **Optional fields arrive as a group.** They are leftovers, not a sequence, and drip-feeding them would be slower than the wall it replaces.
+- **Clearing a required field collapses the steps below it** and disables Post.
+- **Editing an existing Moove skips gating entirely** and renders every field. Progressive disclosure helps a blank form and obstructs a full one. **A Discover prefill also skips it**, since title and date arrive already filled.
+
+### R3 — When: coarse default, exact behind the "+", and real hints
+
+- **Coarse is the default and the chips now start unselected.** Today the composer preselects `week`/`weekend`, so "When" is already satisfied when the sheet opens — under step gating that would flash step 2 past and dump the whole form at once. **This raises the floor from one required field to two**, recorded as a deliberate cost of the pacing.
+- **Exact stays behind "+ Add an exact date and time"**, and the two are mutually exclusive in both directions: switching back to rough hides the exact fields **and** clears their satisfaction, so a stale date cannot keep the step green.
+- **Date and time render as buttons**, showing **"7/29"** and **"10:30 AM"** in placeholder grey until set, and opening the **native picker** on tap. `<input type="date">` ignores `placeholder` on iOS — that is what produced the two blank boxes in the report, and it is browser behaviour rather than a missing attribute. Buttons keep the native wheel while giving us control of the resting state.
+- Date stays required in exact mode; time stays optional.
+
+### R4 — "Who can see this?" moves up
+
+It sits **directly under When**, above Where and Anything else. It is the only field in that group that changes who the Moove reaches; sitting under two optional fields it read as an afterthought.
+
+### R5 — The Moove sheet loses its header
+
+Remove the block above the segmented control: the **avatar stack**, the **"{Name} is doing {Title}"** line, and the **when/location** line. The sheet opens on the grabber and then straight to **Who's in | Comments**.
+
+- **It goes from both panes**, since the block was shared. The panes stay symmetrical.
+- Buys back **~120px**, about a comment and a half — enough for a third comment without scrolling.
+- Rationale: it restated what you already knew, because you tapped that card to get here.
+
+### R6 — Swipe down to close, everywhere it is promised
+
+**Problem:** every sheet in the app draws a grab handle, and exactly one (`PlanComposer`, patched after the PR #45 device test) responds to a drag. A handle that does not drag is a promise the UI breaks.
+
+One shared drag hook, adopted by **every sheet that draws a grab handle**:
+
+- Drag follows the finger **downward only**; upward does nothing.
+- **Dismiss** past **one third of that sheet's own height** — proportional, not a fixed pixel count, so a short sheet and a tall composer do not demand identical travel.
+- **Or on a flick**: velocity > 0.5 px/ms **and** travel > 60px. The distance floor is load-bearing — without it a quick thumb twitch divides by a tiny elapsed time, reads as enormous velocity, and closes a sheet somebody was reading. *(Caught in the mockup: a 40px twitch dismissed it.)*
+- **Short of the threshold it springs back**, ~220ms.
+- **The scrim fades with the drag**, so the gesture feels attached to something.
+- **Action sheets are excluded.** An explicit Cancel row and no grab handle means no drag; an invisible gesture on a control with no affordance is undiscoverable.
+  - ⚠ **Corrected at build (2026-07-28).** This originally named `MooveActionsSheet` and `GoGreyConfirm` as excluded outright. `GoGreyConfirm` is excluded. **`MooveActionsSheet` has two shapes**, and the spec was written on an incomplete read: its action *list* has no grabber and does not drag, but its **"Cancel this Moove?" confirm draws one and therefore does**. The rule is the handle, not the file. Dragging that confirm backs out to the list, matching what its own Cancel row does — never cancelling the Moove.
+- Dragging never fires the sheet's action — dismissal only.
+
+### R7 — Copy
+
+Composer subtitle becomes: **"Got something in mind? Throw it out there! This does not make you free right now."**
+
+### R8 — Likes and tagging *(amends Phase 21)*
+
+> **This is an amendment, made in daylight, not a drift.** §21.2 says "no @mentions, no reactions on comments" and lists both under Out of scope. Reactions are also what was cut at Phase 20 with *"Remove reactions entirely, I don't want them."* Both are reversed here, deliberately and narrowly. The precedent is the second revision, which amended "no count anywhere" the same way.
+
+**Replacement text for §21.2's first paragraph (verbatim):**
+
+> Flat list, oldest → newest, in the Moove sheet. No threading, no reply-to. **Two additions (R8, 2026-07-28): a like on a comment, and @tagging limited to the Moove's roster.** Both live entirely inside the sheet, which already requires having joined, so neither is visible or inferable to anyone outside it. Reactions on a *green*, tagging someone who has not joined, a like count on a card, or any push arising from either remain forbidden.
+
+**Likes**
+
+- A heart on each comment, tappable by anyone who can read it (author + joiners). **You may like your own.**
+- **A zero renders no number at all** — outline heart only. A "0" reads as a score you are losing.
+- The count appears **beside its heart and nowhere else**: not on the card, not on the Comments tab, never a push.
+
+**Tagging**
+
+- Typing `@` opens a picker of **only people who are in this Moove** (author + joiners). Never the full friends list.
+- That is what keeps wall 2 standing: comments remain coordination among people who are going, and you cannot pull an outsider into a room they were never in.
+- A tag renders in purple. **It sends no push, no badge, no dot, and creates no "you were mentioned" surface.** That line is what stops this becoming an inbox.
+- The server validates every tagged id against the roster and drops the rest, so a hand-built request cannot tag a non-joiner.
+
+**Both die with the Moove**, by cascade, like the comments they hang on.
+
+### Data
+
+- **New `plan_comment_likes`:** `comment_id` (FK → `plan_comments`, cascade) · `user_id` (FK → `users`, cascade) · `created_at`. PK `(comment_id, user_id)`, so a double-tap cannot double-count. RLS on, **no policies — service-role only**. Not in the realtime publication.
+- **`plan_comments` gains `mentions UUID[]`** — validated server-side against the roster at write time. The body keeps the literal `@Name` text; the array is what drives highlighting and enforces the roster rule.
+- **Reads:** comments come back with a like count and whether *you* liked it. No new feed-function work — `get_feed` and `get_plans` are untouched.
+- **Analytics:** `comment_liked`, `comment_unliked`, `comment_mention_added`, `plan_composer_step_advanced`, `nav_plan_tapped`, `sheet_swipe_dismissed`.
+
+### Out of scope
+
+Likes or tags on greens (structurally forbidden) · likes on anything other than a comment · a list of who liked · notifying anyone about a like or a tag · tagging people outside the roster · reply/threading · reordering the composer beyond R4 · redesigning the nav's other four tabs · swipe-to-close on action sheets · any change to `get_feed` or `get_plans`.
+
+### Open questions
+
+None.
+
+### Acceptance criteria
+
+- [ ] The floating FAB is gone; the nav has five slots with "Plan a Moove" centred and raised.
+- [ ] The centre button uses the shipped cow artwork plus a "+" badge, and **never** renders an active/current-page state.
+- [ ] Tapping it on `/feed` opens the composer in place; from the other three tabs it lands on `/feed` with the composer open.
+- [ ] No feed content sits under a floating button any more.
+- [ ] A fresh composer shows **only** "What is it"; When appears once a title exists; the remaining three appear once When is satisfied.
+- [ ] Clearing a required field re-collapses everything below it and disables Post.
+- [ ] Editing a Moove, and a Discover prefill, both bypass gating and show all fields.
+- [ ] Coarse chips start **unselected**; the default set is Tonight · This week · This weekend.
+- [ ] The exact date/time fields are **not visible** until "+ Add an exact date and time" is tapped, and are hidden again on switching back.
+- [ ] Date and time show "7/29" and "10:30 AM" in grey when unset and open the native picker on tap, on iOS included.
+- [ ] "Who can see this?" renders above Where and Anything else.
+- [ ] The Moove sheet opens on the segmented control; the avatar stack, "is doing" line and when/location line are gone from **both** panes.
+- [ ] Every sheet with a grab handle dismisses on a downward drag past a third of its height, or on a flick over 0.5 px/ms that travelled more than 60px.
+- [ ] A drag under those thresholds springs back and changes nothing; a 40px twitch never dismisses.
+- [ ] The scrim fades proportionally during a drag.
+- [ ] `GoGreyConfirm` and `MooveActionsSheet`'s action **list** are unchanged and do not drag; `MooveActionsSheet`'s **confirm** variant drags (it draws a grabber) and doing so returns to the list rather than cancelling the Moove.
+- [ ] Composer subtitle reads the new copy exactly.
+- [ ] A comment can be liked and unliked; an unliked comment shows **no number**; the count appears nowhere but beside its heart.
+- [ ] `@` offers only the author and joiners; a tagged non-joiner is rejected server-side.
+- [ ] No push, badge, dot or mention-inbox results from a like or a tag.
+- [ ] Likes and mentions are hard-deleted when the Moove dies.
+- [ ] §21.2 is replaced with the amended text verbatim, and Phase 21's Out-of-scope list is updated to match.
+- [ ] `get_feed` and `get_plans` are byte-identical to their deployed definitions.

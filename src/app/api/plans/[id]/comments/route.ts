@@ -69,6 +69,35 @@ async function access(
   return { authorId: plan.author_id, title: plan.title, isHost: false }
 }
 
+/**
+ * R8 — narrow a claimed mention list down to people actually in this Moove.
+ *
+ * Returns only ids that are the author or hold a plan join. Anything else is
+ * dropped silently: the comment still posts, the tag simply does not become a
+ * tag. Failing the whole write would turn a cosmetic overreach into a lost
+ * comment, which is the worse outcome for a coordination surface.
+ */
+async function validMentions(
+  supabase: Supabase,
+  planId: string,
+  authorId: string,
+  claimed: unknown,
+): Promise<string[]> {
+  if (!Array.isArray(claimed) || claimed.length === 0) return []
+  const wanted = [...new Set(claimed.filter((v): v is string => typeof v === 'string'))].slice(0, 20)
+  if (wanted.length === 0) return []
+
+  const { data: joins } = await supabase
+    .from('move_joins')
+    .select('joiner_id')
+    .eq('plan_id', planId)
+    .in('joiner_id', wanted)
+
+  const allowed = new Set<string>([...(joins ?? []).map(j => j.joiner_id)])
+  if (wanted.includes(authorId)) allowed.add(authorId)
+  return wanted.filter(id => allowed.has(id))
+}
+
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const userId = req.headers.get('x-user-id')
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -82,7 +111,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 
   const { data, error } = await supabase
     .from('plan_comments')
-    .select('id, author_id, body, created_at, edited_at, users:author_id (display_name, avatar_url)')
+    .select('id, author_id, body, created_at, edited_at, mentions, users:author_id (display_name, avatar_url)')
     .eq('plan_id', id)
     .order('created_at', { ascending: true })
 
@@ -97,10 +126,29 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     body: string
     created_at: string
     edited_at: string | null
+    mentions: string[] | null
     users: { display_name: string | null; avatar_url: string | null } | null
   }
+  const rows = (data ?? []) as unknown as Row[]
 
-  const comments: PlanComment[] = ((data ?? []) as unknown as Row[]).map(r => ({
+  // R8 — likes, counted from the join table rather than a denormalised column.
+  // The composite PK is the integrity story: one row per (comment, liker), so
+  // there is no counter that can drift out of true.
+  const ids = rows.map(r => r.id)
+  const likeCounts = new Map<string, number>()
+  const likedByMe = new Set<string>()
+  if (ids.length) {
+    const { data: likes } = await supabase
+      .from('plan_comment_likes')
+      .select('comment_id, user_id')
+      .in('comment_id', ids)
+    for (const l of likes ?? []) {
+      likeCounts.set(l.comment_id, (likeCounts.get(l.comment_id) ?? 0) + 1)
+      if (l.user_id === userId) likedByMe.add(l.comment_id)
+    }
+  }
+
+  const comments: PlanComment[] = rows.map(r => ({
     id: r.id,
     authorId: r.author_id,
     authorName: r.users?.display_name ?? null,
@@ -108,6 +156,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     body: r.body,
     createdAt: r.created_at,
     editedAt: r.edited_at,
+    likeCount: likeCounts.get(r.id) ?? 0,
+    likedByMe: likedByMe.has(r.id),
+    mentions: r.mentions ?? [],
   }))
 
   return NextResponse.json({ comments })
@@ -126,16 +177,22 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const gate = await access(supabase, id, userId)
   if (!gate) return NextResponse.json({ error: 'Not available' }, { status: 403 })
 
-  const payload = (await req.json()) as { body?: string }
+  const payload = (await req.json()) as { body?: string; mentions?: string[] }
   const body = typeof payload.body === 'string' ? payload.body.trim() : ''
   if (!body) return NextResponse.json({ error: 'Say something first' }, { status: 400 })
   if (body.length > COMMENT_MAX) {
     return NextResponse.json({ error: 'That is too long' }, { status: 400 })
   }
 
+  // R8 — a tag may only ever name someone who is IN this Moove. Enforced here,
+  // not just in the picker: a hand-built request naming an outsider has that id
+  // dropped rather than stored. This is wall 2 applied to mentions — you cannot
+  // pull someone into a room they were never in.
+  const mentions = await validMentions(supabase, id, gate.authorId, payload.mentions)
+
   const { data, error } = await supabase
     .from('plan_comments')
-    .insert({ plan_id: id, author_id: userId, body })
+    .insert({ plan_id: id, author_id: userId, body, mentions })
     .select('id, created_at')
     .single()
 

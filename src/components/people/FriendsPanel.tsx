@@ -7,6 +7,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { initPostHog, posthog } from '@/lib/posthog'
+import { useSheetDrag } from '@/lib/useSheetDrag'
 import CowIllustration from '@/components/ui/CowIllustration'
 import Toast from '@/components/ui/Toast'
 import FriendsList from './FriendsList'
@@ -60,6 +61,9 @@ export default function FriendsPanel() {
     posthog.capture('friends_remove_initiated')
     setRemoveTarget(target ?? { id, displayName, avatarUrl: null })
   }
+
+  // R6 — the remove-confirmation sheet draws a grabber, so it drags.
+  const removeDrag = useSheetDrag(() => setRemoveTarget(null))
 
   function handleCancelRemove() {
     posthog.capture('friends_remove_cancelled')
@@ -179,6 +183,7 @@ export default function FriendsPanel() {
         <>
           <div
             className="fixed inset-0 bg-text-primary/50 z-40"
+            style={{ opacity: removeDrag.scrimOpacity }}
             onClick={handleCancelRemove}
             aria-hidden="true"
           />
@@ -186,8 +191,9 @@ export default function FriendsPanel() {
             className="fixed bottom-0 left-0 right-0 z-50 bg-card-white rounded-t-3xl px-5 pt-4 [--safe-pb-base:2rem] safe-area-pb"
             role="dialog"
             aria-modal="true"
+            {...removeDrag.sheetProps}
           >
-            <div className="w-9 h-1 rounded-full bg-[#E8E4F5] mx-auto mb-5" />
+            <div className="w-9 h-1 rounded-full bg-[#E8E4F5] mx-auto mb-5 cursor-grab" {...removeDrag.handleProps} />
             <h2 className="font-display font-bold text-[18px] text-text-primary tracking-tight mb-2">
               Remove {removeTarget.displayName ?? 'friend'}?
             </h2>

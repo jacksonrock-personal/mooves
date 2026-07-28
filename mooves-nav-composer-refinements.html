@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mooves — Nav + composer refinements</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg:#1C1730; --app-bg:#F8F6FF; --white:#FFFFFF;
+    --purple:#7C5CDB; --purple-100:#EDE9FF; --purple-700:#5F3FC4;
+    --green:#2ECC71; --green-700:#167A43; --green-100:#E3F9EC;
+    --grey:#BDB5D4; --grey-100:#F1EEFA;
+    --ink:#1C1730; --ink-2:#6B628A; --border:#E8E4F5; --red:#E8405A;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); font-family:'Inter',sans-serif; color:#fff; min-height:100vh; padding:40px 20px 90px; -webkit-font-smoothing:antialiased; }
+  .page-title { text-align:center; font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:22px; letter-spacing:-.02em; margin-bottom:5px; }
+  .page-sub { text-align:center; color:#8B82AE; font-size:13px; margin-bottom:26px; }
+  .toggles { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; align-items:center; max-width:900px; margin:0 auto 30px; }
+  .grp-lbl { font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:rgba(255,255,255,.32); margin:0 4px; }
+  .toggle { background:#2A2340; color:#C9C1E4; border:1px solid #3A3355; font-weight:600; font-size:12.5px; padding:9px 15px; border-radius:999px; cursor:pointer; transition:all .15s; }
+  .toggle:hover { border-color:var(--purple); }
+  .toggle.active { background:var(--purple); color:#fff; border-color:var(--purple); }
+  .state { display:none; }
+  .state.active { display:flex; flex-direction:column; align-items:center; gap:15px; }
+  .row2 { display:flex; gap:22px; flex-wrap:wrap; justify-content:center; align-items:flex-start; }
+  .col { display:flex; flex-direction:column; align-items:center; gap:10px; }
+  .col .tag { font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:#8B82AE; }
+
+  .phone { width:320px; height:680px; border-radius:44px; background:var(--app-bg); overflow:hidden; position:relative; box-shadow:0 30px 70px rgba(0,0,0,.45); border:1px solid #2E2748; display:flex; flex-direction:column; }
+  .caption { max-width:440px; text-align:center; font-size:12.5px; line-height:1.55; color:#9990BC; }
+  .caption b { color:#C9C1E4; font-weight:600; }
+  .screen-label { text-align:center; color:#6E6690; font-size:12px; letter-spacing:.04em; }
+  .note-box { max-width:780px; margin:26px auto 0; background:#241E3A; border:1px solid #342D52; border-radius:14px; padding:16px 20px; font-size:12.5px; color:#B3AAD2; line-height:1.7; }
+  .note-box b { color:#E6DEFF; }
+  .note-box h4 { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:13.5px; color:#fff; margin-bottom:8px; letter-spacing:.01em; }
+  .note-box + .note-box { margin-top:12px; }
+  .note-box code { background:#181233; padding:1px 5px; border-radius:4px; font-size:11.5px; color:#D9CFFF; }
+
+  /* ══ chrome ══ */
+  .fhead { background:linear-gradient(160deg,#7C5CDB 0%,#9B7FE8 70%,#A98FF0 100%); padding:22px 16px 17px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .wm { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:22px; color:#fff; letter-spacing:-.02em; display:flex; align-items:center; }
+  .wm .oo { display:inline-flex; align-items:center; gap:2px; margin:0 1px; position:relative; top:1px; }
+  .wm .d1 { width:11px; height:11px; background:var(--green); border-radius:50%; box-shadow:0 0 6px rgba(46,204,113,.6); }
+  .wm .d2 { width:11px; height:11px; background:rgba(255,255,255,.35); border-radius:50%; }
+  .fbody { flex:1; overflow-y:auto; padding:12px 14px 90px; display:flex; flex-direction:column; }
+  .seclbl { font-size:10.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-2); padding:2px 2px 9px; }
+
+  /* ── the OLD floating FAB, for the before/after ── */
+  .fab-old { position:absolute; right:15px; bottom:70px; width:56px; height:56px; border-radius:50%; background:var(--purple); display:flex; align-items:center; justify-content:center; box-shadow:0 8px 22px rgba(124,92,219,.5); z-index:6; border:2.5px solid var(--app-bg); }
+
+  /* ══ NAV — four tabs, today ══ */
+  .nav { position:absolute; bottom:0; left:0; right:0; background:var(--white); border-top:1px solid var(--border); display:flex; z-index:5; }
+  .nav a { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:9px 0 11px; font-size:10px; font-weight:600; color:var(--grey); text-decoration:none; }
+  .nav a.on { color:var(--purple); }
+
+  /* ══ NAV — five slots, centre raised (the Venmo shape) ══ */
+  .nav5 { position:absolute; bottom:0; left:0; right:0; background:var(--white); border-top:1px solid var(--border); display:flex; z-index:5; }
+  .nav5 a { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:9px 0 11px; font-size:9.5px; font-weight:600; color:var(--grey); text-decoration:none; white-space:nowrap; }
+  .nav5 a.on { color:var(--purple); }
+  .nav5 a.plan { color:var(--purple); font-weight:700; justify-content:flex-end; }
+  /* The circle rises out of the bar; the ring is the bar's own colour, which is
+     what reads as a notch without an SVG cutout. */
+  .nav5 .plan .disc { position:absolute; top:-19px; width:52px; height:52px; border-radius:50%; background:var(--purple); display:flex; align-items:center; justify-content:center; box-shadow:0 6px 16px rgba(124,92,219,.42); border:4px solid var(--white); }
+  .nav5 .plan { position:relative; }
+  .nav5 .plan .lbl { margin-top:34px; }
+
+  /* ══ rail + cards ══ */
+  .rail { display:flex; gap:10px; padding:1px 0 12px; }
+  .rz { display:flex; flex-direction:column; align-items:center; gap:4px; width:54px; flex-shrink:0; }
+  .rav { width:50px; height:50px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff; font-size:17px; box-shadow:0 0 0 2.5px var(--green), 0 0 0 5px var(--app-bg); }
+  .rz .nm { font-size:10.5px; font-weight:600; color:var(--ink); }
+  .rz .tl { font-size:8.5px; font-weight:700; color:var(--ink-2); letter-spacing:.05em; text-transform:uppercase; }
+  .mine-card { background:var(--green-100); border:1.5px solid rgba(46,204,113,.45); border-radius:16px; padding:12px; margin-bottom:11px; }
+  .mine-hd { display:flex; align-items:center; gap:9px; }
+  .mine-dot { width:9px; height:9px; border-radius:50%; background:var(--green); flex-shrink:0; }
+  .mine-t { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:15px; color:var(--green-700); letter-spacing:-.01em; }
+  .chip-g { margin-left:auto; font-size:10.5px; font-weight:700; color:var(--purple-700); background:var(--purple-100); padding:3px 9px; border-radius:100px; }
+  .card { border:1.5px solid var(--border); background:var(--white); border-radius:16px; padding:11px 12px; margin-bottom:8px; }
+  .crow { display:flex; align-items:center; gap:11px; }
+  .lead { width:46px; height:46px; flex-shrink:0; border-radius:13px; background:var(--purple-100); display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .lead .t1 { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:13px; color:var(--purple-700); line-height:1; }
+  .lead .t2 { font-size:8.5px; font-weight:700; letter-spacing:.06em; color:var(--purple-700); opacity:.75; line-height:1.4; }
+  .cbody { flex:1; min-width:0; }
+  .cbody > span { display:block; }
+  .ctitle { font-family:'Plus Jakarta Sans',sans-serif; font-weight:700; font-size:15px; color:var(--ink); }
+  .csub { font-size:12.5px; color:var(--ink-2); margin-top:2px; }
+  .btn-join { flex-shrink:0; padding:8px 13px; border-radius:100px; font-weight:700; font-size:12.5px; border:none; background:var(--purple); color:#fff; }
+  .btn-join.in { background:var(--green-700); }
+  .whorow { display:flex; align-items:center; gap:7px; margin-top:9px; padding-top:8px; border-top:1px solid rgba(28,23,48,.07); font-size:11.5px; color:var(--ink-2); font-weight:600; }
+  .jav { width:22px; height:22px; border-radius:50%; background:#C9A87C; }
+
+  /* ══ THE COMPOSER ══ */
+  .scrim { position:absolute; inset:0; background:rgba(28,23,48,.5); z-index:7; }
+  .sheet { position:absolute; left:0; right:0; bottom:0; z-index:8; background:var(--white); border-radius:22px 22px 0 0; display:flex; flex-direction:column; max-height:92%; }
+  .grab { width:38px; height:4.5px; border-radius:3px; background:var(--grey); margin:9px auto 4px; flex-shrink:0; }
+  .sh-scroll { overflow-y:auto; padding:6px 16px 4px; }
+  .sh-hd { display:flex; align-items:flex-start; gap:10px; }
+  .sh-title { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:20px; letter-spacing:-.025em; color:var(--ink); }
+  .sh-cancel { margin-left:auto; font-size:14.5px; font-weight:600; color:var(--purple); background:none; border:none; cursor:pointer; padding-top:3px; }
+  .sh-sub { font-size:12.5px; color:var(--ink-2); margin-top:4px; line-height:1.45; }
+  .flbl { font-size:10.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-2); margin:16px 0 6px; }
+  .flbl .opt { font-weight:500; text-transform:none; letter-spacing:0; font-size:11px; color:var(--grey); margin-left:3px; }
+  .fin { width:100%; border:1.5px solid var(--border); background:var(--app-bg); border-radius:13px; padding:12px 13px; font-size:14.5px; color:var(--ink); font-family:'Inter',sans-serif; }
+  .fin::placeholder { color:var(--grey); }
+  .fin:focus { outline:none; border-color:var(--purple); background:var(--white); }
+  .when-row { display:flex; gap:9px; }
+  .when-row .fin { flex:1; min-width:0; }
+  /* a "date" field that still shows a hint before it is filled */
+  .ghost { color:var(--grey); }
+  .link-t { display:inline-flex; align-items:center; gap:6px; margin-top:10px; font-size:12.5px; font-weight:700; color:var(--purple); background:none; border:none; cursor:pointer; padding:0; }
+  .chips { display:flex; gap:7px; flex-wrap:wrap; }
+  .chip { padding:9px 15px; border-radius:100px; border:1.5px solid var(--border); background:var(--white); font-size:13px; font-weight:600; color:var(--ink-2); cursor:pointer; font-family:'Inter',sans-serif; }
+  .chip.on { border-color:var(--purple); background:var(--purple-100); color:var(--purple-700); font-weight:700; }
+  .sh-foot { border-top:1px solid var(--border); padding:11px 16px 16px; flex-shrink:0; background:var(--white); }
+  .btn-post { width:100%; padding:14px; border-radius:15px; background:var(--purple); color:#fff; font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:15.5px; border:none; cursor:pointer; }
+  .btn-post:disabled { background:#CFC4F0; cursor:default; }
+
+  /* ══ the cow button ══ */
+  .cowmark { width:34px; height:34px; display:block; }
+  .disc.cow { background:var(--purple); }
+  .disc.cowlight { background:#F3EFFF; border-color:var(--white); box-shadow:0 6px 16px rgba(124,92,219,.34), inset 0 0 0 2px var(--purple); }
+  .pbadge { position:absolute; right:-3px; bottom:-3px; width:21px; height:21px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:2.5px solid var(--white); }
+  .pbadge.onpurple { background:var(--white); }
+  .pbadge.onlight  { background:var(--purple); }
+
+  /* option board */
+  .board { display:flex; gap:26px; flex-wrap:wrap; justify-content:center; align-items:flex-start; background:#241E3A; border:1px solid #342D52; border-radius:18px; padding:24px 26px; }
+  .opt-col { display:flex; flex-direction:column; align-items:center; gap:13px; width:150px; }
+  .opt-name { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:12.5px; color:#fff; letter-spacing:.01em; }
+  .opt-note { font-size:11.5px; line-height:1.55; color:#9990BC; text-align:center; }
+  .opt-note b { color:#C9C1E4; font-weight:600; }
+  /* the two sizes that matter: hero, and the size it actually ships at */
+  .swatch { background:var(--white); border-radius:16px; padding:16px 0 11px; width:100%; display:flex; flex-direction:column; align-items:center; gap:10px; }
+  .big { position:relative; width:78px; height:78px; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+  .big .cowmark { width:52px; height:52px; }
+  .big .pbadge { width:29px; height:29px; right:-2px; bottom:-2px; border-width:3.5px; }
+  .real { position:relative; width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+  .real .cowmark { width:34px; height:34px; }
+  .actual-lbl { font-size:9.5px; font-weight:700; color:var(--purple); letter-spacing:.01em; }
+
+  /* ══ the Moove sheet (comments) ══ */
+  .msheet { position:absolute; left:0; right:0; bottom:0; z-index:8; background:var(--white); border-radius:22px 22px 0 0; display:flex; flex-direction:column; height:76%; }
+  .seg { display:flex; gap:4px; background:var(--grey-100); border-radius:100px; padding:3px; margin:14px 18px 0; flex-shrink:0; }
+  .seg button { flex:1; padding:8px 0; border-radius:100px; border:none; background:none; font-size:12.5px; font-weight:700; color:var(--ink-2); cursor:pointer; font-family:'Inter',sans-serif; }
+  .seg button.on { background:var(--white); color:var(--ink); box-shadow:0 1px 3px rgba(28,23,48,.13); }
+  .seg .n { opacity:.55; margin-left:4px; }
+  .divider { height:1px; background:var(--border); margin:13px 18px 0; flex-shrink:0; }
+  .cmlist { flex:1; overflow-y:auto; padding:8px 18px 6px; }
+  .cmrow { display:flex; gap:9px; padding:8px 0; align-items:flex-start; }
+  .cmav { width:30px; height:30px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; color:#fff; font-size:12px; font-weight:700; }
+  .cmb { flex:1; min-width:0; }
+  .cmname { font-size:12.5px; font-weight:700; color:var(--ink); }
+  .cmtime { font-size:10.5px; color:var(--grey); font-weight:500; margin-left:6px; }
+  .cmtext { font-size:13.5px; color:var(--ink); line-height:1.45; margin-top:1px; word-wrap:break-word; }
+  .cmtext .mention { color:var(--purple-700); font-weight:700; }
+  .heart { display:flex; flex-direction:column; align-items:center; gap:1px; flex-shrink:0; padding:2px 0 0; cursor:pointer; background:none; border:none; }
+  .heart .hc { font-size:10.5px; font-weight:700; color:var(--grey); line-height:1; }
+  .heart.on .hc { color:var(--red); }
+  .pill { border-top:1px solid var(--border); padding:10px 14px 16px; display:flex; gap:8px; align-items:center; flex-shrink:0; }
+  .pill .fld { flex:1; border:1.5px solid var(--border); background:var(--app-bg); border-radius:100px; padding:10px 14px; font-size:13.5px; color:var(--ink); }
+  .pill .fld.ph { color:var(--grey); }
+  .send { width:34px; height:34px; border-radius:50%; background:var(--purple); display:flex; align-items:center; justify-content:center; flex-shrink:0; border:none; }
+  .send.off { background:var(--grey); }
+  .ac { position:absolute; left:14px; right:14px; bottom:64px; background:var(--white); border:1.5px solid var(--border); border-radius:14px; box-shadow:0 -8px 22px rgba(28,23,48,.16); overflow:hidden; z-index:9; }
+  .ac .achd { font-size:9.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--grey); padding:9px 13px 6px; }
+  .ac .acrow { display:flex; align-items:center; gap:9px; padding:8px 13px; cursor:pointer; }
+  .ac .acrow + .acrow { border-top:1px solid var(--border); }
+  .ac .acn { font-size:13.5px; font-weight:600; color:var(--ink); }
+  .ac .actag { margin-left:auto; font-size:10px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--grey); }
+
+  /* drag-to-dismiss */
+  .draggable { touch-action:none; }
+  .grab-zone { cursor:grab; }
+  .grab-zone:active { cursor:grabbing; }
+  .dragging { transition:none !important; }
+  .settling { transition:transform .22s cubic-bezier(.22,.9,.3,1); }
+
+  /* the reveal */
+  .step { animation:rise .28s cubic-bezier(.22,.9,.3,1) both; }
+  /* Global, not scoped to .step — the exact date/time row and the coarse chip
+     row both use it, and scoping it to .step left them with no rule at all. */
+  .hidden { display:none !important; }
+  @keyframes rise { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:none; } }
+</style>
+</head>
+<body>
+  <!-- The shipped cow mark (public/brand/cow-icon.svg, minus its tile), reused by
+       <use> so every button below is provably the same artwork at every size. -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="cow" viewBox="0 0 120 120">
+      <ellipse cx="11" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(-28 11 33)"/>
+      <ellipse cx="109" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(28 109 33)"/>
+      <ellipse cx="11" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(-28 11 34)"/>
+      <ellipse cx="109" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(28 109 34)"/>
+      <ellipse cx="38" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(-14 38 19)"/>
+      <ellipse cx="82" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(14 82 19)"/>
+      <rect x="15" y="20" width="90" height="92" rx="30" fill="#F5F0ED"/>
+      <ellipse cx="41" cy="44" rx="19" ry="13" fill="#7A7282" transform="rotate(-10 41 44)"/>
+      <ellipse cx="79" cy="69" rx="14" ry="9" fill="#7A7282" transform="rotate(16 79 69)"/>
+      <circle cx="44" cy="57" r="6" fill="#2A1E38"/>
+      <circle cx="76" cy="57" r="6" fill="#2A1E38"/>
+      <circle cx="46.5" cy="54.5" r="2.2" fill="white"/>
+      <circle cx="78.5" cy="54.5" r="2.2" fill="white"/>
+      <ellipse cx="60" cy="90" rx="27" ry="20" fill="#F0AABB"/>
+      <circle cx="50" cy="91" r="9" fill="#2ECC71"/>
+      <circle cx="70" cy="91" r="9" fill="#BDB5D4"/>
+    </symbol>
+    <!-- Option C: the grey nostril becomes the "+". Same green-and-grey dot pair
+         the wordmark's "oo" uses, so the mark stays the mark. -->
+    <symbol id="cowplus" viewBox="0 0 120 120">
+      <ellipse cx="11" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(-28 11 33)"/>
+      <ellipse cx="109" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(28 109 33)"/>
+      <ellipse cx="11" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(-28 11 34)"/>
+      <ellipse cx="109" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(28 109 34)"/>
+      <ellipse cx="38" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(-14 38 19)"/>
+      <ellipse cx="82" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(14 82 19)"/>
+      <rect x="15" y="20" width="90" height="92" rx="30" fill="#F5F0ED"/>
+      <ellipse cx="41" cy="44" rx="19" ry="13" fill="#7A7282" transform="rotate(-10 41 44)"/>
+      <ellipse cx="79" cy="69" rx="14" ry="9" fill="#7A7282" transform="rotate(16 79 69)"/>
+      <circle cx="44" cy="57" r="6" fill="#2A1E38"/>
+      <circle cx="76" cy="57" r="6" fill="#2A1E38"/>
+      <circle cx="46.5" cy="54.5" r="2.2" fill="white"/>
+      <circle cx="78.5" cy="54.5" r="2.2" fill="white"/>
+      <ellipse cx="60" cy="90" rx="27" ry="20" fill="#F0AABB"/>
+      <circle cx="50" cy="91" r="9" fill="#2ECC71"/>
+      <circle cx="70" cy="91" r="10.5" fill="#5F3FC4"/>
+      <path d="M70 85.6v10.8M64.6 91h10.8" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/>
+    </symbol>
+  </svg>
+
+  <div class="page-title">Nav + composer refinements</div>
+  <div class="page-sub">The "+" moves into the bar, and the form arrives a step at a time</div>
+
+  <div class="toggles">
+    <span class="grp-lbl">1 · The button</span>
+    <button class="toggle active" data-state="cowopts">Cow options</button>
+    <button class="toggle" data-state="navcompare">Before / after</button>
+    <button class="toggle" data-state="navfeed">New nav, in place</button>
+    <span class="grp-lbl">3 · One step at a time</span>
+    <button class="toggle" data-state="s1">Step 1</button>
+    <button class="toggle" data-state="s2">Step 2</button>
+    <button class="toggle" data-state="s3">Step 3</button>
+    <span class="grp-lbl">2 · When</span>
+    <button class="toggle" data-state="exact">Exact, with hints</button>
+    <span class="grp-lbl">4 · Comments</span>
+    <button class="toggle" data-state="cmhead">Header gone</button>
+    <button class="toggle" data-state="cmlikes">Likes</button>
+    <button class="toggle" data-state="cmtag">Tagging</button>
+    <span class="grp-lbl">Feel it</span>
+    <button class="toggle" data-state="live">Try it →</button>
+    <button class="toggle" data-state="drag">Swipe to close →</button>
+  </div>
+
+  <!-- ══════ COW OPTIONS ══════ -->
+  <div class="state active" data-state="cowopts">
+    <div class="board">
+      <div class="opt-col">
+        <span class="opt-name">A · Badge on purple</span>
+        <div class="swatch">
+          <span class="big cow" style="background:var(--purple);">
+            <svg class="cowmark"><use href="#cow"/></svg>
+            <span class="pbadge onpurple"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7C5CDB" stroke-width="3.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
+          </span>
+          <span class="real cow" style="background:var(--purple);">
+            <svg class="cowmark"><use href="#cow"/></svg>
+            <span class="pbadge onpurple"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#7C5CDB" stroke-width="3.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
+          </span>
+          <span class="actual-lbl">Plan a Moove</span>
+        </div>
+        <span class="opt-note"><b>My pick.</b> Keeps the purple weight of a primary action, and the "+" is unmistakably "add". Survives 52px with room to spare.</span>
+      </div>
+
+      <div class="opt-col">
+        <span class="opt-name">B · Cow on light</span>
+        <div class="swatch">
+          <span class="big cowlight" style="background:#F3EFFF; box-shadow:inset 0 0 0 2.5px var(--purple);">
+            <svg class="cowmark"><use href="#cow"/></svg>
+            <span class="pbadge onlight"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
+          </span>
+          <span class="real cowlight" style="background:#F3EFFF; box-shadow:inset 0 0 0 2px var(--purple);">
+            <svg class="cowmark"><use href="#cow"/></svg>
+            <span class="pbadge onlight"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
+          </span>
+          <span class="actual-lbl">Plan a Moove</span>
+        </div>
+        <span class="opt-note">The cow reads clearest here, because it is not fighting a purple field. But it <b>loses the weight</b> of a primary action and starts to look like a disabled tab.</span>
+      </div>
+
+      <div class="opt-col">
+        <span class="opt-name">C · The nostril "+"</span>
+        <div class="swatch">
+          <span class="big cow" style="background:var(--purple);">
+            <svg class="cowmark"><use href="#cowplus"/></svg>
+          </span>
+          <span class="real cow" style="background:var(--purple);">
+            <svg class="cowmark"><use href="#cowplus"/></svg>
+          </span>
+          <span class="actual-lbl">Plan a Moove</span>
+        </div>
+        <span class="opt-note">The cow's nostrils are already the wordmark's green-and-grey dot pair, so the grey one becomes the "+". Lovely big. <b>At 52px the plus is 4px wide</b> and turns to mush.</span>
+      </div>
+    </div>
+    <div class="caption">Top row is each option at hero size, bottom row is <b>the size it actually ships at</b> in the bar. That second row is the only one that matters, and it is what rules C out however much I like the idea.</div>
+    <div class="screen-label">Plan a Moove — three cow treatments</div>
+  </div>
+
+  <!-- ══════ BEFORE / AFTER ══════ -->
+  <div class="state" data-state="navcompare">
+    <div class="row2">
+      <div class="col">
+        <span class="tag">Today</span>
+        <div class="phone">
+          <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+          <div class="fbody">
+            <div class="seclbl">Mooves</div>
+            <div class="card">
+              <div class="crow">
+                <span class="lead"><span class="t1">THIS</span><span class="t2">WEEK</span></span>
+                <span class="cbody"><span class="ctitle">The Invite</span><span class="csub">This week, Regal North</span></span>
+                <button class="btn-join">I'm in</button>
+              </div>
+              <div class="whorow"><span class="jav"></span>1 in</div>
+            </div>
+            <div class="card">
+              <div class="crow">
+                <span class="lead"><span class="t1">5:05</span><span class="t2">PM</span></span>
+                <span class="cbody"><span class="ctitle">Park hang</span><span class="csub">Tomorrow, Palmer Square</span></span>
+                <button class="btn-join in">You're in ✓</button>
+              </div>
+              <div class="whorow"><span class="jav"></span><span class="jav" style="background:#E8A0B4;"></span>5 in</div>
+            </div>
+          </div>
+          <div class="fab-old"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+          <div class="nav">
+            <a class="on"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Feed</a>
+            <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5 5-2Z"/></svg>Discover</a>
+            <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>People</a>
+            <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col">
+        <span class="tag">Proposed</span>
+        <div class="phone">
+          <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+          <div class="fbody">
+            <div class="seclbl">Mooves</div>
+            <div class="card">
+              <div class="crow">
+                <span class="lead"><span class="t1">THIS</span><span class="t2">WEEK</span></span>
+                <span class="cbody"><span class="ctitle">The Invite</span><span class="csub">This week, Regal North</span></span>
+                <button class="btn-join">I'm in</button>
+              </div>
+              <div class="whorow"><span class="jav"></span>1 in</div>
+            </div>
+            <div class="card">
+              <div class="crow">
+                <span class="lead"><span class="t1">5:05</span><span class="t2">PM</span></span>
+                <span class="cbody"><span class="ctitle">Park hang</span><span class="csub">Tomorrow, Palmer Square</span></span>
+                <button class="btn-join in">You're in ✓</button>
+              </div>
+              <div class="whorow"><span class="jav"></span><span class="jav" style="background:#E8A0B4;"></span>5 in</div>
+            </div>
+          </div>
+          <div class="nav5">
+            <a class="on"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Feed</a>
+            <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5 5-2Z"/></svg>Discover</a>
+            <a class="plan"><span class="disc cow"><svg class="cowmark"><use href="#cow"/></svg><span class="pbadge onpurple"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#7C5CDB" stroke-width="3.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></span><span class="lbl">Plan a Moove</span></a>
+            <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>People</a>
+            <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="caption">Left is what you screenshotted: the FAB is sitting on top of <b>"5 in"</b> and the comment control of the card underneath it. Right, the same two cards are whole. The button also stops being a floating mystery circle and <b>says what it does</b>.</div>
+    <div class="screen-label">Feed — the "+" moves into the bar</div>
+  </div>
+
+  <!-- ══════ NEW NAV IN PLACE ══════ -->
+  <div class="state" data-state="navfeed">
+    <div class="phone">
+      <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+      <div class="fbody">
+        <div class="seclbl">Free</div>
+        <div class="rail">
+          <div class="rz"><span class="rav" style="background:var(--purple);">Y</span><span class="nm">You</span><span class="tl">Tonight</span></div>
+          <div class="rz"><span class="rav" style="background:#C9A87C;">K</span><span class="nm">Katherin…</span><span class="tl">Tonight</span></div>
+        </div>
+        <div class="mine-card">
+          <div class="mine-hd"><span class="mine-dot"></span><span class="mine-t">You're free</span><span class="chip-g">Tonight</span></div>
+        </div>
+        <div class="seclbl">Mooves</div>
+        <div class="card">
+          <div class="crow">
+            <span class="lead"><span class="t1">5:05</span><span class="t2">PM</span></span>
+            <span class="cbody"><span class="ctitle">Park hang</span><span class="csub">Tomorrow, Palmer Square</span></span>
+            <button class="btn-join in">You're in ✓</button>
+          </div>
+          <div class="whorow"><span class="jav"></span><span class="jav" style="background:#E8A0B4;"></span>5 in</div>
+        </div>
+      </div>
+      <div class="nav5">
+        <a class="on"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Feed</a>
+        <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5 5-2Z"/></svg>Discover</a>
+        <a class="plan"><span class="disc cow"><svg class="cowmark"><use href="#cow"/></svg><span class="pbadge onpurple"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#7C5CDB" stroke-width="3.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></span><span class="lbl">Plan a Moove</span></a>
+        <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>People</a>
+        <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+      </div>
+    </div>
+    <div class="caption">The circle rises out of the bar and wears a white ring, which is what reads as a notch without cutting a real hole in it. <b>It is not a tab</b> — it never takes the purple "current page" state, because it opens a sheet and leaves you where you were. The cow here is the <b>same artwork as the header lockup</b>, so the mark you see at the top is the one you press at the bottom.</div>
+    <div class="screen-label">Feed — five slots, centre raised</div>
+  </div>
+
+  <!-- ══════ STEP 1 ══════ -->
+  <div class="state" data-state="s1">
+    <div class="phone">
+      <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+      <div class="fbody"></div>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="sh-scroll">
+          <div class="sh-hd"><span class="sh-title">Plan a Moove</span><button class="sh-cancel">Cancel</button></div>
+          <div class="sh-sub">Got something in mind? Throw it out there! This does not make you free right now.</div>
+          <div class="flbl">What is it</div>
+          <input class="fin" placeholder="Climbing, dinner, trivia night" />
+        </div>
+        <div class="sh-foot"><button class="btn-post" disabled>Post this Moove</button></div>
+      </div>
+    </div>
+    <div class="caption"><b>One question.</b> Your screenshot showed six fields and a scrollbar the moment the sheet opened, which reads as paperwork. This is the same form, asking for the first thing only.</div>
+    <div class="screen-label">Composer — step 1 of 3</div>
+  </div>
+
+  <!-- ══════ STEP 2 ══════ -->
+  <div class="state" data-state="s2">
+    <div class="phone">
+      <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+      <div class="fbody"></div>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="sh-scroll">
+          <div class="sh-hd"><span class="sh-title">Plan a Moove</span><button class="sh-cancel">Cancel</button></div>
+          <div class="sh-sub">Got something in mind? Throw it out there! This does not make you free right now.</div>
+          <div class="flbl">What is it</div>
+          <input class="fin" value="Climbing at First Ascent" />
+          <div class="step">
+            <div class="flbl">When</div>
+            <div class="chips">
+              <button class="chip">Tonight</button>
+              <button class="chip on">This week</button>
+              <button class="chip">This weekend</button>
+            </div>
+            <button class="link-t">＋ Add an exact date and time</button>
+          </div>
+        </div>
+        <div class="sh-foot"><button class="btn-post">Post this Moove</button></div>
+      </div>
+    </div>
+    <div class="caption"><b>Rough time is the default</b>, which is what 294524e settled and what the code already does on a fresh open. The exact pickers stay behind the "+". Note the chips start <b>unselected</b> now, so choosing one is a real action that moves you on, rather than a default that was already satisfied.</div>
+    <div class="screen-label">Composer — step 2 of 3</div>
+  </div>
+
+  <!-- ══════ STEP 3 ══════ -->
+  <div class="state" data-state="s3">
+    <div class="phone">
+      <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+      <div class="fbody"></div>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="sh-scroll">
+          <div class="sh-hd"><span class="sh-title">Plan a Moove</span><button class="sh-cancel">Cancel</button></div>
+          <div class="sh-sub">Got something in mind? Throw it out there! This does not make you free right now.</div>
+          <div class="flbl">What is it</div>
+          <input class="fin" value="Climbing at First Ascent" />
+          <div class="flbl">When</div>
+          <div class="chips">
+            <button class="chip">Tonight</button>
+            <button class="chip on">This week</button>
+            <button class="chip">This weekend</button>
+          </div>
+          <button class="link-t">＋ Add an exact date and time</button>
+          <div class="step">
+            <div class="flbl">Who can see this?</div>
+            <div class="chips">
+              <button class="chip on">Everyone</button>
+              <button class="chip">🏄 Hygge Hive</button>
+              <button class="chip">🎸 Flowminion</button>
+            </div>
+            <div class="flbl">Where <span class="opt">optional</span></div>
+            <input class="fin" placeholder="First Ascent, Avondale" />
+            <div class="flbl">Anything else <span class="opt">optional</span></div>
+            <input class="fin" placeholder="Bring shoes if you have them" />
+          </div>
+        </div>
+        <div class="sh-foot"><button class="btn-post">Post this Moove</button></div>
+      </div>
+    </div>
+    <div class="caption"><b>Who can see this sits directly under When</b>, ahead of the two optional fields. It is the only thing in this group that changes who the Moove reaches, so burying it under Where and Anything else had it reading as an afterthought. The rest arrive together, because they are leftovers rather than a sequence.</div>
+    <div class="screen-label">Composer — step 3 of 3</div>
+  </div>
+
+  <!-- ══════ EXACT ══════ -->
+  <div class="state" data-state="exact">
+    <div class="phone">
+      <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+      <div class="fbody"></div>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="sh-scroll">
+          <div class="sh-hd"><span class="sh-title">Plan a Moove</span><button class="sh-cancel">Cancel</button></div>
+          <div class="sh-sub">Got something in mind? Throw it out there! This does not make you free right now.</div>
+          <div class="flbl">What is it</div>
+          <input class="fin" value="Climbing at First Ascent" />
+          <div class="flbl">When</div>
+          <div class="when-row">
+            <input class="fin ghost" value="7/29" />
+            <input class="fin ghost" value="10:30 AM" />
+          </div>
+          <button class="link-t">－ Use a rough time instead</button>
+          <div class="flbl">Where <span class="opt">optional</span></div>
+          <input class="fin" placeholder="First Ascent, Avondale" />
+        </div>
+        <div class="sh-foot"><button class="btn-post">Post this Moove</button></div>
+      </div>
+    </div>
+    <div class="caption">Two empty grey boxes told you nothing about what went in them. Now they show <b>7/29</b> and <b>10:30 AM</b> in placeholder grey, so the format is obvious before you tap. Date stays required in this mode, time stays optional.</div>
+    <div class="screen-label">Composer — exact date and time</div>
+  </div>
+
+  <!-- ══════ LIVE ══════ -->
+  <div class="state" data-state="live">
+    <div class="phone">
+      <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+      <div class="fbody"></div>
+      <div class="scrim"></div>
+      <div class="sheet" id="liveSheet">
+        <div class="grab"></div>
+        <div class="sh-scroll">
+          <div class="sh-hd"><span class="sh-title">Plan a Moove</span><button class="sh-cancel">Cancel</button></div>
+          <div class="sh-sub">Got something in mind? Throw it out there! This does not make you free right now.</div>
+          <div class="flbl">What is it</div>
+          <input class="fin" id="liveTitle" placeholder="Climbing, dinner, trivia night" />
+
+          <div class="step hidden" id="liveWhen">
+            <div class="flbl">When</div>
+            <div class="chips" id="liveChips">
+              <button class="chip">Tonight</button>
+              <button class="chip">This week</button>
+              <button class="chip">This weekend</button>
+            </div>
+            <button class="link-t" id="liveExactToggle">＋ Add an exact date and time</button>
+            <div class="when-row hidden" id="liveExact" style="margin-top:9px;">
+              <input class="fin" id="liveDate" placeholder="7/29" />
+              <input class="fin" id="liveTime" placeholder="10:30 AM" />
+            </div>
+          </div>
+
+          <div class="step hidden" id="liveRest">
+            <div class="flbl">Who can see this?</div>
+            <div class="chips">
+              <button class="chip on">Everyone</button>
+              <button class="chip">🏄 Hygge Hive</button>
+              <button class="chip">🎸 Flowminion</button>
+            </div>
+            <div class="flbl">Where <span class="opt">optional</span></div>
+            <input class="fin" placeholder="First Ascent, Avondale" />
+            <div class="flbl">Anything else <span class="opt">optional</span></div>
+            <input class="fin" placeholder="Bring shoes if you have them" />
+          </div>
+        </div>
+        <div class="sh-foot"><button class="btn-post" id="livePost" disabled>Post this Moove</button></div>
+      </div>
+    </div>
+    <div class="caption"><b>Type a title, then pick a time.</b> This one actually works, so you can feel the pacing rather than read about it. The reveal is a 280ms rise, short enough that a fast typer is never waiting on it.</div>
+    <div class="screen-label">Composer — the real pacing</div>
+  </div>
+
+  <!-- ══════ COMMENTS — HEADER GONE ══════ -->
+  <div class="state" data-state="cmhead">
+    <div class="row2">
+      <div class="col">
+        <span class="tag">Today</span>
+        <div class="phone">
+          <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+          <div class="fbody"></div>
+          <div class="scrim"></div>
+          <div class="msheet">
+            <div class="grab"></div>
+            <div style="padding:14px 18px 12px; flex-shrink:0;">
+              <div style="display:flex; margin-bottom:11px;">
+                <span class="cmav" style="width:44px;height:44px;font-size:16px;background:#7FA8E8;box-shadow:0 0 0 2.5px #fff;">M</span>
+                <span class="cmav" style="width:44px;height:44px;font-size:16px;background:#C9A87C;margin-left:-14px;box-shadow:0 0 0 2.5px #fff;">K</span>
+                <span class="cmav" style="width:44px;height:44px;font-size:16px;background:#E8A0B4;margin-left:-14px;box-shadow:0 0 0 2.5px #fff;">P</span>
+              </div>
+              <p style="font-size:16px; color:var(--ink); line-height:1.35;"><b>Michael</b> <span style="color:var(--ink-2);">is doing</span> <b>Park hang</b></p>
+              <p style="font-size:13px; color:var(--ink-2); margin-top:5px;">Tomorrow 5:05 PM, Palmer Square</p>
+            </div>
+            <div class="seg" style="margin-top:0;">
+              <button>Who's in <span class="n">5</span></button>
+              <button class="on">Comments <span class="n">3</span></button>
+            </div>
+            <div class="divider"></div>
+            <div class="cmlist">
+              <div class="cmrow"><span class="cmav" style="background:#C9A87C;">K</span><span class="cmb"><span class="cmname">Katherine<span class="cmtime">12m</span></span><span class="cmtext">Running 10 late, start without me</span></span></div>
+              <div class="cmrow"><span class="cmav" style="background:#E8A0B4;">P</span><span class="cmb"><span class="cmname">Priya<span class="cmtime">6m</span></span><span class="cmtext">Bringing a ball</span></span></div>
+            </div>
+            <div class="pill"><span class="fld ph">Add a comment</span><span class="send off"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg></span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col">
+        <span class="tag">Proposed</span>
+        <div class="phone">
+          <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+          <div class="fbody"></div>
+          <div class="scrim"></div>
+          <div class="msheet">
+            <div class="grab"></div>
+            <div class="seg">
+              <button>Who's in <span class="n">5</span></button>
+              <button class="on">Comments <span class="n">3</span></button>
+            </div>
+            <div class="divider"></div>
+            <div class="cmlist">
+              <div class="cmrow"><span class="cmav" style="background:#C9A87C;">K</span><span class="cmb"><span class="cmname">Katherine<span class="cmtime">12m</span></span><span class="cmtext">Running 10 late, start without me</span></span></div>
+              <div class="cmrow"><span class="cmav" style="background:#E8A0B4;">P</span><span class="cmb"><span class="cmname">Priya<span class="cmtime">6m</span></span><span class="cmtext">Bringing a ball</span></span></div>
+              <div class="cmrow"><span class="cmav" style="background:#8FBF9F;">A</span><span class="cmb"><span class="cmname">Aaron<span class="cmtime">2m</span></span><span class="cmtext">Meet at the north gate</span></span></div>
+            </div>
+            <div class="pill"><span class="fld ph">Add a comment</span><span class="send off"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="caption">The restatement cost <b>about 120px</b>, roughly a comment and a half, to tell you something you already knew — you tapped this card to get here. Gone, the sheet opens straight onto the two things it is for, and a third comment fits without scrolling.</div>
+    <div class="screen-label">Moove sheet — header removed</div>
+  </div>
+
+  <!-- ══════ LIKES ══════ -->
+  <div class="state" data-state="cmlikes">
+    <div class="phone">
+      <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+      <div class="fbody"></div>
+      <div class="scrim"></div>
+      <div class="msheet">
+        <div class="grab"></div>
+        <div class="seg">
+          <button>Who's in <span class="n">5</span></button>
+          <button class="on">Comments <span class="n">3</span></button>
+        </div>
+        <div class="divider"></div>
+        <div class="cmlist">
+          <div class="cmrow">
+            <span class="cmav" style="background:#C9A87C;">K</span>
+            <span class="cmb"><span class="cmname">Katherine<span class="cmtime">12m</span></span><span class="cmtext">Running 10 late, start without me</span></span>
+            <button class="heart on"><svg width="17" height="17" viewBox="0 0 24 24" fill="#E8405A" stroke="#E8405A" stroke-width="2"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1L12 21.2l7.7-7.8 1.1-1a5.5 5.5 0 0 0 0-7.8z"/></svg><span class="hc">2</span></button>
+          </div>
+          <div class="cmrow">
+            <span class="cmav" style="background:#E8A0B4;">P</span>
+            <span class="cmb"><span class="cmname">Priya<span class="cmtime">6m</span></span><span class="cmtext">Bringing a ball</span></span>
+            <button class="heart"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#BDB5D4" stroke-width="2"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1L12 21.2l7.7-7.8 1.1-1a5.5 5.5 0 0 0 0-7.8z"/></svg><span class="hc">1</span></button>
+          </div>
+          <div class="cmrow">
+            <span class="cmav" style="background:#8FBF9F;">A</span>
+            <span class="cmb"><span class="cmname">Aaron<span class="cmtime">2m</span></span><span class="cmtext">Meet at the north gate</span></span>
+            <button class="heart"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#BDB5D4" stroke-width="2"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1L12 21.2l7.7-7.8 1.1-1a5.5 5.5 0 0 0 0-7.8z"/></svg></button>
+          </div>
+        </div>
+        <div class="pill"><span class="fld ph">Add a comment</span><span class="send off"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg></span></div>
+      </div>
+    </div>
+    <div class="caption">The hearts are live, tap them. <b>A zero shows no number at all</b>, only the outline — so an unliked comment never displays a 0, which would read as a score you are losing. The count sits with the heart and appears nowhere else: <b>not on the card, not on the tab, never a push</b>.</div>
+    <div class="screen-label">Comments — likes</div>
+  </div>
+
+  <!-- ══════ TAGGING ══════ -->
+  <div class="state" data-state="cmtag">
+    <div class="phone">
+      <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+      <div class="fbody"></div>
+      <div class="scrim"></div>
+      <div class="msheet">
+        <div class="grab"></div>
+        <div class="seg">
+          <button>Who's in <span class="n">5</span></button>
+          <button class="on">Comments <span class="n">3</span></button>
+        </div>
+        <div class="divider"></div>
+        <div class="cmlist">
+          <div class="cmrow"><span class="cmav" style="background:#E8A0B4;">P</span><span class="cmb"><span class="cmname">Priya<span class="cmtime">6m</span></span><span class="cmtext">Bringing a ball</span></span></div>
+          <div class="cmrow"><span class="cmav" style="background:#8FBF9F;">A</span><span class="cmb"><span class="cmname">Aaron<span class="cmtime">2m</span></span><span class="cmtext"><span class="mention">@Katherine</span> can you grab the speaker on your way?</span></span></div>
+        </div>
+        <div class="ac">
+          <div class="achd">People who are in</div>
+          <div class="acrow"><span class="cmav" style="background:#C9A87C;width:26px;height:26px;font-size:11px;">K</span><span class="acn">Katherine Coates</span></div>
+          <div class="acrow"><span class="cmav" style="background:#7FA8E8;width:26px;height:26px;font-size:11px;">M</span><span class="acn">Michael Holtzman</span><span class="actag">Host</span></div>
+        </div>
+        <div class="pill"><span class="fld">@kat</span><span class="send"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg></span></div>
+      </div>
+    </div>
+    <div class="caption">Typing <b>@</b> lists <b>only people who are in this Moove</b>, never your whole friends list. That is what keeps wall 2 standing: comments stay coordination between people who are going, and you cannot pull an outsider into a room they were never in. A tag renders purple and <b>sends no push</b>.</div>
+    <div class="screen-label">Comments — tagging the roster</div>
+  </div>
+
+  <!-- ══════ DRAG ══════ -->
+  <div class="state" data-state="drag">
+    <div class="phone">
+      <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+      <div class="fbody">
+        <div class="seclbl">Mooves</div>
+        <div class="card"><div class="crow"><span class="lead"><span class="t1">5:05</span><span class="t2">PM</span></span><span class="cbody"><span class="ctitle">Park hang</span><span class="csub">Tomorrow, Palmer Square</span></span></div></div>
+      </div>
+      <div class="scrim" id="dragScrim"></div>
+      <div class="msheet draggable" id="dragSheet">
+        <div class="grab grab-zone"></div>
+        <div class="seg">
+          <button>Who's in <span class="n">5</span></button>
+          <button class="on">Comments <span class="n">3</span></button>
+        </div>
+        <div class="divider"></div>
+        <div class="cmlist">
+          <div class="cmrow"><span class="cmav" style="background:#C9A87C;">K</span><span class="cmb"><span class="cmname">Katherine<span class="cmtime">12m</span></span><span class="cmtext">Running 10 late, start without me</span></span></div>
+          <div class="cmrow"><span class="cmav" style="background:#E8A0B4;">P</span><span class="cmb"><span class="cmname">Priya<span class="cmtime">6m</span></span><span class="cmtext">Bringing a ball</span></span></div>
+        </div>
+        <div class="pill"><span class="fld ph">Add a comment</span><span class="send off"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg></span></div>
+      </div>
+    </div>
+    <div class="caption"><b>Drag the grabber down.</b> Past a third of the sheet's height, or a fast flick, and it goes; short of that it springs back. The scrim fades with the drag so the gesture feels attached to something. It reopens after a second so you can try it again.</div>
+    <div class="screen-label">Any sheet — swipe down to close</div>
+  </div>
+
+  <div class="note-box">
+    <h4>The one that needs a real decision: iOS ignores placeholder on date and time inputs</h4>
+    <code>&lt;input type="date" placeholder="7/29"&gt;</code> does nothing on iOS Safari, which is exactly why your screenshot showed two blank boxes — that is the browser, not a missed attribute. Three ways out, and I would take the third: <b>(a)</b> ship a styled overlay showing the hint until a value exists, <b>(b)</b> keep them as text inputs and parse, which breaks the native wheel picker people expect, or <b>(c)</b> render them as <b>buttons</b> that read "7/29" and "10:30 AM" in grey and open the native picker on tap. (c) keeps the iOS picker, gives full control of the resting state, and is the pattern the rest of this app already uses for date-shaped choices.
+  </div>
+
+  <div class="note-box">
+    <h4>The chips have to start unselected, and that is a behaviour change</h4>
+    Today the composer preselects <code>week</code> (or <code>weekend</code> late in the week), so "When" is already satisfied the moment the sheet opens. Under step gating that would make step 2 flash past — you would type a title and the whole rest of the form would appear at once, which is the wall again. So a coarse Moove now starts with <b>no time chosen</b>. Worth knowing it slightly raises the floor: posting goes from one required field to two.
+  </div>
+
+  <div class="note-box">
+    <h4>The cow costs contrast, and it is worth knowing what you are buying</h4>
+    A "+" glyph is the most legible thing that can sit in a 52px circle: one stroke, no detail, readable at a glance and in peripheral vision. The cow is <b>eight overlapping shapes</b> and at 34px the ears and horns start to merge. What you get back is a button that is unmistakably <i>this app's</i> and a mark that repeats between the header and the bar. The badge is what keeps the meaning: <b>the cow says whose button it is, the "+" says what it does.</b> Neither carries it alone, which is why option C fails — remove the badge and the only "add" signal is 4px wide.
+  </div>
+
+  <div class="note-box">
+    <h4>What I did not do</h4>
+    The centre button <b>never takes the active-tab colour</b>, because it opens a sheet rather than navigating — a nav item that lights up and then leaves you on the same page is a small lie. Editing an existing Moove <b>skips the gating entirely</b> and shows every field filled, since progressive disclosure is for a blank form and would be obstruction on a full one. And there is no progress dots, no "step 1 of 3" chrome, and no back button between steps: earlier steps stay on screen and editable, so it is one form that grows, not a wizard.
+  </div>
+
+<script>
+  var toggles = document.querySelectorAll('.toggle');
+  var states = document.querySelectorAll('.state');
+  toggles.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      toggles.forEach(function (b) { b.classList.remove('active'); });
+      states.forEach(function (s) { s.classList.remove('active'); });
+      btn.classList.add('active');
+      document.querySelector('.state[data-state="' + btn.dataset.state + '"]').classList.add('active');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+
+  // static chip rows: let them toggle so the states feel real
+  document.querySelectorAll('.chips').forEach(function (row) {
+    if (row.id === 'liveChips') return;
+    row.querySelectorAll('.chip').forEach(function (c) {
+      c.addEventListener('click', function () {
+        row.querySelectorAll('.chip').forEach(function (x) { x.classList.remove('on'); });
+        c.classList.add('on');
+      });
+    });
+  });
+
+  // ── swipe down to close ──
+  // Threshold is a THIRD OF THE SHEET, not a fixed pixel count: a short action
+  // sheet and a tall composer should not need the same travel to dismiss. A
+  // fast flick wins regardless of distance, which is what makes it feel light.
+  function wireDrag(sheet, scrim, onClosed) {
+    var startY = 0, dy = 0, dragging = false, t0 = 0;
+    var zone = sheet.querySelector('.grab-zone') || sheet.querySelector('.grab');
+    if (!zone) return;
+
+    function down(e) {
+      dragging = true; dy = 0; t0 = Date.now();
+      startY = (e.touches ? e.touches[0].clientY : e.clientY);
+      sheet.classList.add('dragging'); sheet.classList.remove('settling');
+      window.addEventListener('mousemove', move); window.addEventListener('mouseup', up);
+      window.addEventListener('touchmove', move, { passive:false }); window.addEventListener('touchend', up);
+      e.preventDefault();
+    }
+    function move(e) {
+      if (!dragging) return;
+      var y = (e.touches ? e.touches[0].clientY : e.clientY);
+      dy = Math.max(0, y - startY);          // down only; up does nothing
+      sheet.style.transform = 'translateY(' + dy + 'px)';
+      if (scrim) scrim.style.opacity = String(Math.max(0, 1 - dy / sheet.offsetHeight));
+      if (e.cancelable) e.preventDefault();
+    }
+    function up() {
+      if (!dragging) return;
+      dragging = false;
+      window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up);
+      window.removeEventListener('touchmove', move); window.removeEventListener('touchend', up);
+      var velocity = dy / Math.max(1, Date.now() - t0);   // px per ms
+      var far = dy > sheet.offsetHeight / 3;
+      // A flick still has to TRAVEL. Without the distance floor, any quick thumb
+      // twitch divides by a tiny elapsed time, reads as enormous velocity, and
+      // closes a sheet somebody was reading.
+      var flick = velocity > 0.5 && dy > 60;
+      sheet.classList.remove('dragging'); sheet.classList.add('settling');
+      if (far || flick) {
+        sheet.style.transform = 'translateY(' + sheet.offsetHeight + 'px)';
+        if (scrim) scrim.style.opacity = '0';
+        if (onClosed) onClosed();
+      } else {
+        sheet.style.transform = '';
+        if (scrim) scrim.style.opacity = '';
+      }
+    }
+    zone.addEventListener('mousedown', down);
+    zone.addEventListener('touchstart', down, { passive:false });
+  }
+
+  var dragSheet = document.getElementById('dragSheet');
+  var dragScrim = document.getElementById('dragScrim');
+  wireDrag(dragSheet, dragScrim, function () {
+    // reopen so the gesture can be tried repeatedly
+    setTimeout(function () {
+      dragSheet.classList.add('settling');
+      dragSheet.style.transform = '';
+      dragScrim.style.opacity = '';
+    }, 1000);
+  });
+  // every other sheet in the mockup drags too, so the behaviour can be felt
+  // wherever it is met rather than only on the demo screen
+  document.querySelectorAll('.sheet, .msheet').forEach(function (s) {
+    if (s === dragSheet) return;
+    var scrim = s.parentNode.querySelector('.scrim');
+    wireDrag(s, scrim, function () {
+      setTimeout(function () { s.classList.add('settling'); s.style.transform = ''; if (scrim) scrim.style.opacity = ''; }, 1000);
+    });
+  });
+
+  // hearts toggle, and a zero never renders as "0"
+  document.querySelectorAll('.heart').forEach(function (h) {
+    h.addEventListener('click', function () {
+      var on = h.classList.toggle('on');
+      var path = h.querySelector('path');
+      path.setAttribute('fill', on ? '#E8405A' : 'none');
+      path.setAttribute('stroke', on ? '#E8405A' : '#BDB5D4');
+      var c = h.querySelector('.hc');
+      var n = (c ? parseInt(c.textContent, 10) : 0) + (on ? 1 : -1);
+      if (n > 0) {
+        if (!c) { c = document.createElement('span'); c.className = 'hc'; h.appendChild(c); }
+        c.textContent = String(n);
+      } else if (c) {
+        c.remove();
+      }
+    });
+  });
+
+  // ── the live one ──
+  var title = document.getElementById('liveTitle');
+  var when = document.getElementById('liveWhen');
+  var rest = document.getElementById('liveRest');
+  var post = document.getElementById('livePost');
+  var chips = document.getElementById('liveChips');
+  var exactWrap = document.getElementById('liveExact');
+  var exactToggle = document.getElementById('liveExactToggle');
+  var dateIn = document.getElementById('liveDate');
+  var isExact = false;
+
+  function timeChosen() {
+    if (isExact) return dateIn.value.trim().length > 0;
+    return !!chips.querySelector('.chip.on');
+  }
+  function sync() {
+    var hasTitle = title.value.trim().length > 0;
+    when.classList.toggle('hidden', !hasTitle);
+    var ready = hasTitle && timeChosen();
+    rest.classList.toggle('hidden', !ready);
+    post.disabled = !ready;
+  }
+  title.addEventListener('input', sync);
+  dateIn.addEventListener('input', sync);
+  chips.querySelectorAll('.chip').forEach(function (c) {
+    c.addEventListener('click', function () {
+      chips.querySelectorAll('.chip').forEach(function (x) { x.classList.remove('on'); });
+      c.classList.add('on');
+      sync();
+    });
+  });
+  exactToggle.addEventListener('click', function () {
+    isExact = !isExact;
+    exactWrap.classList.toggle('hidden', !isExact);
+    chips.classList.toggle('hidden', isExact);
+    exactToggle.textContent = isExact ? '－ Use a rough time instead' : '＋ Add an exact date and time';
+    sync();
+  });
+</script>
+</body>
+</html>

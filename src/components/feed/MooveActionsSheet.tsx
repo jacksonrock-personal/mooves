@@ -11,6 +11,7 @@
 
 import { useState } from 'react'
 import { posthog } from '@/lib/posthog'
+import { useSheetDrag } from '@/lib/useSheetDrag'
 import type { Plan } from '@/lib/plans'
 
 interface MooveActionsSheetProps {
@@ -36,6 +37,9 @@ export default function MooveActionsSheet({
 }: MooveActionsSheetProps) {
   const [confirming, setConfirming] = useState(false)
   const [working, setWorking] = useState(false)
+  // Only the confirm variant draws a grabber; dragging it backs out to the list
+  // rather than closing outright, which is what its own Cancel row does.
+  const confirmDrag = useSheetDrag(() => setConfirming(false))
 
   async function handleCancel() {
     if (working) return
@@ -63,8 +67,12 @@ export default function MooveActionsSheet({
           className="fixed bottom-0 left-0 right-0 z-50 bg-card-white rounded-t-3xl px-5 pt-3 [--safe-pb-base:1.875rem] safe-area-pb"
           role="dialog"
           aria-modal="true"
+          {...confirmDrag.sheetProps}
         >
-          <div className="w-9 h-1 rounded-full bg-[#E8E4F5] mx-auto mb-4" />
+          {/* R6 — this file has TWO shapes. The action LIST below is a Cancel-row
+              action sheet with no grabber, so it does not drag. This confirm
+              variant does draw a grabber, so it does. */}
+          <div className="w-9 h-1 rounded-full bg-[#E8E4F5] mx-auto mb-4 cursor-grab" {...confirmDrag.handleProps} />
           <h2 className="font-display font-extrabold text-[18px] text-text-primary tracking-tight mb-1.5">
             Cancel this Moove?
           </h2>

@@ -1,6 +1,7 @@
 'use client'
 
 import { type ReactNode } from 'react'
+import { useSheetDrag } from '@/lib/useSheetDrag'
 
 interface SheetProps {
   open: boolean
@@ -15,6 +16,10 @@ interface SheetProps {
 }
 
 export default function Sheet({ open, onClose, children, className = '', bottomInset = 0 }: SheetProps) {
+  // R6 — the handle below has been drawn since Phase 8 and never dragged. Every
+  // caller of this component inherits the gesture from here.
+  const drag = useSheetDrag(onClose)
+
   if (!open) return null
 
   return (
@@ -22,6 +27,7 @@ export default function Sheet({ open, onClose, children, className = '', bottomI
       {/* Overlay */}
       <div
         className="fixed inset-0 bg-black/40 z-40"
+        style={{ opacity: drag.scrimOpacity }}
         onClick={onClose}
         aria-hidden="true"
       />
@@ -30,13 +36,17 @@ export default function Sheet({ open, onClose, children, className = '', bottomI
           below the caller's bottom padding) without any caller needing to change. */}
       <div
         className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl safe-area-pb"
-        style={bottomInset > 0 ? { bottom: bottomInset } : undefined}
+        style={{
+          ...(bottomInset > 0 ? { bottom: bottomInset } : {}),
+          ...drag.sheetProps.style,
+        }}
+        ref={drag.sheetProps.ref as (node: HTMLDivElement | null) => void}
         role="dialog"
         aria-modal="true"
       >
         <div className={className}>
-          {/* Drag handle */}
-          <div className="flex justify-center pt-3 pb-2">
+          {/* Drag handle — now actually draggable. */}
+          <div className="flex justify-center pt-3 pb-2 cursor-grab" {...drag.handleProps}>
             <div className="w-9 h-1 rounded-full bg-gray-200" />
           </div>
           {children}

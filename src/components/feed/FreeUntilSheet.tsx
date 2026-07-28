@@ -11,6 +11,7 @@
 // green stays a `now` green and stays in the rail.
 
 import { posthog } from '@/lib/posthog'
+import { useSheetDrag } from '@/lib/useSheetDrag'
 
 interface FreeUntilSheetProps {
   currentExpiresAt: string | null
@@ -32,6 +33,7 @@ function next3am(from: Date): Date {
 export default function FreeUntilSheet({ currentExpiresAt, onPick, onClose }: FreeUntilSheetProps) {
   const now = new Date()
   const current = currentExpiresAt ? new Date(currentExpiresAt) : null
+  const drag = useSheetDrag(onClose)
 
   // Presets first, because the point of this sheet is speed.
   const options = [
@@ -47,13 +49,15 @@ export default function FreeUntilSheet({ currentExpiresAt, onPick, onClose }: Fr
 
   return (
     <>
-      <div className="fixed inset-0 bg-text-primary/50 z-40" onClick={onClose} aria-hidden="true" />
+      <div className="fixed inset-0 bg-text-primary/50 z-40"
+        style={{ opacity: drag.scrimOpacity }} onClick={onClose} aria-hidden="true" />
       <div
         className="fixed bottom-0 left-0 right-0 z-50 bg-card-white rounded-t-3xl px-5 pt-3 [--safe-pb-base:1.875rem] safe-area-pb"
+        {...drag.sheetProps}
         role="dialog"
         aria-modal="true"
       >
-        <div className="w-9 h-1 rounded-full bg-[#E8E4F5] mx-auto mb-4" />
+        <div className="w-9 h-1 rounded-full bg-[#E8E4F5] mx-auto mb-4 cursor-grab" {...drag.handleProps} />
         <h2 className="font-display font-extrabold text-[18px] text-text-primary tracking-tight mb-1.5">
           Free until
         </h2>
