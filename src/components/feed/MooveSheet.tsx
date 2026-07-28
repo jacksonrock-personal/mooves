@@ -21,6 +21,7 @@ import { useCallback, useEffect, useState } from 'react'
 import Avatar from '@/components/ui/Avatar'
 import { posthog } from '@/lib/posthog'
 import { useSheetDrag } from '@/lib/useSheetDrag'
+import SheetGrabber from '@/components/ui/SheetGrabber'
 import { type Plan } from '@/lib/plans'
 import {
   COMMENT_MAX,
@@ -28,6 +29,7 @@ import {
   commentTime,
   splitMentions,
   type PlanComment,
+  type TaggableFriend,
 } from '@/lib/comments'
 
 export type MoovePane = 'who' | 'comments'
@@ -71,6 +73,12 @@ export default function MooveSheet({
   const [editDraft, setEditDraft] = useState('')
   /** R8 — open only while the draft ends in an unresolved "@fragment". */
   const [mentionQuery, setMentionQuery] = useState<string | null>(null)
+  /**
+   * Friends who are NOT in this Moove but can already see it. Server-derived,
+   * fetched once when the sheet opens; an empty list (or a failed fetch) simply
+   * collapses the picker back to roster-only.
+   */
+  const [taggable, setTaggable] = useState<TaggableFriend[]>([])
   const drag = useSheetDrag(onClose)
 
   const load = useCallback(async () => {
@@ -104,6 +112,29 @@ export default function MooveSheet({
     window.addEventListener('focus', onFocus)
     return () => window.removeEventListener('focus', onFocus)
   }, [load, initialPane])
+
+  // Who this viewer may tag who has not joined. Deliberately NOT reloaded on
+  // focus with the comments: the answer is a friend graph and a visibility
+  // rule, neither of which changes while a sheet is open, and a picker that
+  // silently regrows mid-sentence would be worse than a slightly stale one.
+  useEffect(() => {
+    if (!canComment) return
+    let live = true
+    void (async () => {
+      try {
+        const res = await fetch(`/api/plans/${plan.id}/taggable`)
+        if (!res.ok) return
+        const data = (await res.json()) as { friends: TaggableFriend[] }
+        if (live) setTaggable(data.friends ?? [])
+      } catch {
+        // The picker falls back to roster-only. Tagging someone who is already
+        // in never depended on this call.
+      }
+    })()
+    return () => {
+      live = false
+    }
+  }, [plan.id, canComment])
 
   /**
    * R8 — a like, applied optimistically and reconciled from the response.
@@ -213,17 +244,19 @@ export default function MooveSheet({
     }
   }
 
-  /** Which roster members this body actually names. */
+  /** Which mentionable people this body actually names. */
   function mentionedIds(body: string): string[] {
-    return roster
+    return mentionable
       .filter(r => r.displayName && body.includes(`@${r.displayName}`))
       .map(r => r.id)
   }
 
   /**
-   * R8 — the picker opens on a trailing "@fragment" and lists ONLY the roster.
-   * Never the full friends list: that is what keeps wall 2 standing, since a
-   * comment cannot name somebody who is not in the room.
+   * The picker opens on a trailing "@fragment" and lists the roster plus the
+   * friends who can already SEE this Moove — still never the full friends list.
+   * That is what keeps the amended wall 2 standing: a comment can now reach
+   * somebody who has not joined, but only somebody the Moove was already
+   * visible to, so tagging can never be what discloses it.
    */
   function onDraftChange(value: string) {
     setDraft(value)
@@ -247,12 +280,12 @@ export default function MooveSheet({
   }
 
   const remaining = COMMENT_MAX - draft.length
-  const roster = plan.isMine
-    ? [{ id: plan.authorId, displayName: plan.authorName, avatarUrl: plan.authorAvatar }, ...plan.joiners]
-    : [
-        { id: plan.authorId, displayName: plan.authorName, avatarUrl: plan.authorAvatar },
-        ...plan.joiners,
-      ]
+  const roster = [
+    { id: plan.authorId, displayName: plan.authorName, avatarUrl: plan.authorAvatar },
+    ...plan.joiners,
+  ]
+  /** Everyone this comment may name — the room, plus the friends who can see it. */
+  const mentionable = [...roster, ...taggable]
 
   return (
     <>
@@ -269,7 +302,11 @@ export default function MooveSheet({
         aria-modal="true"
         {...drag.sheetProps}
       >
-        <div className="w-11 h-[5px] rounded-full bg-[#DDD8EC] mx-auto mt-2.5 shrink-0 cursor-grab" {...drag.handleProps} />
+        {/* R5 removed the restated Moove from the top of this sheet, which also
+            removed the only thing above the tabs that was safe to drag. The
+            grabber's band now carries it alone, so it is a real 36px target
+            rather than the 5px pill it draws. */}
+        <SheetGrabber drag={drag} className="mt-[18px]" pillClassName="w-11 h-[5px] rounded-full bg-[#DDD8EC]" />
 
         {/* R5 — the Moove is NOT restated here any more. The avatar stack, the
             "X is doing Y" line and the when/location line are gone from both
@@ -301,7 +338,9 @@ export default function MooveSheet({
 
         <div className="h-px bg-[#E8E4F5] mx-[18px] mt-3.5 shrink-0" />
 
-        <div className="flex-1 overflow-y-auto px-[18px] pt-3 pb-1.5">
+        {/* Also a drag target, but only from scrollTop 0 and only downward —
+            reading back up through a comment thread must never dismiss it. */}
+        <div className="flex-1 overflow-y-auto px-[18px] pt-3 pb-1.5" {...drag.contentProps}>
           {pane === 'who' && (
             <ul>
               {roster.map(p => (
@@ -366,7 +405,7 @@ export default function MooveSheet({
                         )}
                       </div>
                       <p className="font-sans text-[14px] leading-relaxed text-ink-900 break-words">
-                        {splitMentions(c.body, roster).map((run, i) =>
+                        {splitMentions(c.body, mentionable).map((run, i) =>
                           run.mention ? (
                             <span key={i} className="font-bold text-purple-700">
                               {run.text}
@@ -461,36 +500,69 @@ export default function MooveSheet({
         {/* Compose lives ONLY on the comments pane. */}
         {pane === 'comments' && canComment && (
           <>
-            {/* R8 — the mention picker. Roster only, never the friends list. */}
+            {/* The mention picker. Two sections, and the split is the point:
+                the second one names people who are NOT here yet, so it says so
+                on every row. Tagging somebody into a conversation they cannot
+                read should never feel like an accident. */}
             {mentionQuery !== null &&
               (() => {
                 const q = mentionQuery.toLowerCase()
-                const matches = roster.filter(
-                  r => r.displayName && r.displayName.toLowerCase().startsWith(q),
+                const hit = (r: { displayName: string | null }) =>
+                  !!r.displayName && r.displayName.toLowerCase().startsWith(q)
+                const inRoom = roster.filter(hit).slice(0, 4)
+                // The room comes first and keeps its four slots; outsiders fill
+                // what is left, so the common case never gets pushed off-screen
+                // by the new one.
+                const outside = taggable.filter(hit).slice(0, Math.max(0, 5 - inRoom.length))
+                if (inRoom.length === 0 && outside.length === 0) return null
+
+                const row = (
+                  r: { id: string; displayName: string | null; avatarUrl: string | null },
+                  tag: string | null,
+                ) => (
+                  <button
+                    key={r.id}
+                    onClick={() => applyMention(r.displayName ?? '')}
+                    className="w-full flex items-center gap-2.5 px-3.5 py-2 border-t border-[#E8E4F5] text-left"
+                  >
+                    <Avatar src={r.avatarUrl} name={r.displayName ?? '?'} size={26} className="shrink-0" />
+                    <span className="font-sans text-[13.5px] font-semibold text-ink-900">
+                      {r.displayName}
+                    </span>
+                    {tag && (
+                      <span className="ml-auto font-sans text-[10px] font-bold uppercase tracking-[0.05em] text-grey-300">
+                        {tag}
+                      </span>
+                    )}
+                  </button>
                 )
-                if (matches.length === 0) return null
+
                 return (
                   <div className="shrink-0 mx-4 mb-1 rounded-2xl border-[1.5px] border-[#E8E4F5] bg-card-white overflow-hidden shadow-[0_-8px_22px_rgba(28,23,48,0.12)]">
-                    <p className="font-sans text-[9.5px] font-bold uppercase tracking-[0.09em] text-grey-300 px-3.5 pt-2.5 pb-1.5">
-                      People who are in
-                    </p>
-                    {matches.slice(0, 4).map(r => (
-                      <button
-                        key={r.id}
-                        onClick={() => applyMention(r.displayName ?? '')}
-                        className="w-full flex items-center gap-2.5 px-3.5 py-2 border-t border-[#E8E4F5] text-left"
-                      >
-                        <Avatar src={r.avatarUrl} name={r.displayName ?? '?'} size={26} className="shrink-0" />
-                        <span className="font-sans text-[13.5px] font-semibold text-ink-900">
-                          {r.displayName}
-                        </span>
-                        {r.id === plan.authorId && (
-                          <span className="ml-auto font-sans text-[10px] font-bold uppercase tracking-[0.05em] text-grey-300">
-                            Host
-                          </span>
-                        )}
-                      </button>
-                    ))}
+                    {inRoom.length > 0 && (
+                      <>
+                        <p className="font-sans text-[9.5px] font-bold uppercase tracking-[0.09em] text-grey-300 px-3.5 pt-2.5 pb-1.5">
+                          People who are in
+                        </p>
+                        {inRoom.map(r => row(r, r.id === plan.authorId ? 'Host' : null))}
+                      </>
+                    )}
+                    {outside.length > 0 && (
+                      <>
+                        {/* Named for what it guarantees, not for what it does.
+                            "Friends who can see this" IS the rule — nobody
+                            reaches this list who was not already being shown
+                            the Moove. */}
+                        <p
+                          className={`font-sans text-[9.5px] font-bold uppercase tracking-[0.09em] text-grey-300 px-3.5 pt-2.5 pb-1.5 ${
+                            inRoom.length > 0 ? 'border-t border-[#E8E4F5]' : ''
+                          }`}
+                        >
+                          Friends who can see this
+                        </p>
+                        {outside.map(r => row(r, 'Not in yet'))}
+                      </>
+                    )}
                   </div>
                 )
               })()}

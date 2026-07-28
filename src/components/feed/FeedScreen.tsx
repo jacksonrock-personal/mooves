@@ -122,6 +122,16 @@ export default function FeedScreen() {
   // pane the tapped half of the card asked for.
   const [sheet, setSheet] = useState<{ plan: Plan; pane: MoovePane } | null>(null)
   const [planPrefill, setPlanPrefill] = useState<PlanPrefill | null>(null)
+  /**
+   * ?plan=<id> — where the "tagged you in a Moove" push lands.
+   *
+   * Held until the plans arrive, then resolved into the sheet. It opens on
+   * "Who's in", NEVER on comments: a tagged friend has not joined, so wall 3
+   * still applies and the sheet gives them the way in ("I'm in") rather than
+   * the conversation. Read once on mount; the URL is scrubbed immediately so a
+   * refresh does not reopen it.
+   */
+  const [pendingPlanId, setPendingPlanId] = useState<string | null>(null)
   const [freeUntilOpen, setFreeUntilOpen] = useState(false)
   const [myStatusExpiresAt, setMyStatusExpiresAt] = useState<string | null>(null)
   // 17.1 in-app wave strip. `wave` is the resolved group from the feed; dismissal
@@ -490,6 +500,17 @@ export default function FeedScreen() {
         if (typeof window !== 'undefined') window.history.replaceState({}, '', '/feed')
       }
 
+      // Arriving from a "tagged you in a Moove" push. Stashed rather than acted
+      // on: the sheet needs the Plan itself, and if the Moove has since expired
+      // or been cancelled it will simply not be in the list — in which case
+      // nothing opens, which is the correct outcome.
+      const taggedPlan = searchParams.get('plan')
+      if (taggedPlan) {
+        setPendingPlanId(taggedPlan)
+        posthog.capture('tag_push_opened')
+        if (typeof window !== 'undefined') window.history.replaceState({}, '', '/feed')
+      }
+
       // Arriving from the onboarding launchpad "Go green" (Screen 3 loop):
       // open the go-green sheet once, unless the user is already available.
       if (searchParams.get('gogreen') === '1') {
@@ -602,6 +623,15 @@ export default function FeedScreen() {
         void refetchPlans()
       })
   }
+
+  // Resolve a ?plan= deep link once the feed has actually loaded. Cleared
+  // either way, so a Moove that is gone does not leave this armed forever.
+  useEffect(() => {
+    if (!pendingPlanId || plans.length === 0) return
+    const target = plans.find(p => p.id === pendingPlanId)
+    setPendingPlanId(null)
+    if (target) setSheet({ plan: target, pane: 'who' })
+  }, [pendingPlanId, plans])
 
   async function refetchPlans() {
     try {

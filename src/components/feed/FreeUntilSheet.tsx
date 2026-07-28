@@ -12,6 +12,7 @@
 
 import { posthog } from '@/lib/posthog'
 import { useSheetDrag } from '@/lib/useSheetDrag'
+import SheetGrabber from '@/components/ui/SheetGrabber'
 
 interface FreeUntilSheetProps {
   currentExpiresAt: string | null
@@ -57,7 +58,7 @@ export default function FreeUntilSheet({ currentExpiresAt, onPick, onClose }: Fr
         role="dialog"
         aria-modal="true"
       >
-        <div className="w-9 h-1 rounded-full bg-[#E8E4F5] mx-auto mb-4 cursor-grab" {...drag.handleProps} />
+        <SheetGrabber drag={drag} className="mb-[22px]" />
         <h2 className="font-display font-extrabold text-[18px] text-text-primary tracking-tight mb-1.5">
           Free until
         </h2>

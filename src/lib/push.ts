@@ -381,6 +381,60 @@ export async function sendCommentPush(
 }
 
 /**
+ * Somebody tagged a friend who is not in the Moove.
+ *
+ * The one push in this app that both NAMES A PERSON and is aimed at somebody
+ * who has committed to nothing — so it needs its justification stated rather
+ * than assumed.
+ *
+ * 15.3 forbids notifications about a person's AVAILABILITY ("friend X is
+ * green"), because that turns the app into a thing that watches your friends
+ * for you. This is the opposite direction: a specific person deliberately
+ * asked for you, by name, on a Moove that was already sitting in your feed.
+ * Naming the tagger is the whole content — "you were tagged" by nobody in
+ * particular is a notification about the app, not about a friend.
+ *
+ * WHERE IT LANDS is the part that keeps wall 3 standing. The recipient has not
+ * joined, so they cannot read the thread and this push does not pretend
+ * otherwise: it opens the Moove card with "I'm in", not the comments. It is an
+ * invitation, and the way to accept it is to join.
+ *
+ * The comment body never travels. One per Moove per recipient per hour, so
+ * being named repeatedly in one conversation buzzes a pocket once.
+ */
+export async function sendTagPush(
+  planId: string,
+  recipientIds: string[],
+  title: string,
+  taggerId: string,
+): Promise<void> {
+  const recipients = recipientIds.filter(id => id !== taggerId)
+  if (!recipients.length) return
+  const supabase = createServiceClient()
+
+  const { data: tagger } = await supabase
+    .from('users')
+    .select('display_name')
+    .eq('id', taggerId)
+    .maybeSingle()
+
+  const eligible: string[] = []
+  for (const id of recipients) {
+    if (await checkRateLimit(`tags:push:${planId}:${id}`, 1, COMMENT_PUSH_COOLDOWN_SECONDS)) {
+      eligible.push(id)
+    }
+  }
+  if (!eligible.length) return
+
+  await pushToUsers(supabase, eligible, {
+    title: `${tagger?.display_name ?? 'A friend'} tagged you in a Moove`,
+    body: title,
+    // The card, not the thread. They have not joined.
+    url: `/feed?plan=${planId}`,
+  })
+}
+
+/**
  * Phase 22 — the weekly nudge.
  *
  * Named honestly: this is the ONE push in this app whose destination is the app

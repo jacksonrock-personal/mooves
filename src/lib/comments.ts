@@ -16,8 +16,32 @@ export interface PlanComment {
   /** R8 — likes. Zero renders NO number, only the outline heart. */
   likeCount: number
   likedByMe: boolean
-  /** R8 — validated ids behind the @tokens in `body`. Roster members only. */
+  /**
+   * Validated ids behind the @tokens in `body`.
+   *
+   * No longer roster-only. A mention may now name a friend who is not in the
+   * Moove, provided that friend can already see it — see `TaggableFriend`.
+   */
   mentions: string[]
+}
+
+/**
+ * Someone you may tag who has NOT joined this Moove.
+ *
+ * The bounded amendment to wall 2. Wall 2 said you cannot pull someone into a
+ * room they were never in, and that still holds for anyone who cannot see the
+ * Moove: this list contains only your own friends who ALREADY have this Moove
+ * in their feed, so a tag can never be the thing that reveals it. What it can
+ * do is turn "visible in a feed they may not check today" into "somebody
+ * actually asked me" — which is the entire point of the app.
+ *
+ * Derived server-side by `plan_taggable_friends`; the picker never assembles
+ * this list itself.
+ */
+export interface TaggableFriend {
+  id: string
+  displayName: string | null
+  avatarUrl: string | null
 }
 
 /**

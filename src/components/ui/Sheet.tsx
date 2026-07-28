@@ -2,6 +2,7 @@
 
 import { type ReactNode } from 'react'
 import { useSheetDrag } from '@/lib/useSheetDrag'
+import SheetGrabber from './SheetGrabber'
 
 interface SheetProps {
   open: boolean
@@ -45,10 +46,7 @@ export default function Sheet({ open, onClose, children, className = '', bottomI
         aria-modal="true"
       >
         <div className={className}>
-          {/* Drag handle — now actually draggable. */}
-          <div className="flex justify-center pt-3 pb-2 cursor-grab" {...drag.handleProps}>
-            <div className="w-9 h-1 rounded-full bg-gray-200" />
-          </div>
+          <SheetGrabber drag={drag} className="mt-5 mb-3" pillClassName="w-9 h-1 rounded-full bg-gray-200" />
           {children}
         </div>
       </div>

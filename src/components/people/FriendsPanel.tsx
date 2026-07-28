@@ -8,6 +8,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { initPostHog, posthog } from '@/lib/posthog'
 import { useSheetDrag } from '@/lib/useSheetDrag'
+import SheetGrabber from '@/components/ui/SheetGrabber'
 import CowIllustration from '@/components/ui/CowIllustration'
 import Toast from '@/components/ui/Toast'
 import FriendsList from './FriendsList'
@@ -193,7 +194,7 @@ export default function FriendsPanel() {
             aria-modal="true"
             {...removeDrag.sheetProps}
           >
-            <div className="w-9 h-1 rounded-full bg-[#E8E4F5] mx-auto mb-5 cursor-grab" {...removeDrag.handleProps} />
+            <SheetGrabber drag={removeDrag} className="mb-7" />
             <h2 className="font-display font-bold text-[18px] text-text-primary tracking-tight mb-2">
               Remove {removeTarget.displayName ?? 'friend'}?
             </h2>

@@ -7,6 +7,7 @@
 import { useState } from 'react'
 import { posthog } from '@/lib/posthog'
 import { useSheetDrag } from '@/lib/useSheetDrag'
+import SheetGrabber from '@/components/ui/SheetGrabber'
 import {
   captureDeviceArea,
   saveManualZip,
@@ -271,7 +272,7 @@ export default function AreaControl({
           />
           <div className="fixed bottom-0 left-0 right-0 z-50 px-3 [--safe-pb-base:2rem] safe-area-pb" {...areaDrag.sheetProps}>
             <div className="bg-white rounded-[28px] p-5 pb-6">
-              <div className="w-[38px] h-1 rounded-full bg-[#DED8F0] mx-auto mb-4 cursor-grab" {...areaDrag.handleProps} />
+              <SheetGrabber drag={areaDrag} className="mb-[22px]" pillClassName="w-[38px] h-1 rounded-full bg-[#DED8F0]" />
               <div className="font-display font-extrabold text-[19px] text-ink-900 text-center">Set your area</div>
               <p className="font-sans text-[13px] text-ink-500 text-center mt-1.5 leading-snug px-2">
                 We keep a coarse area (your zip) to get you ready for moves near you.
@@ -327,7 +328,7 @@ export default function AreaControl({
           />
           <div className="fixed bottom-0 left-0 right-0 z-50 px-3 [--safe-pb-base:2rem] safe-area-pb" {...areaDrag.sheetProps}>
             <div className="bg-white rounded-[28px] p-5 pb-6">
-              <div className="w-[38px] h-1 rounded-full bg-[#DED8F0] mx-auto mb-4 cursor-grab" {...areaDrag.handleProps} />
+              <SheetGrabber drag={areaDrag} className="mb-[22px]" pillClassName="w-[38px] h-1 rounded-full bg-[#DED8F0]" />
               <div className="font-display font-extrabold text-[19px] text-ink-900 text-center">Your area</div>
               {area && (
                 <p className="font-sans text-[13px] text-ink-500 text-center mt-1.5">
