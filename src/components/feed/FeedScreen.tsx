@@ -480,6 +480,16 @@ export default function FeedScreen() {
         // The ritual is additive: if this fails the feed is exactly as it was.
       }
 
+      // R1 — arriving from the nav's "Plan a Moove" on another tab. The button
+      // is global but the composer belongs to the feed, so the other three tabs
+      // route here and open it on landing.
+      if (searchParams.get('compose') === '1') {
+        setEditingPlan(null)
+        setPlanPrefill(null)
+        setComposerOpen(true)
+        if (typeof window !== 'undefined') window.history.replaceState({}, '', '/feed')
+      }
+
       // Arriving from the onboarding launchpad "Go green" (Screen 3 loop):
       // open the go-green sheet once, unless the user is already available.
       if (searchParams.get('gogreen') === '1') {
@@ -848,7 +858,13 @@ export default function FeedScreen() {
         )}
       </div>
 
-      <BottomNav />
+      <BottomNav
+        onPlanTap={() => {
+          setEditingPlan(null)
+          setPlanPrefill(null)
+          setComposerOpen(true)
+        }}
+      />
 
       <GoGreenSheet
         open={sheetOpen}
@@ -932,23 +948,10 @@ export default function FeedScreen() {
         </button>
       </Sheet>
 
-      {/* 20.3 — the plan path. A floating control, deliberately far from the
-          swipe so the two creation gestures are never confused. */}
-      {loaded && (
-        <button
-          onClick={() => {
-            setEditingPlan(null)
-            setComposerOpen(true)
-          }}
-          aria-label="Plan a Moove"
-          className="fixed right-[15px] bottom-[74px] z-30 w-[58px] h-[58px] rounded-full bg-purple-500 border-[2.5px] border-purple-50 shadow-[0_8px_22px_rgba(124,92,219,0.5)] flex items-center justify-center"
-        >
-          <svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.2" strokeLinecap="round">
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-        </button>
-      )}
+      {/* R1 — the floating "+" is gone. The plan path now lives in the centre of
+          the nav, which is still deliberately far from the swipe (opposite end
+          of the screen) so the two creation gestures are never confused, and no
+          longer sits on top of the card underneath it. */}
 
       <PlanComposer
         open={composerOpen}

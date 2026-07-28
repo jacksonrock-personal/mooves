@@ -12,6 +12,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { posthog } from '@/lib/posthog'
+import { useSheetDrag } from '@/lib/useSheetDrag'
 import { combineStartAt, splitStartAt } from '@/lib/movetime'
 import {
   computePlanExpiry,
@@ -32,6 +33,22 @@ interface Group {
   id: string
   name: string
   emoji: string | null
+}
+
+// R3 — the resting-state hints. These render the value the picker returned in
+// the same shape the placeholder promised, so the field never changes format
+// between "7/29" and what you get after choosing.
+function formatDateHint(value: string): string {
+  const [, m, d] = value.split('-').map(Number)
+  return Number.isFinite(m) && Number.isFinite(d) ? `${m}/${d}` : value
+}
+
+function formatTimeHint(value: string): string {
+  const [h, min] = value.split(':').map(Number)
+  if (!Number.isFinite(h) || !Number.isFinite(min)) return value
+  const suffix = h < 12 ? 'AM' : 'PM'
+  const hour12 = h % 12 === 0 ? 12 : h % 12
+  return `${hour12}:${String(min).padStart(2, '0')} ${suffix}`
 }
 
 /**
@@ -74,10 +91,16 @@ export default function PlanComposer({
   const [visibleTo, setVisibleTo] = useState<string[]>([])
   const [showGroups, setShowGroups] = useState(false)
   // Coarse is the default; `exact` swaps the chips for real pickers.
-  const [mode, setMode] = useState<PlanTimeMode>('weekend')
+  //
+  // R3 — starts NULL rather than preselected. A preselected chip meant "When"
+  // was already satisfied the instant the sheet opened, which under R2's step
+  // gating would flash step 2 past and dump the whole form at once. The cost,
+  // recorded deliberately: posting goes from one required field to two.
+  const [mode, setMode] = useState<PlanTimeMode | null>(null)
   const [exact, setExact] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const drag = useSheetDrag(onClose)
 
   // Reset (or prefill) every time the sheet opens.
   useEffect(() => {
@@ -110,7 +133,7 @@ export default function PlanComposer({
     } else {
       setTitle('')
       setExact(false)
-      setMode(isWeekModeAvailable() ? 'week' : 'weekend')
+      setMode(null) // R3 — nothing preselected, so picking one is a real step
       setDate('')
       setTime('')
       setLocation('')
@@ -125,10 +148,22 @@ export default function PlanComposer({
     )
   }, [open, editing, prefill])
 
-  // A coarse Moove needs only a title; an exact one also needs its date.
+  // ── R2, the step gate ──────────────────────────────────────────────────────
+  //
+  // Editing and a Discover prefill both BYPASS it: progressive disclosure helps
+  // a blank form and obstructs a full one, and both of those arrive populated.
+  const gated = !editing && !prefill
+
+  const hasTitle = title.trim().length > 0
+  /** Step 2 is satisfied by a coarse chip, or by a date in exact mode. */
+  const timeChosen = exact ? date.length > 0 : mode !== null
+
+  const showWhen = !gated || hasTitle
+  const showRest = !gated || (hasTitle && timeChosen)
+
   const canSave = useMemo(
-    () => title.trim().length > 0 && (!exact || date.length > 0),
-    [title, exact, date],
+    () => title.trim().length > 0 && (exact ? date.length > 0 : mode !== null),
+    [title, exact, date, mode],
   )
 
   async function handleSave() {
@@ -137,7 +172,9 @@ export default function PlanComposer({
     setError(null)
 
     const hasTime = exact && time.length > 0
-    const timeMode: PlanTimeMode = exact ? (hasTime ? 'datetime' : 'date') : mode
+    // canSave guarantees a mode in the coarse branch; the fallback only exists
+    // so the type is honest.
+    const timeMode: PlanTimeMode = exact ? (hasTime ? 'datetime' : 'date') : (mode ?? 'weekend')
 
     // Coarse Mooves have no real start, so start_at is a SORT KEY stamped at
     // the end of the window — that is what puts "Saturday 9am" above "sometime
@@ -207,34 +244,24 @@ export default function PlanComposer({
 
   return (
     <>
-      <div className="fixed inset-0 bg-text-primary/50 z-40" onClick={onClose} aria-hidden="true" />
+      <div
+        className="fixed inset-0 bg-text-primary/50 z-40"
+        style={{ opacity: drag.scrimOpacity }}
+        onClick={onClose}
+        aria-hidden="true"
+      />
       <div
         className="fixed bottom-0 left-0 right-0 z-50 bg-card-white rounded-t-3xl flex flex-col max-h-[90%]"
         role="dialog"
         aria-modal="true"
+        {...drag.sheetProps}
       >
         {/* Escaping this sheet was impossible on device: it fills ~90% of the
-            screen, so there was almost no scrim left to tap. Three ways out now
-            — drag the grabber down, tap Cancel, or tap what scrim there is. */}
-        <div
-          className="shrink-0 pt-3 cursor-grab touch-none"
-          onPointerDown={e => {
-            const startY = e.clientY
-            const el = e.currentTarget.parentElement
-            const onMove = (ev: PointerEvent) => {
-              const dy = Math.max(0, ev.clientY - startY)
-              if (el) el.style.transform = `translateY(${dy}px)`
-            }
-            const onUp = (ev: PointerEvent) => {
-              window.removeEventListener('pointermove', onMove)
-              window.removeEventListener('pointerup', onUp)
-              if (el) el.style.transform = ''
-              if (ev.clientY - startY > 90) onClose()
-            }
-            window.addEventListener('pointermove', onMove)
-            window.addEventListener('pointerup', onUp)
-          }}
-        >
+            screen, so there was almost no scrim left to tap. Three ways out —
+            drag the grabber down, tap Cancel, or tap what scrim there is.
+            R6 moved the bespoke drag handler here onto the shared hook, so the
+            other eight grabber sheets behave identically. */}
+        <div className="shrink-0 pt-3 cursor-grab" {...drag.handleProps}>
           <div className="w-9 h-1 rounded-full bg-[#E8E4F5] mx-auto" />
         </div>
         <div className="shrink-0 px-5 pt-3">
@@ -252,7 +279,7 @@ export default function PlanComposer({
           <p className="font-sans text-[13.5px] text-text-secondary leading-relaxed mb-4">
             {editing
               ? `${editing.joiners.length} ${editing.joiners.length === 1 ? 'person is' : 'people are'} in. They won't be notified about edits, only if you cancel.`
-              : 'Something with a day on it. This does not make you free right now.'}
+              : 'Got something in mind? Throw it out there! This does not make you free right now.'}
           </p>
         </div>
 
@@ -270,124 +297,170 @@ export default function PlanComposer({
               the exact date and time hide behind a "+" rather than sitting there
               as two blank boxes that look required. One or the other, never
               both, so the card always knows which to render. */}
-          <Label>When</Label>
-          {!exact && (
-            <>
-              <div className="flex gap-2 flex-wrap mb-3">
-                {COARSE_MODES.filter(m => m !== 'week' || isWeekModeAvailable()).map(m => (
-                  <Chip key={m} on={mode === m} onClick={() => setMode(m)}>
-                    {TIME_MODE_LABEL[m]}
+          {showWhen && (
+            <div className={gated ? 'animate-[rise_.28s_cubic-bezier(.22,.9,.3,1)_both]' : ''}>
+              <Label>When</Label>
+              {!exact && (
+                <>
+                  <div className="flex gap-2 flex-wrap mb-3">
+                    {COARSE_MODES.filter(m => m !== 'week' || isWeekModeAvailable()).map(m => (
+                      <Chip
+                        key={m}
+                        on={mode === m}
+                        onClick={() => {
+                          setMode(m)
+                          if (gated && mode === null) posthog.capture('plan_composer_step_advanced', { step: 2 })
+                        }}
+                      >
+                        {TIME_MODE_LABEL[m]}
+                      </Chip>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => setExact(true)}
+                    className="flex items-center gap-1.5 font-sans text-[12.5px] font-semibold text-purple-500 mb-4"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">
+                      <line x1="12" y1="5" x2="12" y2="19" />
+                      <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                    Add an exact date and time
+                  </button>
+                </>
+              )}
+
+              {exact && (
+                <>
+                  {/* R3 — iOS ignores `placeholder` on date and time inputs, which is
+                      exactly why these shipped as two blank boxes. The native input is
+                      kept (so the wheel picker still opens on tap) but made fully
+                      transparent and laid over a span we control, which gives the
+                      resting state a real hint instead of nothing. */}
+                  <div className="flex gap-2 mb-3">
+                    <span className="relative flex-1 min-w-0">
+                      <span
+                        className={`block min-h-[46px] rounded-2xl border-[1.5px] border-[#E8E4F5] bg-surface-bg px-3.5 py-3 font-sans text-[16px] ${
+                          date ? 'text-ink-900' : 'text-grey-300'
+                        }`}
+                      >
+                        {date ? formatDateHint(date) : '7/29'}
+                      </span>
+                      <input
+                        type="date"
+                        value={date}
+                        onChange={e => setDate(e.target.value)}
+                        aria-label="Date"
+                        className="absolute inset-0 w-full h-full opacity-0"
+                      />
+                    </span>
+                    <span className="relative flex-1 min-w-0">
+                      <span
+                        className={`block min-h-[46px] rounded-2xl border-[1.5px] border-[#E8E4F5] bg-surface-bg px-3.5 py-3 font-sans text-[16px] ${
+                          time ? 'text-ink-900' : 'text-grey-300'
+                        }`}
+                      >
+                        {time ? formatTimeHint(time) : '10:30 AM'}
+                      </span>
+                      <input
+                        type="time"
+                        value={time}
+                        onChange={e => setTime(e.target.value)}
+                        aria-label="Time"
+                        className="absolute inset-0 w-full h-full opacity-0"
+                      />
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      // Clearing both is what makes the two modes mutually
+                      // exclusive in BOTH directions — otherwise a stale date
+                      // would keep step 2 satisfied after switching back.
+                      setExact(false)
+                      setDate('')
+                      setTime('')
+                    }}
+                    className="flex items-center gap-1.5 font-sans text-[12.5px] font-semibold text-text-secondary mb-4"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">
+                      <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                    Use a rough time instead
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* R4 — visibility sits directly under When, ahead of the two optional
+              fields. It is the only one of the three that changes who the Moove
+              reaches; under Where and Anything else it read as an afterthought. */}
+          {showRest && (
+            <div className={gated ? 'animate-[rise_.28s_cubic-bezier(.22,.9,.3,1)_both]' : ''}>
+              <Label>Who can see this?</Label>
+              <div className="flex gap-2 flex-wrap mb-4">
+                <Chip on={visibleTo.length === 0} onClick={() => setVisibleTo([])}>
+                  Everyone
+                </Chip>
+                {groups.map(g => (
+                  <Chip key={g.id} on={visibleTo.includes(g.id)} onClick={() => toggleGroup(g.id)}>
+                    {g.emoji ? `${g.emoji} ` : ''}
+                    {g.name}
                   </Chip>
                 ))}
               </div>
-              <button
-                onClick={() => setExact(true)}
-                className="flex items-center gap-1.5 font-sans text-[12.5px] font-semibold text-purple-500 mb-4"
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">
-                  <line x1="12" y1="5" x2="12" y2="19" />
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-                Add an exact date and time
-              </button>
-            </>
-          )}
 
-          {exact && (
-            <>
-              <div className="flex gap-2 mb-3">
-                <input
-                  type="date"
-                  value={date}
-                  onChange={e => setDate(e.target.value)}
-                  className="flex-1 min-w-0 min-h-[46px] rounded-2xl border-[1.5px] border-[#E8E4F5] bg-surface-bg px-3.5 py-3 font-sans text-[16px] text-ink-900 outline-none focus:border-purple-500"
-                />
-                <input
-                  type="time"
-                  value={time}
-                  onChange={e => setTime(e.target.value)}
-                  className="flex-1 min-w-0 min-h-[46px] rounded-2xl border-[1.5px] border-[#E8E4F5] bg-surface-bg px-3.5 py-3 font-sans text-[16px] text-ink-900 outline-none focus:border-purple-500"
-                />
-              </div>
-              <button
-                onClick={() => {
-                  setExact(false)
-                  setDate('')
-                  setTime('')
-                }}
-                className="flex items-center gap-1.5 font-sans text-[12.5px] font-semibold text-text-secondary mb-4"
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-                Use a rough time instead
-              </button>
-            </>
-          )}
+              {/* 18.2's toggle, reused. Appears only once a group is picked, and
+                  defaults off. It belongs directly under the chips it qualifies —
+                  see the block below, which is now unreachable and removed. */}
+              {visibleTo.length > 0 && (
+                <button
+                  onClick={() => setShowGroups(s => !s)}
+                  role="switch"
+                  aria-checked={showGroups}
+                  className="w-full flex items-center gap-2.5 border border-[#E8E4F5] bg-surface-bg rounded-2xl px-3.5 py-3 mb-4 text-left"
+                >
+                  <span className="flex-1 min-w-0">
+                    <span className="block font-sans text-[13px] font-semibold text-ink-900">
+                      Show who this is shared with
+                    </span>
+                    <span className="block font-sans text-[11.5px] text-text-secondary truncate">
+                      {groups
+                        .filter(g => visibleTo.includes(g.id))
+                        .map(g => g.name)
+                        .join(', ')}{' '}
+                      appears on the card
+                    </span>
+                  </span>
+                  <span
+                    className={`shrink-0 w-11 h-6 rounded-full relative transition-colors ${
+                      showGroups ? 'bg-green-700' : 'bg-grey-300'
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-[3px] w-[18px] h-[18px] rounded-full bg-white transition-all ${
+                        showGroups ? 'left-[23px]' : 'left-[3px]'
+                      }`}
+                    />
+                  </span>
+                </button>
+              )}
 
-          <Label optional>Where</Label>
-          <input
-            value={location}
-            onChange={e => setLocation(e.target.value.slice(0, PLAN_LOCATION_MAX))}
-            placeholder="First Ascent, Avondale"
-            className="w-full min-h-[46px] rounded-2xl border-[1.5px] border-[#E8E4F5] bg-surface-bg px-3.5 py-3 font-sans text-[16px] text-ink-900 outline-none mb-4 focus:border-purple-500"
-          />
+              <Label optional>Where</Label>
+              <input
+                value={location}
+                onChange={e => setLocation(e.target.value.slice(0, PLAN_LOCATION_MAX))}
+                placeholder="First Ascent, Avondale"
+                className="w-full min-h-[46px] rounded-2xl border-[1.5px] border-[#E8E4F5] bg-surface-bg px-3.5 py-3 font-sans text-[16px] text-ink-900 outline-none mb-4 focus:border-purple-500"
+              />
 
-          <Label optional>Anything else</Label>
-          <input
-            value={note}
-            onChange={e => setNote(e.target.value.slice(0, PLAN_NOTE_MAX))}
-            placeholder="Bring shoes if you have them"
-            className="w-full min-h-[46px] rounded-2xl border-[1.5px] border-[#E8E4F5] bg-surface-bg px-3.5 py-3 font-sans text-[16px] text-ink-900 outline-none mb-4 focus:border-purple-500"
-          />
-
-          <Label>Who can see this?</Label>
-          <div className="flex gap-2 flex-wrap mb-4">
-            <Chip on={visibleTo.length === 0} onClick={() => setVisibleTo([])}>
-              Everyone
-            </Chip>
-            {groups.map(g => (
-              <Chip key={g.id} on={visibleTo.includes(g.id)} onClick={() => toggleGroup(g.id)}>
-                {g.emoji ? `${g.emoji} ` : ''}
-                {g.name}
-              </Chip>
-            ))}
-          </div>
-
-          {/* 18.2's toggle, reused. Appears only once a group is picked, and
-              defaults off. The viewer-side rule is unchanged: you only ever see
-              the names of groups you are in. */}
-          {visibleTo.length > 0 && (
-            <button
-              onClick={() => setShowGroups(s => !s)}
-              role="switch"
-              aria-checked={showGroups}
-              className="w-full flex items-center gap-2.5 border border-[#E8E4F5] bg-surface-bg rounded-2xl px-3.5 py-3 mb-4 text-left"
-            >
-              <span className="flex-1 min-w-0">
-                <span className="block font-sans text-[13px] font-semibold text-ink-900">
-                  Show who this is shared with
-                </span>
-                <span className="block font-sans text-[11.5px] text-text-secondary truncate">
-                  {groups
-                    .filter(g => visibleTo.includes(g.id))
-                    .map(g => g.name)
-                    .join(', ')}{' '}
-                  appears on the card
-                </span>
-              </span>
-              <span
-                className={`shrink-0 w-11 h-6 rounded-full relative transition-colors ${
-                  showGroups ? 'bg-green-700' : 'bg-grey-300'
-                }`}
-              >
-                <span
-                  className={`absolute top-[3px] w-[18px] h-[18px] rounded-full bg-white transition-all ${
-                    showGroups ? 'left-[23px]' : 'left-[3px]'
-                  }`}
-                />
-              </span>
-            </button>
+              <Label optional>Anything else</Label>
+              <input
+                value={note}
+                onChange={e => setNote(e.target.value.slice(0, PLAN_NOTE_MAX))}
+                placeholder="Bring shoes if you have them"
+                className="w-full min-h-[46px] rounded-2xl border-[1.5px] border-[#E8E4F5] bg-surface-bg px-3.5 py-3 font-sans text-[16px] text-ink-900 outline-none mb-4 focus:border-purple-500"
+              />
+            </div>
           )}
 
           {error && <p className="font-sans text-[13px] text-[#E8405A] mb-3">{error}</p>}

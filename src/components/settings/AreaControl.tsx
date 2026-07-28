@@ -6,6 +6,7 @@
 
 import { useState } from 'react'
 import { posthog } from '@/lib/posthog'
+import { useSheetDrag } from '@/lib/useSheetDrag'
 import {
   captureDeviceArea,
   saveManualZip,
@@ -34,6 +35,9 @@ export default function AreaControl({
   )
   const [view, setView] = useState<CardView>('card')
   const [sheet, setSheet] = useState<Sheet>('none')
+  // R6 — both variants below draw a grabber, and only one is ever mounted at a
+  // time, so they share a single hook.
+  const areaDrag = useSheetDrag(() => setSheet('none'))
   const [busy, setBusy] = useState(false)
   const [zip, setZip] = useState('')
   const [zipError, setZipError] = useState<string | null>(null)
@@ -259,10 +263,15 @@ export default function AreaControl({
       {/* Method sheet */}
       {sheet === 'method' && (
         <>
-          <div className="fixed inset-0 bg-ink-900/50 z-40" onClick={() => setSheet('none')} aria-hidden="true" />
-          <div className="fixed bottom-0 left-0 right-0 z-50 px-3 [--safe-pb-base:2rem] safe-area-pb">
+          <div
+            className="fixed inset-0 bg-ink-900/50 z-40"
+            style={{ opacity: areaDrag.scrimOpacity }}
+            onClick={() => setSheet('none')}
+            aria-hidden="true"
+          />
+          <div className="fixed bottom-0 left-0 right-0 z-50 px-3 [--safe-pb-base:2rem] safe-area-pb" {...areaDrag.sheetProps}>
             <div className="bg-white rounded-[28px] p-5 pb-6">
-              <div className="w-[38px] h-1 rounded-full bg-[#DED8F0] mx-auto mb-4" />
+              <div className="w-[38px] h-1 rounded-full bg-[#DED8F0] mx-auto mb-4 cursor-grab" {...areaDrag.handleProps} />
               <div className="font-display font-extrabold text-[19px] text-ink-900 text-center">Set your area</div>
               <p className="font-sans text-[13px] text-ink-500 text-center mt-1.5 leading-snug px-2">
                 We keep a coarse area (your zip) to get you ready for moves near you.
@@ -310,10 +319,15 @@ export default function AreaControl({
       {/* Edit sheet */}
       {sheet === 'edit' && (
         <>
-          <div className="fixed inset-0 bg-ink-900/50 z-40" onClick={() => setSheet('none')} aria-hidden="true" />
-          <div className="fixed bottom-0 left-0 right-0 z-50 px-3 [--safe-pb-base:2rem] safe-area-pb">
+          <div
+            className="fixed inset-0 bg-ink-900/50 z-40"
+            style={{ opacity: areaDrag.scrimOpacity }}
+            onClick={() => setSheet('none')}
+            aria-hidden="true"
+          />
+          <div className="fixed bottom-0 left-0 right-0 z-50 px-3 [--safe-pb-base:2rem] safe-area-pb" {...areaDrag.sheetProps}>
             <div className="bg-white rounded-[28px] p-5 pb-6">
-              <div className="w-[38px] h-1 rounded-full bg-[#DED8F0] mx-auto mb-4" />
+              <div className="w-[38px] h-1 rounded-full bg-[#DED8F0] mx-auto mb-4 cursor-grab" {...areaDrag.handleProps} />
               <div className="font-display font-extrabold text-[19px] text-ink-900 text-center">Your area</div>
               {area && (
                 <p className="font-sans text-[13px] text-ink-500 text-center mt-1.5">

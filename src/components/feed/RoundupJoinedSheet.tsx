@@ -12,6 +12,7 @@
 
 import { useState } from 'react'
 import { posthog } from '@/lib/posthog'
+import { useSheetDrag } from '@/lib/useSheetDrag'
 
 interface RoundupJoinedSheetProps {
   code: string
@@ -42,16 +43,23 @@ export default function RoundupJoinedSheet({
   }
 
   const n = connectedCount
+  const drag = useSheetDrag(onDismiss)
 
   return (
     <>
-      <div className="fixed inset-0 bg-text-primary/50 z-40" onClick={onDismiss} aria-hidden="true" />
+      <div
+        className="fixed inset-0 bg-text-primary/50 z-40"
+        style={{ opacity: drag.scrimOpacity }}
+        onClick={onDismiss}
+        aria-hidden="true"
+      />
       <div
         className="fixed bottom-0 left-0 right-0 z-50 bg-card-white rounded-t-3xl px-5 pt-3 [--safe-pb-base:1.875rem] safe-area-pb"
         role="dialog"
         aria-modal="true"
+        {...drag.sheetProps}
       >
-        <div className="w-9 h-1 rounded-full bg-[#E8E4F5] mx-auto mb-[18px]" />
+        <div className="w-9 h-1 rounded-full bg-[#E8E4F5] mx-auto mb-[18px] cursor-grab" {...drag.handleProps} />
 
         <div className="text-center">
           <div className="w-14 h-14 mx-auto mb-3.5 rounded-full bg-purple-100 flex items-center justify-center">

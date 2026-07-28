@@ -115,6 +115,39 @@ export type Database = {
           },
         ]
       }
+      plan_comment_likes: {
+        Row: {
+          comment_id: string
+          user_id: string
+          created_at: string
+        }
+        Insert: {
+          comment_id: string
+          user_id: string
+          created_at?: string
+        }
+        Update: {
+          comment_id?: string
+          user_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_comment_likes_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "plan_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_comment_likes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       availability_slots: {
         Row: {
           id: string
@@ -598,6 +631,7 @@ export type Database = {
           body: string
           created_at: string
           edited_at: string | null
+          mentions: string[]
         }
         Insert: {
           id?: string
@@ -606,6 +640,7 @@ export type Database = {
           body: string
           created_at?: string
           edited_at?: string | null
+          mentions?: string[]
         }
         Update: {
           id?: string
@@ -614,6 +649,7 @@ export type Database = {
           body?: string
           created_at?: string
           edited_at?: string | null
+          mentions?: string[]
         }
         Relationships: [
           {

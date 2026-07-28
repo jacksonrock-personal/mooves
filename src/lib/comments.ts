@@ -13,6 +13,52 @@ export interface PlanComment {
   body: string
   createdAt: string
   editedAt: string | null
+  /** R8 — likes. Zero renders NO number, only the outline heart. */
+  likeCount: number
+  likedByMe: boolean
+  /** R8 — validated ids behind the @tokens in `body`. Roster members only. */
+  mentions: string[]
+}
+
+/**
+ * R8 — split a comment body into plain runs and @mention runs, for rendering.
+ *
+ * Matching is by NAME against the roster we already hold, longest-first, so
+ * "@Kate" cannot shadow "@Katherine". Names are matched rather than parsed as
+ * a token because display names contain spaces; a naive /@\w+/ would highlight
+ * "@Katherine" but drop the "Coates".
+ *
+ * Only names of people actually in the roster highlight. Typing "@nobody" is
+ * just text, which is the same rule the server enforces on write.
+ */
+export function splitMentions(
+  body: string,
+  roster: { id: string; displayName: string | null }[],
+): { text: string; mention: boolean }[] {
+  const names = roster
+    .map(r => r.displayName)
+    .filter((n): n is string => !!n && n.length > 0)
+    .sort((a, b) => b.length - a.length)
+
+  if (names.length === 0) return [{ text: body, mention: false }]
+
+  const out: { text: string; mention: boolean }[] = []
+  let i = 0
+  while (i < body.length) {
+    if (body[i] === '@') {
+      const hit = names.find(n => body.startsWith(n, i + 1))
+      if (hit) {
+        out.push({ text: `@${hit}`, mention: true })
+        i += hit.length + 1
+        continue
+      }
+    }
+    const last = out[out.length - 1]
+    if (last && !last.mention) last.text += body[i]
+    else out.push({ text: body[i], mention: false })
+    i += 1
+  }
+  return out
 }
 
 export const COMMENT_MAX = 500

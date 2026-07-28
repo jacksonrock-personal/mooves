@@ -19,6 +19,7 @@
 
 import { useState } from 'react'
 import { posthog } from '@/lib/posthog'
+import { useSheetDrag } from '@/lib/useSheetDrag'
 import { SLOT_LABEL, greenForSlots, type SlotPart } from '@/lib/availability'
 
 interface ConfirmFreeSheetProps {
@@ -42,6 +43,7 @@ export default function ConfirmFreeSheet({
 }: ConfirmFreeSheetProps) {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const drag = useSheetDrag(onClose)
 
   if (!open || parts.length === 0) return null
 
@@ -86,17 +88,24 @@ export default function ConfirmFreeSheet({
 
   return (
     <>
-      <div className="fixed inset-0 bg-text-primary/50 z-40" onClick={onClose} aria-hidden="true" />
+      <div
+        className="fixed inset-0 bg-text-primary/50 z-40"
+        style={{ opacity: drag.scrimOpacity }}
+        onClick={onClose}
+        aria-hidden="true"
+      />
       <div
         className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl bg-surface-bg px-4 [--safe-pb-base:1.125rem] safe-area-pb"
         role="dialog"
         aria-modal="true"
         aria-label="Free today?"
+        {...drag.sheetProps}
       >
         <button
           onClick={onClose}
           aria-label="Close"
-          className="mx-auto mb-3 mt-2.5 h-1 w-9 rounded-full bg-grey-300"
+          className="mx-auto mb-3 mt-2.5 h-1 w-9 cursor-grab rounded-full bg-grey-300"
+          {...drag.handleProps}
         />
 
         <h2 className="font-display text-[20px] font-extrabold tracking-tight text-ink-900">

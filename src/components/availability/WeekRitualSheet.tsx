@@ -18,6 +18,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { posthog } from '@/lib/posthog'
+import { useSheetDrag } from '@/lib/useSheetDrag'
 import {
   SLOT_LABEL,
   isDayPast,
@@ -58,6 +59,7 @@ export default function WeekRitualSheet({
   // Whether this week already had slots when the sheet opened. Drives the title
   // and the secondary action: a week you have already set is edited, not created.
   const [hadSlots, setHadSlots] = useState(false)
+  const drag = useSheetDrag(onClose)
 
   const days = weekDates(ritualDay)
   const from = toLocalDateStr(days[0])
@@ -128,17 +130,24 @@ export default function WeekRitualSheet({
 
   return (
     <>
-      <div className="fixed inset-0 bg-text-primary/50 z-40" onClick={onClose} aria-hidden="true" />
+      <div
+        className="fixed inset-0 bg-text-primary/50 z-40"
+        style={{ opacity: drag.scrimOpacity }}
+        onClick={onClose}
+        aria-hidden="true"
+      />
       <div
         className="fixed bottom-0 left-0 right-0 z-50 flex max-h-[88%] flex-col rounded-t-3xl bg-surface-bg px-4 [--safe-pb-base:1.125rem] safe-area-pb"
         role="dialog"
         aria-modal="true"
         aria-label="Set your week"
+        {...drag.sheetProps}
       >
         <button
           onClick={onClose}
           aria-label="Close"
-          className="mx-auto mb-3 mt-2.5 h-1 w-9 shrink-0 rounded-full bg-grey-300"
+          className="mx-auto mb-3 mt-2.5 h-1 w-9 shrink-0 cursor-grab rounded-full bg-grey-300"
+          {...drag.handleProps}
         />
 
         <h2 className="shrink-0 font-display text-[20px] font-extrabold tracking-tight text-ink-900">

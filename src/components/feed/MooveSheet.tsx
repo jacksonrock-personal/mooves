@@ -20,11 +20,13 @@
 import { useCallback, useEffect, useState } from 'react'
 import Avatar from '@/components/ui/Avatar'
 import { posthog } from '@/lib/posthog'
-import { planWhenLine, type Plan } from '@/lib/plans'
+import { useSheetDrag } from '@/lib/useSheetDrag'
+import { type Plan } from '@/lib/plans'
 import {
   COMMENT_MAX,
   COMMENT_COUNTER_AT,
   commentTime,
+  splitMentions,
   type PlanComment,
 } from '@/lib/comments'
 
@@ -67,6 +69,9 @@ export default function MooveSheet({
   const [acting, setActing] = useState<PlanComment | null>(null)
   const [editing, setEditing] = useState<PlanComment | null>(null)
   const [editDraft, setEditDraft] = useState('')
+  /** R8 — open only while the draft ends in an unresolved "@fragment". */
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null)
+  const drag = useSheetDrag(onClose)
 
   const load = useCallback(async () => {
     if (!canComment) {
@@ -100,12 +105,55 @@ export default function MooveSheet({
     return () => window.removeEventListener('focus', onFocus)
   }, [load, initialPane])
 
+  /**
+   * R8 — a like, applied optimistically and reconciled from the response.
+   *
+   * No push and no notification of any kind: nobody is ever told they were
+   * liked. The count travels with its heart and appears nowhere else.
+   */
+  async function toggleLike(comment: PlanComment) {
+    const liking = !comment.likedByMe
+    setComments(cs =>
+      cs.map(c =>
+        c.id === comment.id
+          ? { ...c, likedByMe: liking, likeCount: c.likeCount + (liking ? 1 : -1) }
+          : c,
+      ),
+    )
+    posthog.capture(liking ? 'comment_liked' : 'comment_unliked')
+    try {
+      const res = await fetch(`/api/plans/${plan.id}/comments/${comment.id}/like`, {
+        method: liking ? 'POST' : 'DELETE',
+      })
+      if (!res.ok) throw new Error('failed')
+      const data = (await res.json()) as { likeCount: number; likedByMe: boolean }
+      setComments(cs =>
+        cs.map(c =>
+          c.id === comment.id
+            ? { ...c, likedByMe: data.likedByMe, likeCount: data.likeCount }
+            : c,
+        ),
+      )
+    } catch {
+      // Put it back. A like that silently did not happen is worse than a flicker.
+      setComments(cs =>
+        cs.map(c =>
+          c.id === comment.id
+            ? { ...c, likedByMe: comment.likedByMe, likeCount: comment.likeCount }
+            : c,
+        ),
+      )
+    }
+  }
+
   async function send(body: string, key: string) {
     try {
       const res = await fetch(`/api/plans/${plan.id}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ body }),
+        // Ids are resolved from the roster we already hold, and re-validated
+        // server-side — the picker is convenience, the server is the rule.
+        body: JSON.stringify({ body, mentions: mentionedIds(body) }),
       })
       if (!res.ok) throw new Error('failed')
       posthog.capture('moove_comment_posted')
@@ -122,6 +170,7 @@ export default function MooveSheet({
     const key = `${Date.now()}-${Math.random()}`
     setPending(p => [...p, { key, body, failed: false }])
     setDraft('')
+    setMentionQuery(null) // a sent comment must not leave the picker hanging open
     void send(body, key)
   }
 
@@ -164,6 +213,39 @@ export default function MooveSheet({
     }
   }
 
+  /** Which roster members this body actually names. */
+  function mentionedIds(body: string): string[] {
+    return roster
+      .filter(r => r.displayName && body.includes(`@${r.displayName}`))
+      .map(r => r.id)
+  }
+
+  /**
+   * R8 — the picker opens on a trailing "@fragment" and lists ONLY the roster.
+   * Never the full friends list: that is what keeps wall 2 standing, since a
+   * comment cannot name somebody who is not in the room.
+   */
+  function onDraftChange(value: string) {
+    setDraft(value)
+    const at = value.lastIndexOf('@')
+    if (at === -1) {
+      setMentionQuery(null)
+      return
+    }
+    const frag = value.slice(at + 1)
+    // A space-containing fragment that already matches a full name is a
+    // finished tag, not a query.
+    setMentionQuery(frag.length <= 24 && !frag.includes('\n') ? frag : null)
+  }
+
+  function applyMention(name: string) {
+    const at = draft.lastIndexOf('@')
+    if (at === -1) return
+    setDraft(`${draft.slice(0, at)}@${name} `)
+    setMentionQuery(null)
+    posthog.capture('comment_mention_added')
+  }
+
   const remaining = COMMENT_MAX - draft.length
   const roster = plan.isMine
     ? [{ id: plan.authorId, displayName: plan.authorName, avatarUrl: plan.authorAvatar }, ...plan.joiners]
@@ -174,44 +256,30 @@ export default function MooveSheet({
 
   return (
     <>
-      <div className="fixed inset-0 bg-text-primary/45 z-40" onClick={onClose} aria-hidden="true" />
+      <div
+        className="fixed inset-0 bg-text-primary/45 z-40"
+        style={{ opacity: drag.scrimOpacity }}
+        onClick={onClose}
+        aria-hidden="true"
+      />
 
       <div
         className="fixed bottom-0 left-0 right-0 z-50 bg-card-white rounded-t-[22px] flex flex-col max-h-[86%] h-[76%]"
         role="dialog"
         aria-modal="true"
+        {...drag.sheetProps}
       >
-        <div className="w-11 h-[5px] rounded-full bg-[#DDD8EC] mx-auto mt-2.5 shrink-0" />
+        <div className="w-11 h-[5px] rounded-full bg-[#DDD8EC] mx-auto mt-2.5 shrink-0 cursor-grab" {...drag.handleProps} />
 
-        {/* The Moove, restated. Shared by both panes so switching never loses
-            track of what you are looking at. */}
-        <div className="px-[18px] pt-4 pb-3.5 shrink-0">
-          <div className="flex mb-3">
-            {[{ id: plan.authorId, name: plan.authorName, url: plan.authorAvatar }, ...plan.joiners.slice(0, 2).map(j => ({ id: j.id, name: j.displayName, url: j.avatarUrl }))].map(
-              (p, i) => (
-                <Avatar
-                  key={p.id}
-                  src={p.url}
-                  name={p.name ?? '?'}
-                  size={44}
-                  className={`ring-[2.5px] ring-white ${i > 0 ? '-ml-3.5' : ''}`}
-                />
-              ),
-            )}
-          </div>
-          <p className="font-sans text-[16px] leading-snug text-ink-900">
-            <span className="font-bold">{plan.isMine ? 'You' : (plan.authorName ?? 'A friend')}</span>
-            <span className="text-ink-500"> {plan.isMine ? 'are doing' : 'is doing'} </span>
-            <span className="font-bold">{plan.title}</span>
-          </p>
-          <p className="font-sans text-[13px] text-ink-500 mt-1.5">
-            {planWhenLine(new Date(plan.startAt), plan.hasTime, plan.locationText, new Date(), plan.timeMode)}
-          </p>
-        </div>
+        {/* R5 — the Moove is NOT restated here any more. The avatar stack, the
+            "X is doing Y" line and the when/location line are gone from both
+            panes: they cost ~120px, about a comment and a half, to tell you
+            something you already knew, because you tapped that card to get here.
+            The sheet now opens straight onto the two things it is for. */}
 
         {/* Wall 3: no tabs at all for someone who has not joined. */}
         {canComment && (
-          <div className="mx-[18px] flex gap-1 bg-grey-100 rounded-full p-[3px] shrink-0">
+          <div className="mx-[18px] mt-3.5 flex gap-1 bg-grey-100 rounded-full p-[3px] shrink-0">
             {(['who', 'comments'] as MoovePane[]).map(p => (
               <button
                 key={p}
@@ -298,9 +366,45 @@ export default function MooveSheet({
                         )}
                       </div>
                       <p className="font-sans text-[14px] leading-relaxed text-ink-900 break-words">
-                        {c.body}
+                        {splitMentions(c.body, roster).map((run, i) =>
+                          run.mention ? (
+                            <span key={i} className="font-bold text-purple-700">
+                              {run.text}
+                            </span>
+                          ) : (
+                            <span key={i}>{run.text}</span>
+                          ),
+                        )}
                       </p>
                     </div>
+                    {/* R8 — the heart. A zero renders NO number, only the outline:
+                        a "0" reads as a score you are losing. */}
+                    <button
+                      onClick={() => void toggleLike(c)}
+                      aria-label={c.likedByMe ? 'Unlike' : 'Like'}
+                      aria-pressed={c.likedByMe}
+                      className="shrink-0 flex flex-col items-center gap-px pt-0.5 w-[26px]"
+                    >
+                      <svg
+                        width="17"
+                        height="17"
+                        viewBox="0 0 24 24"
+                        fill={c.likedByMe ? '#E8405A' : 'none'}
+                        stroke={c.likedByMe ? '#E8405A' : '#BDB5D4'}
+                        strokeWidth="2"
+                      >
+                        <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1L12 21.2l7.7-7.8 1.1-1a5.5 5.5 0 0 0 0-7.8z" />
+                      </svg>
+                      {c.likeCount > 0 && (
+                        <span
+                          className={`font-sans text-[10.5px] font-bold leading-none ${
+                            c.likedByMe ? 'text-red-500' : 'text-grey-300'
+                          }`}
+                        >
+                          {c.likeCount}
+                        </span>
+                      )}
+                    </button>
                     {(mine || plan.isMine) && (
                       <button
                         onClick={() => setActing(c)}
@@ -357,10 +461,44 @@ export default function MooveSheet({
         {/* Compose lives ONLY on the comments pane. */}
         {pane === 'comments' && canComment && (
           <>
+            {/* R8 — the mention picker. Roster only, never the friends list. */}
+            {mentionQuery !== null &&
+              (() => {
+                const q = mentionQuery.toLowerCase()
+                const matches = roster.filter(
+                  r => r.displayName && r.displayName.toLowerCase().startsWith(q),
+                )
+                if (matches.length === 0) return null
+                return (
+                  <div className="shrink-0 mx-4 mb-1 rounded-2xl border-[1.5px] border-[#E8E4F5] bg-card-white overflow-hidden shadow-[0_-8px_22px_rgba(28,23,48,0.12)]">
+                    <p className="font-sans text-[9.5px] font-bold uppercase tracking-[0.09em] text-grey-300 px-3.5 pt-2.5 pb-1.5">
+                      People who are in
+                    </p>
+                    {matches.slice(0, 4).map(r => (
+                      <button
+                        key={r.id}
+                        onClick={() => applyMention(r.displayName ?? '')}
+                        className="w-full flex items-center gap-2.5 px-3.5 py-2 border-t border-[#E8E4F5] text-left"
+                      >
+                        <Avatar src={r.avatarUrl} name={r.displayName ?? '?'} size={26} className="shrink-0" />
+                        <span className="font-sans text-[13.5px] font-semibold text-ink-900">
+                          {r.displayName}
+                        </span>
+                        {r.id === plan.authorId && (
+                          <span className="ml-auto font-sans text-[10px] font-bold uppercase tracking-[0.05em] text-grey-300">
+                            Host
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )
+              })()}
+
             <div className="shrink-0 px-4 pt-2.5 pb-[18px] flex gap-2.5 items-end bg-card-white">
               <textarea
                 value={draft}
-                onChange={e => setDraft(e.target.value.slice(0, COMMENT_MAX))}
+                onChange={e => onDraftChange(e.target.value.slice(0, COMMENT_MAX))}
                 placeholder="Add a comment"
                 rows={1}
                 className={`flex-1 min-h-[44px] max-h-36 bg-grey-100 px-[17px] py-3 font-sans text-[14.5px] leading-snug text-ink-900 placeholder:text-grey-300 focus:outline-none focus:bg-card-white resize-none ${
