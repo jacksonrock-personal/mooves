@@ -41,6 +41,7 @@
 | — | Phase 21 — **Comments on a Moove**: the amendment (21.0) · access & lifetime (21.1) · the comment area (21.2) · notifications (21.3) · moderation (21.4) | ✅ Spec 2026-07-27 (see "Phase 21" at EOF) — **amends the "no in-app messaging, ever" rule in daylight; four walls, all load-bearing** · ✅ Mockup **`mooves-phase21-comments-sheets-v2.html`** (bottom sheet, approved 2026-07-27 — **supersedes** `mooves-phase21-comments.html`, the inline version that shipped first) · ✅ Code 2026-07-27 (inline version: migration `20260728012000` **applied to prod**, **merged via PR #47** `674ffa8`; **`SKILL.md:72` amended** — "No in-app messaging. Ever." replaced with the four-wall exception) · 🔁 **Sheet rebuild** on `feat/phase21-comments-sheet` — UI only, `plan_comments` schema and all four API routes unchanged, `get_plans` gains `commentCount` |
 | — | Phase 22 — **Scheduled availability**: the reframing (22.0) · stance-card tension (22.0a) · timezones (22.1) · the scheduler (22.2) · the weekly ritual (22.3) · the confirm (22.4) · private until green (22.5) · Settings (22.6) | ✅ Spec 2026-07-27 (see "Phase 22" at EOF) — **not preset recurring times: a weekly ritual, set fresh each week**. First server-side scheduler in the app (`pg_cron` + `pg_net` → one authed route); first stored user timezones, reversing 18.1's punt · ✅ Mockup `mooves-phase22-scheduled-availability.html` (approved 2026-07-27, 11 states) · ✅ Code 2026-07-27 (`feat/phase22-scheduled-availability`; `tsc --noEmit` + `next build` clean; **migration `20260728030000` applied by Jackson**, both cron jobs registered and active, Vault secrets set — verified via `cron.job` + a manual `availability_cron_tick()` that reached the app) |
 | — | **Refinements R1–R8** — nav "Plan a Moove" button (R1) · composer step gating (R2) · When defaults + real date/time hints (R3) · visibility moves up (R4) · Moove sheet header removed (R5) · swipe-to-close everywhere (R6) · copy (R7) · **likes + roster-only tagging (R8)** | ✅ Spec 2026-07-28 (see "Refinements R1–R8" at EOF) — **R8 amends Phase 21's "no @mentions, no reactions on comments" in daylight** · ✅ Mockup `mooves-nav-composer-refinements.html` (11 states, approved 2026-07-28) · ✅ Code 2026-07-28 (`fix/nav-composer-comments`; `tsc --noEmit` + `next build` clean; **migration `20260728050000` applied by Jackson** — `plan_comment_likes` verified RLS-on with zero policies, `plan_comments.mentions` present; **R6 corrected at build**, see the ⚠ note in R6) |
+| — | **Refinements R9–R13** — composer fixed height (R9) · reveal slowed because it no longer reflows (R10) · **tagging someone NOT in the Moove, + push (R11)** · **the edit bug, repaired (R12)** · sheet grab targets (R13) | ✅ Spec 2026-07-28 (see "Refinements R9–R13" at EOF) — **R11 amends R8, which amended Phase 21: a tag may now reach a non-joiner, bounded to people who can ALREADY see the Moove.** R9, R10 and R13 are same-day corrections to R2 and R6 · ✅ Mockup `mooves-composer-height-tagging.html` (approved 2026-07-28) · ✅ Code 2026-07-28 (`fix/composer-height-tagging-edit`, **merged PR #51** `5b760b5`; `tsc --noEmit` + `next build` clean; **migration `20260728120000` applied by Jackson** — `get_plans` verified live with the two author-only keys, `plan_taggable_friends` present) · ⬜ **device test pending on all five** |
 | — | Phase 23 — 30-day friend-availability calendar | 🔮 Gated on Phase 22 · pointless until future availability data exists |
 
 ---
@@ -4340,7 +4341,9 @@ State-based throughout, **no coined noun anywhere**:
 
 ---
 
-## Phase 20 — Greens & Planned Mooves (Spec) — *spec'd 2026-07-27* · SPEC ✅ (**revised at mockup, see "Revision" below**) · MOCKUP ✅ (`mooves-phase20-greens-plans.html`, approved 2026-07-27) · CODE ⬜
+## Phase 20 — Greens & Planned Mooves (Spec) — *spec'd 2026-07-27* · SPEC ✅ (**revised at mockup, see "Revision" below**) · MOCKUP ✅ (`mooves-phase20-greens-plans.html`, approved 2026-07-27) · CODE ✅ 2026-07-27, merged
+
+> ⚠ **The 20.9 edit path shipped broken and was repaired on 2026-07-28 — see R12.** `PATCH /api/plans/[id]` never wrote `time_mode` (it predates 20.6's coarse timing), and every edit silently widened a group-scoped Moove to all the author's friends.
 
 > ### ⚠️ SECOND revision, post-deployment (2026-07-27) — this wins over everything below, including the first revision block
 >
@@ -4520,7 +4523,9 @@ Never auto-grey. Joining a friend's green while you are green, your green has **
 
 ---
 
-## Phase 21 — Comments on a Moove (Spec) — *spec'd 2026-07-27* · SPEC ✅ (**revised at mockup, see the revision block below**) · MOCKUP ✅ (`mooves-phase21-comments.html`, approved 2026-07-27) · CODE ⬜
+## Phase 21 — Comments on a Moove (Spec) — *spec'd 2026-07-27* · SPEC ✅ (**revised at mockup twice, see the revision blocks below**) · MOCKUP ✅ (`mooves-phase21-comments.html` → `mooves-phase21-comments-sheets-v2.html`, approved 2026-07-27) · CODE ✅ 2026-07-27, merged (PR #49, `292e27e`)
+
+> ⚠ **Wall 2 has since been amended twice.** R8 (2026-07-28) added likes and roster-only @tagging. **R11 (2026-07-28) went further and allows tagging someone who is NOT in the Moove**, bounded to people who can already see it. The wall now reads: a comment may reach anyone the Moove was *already visible to*, and no one else.
 
 *Promoted ahead of Phase 22 after reactions were cut at Phase 20's third mockup pass, which left Phase 20 with no expressive layer at all. This phase's first job is not the comment UI — it is **consciously amending** the build skill's "No in-app messaging. Ever." rule and reconciling with the shipped 17.3 stance card. That trade-off is made below, in daylight.*
 
@@ -4565,7 +4570,9 @@ Four walls, all load-bearing. Remove any one and this becomes messaging:
 
 1. **Only on a Moove.** Never on a green, never on a person. The Phase 20 second revision (`294524e`) stripped the note off greens and retired green joins precisely because a green with nothing to read needed no card. *A green is you being free; a Moove is a thing you are doing.* Only content takes comments — availability never does.
 2. **Only for people who joined.** You must have tapped "I'm in." Commenting is coordination among people who are going, not an audience talking at a plan.
+   - ⚠ **Amended 2026-07-28 by R11.** You may now **tag** someone who has not joined — bounded to **your own friends who can already see this Moove in their feed**. Writing, reading and the thread itself are still joiners-only; what crosses the wall is a single tag and its push. A tag can never be what *discloses* a Moove, because its audience is a subset of the people already being shown it.
 3. **Invisible to everyone else.** Not merely unreadable — **unhinted**. No thread, no count, no dot, no "3 notes" on a Moove you have not joined. A visible count is an unread badge wearing a different hat, and it makes comments a lure to join.
+   - ⚠ **Bent exactly once, 2026-07-28 by R11**, and only for someone deliberately named: a tagged non-joiner gets **one** push ("*{Name}* tagged you in a Moove") which does hint that comments exist. It lands on the Moove **card** with "I'm in" — never the thread. They still cannot read a word of it, see a count, or learn who else is talking. The wall holds for everyone who was not personally named.
 4. **Dies when the Moove dies.** The same `expires_at` the Moove already carries, and instantly on cancel. There is never a backlog, never history, never anything to scroll back to.
 
 **Replacement text for `SKILL.md:72` (verbatim):**
@@ -4836,7 +4843,9 @@ None. Both open items were settled at mockup approval (2026-07-27, approved with
 
 ---
 
-## Refinements R1–R8 — Nav, composer, comments (Spec) — *spec'd 2026-07-28* · SPEC ✅ · MOCKUP ✅ (`mooves-nav-composer-refinements.html`, 11 states, approved 2026-07-28) · CODE ⬜
+## Refinements R1–R8 — Nav, composer, comments (Spec) — *spec'd 2026-07-28* · SPEC ✅ · MOCKUP ✅ (`mooves-nav-composer-refinements.html`, 11 states, approved 2026-07-28) · CODE ✅ 2026-07-28 (`fix/nav-composer-comments`, PR #50, merged `3663bf2`)
+
+> ⚠ **R2, R6 and R8 were each revised within a day of shipping, by R9–R13 below.** R2's step reveal and R6's drag targets both failed on device; R8's "tagging is roster-only" line is **reversed** by R11. Read this section with that block.
 
 *A cross-cutting batch from device use, not a phase. One branch, one PR.*
 
@@ -4921,7 +4930,7 @@ Composer subtitle becomes: **"Got something in mind? Throw it out there! This do
 **Tagging**
 
 - Typing `@` opens a picker of **only people who are in this Moove** (author + joiners). Never the full friends list.
-- That is what keeps wall 2 standing: comments remain coordination among people who are going, and you cannot pull an outsider into a room they were never in.
+- That is what keeps wall 2 standing: comments remain coordination among people who are going, and you cannot pull an outsider into a room they were never in. — ⚠ **reversed by R11 (2026-07-28)**: you may tag an outsider, bounded to friends who can already see the Moove. Reading the thread is still joiners-only.
 - A tag renders in purple. **It sends no push, no badge, no dot, and creates no "you were mentioned" surface.** That line is what stops this becoming an inbox.
 - The server validates every tagged id against the roster and drops the rest, so a hand-built request cannot tag a non-joiner.
 
@@ -4962,8 +4971,122 @@ None.
 - [ ] `GoGreyConfirm` and `MooveActionsSheet`'s action **list** are unchanged and do not drag; `MooveActionsSheet`'s **confirm** variant drags (it draws a grabber) and doing so returns to the list rather than cancelling the Moove.
 - [ ] Composer subtitle reads the new copy exactly.
 - [ ] A comment can be liked and unliked; an unliked comment shows **no number**; the count appears nowhere but beside its heart.
-- [ ] `@` offers only the author and joiners; a tagged non-joiner is rejected server-side.
-- [ ] No push, badge, dot or mention-inbox results from a like or a tag.
+- [ ] `@` offers only the author and joiners; a tagged non-joiner is rejected server-side. — **superseded by R11**
+- [ ] No push, badge, dot or mention-inbox results from a like or a tag. — **still holds for likes; superseded for tags by R11**
 - [ ] Likes and mentions are hard-deleted when the Moove dies.
 - [ ] §21.2 is replaced with the amended text verbatim, and Phase 21's Out-of-scope list is updated to match.
-- [ ] `get_feed` and `get_plans` are byte-identical to their deployed definitions.
+- [ ] `get_feed` and `get_plans` are byte-identical to their deployed definitions. — **`get_plans` gained two author-only keys in R12; `get_feed` still untouched**
+
+---
+
+## Refinements R9–R13 — Composer frame, outsider tags, the edit bug, sheet grab (Spec) — *spec'd 2026-07-28* · SPEC ✅ · MOCKUP ✅ (`mooves-composer-height-tagging.html`, approved 2026-07-28) · CODE ✅ 2026-07-28 (`fix/composer-height-tagging-edit`, PR #51, merged `5b760b5`; migration `20260728120000` applied to prod)
+
+*A second cross-cutting batch, from device use of R1–R8 the same day. One branch, one PR. Three of the five are corrections to things R1–R8 shipped hours earlier — recorded as such rather than quietly re-tuned.*
+
+### R9 — The composer is one fixed height *(corrects R2)*
+
+**Problem, observed:** R2 gates steps by mounting them. Every unlock inserts a block of layout, so the sheet's top edge and the Post button jump while you are still typing — the sheet grows under your thumb.
+
+- The composer sheet is a **constant `h-[86%]`**, replacing `max-h-[90%]`. Nothing rendered inside it can change its height.
+- 86% is sized to hold the **fully expanded** form on a modern phone — title, When in its taller exact-picker state, visibility *with* the group toggle showing, Where, Anything else. Past that the form scrolls inside the frame; the header and the commit button never do.
+- **The cost, accepted:** a one-field composer now opens at the same height as a five-field one. A sheet that is briefly larger than its contents is a much smaller problem than a sheet that moves while being used.
+
+### R10 — The reveal is slower because it no longer reflows *(corrects R2)*
+
+**Problem:** at 280ms the reveal read as a jolt. Halving the speed alone would not have fixed it — **the reflow was the jarring part, not the duration.**
+
+- **Gated steps stay in the layout from the start.** A locked step keeps its space and is only made invisible and inert (`opacity 0`, `translateY(16px)`, `blur(3px)`, `pointer-events: none`, `aria-hidden`). Unlocking transitions those three properties and **moves nothing**.
+- With reflow gone the duration became a free choice: **280ms → 560ms**, with an **80ms stagger** on the third step so the last two do not arrive as one slab.
+- The `rise` **keyframe is deleted**. A keyframe cannot animate *from whatever state you are in*, which is what a step being re-locked mid-edit requires.
+- Everything R2 specified about the gate itself is unchanged: earlier steps stay editable, clearing a required field re-locks what is below it, editing and Discover prefills still bypass gating entirely.
+
+### R11 — Tagging someone who is not in the Moove *(amends R8, which amends §21.2)*
+
+> **A second amendment in daylight.** R8 wrote *"tagging someone who has not joined … remain forbidden"* and *"you cannot pull an outsider into a room they were never in."* **That is reversed here, bounded.** The bound is what makes it payable, and it is a property of the *audience*, not of the tag.
+
+**The rule, in one line: you may tag a friend only if that friend can already see this Moove in their own feed.**
+
+So a tag can never be the thing that *discloses* a Moove. It turns "sitting in a feed they may not open today" into "somebody actually asked me", which is the entire point of the app.
+
+**Who is offered (all three conditions required):**
+
+1. **Your own friend.** Not merely someone who can see the Moove. Without this, a joiner opening the picker would be handed the names of the host's friends they have never met — the picker would leak the host's contact graph to everyone who joined. *(Chosen deliberately over the looser reading; the cost is that a joiner cannot tag one of the host's friends they don't know.)*
+2. **Can already see it** — friends with the author, and either the Moove is unscoped or they are in one of its `visible_to` groups. Exactly `get_plans`' rule.
+3. **Not already in the roster**, which the picker lists separately.
+
+**The picker** grows a second section, **"Friends who can see this"**, under the existing "People who are in". Every row in it is badged **"Not in yet"**. The room keeps its four slots and outsiders fill what is left, so the common case is never pushed off-screen by the new one.
+
+**The push** — the one place this is genuinely new behaviour:
+
+- **It names the tagger**: *"Dev tagged you in a Moove"*, body = the Moove's title. "You were tagged" by nobody in particular is a notification about the app, not about a friend.
+- **It lands on the Moove CARD, not the thread** (`/feed?plan=<id>`, opening the sheet on **Who's in** with the "I'm in" button). The recipient has not joined, so **wall 3 still holds** — they get the invitation, not the conversation. The way to accept is to join.
+- **One per Moove per recipient per hour**, the same floor as the comment push. The comment body never travels.
+- This does **not** reopen 15.3. 15.3 forbids notifications about a person's *availability*; this is a specific person deliberately asking for you by name, on a card already in your feed.
+
+**Likes are untouched.** A like still pushes nothing, names no one, and appears nowhere but beside its heart.
+
+### R12 — Editing a Moove, repaired *(fixes Phase 20.9)*
+
+Editing was reported as "not working". It was two independent defects, both server-side, both silent — the composer said "Moove updated" every time.
+
+**a. `time_mode` was never written.** `PATCH /api/plans/[id]` predates 20.6's coarse timing and was never brought forward: it read `title`, `startAt`, `hasTime`, `expiresAt`, `locationText`, `note`, `visibleTo` and dropped `timeMode` on the floor. Changing "Climbing this weekend" to Saturday 9am wrote the new `start_at`, returned 200, and left the card rendering **THIS WEEKEND**. **Every When edit crossing coarse↔exact appeared to do nothing.** The create route had always handled it correctly, which is why this survived.
+
+**b. Every edit silently widened the audience.** The composer reset `visibleTo` to `[]` whenever it opened for an edit — not from choice, but because it had **nothing to restore from**: `get_plans` returned `visibleGroups` as group *names*, filtered to ones the viewer shares and only when `show_groups` is on. So the chips always showed "Everyone" regardless of the truth, and saving wrote that guess back. **A Moove scoped to one group became visible to all of the author's friends the first time its author fixed a typo in it.** This is the more serious of the two, and is a privacy defect rather than a UI one.
+
+**Fix:**
+
+- `get_plans` returns **`visibleTo`** (raw group ids) and **`showGroups`** — **to the author only**, via the same `CASE WHEN v.author_id = viewer` rule the joiner phone numbers already use. Nobody else is handed a group id.
+- The composer prefills both, so an edit opens showing what the Moove *is* scoped to.
+- `PATCH` accepts `timeMode` (against the create route's whitelist) and writes `show_groups` **in the same branch as `visible_to`**, so the pair cannot drift — `show_groups: true` with `visible_to: null` was reachable before this.
+
+⚠ **`get_plans` has been silently broken twice historically.** The migration is the deployed 20260728040000 body copied **verbatim** with two keys added to the `jsonb_build_object`; the `cancelled_at`/`expires_at` filters, the `visible_to` rule, the `show_groups` opt-in, the joiner phone rule, the `commentCount` wall and the `ORDER BY sort_at` are all untouched.
+
+### R13 — Somewhere to actually grab *(corrects R6)*
+
+**Problem, observed:** R6 gave every sheet a real drag gesture and bound it to the grabber **pill** — 9×4 CSS pixels. The gesture worked and was still unusable: you had to land on the very top edge of the sheet, repeatedly, to get out of one.
+
+Three targets, in descending order of how deliberate they are:
+
+- **The grabber's band.** New shared `SheetGrabber` renders the same pill inside a **36px** target (padding plus a matching negative margin, so the layout footprint is unchanged and no caller re-tunes its spacing). The band bleeds ~12px over what follows it but is the first child, so anything painted after it wins the hit test — the band only collects taps that would have hit nothing.
+- **The whole header**, on the two tall sheets (composer, Moove sheet). This is what turns a 4px target into ~130px, and it costs nothing: a heading has nothing else to do with a touch.
+- **The scrolling body** — but **only from `scrollTop === 0` and only downward**, the standard sheet behaviour. Reading back up through a comment thread must never yank the sheet away. A drag that starts at the top and then scrolls is given up as a scroll.
+
+**Against the opposite failure**, which is worse: every path is behind an **8px activation threshold** before it engages at all, and travel is measured *from* that point so the sheet does not jump. A tap on a header, or a thumb resting on a list before flicking it upward, never moves the sheet. R6's one-third-of-height dismiss and 60px flick floor are **unchanged**.
+
+### Data
+
+- **`get_plans` gains two author-only keys**, `visibleTo` (`uuid[]` → jsonb array, or jsonb `null`) and `showGroups` (bool). No other key or clause moved. **`get_feed` is untouched.**
+- **New `plan_taggable_friends(p_plan uuid, p_viewer uuid)`** returning `(id, display_name, avatar_url)` — the R11 rule, in SQL, so the picker and the write path cannot disagree. `STABLE`, service-role only.
+- **New `GET /api/plans/[id]/taggable`** — gated identically to reading the thread (author, or a join on *this* plan). Degrades to an empty list on error rather than breaking the compose box.
+- **`PATCH /api/plans/[id]`** accepts `timeMode` and `showGroups`.
+- **No new tables and no new columns.** `plan_comments.mentions` already exists from R8 and now simply admits a wider set of ids.
+- **Analytics:** `tag_push_opened`.
+
+### Out of scope
+
+Tagging anyone who cannot already see the Moove (structurally forbidden — it is the whole bound) · a "you were mentioned" inbox or badge · letting a tagged non-joiner read the thread · notifying anyone about a like · reactions on greens · swipe-to-close on action sheets · any change to `get_feed` · re-tuning the composer's field order (R4 stands).
+
+### Open questions
+
+None.
+
+### Acceptance criteria
+
+- [x] The composer sheet is the same height with one field showing as with all five; its top edge and the Post button never move.
+- [x] Unlocking a step causes **no reflow** — only opacity, offset and blur change.
+- [x] The reveal runs at 560ms with an 80ms stagger on step 3; the `rise` keyframe no longer exists.
+- [x] A locked step is unreachable by tab and hidden from assistive tech.
+- [x] The `@` picker shows "People who are in" **and** "Friends who can see this", the latter badged "Not in yet".
+- [x] The taggable list contains only the tagger's own friends who can already see the Moove, and excludes the roster.
+- [x] A hand-built request naming someone who cannot see the Moove has that id **dropped**, and the comment still posts.
+- [x] Tagging an outsider sends **one** push naming the tagger, capped at one per Moove per person per hour.
+- [x] That push opens the Moove **card** on Who's in with "I'm in" — never the comment thread.
+- [x] Editing a coarse Moove into an exact one updates the card's tile and when-line.
+- [x] Editing a group-scoped Moove opens with **its groups selected**, and saving leaves the scope unchanged.
+- [x] `get_plans` returns `visibleTo`/`showGroups` to the author and jsonb `null` / `false` to everyone else.
+- [x] Every grab handle sits in a target of at least 36px; the composer and Moove sheet also drag from their headers.
+- [x] Scrolling a long thread upward never dismisses the sheet; dragging down from the top of it does.
+- [x] A tap, or an 8px twitch, on any drag target changes nothing.
+- [x] `get_feed` is byte-identical to its deployed definition.
+
+**Device test pending** on all five — everything above is verified by build, by the mockup, and by read-only checks against prod (both new SQL bodies `EXPLAIN`-planned before the migration; the two new `get_plans` keys confirmed live after it). What only a thumb can settle: whether 560ms is right, and whether the 36px band plus header is enough grab without becoming accidental.
