@@ -118,6 +118,14 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     return NextResponse.json({ error: 'Could not cancel' }, { status: 500 })
   }
 
+  // Phase 21, wall 4 — comments die with the Moove. Cancelling is a soft flag on
+  // `plans`, so the FK cascade never fires; the rows have to go explicitly or
+  // they would outlive the thing they were about. Best effort: the API already
+  // refuses to read them once cancelled_at is set, so a failure here leaves them
+  // unreachable rather than exposed.
+  const { error: commentsError } = await supabase.from('plan_comments').delete().eq('plan_id', id)
+  if (commentsError) console.error('comment cleanup on cancel failed:', commentsError)
+
   if (joinerIds.length > 0) {
     try {
       await sendPlanCancelledPush(userId, joinerIds, gate.plan.title)

@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mooves — Phase 21 comments</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg:#1C1730; --app-bg:#F8F6FF; --white:#FFFFFF;
+    --purple:#7C5CDB; --purple-100:#EDE9FF; --purple-700:#5F3FC4;
+    --green:#2ECC71; --green-700:#167A43; --green-100:#E3F9EC;
+    --grey:#BDB5D4; --grey-100:#F1EEFA;
+    --ink:#1C1730; --ink-2:#6B628A; --border:#E8E4F5; --red:#E8405A;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); font-family:'Inter',sans-serif; color:#fff; min-height:100vh; padding:40px 20px 90px; -webkit-font-smoothing:antialiased; }
+  .page-title { text-align:center; font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:22px; letter-spacing:-.02em; margin-bottom:5px; }
+  .page-sub { text-align:center; color:#8B82AE; font-size:13px; margin-bottom:26px; }
+  .toggles { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; align-items:center; max-width:860px; margin:0 auto 30px; }
+  .grp-lbl { font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:rgba(255,255,255,.32); margin:0 4px; }
+  .toggle { background:#2A2340; color:#C9C1E4; border:1px solid #3A3355; font-weight:600; font-size:12.5px; padding:9px 15px; border-radius:999px; cursor:pointer; transition:all .15s; }
+  .toggle:hover { border-color:var(--purple); }
+  .toggle.active { background:var(--purple); color:#fff; border-color:var(--purple); }
+  .state { display:none; }
+  .state.active { display:flex; flex-direction:column; align-items:center; gap:15px; }
+
+  .phone { width:320px; height:680px; border-radius:44px; background:var(--app-bg); overflow:hidden; position:relative; box-shadow:0 30px 70px rgba(0,0,0,.45); border:1px solid #2E2748; display:flex; flex-direction:column; }
+  .caption { max-width:420px; text-align:center; font-size:12.5px; line-height:1.55; color:#9990BC; }
+  .caption b { color:#C9C1E4; font-weight:600; }
+  .screen-label { text-align:center; color:#6E6690; font-size:12px; letter-spacing:.04em; }
+  .note-box { max-width:720px; margin:26px auto 0; background:#241E3A; border:1px solid #342D52; border-radius:14px; padding:16px 20px; font-size:12.5px; color:#B3AAD2; line-height:1.7; }
+  .note-box b { color:#E6DEFF; }
+  .note-box h4 { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:13.5px; color:#fff; margin-bottom:8px; letter-spacing:.01em; }
+  .note-box + .note-box { margin-top:12px; }
+
+  /* ══ chrome ══ */
+  .fhead { background:linear-gradient(160deg,#7C5CDB 0%,#9B7FE8 70%,#A98FF0 100%); padding:26px 16px 20px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .wm { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:23px; color:#fff; letter-spacing:-.02em; display:flex; align-items:center; }
+  .wm .oo { display:inline-flex; align-items:center; gap:2px; margin:0 1px; position:relative; top:1px; }
+  .wm .d1 { width:12px; height:12px; background:var(--green); border-radius:50%; box-shadow:0 0 6px rgba(46,204,113,.6); }
+  .wm .d2 { width:12px; height:12px; background:rgba(255,255,255,.35); border-radius:50%; }
+
+  .fbody { flex:1; overflow-y:auto; padding:13px 14px 96px; display:flex; flex-direction:column; }
+  .fab { position:absolute; right:15px; bottom:74px; width:58px; height:58px; border-radius:50%; background:var(--purple); display:flex; align-items:center; justify-content:center; box-shadow:0 8px 22px rgba(124,92,219,.5); z-index:6; border:2.5px solid var(--app-bg); }
+  .nav { position:absolute; bottom:0; left:0; right:0; background:var(--white); border-top:1px solid var(--border); display:flex; z-index:5; }
+  .nav a { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:9px 0 10px; font-size:10px; font-weight:600; color:var(--grey); text-decoration:none; }
+  .nav a.on { color:var(--purple); }
+  .seclbl { font-size:10.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-2); padding:2px 2px 9px; }
+
+  /* ══ CARDS (unchanged from Phase 20) ══ */
+  .card { border-radius:16px; padding:11px 12px; margin-bottom:8px; }
+  .card.plan { border:1.5px solid var(--border); background:var(--white); }
+  .card.mine { border-color:rgba(124,92,219,.4); }
+  .crow { display:flex; align-items:center; gap:11px; }
+  .lead { width:46px; height:46px; flex-shrink:0; }
+  .lead.tile { border-radius:13px; background:var(--purple-100); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; }
+  .lead.tile .t1 { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:14px; color:var(--purple-700); line-height:1; letter-spacing:-.02em; }
+  .lead.tile .t2 { font-size:9px; font-weight:700; letter-spacing:.08em; color:var(--purple-700); opacity:.75; line-height:1; }
+  .cbody { flex:1; min-width:0; }
+  .ctitle { font-family:'Plus Jakarta Sans',sans-serif; font-weight:700; font-size:15px; color:var(--ink); line-height:1.25; letter-spacing:-.01em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .csub { font-size:12.5px; color:var(--ink-2); line-height:1.35; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .cmeta { display:flex; align-items:center; gap:6px; margin-top:4px; }
+  .chip-t { font-size:10.5px; font-weight:700; color:var(--purple-700); background:var(--purple-100); padding:2px 7px; border-radius:100px; }
+  .btn-join { flex-shrink:0; padding:8px 13px; border-radius:100px; font-weight:700; font-size:12.5px; border:none; background:var(--purple); color:#fff; cursor:pointer; }
+  .btn-join.in { background:var(--green-700); }
+  .dots { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--ink-2); flex-shrink:0; background:var(--app-bg); border:1px solid var(--border); cursor:pointer; }
+
+  /* ══ ONE section, ONE arrow: who's in, then comments underneath ══ */
+  .who { margin-top:10px; padding-top:9px; border-top:1px solid rgba(28,23,48,.07); }
+  .who-hd { display:flex; align-items:center; gap:8px; cursor:pointer; }
+  .jav { width:23px; height:23px; border-radius:50%; border:2px solid var(--white); display:flex; align-items:center; justify-content:center; font-size:9.5px; font-weight:700; color:#fff; flex-shrink:0; }
+  .jav+.jav { margin-left:-8px; }
+  .who-txt { flex:1; font-size:11.5px; color:var(--ink-2); font-weight:600; }
+  .who-chev { color:var(--ink-2); flex-shrink:0; transition:transform .15s; }
+  .who-chev.open { transform:rotate(180deg); }
+  .who-list { margin-top:9px; display:flex; flex-direction:column; gap:1px; }
+  .who-row { display:flex; align-items:center; gap:9px; padding:5px 0; }
+  .who-row .jav { width:26px; height:26px; margin:0; font-size:10px; border:none; }
+  .who-row span.nm { font-size:13px; color:var(--ink); font-weight:500; }
+  .who-row .tag { font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-2); margin-left:auto; }
+
+  /* ── comments, inside the same disclosure, below the people ── */
+  .cm-sec { margin-top:11px; padding-top:10px; border-top:1px solid rgba(28,23,48,.07); }
+  .cm-lbl { font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--grey); margin-bottom:4px; }
+  .cm-row { display:flex; gap:8px; padding:7px 0; align-items:flex-start; }
+  .cm-av { width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; color:#fff; flex-shrink:0; margin-top:1px; }
+  .cm-body { flex:1; min-width:0; }
+  .cm-meta { display:flex; align-items:baseline; gap:6px; }
+  .cm-name { font-size:12px; font-weight:700; color:var(--ink); }
+  .cm-time { font-size:10.5px; color:var(--grey); font-weight:500; }
+  .cm-edited { font-size:10.5px; color:var(--grey); font-weight:500; font-style:italic; }
+  .cm-text { font-size:13px; color:var(--ink); line-height:1.45; margin-top:1px; word-wrap:break-word; }
+  .cm-row.mine .cm-name { color:var(--purple-700); }
+  .cm-row.pending { opacity:.45; }
+  .cm-status { font-size:10.5px; font-weight:600; color:var(--ink-2); margin-top:3px; }
+  .cm-status.fail { color:var(--red); }
+  .cm-status.fail a { color:var(--purple); font-weight:700; text-decoration:none; margin-left:6px; }
+  .cm-dots { width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--grey); flex-shrink:0; cursor:pointer; margin-top:1px; }
+  .cm-dots:hover { color:var(--ink-2); background:var(--app-bg); }
+
+  /* compose */
+  .compose { display:flex; gap:8px; align-items:flex-end; margin-top:8px; }
+  .c-field { flex:1; min-height:38px; border-radius:12px; border:1.5px solid var(--border); background:var(--app-bg); padding:9px 12px; font-size:13.5px; color:var(--ink); line-height:1.4; }
+  .c-field.ph { color:var(--grey); }
+  .c-field.focus { border-color:var(--purple); background:var(--white); }
+  .c-send { width:34px; height:34px; border-radius:50%; background:var(--purple); display:flex; align-items:center; justify-content:center; flex-shrink:0; border:none; cursor:pointer; }
+  .c-send.off { background:var(--grey); }
+  .c-count { text-align:right; font-size:10.5px; color:var(--ink-2); font-weight:600; margin-top:5px; }
+
+  /* keyboard */
+  .kbd { position:absolute; left:0; right:0; bottom:0; height:216px; background:#D6D2DE; border-top:1px solid #BFBACB; z-index:7; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:7px; }
+  .kbd .kr { display:flex; gap:5px; }
+  .kbd .kk { width:26px; height:33px; border-radius:5px; background:#fff; box-shadow:0 1px 0 rgba(0,0,0,.28); }
+  .kbd .kk.w { width:150px; }
+
+  /* action sheet */
+  .scrim { position:absolute; inset:0; background:rgba(28,23,48,.5); z-index:6; }
+  .act-sheet { position:absolute; left:0; right:0; bottom:0; z-index:8; padding:0 8px 26px; display:flex; flex-direction:column; gap:8px; }
+  .act-grp { border-radius:16px; overflow:hidden; border:1px solid var(--border); background:rgba(248,246,255,.97); }
+  .act-grp .hd { font-size:12px; font-weight:500; color:var(--ink-2); text-align:center; padding:11px 14px 9px; border-bottom:1px solid var(--border); line-height:1.45; }
+  .act-grp button { width:100%; padding:15px; font-size:17px; font-weight:600; background:none; border:none; cursor:pointer; color:var(--purple); }
+  .act-grp button+button { border-top:1px solid var(--border); }
+  .act-grp button.danger { color:var(--red); }
+  .act-cancel { width:100%; padding:15px; border-radius:16px; border:1px solid var(--border); background:rgba(248,246,255,.97); font-size:17px; font-weight:700; color:var(--ink); cursor:pointer; }
+
+  /* lock screen push */
+  .lock { flex:1; background:linear-gradient(165deg,#2A2340 0%,#1C1730 60%,#241E3A 100%); display:flex; flex-direction:column; align-items:center; padding:52px 14px 0; }
+  .lk-time { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:56px; color:#fff; letter-spacing:-.03em; line-height:1; }
+  .lk-date { font-size:13px; color:rgba(255,255,255,.65); margin-top:6px; margin-bottom:34px; font-weight:500; }
+  .push { width:100%; background:rgba(255,255,255,.93); border-radius:18px; padding:12px 13px; display:flex; gap:10px; align-items:flex-start; box-shadow:0 8px 26px rgba(0,0,0,.3); }
+  .push-icon { width:34px; height:34px; border-radius:9px; background:linear-gradient(160deg,#7C5CDB,#A98FF0); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .push-icon span { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:15px; color:#fff; }
+  .push-b { flex:1; min-width:0; }
+  .push-app { font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-2); }
+  .push-t { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:14px; color:var(--ink); margin-top:2px; letter-spacing:-.01em; }
+  .push-x { font-size:13px; color:var(--ink-2); margin-top:1px; line-height:1.35; }
+  .push-when { font-size:10.5px; color:var(--grey); flex-shrink:0; }
+</style>
+</head>
+<body>
+  <div class="page-title">Phase 21 — Comments on a Moove</div>
+  <div class="page-sub">One disclosure: who's in, then the comments underneath</div>
+
+  <div class="toggles">
+    <span class="grp-lbl">The wall</span>
+    <button class="toggle active" data-state="notin">Not in, open</button>
+    <button class="toggle" data-state="collapsed">In, collapsed</button>
+    <button class="toggle" data-state="empty">In, no comments</button>
+    <button class="toggle" data-state="open">In, open</button>
+    <span class="grp-lbl">Writing</span>
+    <button class="toggle" data-state="compose">Composing</button>
+    <button class="toggle" data-state="limit">Near the cap</button>
+    <button class="toggle" data-state="pending">Sending, failed</button>
+    <span class="grp-lbl">The ellipsis</span>
+    <button class="toggle" data-state="mine">Your comment</button>
+    <button class="toggle" data-state="host">Host removes</button>
+    <span class="grp-lbl">Away</span>
+    <button class="toggle" data-state="push">Push</button>
+  </div>
+
+  <!-- ══════ 1. NOT IN, OPEN — the wall ══════ -->
+  <div class="state active" data-state="notin">
+    <div class="phone">
+      <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+      <div class="fbody">
+        <div class="seclbl">Mooves</div>
+        <div class="card plan">
+          <div class="crow">
+            <span class="lead tile"><span class="t1">SAT</span><span class="t2">AUG 2</span></span>
+            <span class="cbody">
+              <span class="ctitle">Climbing at First Ascent</span>
+              <span class="csub">Saturday 9:00 AM, Avondale</span>
+              <span class="cmeta"><span class="chip-t">Priya</span></span>
+            </span>
+            <button class="btn-join">I'm in</button>
+          </div>
+          <div class="who">
+            <div class="who-hd">
+              <span class="jav" style="background:#C9A87C;">P</span><span class="jav" style="background:#E8A0B4;">M</span><span class="jav" style="background:#7FA8E8;">T</span>
+              <span class="who-txt">4 in</span>
+              <span class="who-chev open"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+            </div>
+            <div class="who-list">
+              <div class="who-row"><span class="jav" style="background:#C9A87C;">P</span><span class="nm">Priya</span><span class="tag">Host</span></div>
+              <div class="who-row"><span class="jav" style="background:#E8A0B4;">M</span><span class="nm">Maya</span></div>
+              <div class="who-row"><span class="jav" style="background:#7FA8E8;">T</span><span class="nm">Tom</span></div>
+              <div class="who-row"><span class="jav" style="background:#8FBF9F;">A</span><span class="nm">Aaron</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="fab"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+      <div class="nav">
+        <a class="on"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Feed</a>
+        <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M16.2 7.8l-2.9 6.4-6.4 2.9 2.9-6.4z"/></svg>Discover</a>
+        <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>People</a>
+        <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+      </div>
+    </div>
+    <div class="caption"><b>Wall 3, and the merge makes it cleaner.</b> This card is fully expanded and there are <b>six comments</b> on it. You see the four people going and then the section simply ends. No count, no greyed row, no "join to see". The disclosure is the same control it already was in Phase 20, so nothing new appears to a non joiner at all.</div>
+    <div class="screen-label">Screen 4 — Not in, open</div>
+  </div>
+
+  <!-- ══════ 2. IN, COLLAPSED ══════ -->
+  <div class="state" data-state="collapsed">
+    <div class="phone">
+      <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+      <div class="fbody">
+        <div class="seclbl">Mooves</div>
+        <div class="card plan">
+          <div class="crow">
+            <span class="lead tile"><span class="t1">SAT</span><span class="t2">AUG 2</span></span>
+            <span class="cbody">
+              <span class="ctitle">Climbing at First Ascent</span>
+              <span class="csub">Saturday 9:00 AM, Avondale</span>
+              <span class="cmeta"><span class="chip-t">Priya</span></span>
+            </span>
+            <button class="btn-join in">You're in ✓</button>
+          </div>
+          <div class="who">
+            <div class="who-hd">
+              <span class="jav" style="background:#C9A87C;">P</span><span class="jav" style="background:#E8A0B4;">M</span><span class="jav" style="background:#7FA8E8;">T</span>
+              <span class="who-txt">5 in</span>
+              <span class="who-chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card plan">
+          <div class="crow">
+            <span class="lead tile"><span class="t1">THIS</span><span class="t2">WEEKEND</span></span>
+            <span class="cbody">
+              <span class="ctitle">Dinner somewhere new</span>
+              <span class="csub">This weekend, no place yet</span>
+              <span class="cmeta"><span class="chip-t">Tom</span></span>
+            </span>
+            <button class="btn-join">I'm in</button>
+          </div>
+        </div>
+      </div>
+      <div class="fab"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+      <div class="nav">
+        <a class="on"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Feed</a>
+        <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M16.2 7.8l-2.9 6.4-6.4 2.9 2.9-6.4z"/></svg>Discover</a>
+        <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>People</a>
+        <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+      </div>
+    </div>
+    <div class="caption"><b>One arrow, one row.</b> Collapsed, the card looks exactly like it does today, so nothing about the feed changes until you ask for it. Tap the row and you get the people, then the comments. Try it, the arrow works.</div>
+    <div class="screen-label">Screen 4 — In, collapsed</div>
+  </div>
+
+  <!-- ══════ 3. IN, NO COMMENTS ══════ -->
+  <div class="state" data-state="empty">
+    <div class="phone">
+      <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+      <div class="fbody">
+        <div class="seclbl">Mooves</div>
+        <div class="card plan">
+          <div class="crow">
+            <span class="lead tile"><span class="t1">SAT</span><span class="t2">AUG 2</span></span>
+            <span class="cbody">
+              <span class="ctitle">Climbing at First Ascent</span>
+              <span class="csub">Saturday 9:00 AM, Avondale</span>
+              <span class="cmeta"><span class="chip-t">Priya</span></span>
+            </span>
+            <button class="btn-join in">You're in ✓</button>
+          </div>
+          <div class="who">
+            <div class="who-hd">
+              <span class="jav" style="background:#C9A87C;">P</span><span class="jav" style="background:#E8A0B4;">M</span><span class="jav" style="background:#7FA8E8;">T</span>
+              <span class="who-txt">5 in</span>
+              <span class="who-chev open"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+            </div>
+            <div class="who-list">
+              <div class="who-row"><span class="jav" style="background:#C9A87C;">P</span><span class="nm">Priya</span><span class="tag">Host</span></div>
+              <div class="who-row"><span class="jav" style="background:#E8A0B4;">M</span><span class="nm">Maya</span></div>
+              <div class="who-row"><span class="jav" style="background:#7FA8E8;">T</span><span class="nm">Tom</span></div>
+              <div class="who-row"><span class="jav" style="background:#8FBF9F;">A</span><span class="nm">Aaron</span></div>
+              <div class="who-row"><span class="jav" style="background:var(--purple);">J</span><span class="nm">You</span></div>
+            </div>
+            <div class="cm-sec">
+              <div class="compose">
+                <div class="c-field ph">Add a comment</div>
+                <button class="c-send off"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="fab"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+      <div class="nav">
+        <a class="on"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Feed</a>
+        <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M16.2 7.8l-2.9 6.4-6.4 2.9 2.9-6.4z"/></svg>Discover</a>
+        <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>People</a>
+        <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+      </div>
+    </div>
+    <div class="caption">No comments yet, so there is <b>no explanatory copy and no empty-state label</b>, just the field. Being in the Moove is what puts the field there, and the field explains itself.</div>
+    <div class="screen-label">Screen 4 — In, no comments</div>
+  </div>
+
+  <!-- ══════ 4. IN, OPEN ══════ -->
+  <div class="state" data-state="open">
+    <div class="phone">
+      <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+      <div class="fbody">
+        <div class="seclbl">Mooves</div>
+        <div class="card plan">
+          <div class="crow">
+            <span class="lead tile"><span class="t1">SAT</span><span class="t2">AUG 2</span></span>
+            <span class="cbody">
+              <span class="ctitle">Climbing at First Ascent</span>
+              <span class="csub">Saturday 9:00 AM, Avondale</span>
+              <span class="cmeta"><span class="chip-t">Priya</span></span>
+            </span>
+            <button class="btn-join in">You're in ✓</button>
+          </div>
+          <div class="who">
+            <div class="who-hd">
+              <span class="jav" style="background:#C9A87C;">P</span><span class="jav" style="background:#E8A0B4;">M</span><span class="jav" style="background:#7FA8E8;">T</span>
+              <span class="who-txt">5 in</span>
+              <span class="who-chev open"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+            </div>
+            <div class="who-list">
+              <div class="who-row"><span class="jav" style="background:#C9A87C;">P</span><span class="nm">Priya</span><span class="tag">Host</span></div>
+              <div class="who-row"><span class="jav" style="background:#E8A0B4;">M</span><span class="nm">Maya</span></div>
+              <div class="who-row"><span class="jav" style="background:#7FA8E8;">T</span><span class="nm">Tom</span></div>
+              <div class="who-row"><span class="jav" style="background:#8FBF9F;">A</span><span class="nm">Aaron</span></div>
+              <div class="who-row"><span class="jav" style="background:var(--purple);">J</span><span class="nm">You</span></div>
+            </div>
+            <div class="cm-sec">
+              <div class="cm-lbl">Comments</div>
+              <div class="cm-row">
+                <span class="cm-av" style="background:#C9A87C;">P</span>
+                <span class="cm-body">
+                  <span class="cm-meta"><span class="cm-name">Priya</span><span class="cm-time">Thu</span></span>
+                  <span class="cm-text">Parking on Belmont fills up by nine, so leave a little early or take the street spots one block north. I have four extra harnesses and two pairs of shoes, sizes 9 and 11, so do not rent unless you need something specific. We start on the slab wall, then move to the overhang after lunch.</span>
+                </span>
+              </div>
+              <div class="cm-row">
+                <span class="cm-av" style="background:#7FA8E8;">T</span>
+                <span class="cm-body">
+                  <span class="cm-meta"><span class="cm-name">Tom</span><span class="cm-time">Thu</span></span>
+                  <span class="cm-text">Taking the 9 up, happy to grab anyone at Damen on the way.</span>
+                </span>
+              </div>
+              <div class="cm-row">
+                <span class="cm-av" style="background:#8FBF9F;">A</span>
+                <span class="cm-body">
+                  <span class="cm-meta"><span class="cm-name">Aaron</span><span class="cm-time">Fri</span><span class="cm-edited">edited</span></span>
+                  <span class="cm-text">Bringing the good chalk this time.</span>
+                </span>
+              </div>
+              <div class="cm-row mine">
+                <span class="cm-av" style="background:var(--purple);">J</span>
+                <span class="cm-body">
+                  <span class="cm-meta"><span class="cm-name">You</span><span class="cm-time">2h</span></span>
+                  <span class="cm-text">Running about ten minutes behind, start without me.</span>
+                </span>
+                <span class="cm-dots"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></span>
+              </div>
+              <div class="compose">
+                <div class="c-field ph">Add a comment</div>
+                <button class="c-send off"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="fab"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+      <div class="nav">
+        <a class="on"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Feed</a>
+        <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M16.2 7.8l-2.9 6.4-6.4 2.9 2.9-6.4z"/></svg>Discover</a>
+        <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>People</a>
+        <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+      </div>
+    </div>
+    <div class="caption"><b>One arrow got you here.</b> The people you are going with, then what they said about getting there. Flat, oldest first, no replies and no mentions. The <b>"···"</b> sits on your own comment and nowhere else.</div>
+    <div class="screen-label">Screen 4 — In, open</div>
+  </div>
+
+  <!-- ══════ 5. COMPOSING ══════ -->
+  <div class="state" data-state="compose">
+    <div class="phone">
+      <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+      <div class="fbody" style="padding-bottom:14px;">
+        <div class="seclbl">Mooves</div>
+        <div class="card plan">
+          <div class="crow">
+            <span class="lead tile"><span class="t1">SAT</span><span class="t2">AUG 2</span></span>
+            <span class="cbody">
+              <span class="ctitle">Climbing at First Ascent</span>
+              <span class="csub">Saturday 9:00 AM, Avondale</span>
+              <span class="cmeta"><span class="chip-t">Priya</span></span>
+            </span>
+            <button class="btn-join in">You're in ✓</button>
+          </div>
+          <div class="who">
+            <div class="who-hd">
+              <span class="jav" style="background:#C9A87C;">P</span><span class="jav" style="background:#E8A0B4;">M</span><span class="jav" style="background:#7FA8E8;">T</span>
+              <span class="who-txt">5 in</span>
+              <span class="who-chev open"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+            </div>
+            <div class="cm-sec">
+              <div class="cm-lbl">Comments</div>
+              <div class="cm-row">
+                <span class="cm-av" style="background:#7FA8E8;">T</span>
+                <span class="cm-body">
+                  <span class="cm-meta"><span class="cm-name">Tom</span><span class="cm-time">Thu</span></span>
+                  <span class="cm-text">Taking the 9 up, happy to grab anyone at Damen on the way.</span>
+                </span>
+              </div>
+              <div class="cm-row">
+                <span class="cm-av" style="background:#8FBF9F;">A</span>
+                <span class="cm-body">
+                  <span class="cm-meta"><span class="cm-name">Aaron</span><span class="cm-time">Fri</span></span>
+                  <span class="cm-text">Bringing the good chalk this time.</span>
+                </span>
+              </div>
+              <div class="compose">
+                <div class="c-field focus">Running about ten minutes behind, start<span style="border-left:1.5px solid var(--purple);margin-left:2px;"></span></div>
+                <button class="c-send"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="kbd">
+        <div class="kr"><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i></div>
+        <div class="kr"><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i></div>
+        <div class="kr"><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i></div>
+        <div class="kr"><i class="kk w"></i></div>
+      </div>
+    </div>
+    <div class="caption"><b>No counter yet.</b> At 39 of 500 characters a counter is pure noise, and a number that watches you type is its own small pressure. The card scrolls clear of the keyboard using the <b>Phase 16 keyboard-inset hook already shipped</b>, and the send arrow only turns purple once there is something to send.</div>
+    <div class="screen-label">Screen 4 — Composing</div>
+  </div>
+
+  <!-- ══════ 6. NEAR THE CAP ══════ -->
+  <div class="state" data-state="limit">
+    <div class="phone">
+      <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+      <div class="fbody" style="padding-bottom:14px;">
+        <div class="seclbl">Mooves</div>
+        <div class="card plan">
+          <div class="crow">
+            <span class="lead tile"><span class="t1">SAT</span><span class="t2">AUG 2</span></span>
+            <span class="cbody">
+              <span class="ctitle">Climbing at First Ascent</span>
+              <span class="csub">Saturday 9:00 AM, Avondale</span>
+              <span class="cmeta"><span class="chip-t">Priya</span></span>
+            </span>
+            <button class="btn-join in">You're in ✓</button>
+          </div>
+          <div class="who">
+            <div class="who-hd">
+              <span class="jav" style="background:#C9A87C;">P</span><span class="jav" style="background:#E8A0B4;">M</span><span class="jav" style="background:#7FA8E8;">T</span>
+              <span class="who-txt">5 in</span>
+              <span class="who-chev open"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+            </div>
+            <div class="cm-sec">
+              <div class="cm-lbl">Comments</div>
+              <div class="compose">
+                <div class="c-field focus">Parking on Belmont fills up by nine, so leave early or take the street spots one block north. I have four extra harnesses and two pairs of shoes, sizes 9 and 11, so do not rent unless you need something specific. We start on the slab wall, then move to the overhang after lunch. If you get there late, text me and I will come let you in through the side door. Also the cafe on the corner opens at seven if anyone wants coffee first, and there is a decent breakfast place two doors<span style="border-left:1.5px solid var(--purple);margin-left:2px;"></span></div>
+                <button class="c-send"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+              </div>
+              <div class="c-count">20 left</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="kbd">
+        <div class="kr"><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i></div>
+        <div class="kr"><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i></div>
+        <div class="kr"><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i></div>
+        <div class="kr"><i class="kk w"></i></div>
+      </div>
+    </div>
+    <div class="caption"><b>Cap 500, counter appears at 50 left and counts down.</b> Counting down only ever means "you are near the end", where counting up would read as a score. This is what 480 characters looks like inside a 320px card, which is the real argument for where the cap sits.</div>
+    <div class="screen-label">Screen 4 — Near the cap</div>
+  </div>
+
+  <!-- ══════ 7. SENDING / FAILED ══════ -->
+  <div class="state" data-state="pending">
+    <div class="phone">
+      <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+      <div class="fbody">
+        <div class="seclbl">Mooves</div>
+        <div class="card plan">
+          <div class="crow">
+            <span class="lead tile"><span class="t1">SAT</span><span class="t2">AUG 2</span></span>
+            <span class="cbody">
+              <span class="ctitle">Climbing at First Ascent</span>
+              <span class="csub">Saturday 9:00 AM, Avondale</span>
+              <span class="cmeta"><span class="chip-t">Priya</span></span>
+            </span>
+            <button class="btn-join in">You're in ✓</button>
+          </div>
+          <div class="who">
+            <div class="who-hd">
+              <span class="jav" style="background:#C9A87C;">P</span><span class="jav" style="background:#E8A0B4;">M</span><span class="jav" style="background:#7FA8E8;">T</span>
+              <span class="who-txt">5 in</span>
+              <span class="who-chev open"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+            </div>
+            <div class="cm-sec">
+              <div class="cm-lbl">Comments</div>
+              <div class="cm-row">
+                <span class="cm-av" style="background:#7FA8E8;">T</span>
+                <span class="cm-body">
+                  <span class="cm-meta"><span class="cm-name">Tom</span><span class="cm-time">Thu</span></span>
+                  <span class="cm-text">Taking the 9 up, happy to grab anyone at Damen on the way.</span>
+                </span>
+              </div>
+              <div class="cm-row mine pending">
+                <span class="cm-av" style="background:var(--purple);">J</span>
+                <span class="cm-body">
+                  <span class="cm-meta"><span class="cm-name">You</span></span>
+                  <span class="cm-text">Bringing an extra rope just in case.</span>
+                  <span class="cm-status">Sending</span>
+                </span>
+              </div>
+              <div class="cm-row mine">
+                <span class="cm-av" style="background:var(--purple);">J</span>
+                <span class="cm-body">
+                  <span class="cm-meta"><span class="cm-name">You</span></span>
+                  <span class="cm-text">Running about ten minutes behind, start without me.</span>
+                  <span class="cm-status fail">Didn't send<a href="#">Try again</a></span>
+                </span>
+                <span class="cm-dots"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></span>
+              </div>
+              <div class="compose">
+                <div class="c-field ph">Add a comment</div>
+                <button class="c-send off"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="fab"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+      <div class="nav">
+        <a class="on"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Feed</a>
+        <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M16.2 7.8l-2.9 6.4-6.4 2.9 2.9-6.4z"/></svg>Discover</a>
+        <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>People</a>
+        <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+      </div>
+    </div>
+    <div class="caption">Your comment appears immediately and dims until the server confirms it. A failure says <b>"Didn't send"</b> in plain words with a retry, and the text is never thrown away. Both live inline, not in a toast, because a toast disappears before you have read it.</div>
+    <div class="screen-label">Screen 4 — Sending, failed</div>
+  </div>
+
+  <!-- ══════ 8. YOUR COMMENT — ellipsis ══════ -->
+  <div class="state" data-state="mine">
+    <div class="phone">
+      <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+      <div class="fbody">
+        <div class="seclbl">Mooves</div>
+        <div class="card plan">
+          <div class="crow">
+            <span class="lead tile"><span class="t1">SAT</span><span class="t2">AUG 2</span></span>
+            <span class="cbody">
+              <span class="ctitle">Climbing at First Ascent</span>
+              <span class="csub">Saturday 9:00 AM, Avondale</span>
+              <span class="cmeta"><span class="chip-t">Priya</span></span>
+            </span>
+            <button class="btn-join in">You're in ✓</button>
+          </div>
+          <div class="who">
+            <div class="who-hd">
+              <span class="jav" style="background:#C9A87C;">P</span><span class="jav" style="background:#E8A0B4;">M</span><span class="jav" style="background:#7FA8E8;">T</span>
+              <span class="who-txt">5 in</span>
+              <span class="who-chev open"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+            </div>
+            <div class="cm-sec">
+              <div class="cm-lbl">Comments</div>
+              <div class="cm-row">
+                <span class="cm-av" style="background:#7FA8E8;">T</span>
+                <span class="cm-body">
+                  <span class="cm-meta"><span class="cm-name">Tom</span><span class="cm-time">Thu</span></span>
+                  <span class="cm-text">Taking the 9 up, happy to grab anyone at Damen on the way.</span>
+                </span>
+              </div>
+              <div class="cm-row mine">
+                <span class="cm-av" style="background:var(--purple);">J</span>
+                <span class="cm-body">
+                  <span class="cm-meta"><span class="cm-name">You</span><span class="cm-time">2h</span></span>
+                  <span class="cm-text">Running about ten minutes behind, start without me.</span>
+                </span>
+                <span class="cm-dots" style="color:var(--ink-2);background:var(--app-bg);"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="scrim"></div>
+      <div class="act-sheet">
+        <div class="act-grp">
+          <div class="hd">Your comment, "Running about ten minutes behind, start without me."</div>
+          <button>Edit</button>
+          <button class="danger">Delete</button>
+        </div>
+        <button class="act-cancel">Cancel</button>
+      </div>
+    </div>
+    <div class="caption"><b>A visible button, not a long press.</b> The <b>"···"</b> sits on every comment you wrote and opens the same native action sheet the app already uses for go-grey, for leaving a move, and for the Moove's own <b>"···"</b>. An edited comment carries a quiet <b>"edited"</b> next to the time.</div>
+    <div class="screen-label">Screen 4 — Your comment</div>
+  </div>
+
+  <!-- ══════ 9. HOST REMOVES — same ellipsis ══════ -->
+  <div class="state" data-state="host">
+    <div class="phone">
+      <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+      <div class="fbody">
+        <div class="seclbl">Mooves</div>
+        <div class="card plan mine">
+          <div class="crow">
+            <span class="lead tile"><span class="t1">SAT</span><span class="t2">AUG 2</span></span>
+            <span class="cbody">
+              <span class="ctitle">Climbing at First Ascent</span>
+              <span class="csub">Saturday 9:00 AM, Avondale</span>
+              <span class="cmeta"><span class="chip-t">Your Moove</span></span>
+            </span>
+            <span class="dots"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></span>
+          </div>
+          <div class="who">
+            <div class="who-hd">
+              <span class="jav" style="background:#E8A0B4;">M</span><span class="jav" style="background:#7FA8E8;">T</span><span class="jav" style="background:#8FBF9F;">A</span>
+              <span class="who-txt">4 in</span>
+              <span class="who-chev open"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+            </div>
+            <div class="cm-sec">
+              <div class="cm-lbl">Comments</div>
+              <div class="cm-row">
+                <span class="cm-av" style="background:#7FA8E8;">T</span>
+                <span class="cm-body">
+                  <span class="cm-meta"><span class="cm-name">Tom</span><span class="cm-time">Thu</span></span>
+                  <span class="cm-text">Taking the 9 up, happy to grab anyone at Damen on the way.</span>
+                </span>
+                <span class="cm-dots"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></span>
+              </div>
+              <div class="cm-row">
+                <span class="cm-av" style="background:#8FBF9F;">A</span>
+                <span class="cm-body">
+                  <span class="cm-meta"><span class="cm-name">Aaron</span><span class="cm-time">Fri</span></span>
+                  <span class="cm-text">Bringing the good chalk this time.</span>
+                </span>
+                <span class="cm-dots"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></span>
+              </div>
+              <div class="cm-row">
+                <span class="cm-av" style="background:#E8A0B4;">M</span>
+                <span class="cm-body">
+                  <span class="cm-meta"><span class="cm-name">Maya</span><span class="cm-time">1h</span></span>
+                  <span class="cm-text">Can we push to ten, I have a thing at eight.</span>
+                </span>
+                <span class="cm-dots" style="color:var(--ink-2);background:var(--app-bg);"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="scrim"></div>
+      <div class="act-sheet">
+        <div class="act-grp">
+          <div class="hd">Maya's comment on your Moove</div>
+          <button class="danger">Remove comment</button>
+        </div>
+        <button class="act-cancel">Cancel</button>
+      </div>
+    </div>
+    <div class="caption"><b>Same ellipsis, different menu.</b> On a Moove you host, every comment carries a <b>"···"</b>, and yours offers Remove. There is no report queue and no blocking anywhere in the app, so this plus friends only, joined only, and comments dying with the Moove is the whole safety story. Honest at this size, thin at ten times it.</div>
+    <div class="screen-label">Screen 4 — Host removes a comment</div>
+  </div>
+
+  <!-- ══════ 10. PUSH ══════ -->
+  <div class="state" data-state="push">
+    <div class="phone">
+      <div class="lock">
+        <div class="lk-time">9:41</div>
+        <div class="lk-date">Friday, August 1</div>
+        <div class="push">
+          <span class="push-icon"><span>M</span></span>
+          <span class="push-b">
+            <span class="push-app">Mooves</span>
+            <span class="push-t">Climbing at First Ascent</span>
+            <span class="push-x">3 new comments.</span>
+          </span>
+          <span class="push-when">now</span>
+        </div>
+      </div>
+    </div>
+    <div class="caption">Title is the Moove, body is a plain count. <b>Never the comment text, never who wrote it, never how many people are going.</b> One of these per Moove per hour at most, so a busy Moove cannot buzz your pocket more than once. It is not warm, on purpose, because warmth in a push is a way of asking for attention.</div>
+    <div class="screen-label">Screen 4 — Push</div>
+  </div>
+
+  <div class="note-box">
+    <h4>What changed in this pass</h4>
+    <b>1. They are comments.</b> Renamed everywhere, including the push.<br><br>
+    <b>2. One arrow, one section.</b> The separate comments disclosure is gone. The Phase 20 who's-in row is now the only control: it opens to the exact people in, then the comments under them, then the field. Collapsed, a card looks exactly as it does today.<br><br>
+    <b>3. No intro copy.</b> The empty state is the field alone, placeholder <b>"Add a comment"</b>.<br><br>
+    <b>4. Ellipsis on comments.</b> Visible <b>"···"</b> rather than a long press. On your own comment it opens Edit and Delete. On a Moove you host, every comment has one and yours offers Remove.<br><br>
+    <b>5. Push says comments.</b>
+  </div>
+
+  <div class="note-box">
+    <h4>One consequence of the merge, worth a look before you approve</h4>
+    Comments now live behind the same arrow as the roster, so <b>a joiner cannot tell there are comments without opening the row</b>. The old design leaked that with a "4 comments" label. This is stricter and simpler, and it removes the last count from the card, but it does mean a comment can sit unseen until someone expands, and the push is doing more of the work of telling people something was said. Reasonable given comments only last as long as the Moove. Flagging it rather than burying it.
+  </div>
+
+  <div class="note-box">
+    <h4>Still deliberately absent</h4>
+    No speech-bubble icon anywhere, because a speech bubble is the universal sign for chat and this is not that. No reply arrows, no mentions, no reactions on comments, no typing indicator, no read receipts, no live updating, no dot on the Feed tab, and nothing at all on a card you have not joined.
+  </div>
+
+<script>
+  var toggles = document.querySelectorAll('.toggle');
+  var states = document.querySelectorAll('.state');
+  toggles.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      toggles.forEach(function (b) { b.classList.remove('active'); });
+      states.forEach(function (s) { s.classList.remove('active'); });
+      btn.classList.add('active');
+      document.querySelector('.state[data-state="' + btn.dataset.state + '"]').classList.add('active');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+
+  // the single arrow actually works, so the one-tap cost is real rather than described
+  document.querySelectorAll('.who-hd').forEach(function (hd) {
+    hd.addEventListener('click', function () {
+      var wrap = hd.parentNode;
+      var list = wrap.querySelector('.who-list');
+      var cm = wrap.querySelector('.cm-sec');
+      var chev = hd.querySelector('.who-chev');
+      var opening = !chev.classList.contains('open');
+      if (list) list.style.display = opening ? 'flex' : 'none';
+      if (cm) cm.style.display = opening ? 'block' : 'none';
+      chev.classList.toggle('open', opening);
+    });
+  });
+</script>
+</body>
+</html>

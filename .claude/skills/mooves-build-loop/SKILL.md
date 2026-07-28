@@ -69,7 +69,7 @@ Write the code based on the spec and mockup.
 - Tailwind only for styling — no inline style objects, no arbitrary CSS files
 - Every visual state from the spec must be handled (empty, loading, error, populated)
 - Supabase queries use the correct table/column names from the data model in `mooves-prd.md`
-- No in-app messaging. Ever. Not even a placeholder.
+- **In-app messaging: one bounded exception, and only one.** Moove comments (Phase 21) are permitted. Nothing else is — no DMs, no per-person message surface, no inbox, no threads, no unread counts or badges, no realtime message delivery. The exception holds only while all four walls hold: comments live **only** on a Moove, **only** for people who joined it, are **never shown or hinted at** to anyone who hasn't, and **die when the Moove does**. Text on a green, text between two people, text that outlives its Moove, or a count shown to a non-joiner are violations of this rule — not extensions of the exception.
 - No engagement patterns: no unread counts, no red notification dots, no streak UI
 - Auth is Supabase Auth (SMS OTP). Don't roll your own.
 - Realtime (if this screen needs it): Supabase Realtime subscriptions, not polling

@@ -37,8 +37,8 @@
 | — | Phase 17 — Green Wave + Wave Blast + Onboarding Group CTA + Loop Stance Card | ✅ Spec 2026-07-23 (see "Phase 17" near EOF) · ✅ Mockup `mooves-phase17-wave-stance.html` · ✅ Code 2026-07-23 (`feat/phase17-green-wave`) |
 | — | Phase 18 — "This week" time chip (18.1) + group visibility label (18.2) | ✅ Spec 2026-07-27 (see "Phase 18" at EOF) · ✅ Mockup `mooves-phase18-week-chip-group-label.html` · ✅ Code 2026-07-27 (`feat/phase18-week-chip-group-label`) |
 | — | Phase 19 — In-person adds: "Add everyone here" (19.1) + personal QR (19.2) | ✅ Spec 2026-07-27 (see "Phase 19" at EOF) · ✅ Mockup `mooves-phase19-in-person-adds.html` (approved 2026-07-27) · ✅ Code 2026-07-27 (`feat/phase19-in-person-adds`, merged PR #42) |
-| — | Phase 20 — Greens & Planned Mooves: lighter swipe (20.1) · rail of all greens + wave fold-in (20.2) · planned Mooves (20.3) · Mooves-only feed (20.4) · join-while-green (20.5) · who's-in (20.6) · Free until (20.7) · reactions (20.8) | ✅ Spec 2026-07-27, **revised at mockup** (see "Phase 20" at EOF) · ✅ Mockup `mooves-phase20-greens-plans.html` (approved 2026-07-27) · ⬜ Code |
-| — | Phase 21 — **Comments on a Moove** | 🔮 Deferred from Phase 20, **promoted ahead of scheduled availability 2026-07-27** after reactions were cut · must consciously amend the "no in-app messaging, ever" rule |
+| — | Phase 20 — Greens & Planned Mooves: lighter swipe (20.1) · rail of all greens + wave fold-in (20.2) · planned Mooves (20.3) · Mooves-only feed (20.4) · join-while-green (20.5) · who's-in (20.6) · Free until (20.7) · reactions (20.8) | ✅ Spec 2026-07-27, **revised at mockup** (see "Phase 20" at EOF) · ✅ Mockup `mooves-phase20-greens-plans.html` (approved 2026-07-27) · ✅ Code 2026-07-27 (`feat/phase20-greens-plans`, merged PR #44; **second revision** `294524e` — coarse timing, minimal go-green, green joins retired) |
+| — | Phase 21 — **Comments on a Moove**: the amendment (21.0) · access & lifetime (21.1) · the comment area (21.2) · notifications (21.3) · moderation (21.4) | ✅ Spec 2026-07-27 (see "Phase 21" at EOF) — **amends the "no in-app messaging, ever" rule in daylight; four walls, all load-bearing** · ✅ Mockup `mooves-phase21-comments.html` (approved 2026-07-27, **revised at mockup — see the revision block**) · ✅ Code 2026-07-27 (`tsc --noEmit` + `next build` clean; **migration `20260728012000_phase21_plan_comments.sql` pending Jackson's `npm run db:push`**; **`SKILL.md:72` amended** — "No in-app messaging. Ever." replaced with the four-wall exception) |
 | — | Phase 22 — Scheduled availability (preset green times + confirm-push + Monday nudge) | 🔮 Deferred from Phase 20 · **requires storing user timezones**, which the app has never done |
 | — | Phase 23 — 30-day friend-availability calendar | 🔮 Gated on Phase 22 · pointless until future availability data exists |
 
@@ -4516,3 +4516,129 @@ Never auto-grey. Joining a friend's green while you are green, your green has **
 - [ ] Join-while-green prompts only at green + zero joiners + matching bucket; never automatic; greens only.
 - [ ] **Every `move_joins` read and write filters `plan_id IS NULL` where it means green joins** — verified specifically for go-grey, which must not delete plan joins.
 - [ ] `get_feed` redefinition preserves the `status_expires_at` filter and adds the `plan_id` filter.
+
+---
+
+## Phase 21 — Comments on a Moove (Spec) — *spec'd 2026-07-27* · SPEC ✅ (**revised at mockup, see the revision block below**) · MOCKUP ✅ (`mooves-phase21-comments.html`, approved 2026-07-27) · CODE ⬜
+
+*Promoted ahead of Phase 22 after reactions were cut at Phase 20's third mockup pass, which left Phase 20 with no expressive layer at all. This phase's first job is not the comment UI — it is **consciously amending** the build skill's "No in-app messaging. Ever." rule and reconciling with the shipped 17.3 stance card. That trade-off is made below, in daylight.*
+
+> **Pushback recorded before spec'ing, and overruled by Jackson (2026-07-27).** Four objections were put on the table: (1) 17.3 ships anti-attention copy to every invite-link user at the trust moment; (2) the Phase 20 amendment had, the day before, killed the green join card as "pure tax" and made one-tap-to-Messages the payoff of onboarding cards 2 *and* 3 — Screen 6 calls the text handoff "the most important anti-engagement decision in the product"; (3) the need was **inferred, not observed** — reactions were specced to serve "let people be clever," reactions were cut, and the justification was inherited by a more expensive feature without anyone having asked for it; (4) notifications are a trapdoor with possibly no stable middle — silent comments are decorative, notified comments are per-person push, which 15.3 refused.
+>
+> **What survived the objections, and is why this phase exists:** a Moove has a **roster** — several people who tapped "I'm in" who are not necessarily all in one group thread. "Running 10 late," "bringing a ball," "meet at the north gate" is coordination attached to the **object**, and the app has nowhere to put it. The text handoff does not close that gap; it only works when a group already exists and contains everyone who is in. So the thing being built is not "comments" — it is **logistics that hang on a Moove and die with it.**
+
+> ### ⚠️ Revision at mockup approval (2026-07-27) — this wins over the sections below where they disagree
+>
+> Mockup: `mooves-phase21-comments.html`, approved after one feedback pass. Jackson's feedback reshaped the surface; the four walls of §21.0 are untouched.
+>
+> 1. **They are called COMMENTS.** Not "notes". Everywhere, including the push body. The first mockup pass used "notes" as a softening device; rejected, and rightly — if the thing is a comment, calling it something else is how a rule gets eroded sideways instead of amended in daylight.
+> 2. **ONE disclosure, one arrow.** The separate comments section is **gone**. The Phase 20 who's-in row is now the only control on the card: it opens to the exact people who are in, then the comments beneath them, then the compose field. Two adjacent expand/collapse arrows on one card was the worst thing in the first pass. **Collapsed, a Moove card is identical to what ships today.**
+> 3. **No comment count anywhere, for anyone.** Dropping the separate section also dropped its "4 comments" label, so the card now carries **zero** numbers about comments. *Consequence, accepted knowingly:* a joiner cannot tell comments exist without opening the row, so the push carries more of the load of telling people something was said. Acceptable because comments only live as long as the Moove.
+> 4. **No empty-state copy.** No explanatory line, no label, no cow. With no comments the section is **the field alone**, placeholder **"Add a comment"**.
+> 5. **A visible "···" on each comment, not a long-press.** On your own comment it opens Edit / Delete. On a Moove you host, **every** comment carries one and yours offers **Remove comment**. Same native action sheet the app already uses for go-grey, for leaving a move, and for the Moove's own "···". This supersedes the spec's silence on how edit and delete are reached — the first pass hid them behind a long-press, which is undiscoverable.
+>
+> **The three parked open questions, now settled:** (1) cap = **500**, counter appears at **50 left** and **counts down**, so it never reads as a score; (2) collapsed vs expanded — resolved by the merge above, one arrow; (3) push copy = **Moove title** as the title, **"3 new comments."** as the body, strictly aggregate.
+
+### 21.0 — The amendment *(the first job; everything else is downstream of this)*
+
+**The rule as shipped**, `.claude/skills/mooves-build-loop/SKILL.md:72`:
+
+> `- No in-app messaging. Ever. Not even a placeholder.`
+
+**Where the amended line sits.** The rule was never really about text. It was about the two things text drags in: **a place that accumulates**, and **a reason to check**. Comments are permitted only in a form that can produce neither. The constraint is on **who** and **for how long** — *not* on how much you can say. Inside a room this small and this short-lived, the text can breathe.
+
+Four walls, all load-bearing. Remove any one and this becomes messaging:
+
+1. **Only on a Moove.** Never on a green, never on a person. The Phase 20 second revision (`294524e`) stripped the note off greens and retired green joins precisely because a green with nothing to read needed no card. *A green is you being free; a Moove is a thing you are doing.* Only content takes comments — availability never does.
+2. **Only for people who joined.** You must have tapped "I'm in." Commenting is coordination among people who are going, not an audience talking at a plan.
+3. **Invisible to everyone else.** Not merely unreadable — **unhinted**. No thread, no count, no dot, no "3 notes" on a Moove you have not joined. A visible count is an unread badge wearing a different hat, and it makes comments a lure to join.
+4. **Dies when the Moove dies.** The same `expires_at` the Moove already carries, and instantly on cancel. There is never a backlog, never history, never anything to scroll back to.
+
+**Replacement text for `SKILL.md:72` (verbatim):**
+
+> - **In-app messaging: one bounded exception, and only one.** Moove comments (Phase 21) are permitted. Nothing else is — no DMs, no per-person message surface, no inbox, no threads, no unread counts or badges, no realtime message delivery. The exception holds only while all four walls hold: comments live **only** on a Moove, **only** for people who joined it, are **never shown or hinted at** to anyone who hasn't, and **die when the Moove does**. Text on a green, text between two people, text that outlives its Moove, or a count shown to a non-joiner are violations of this rule — not extensions of the exception.
+
+**The 17.3 stance card does not change, and that is a decision, not an oversight.** *"We don't want your attention. We want you off the app and out the door. Green means free. That's it."* A comment that exists only among people already committed to going somewhere, and that evaporates when they get there, is not a bid for attention — it is the logistics of getting out the door. The card ships on, unedited.
+
+**Reconciling with 15.3's no-per-person-notification rule.** 15.3 banned pushes *about a person's availability* ("friend X is green"). A comment push is about **an object you personally committed to**, aggregated, and rate-limited by the same infrastructure. That is the distinction that lets it through, and it is the distinction to defend if anyone later proposes widening it.
+
+### 21.1 — Access and lifetime
+
+- **Read + write:** the Moove's author (always, whether or not they are "in") and anyone holding a `move_joins` row for that plan. Nobody else.
+- **Leaving:** un-joining revokes read access and stops pushes. Comments already left stay until expiry.
+- **Death:** unreachable the moment the Moove is unreachable — `expires_at` (time set → start + 3h; date-only → end of local day; **coarse → end-of-window + 3h**, per the Phase 20 amendment) or `cancelled_at`. Hard-deleted by cascade.
+- **No realtime.** Comments fetch on open and on focus, matching the existing decision that plans are not realtime-subscribed. Live-appearing messages are what make a surface feel like chat; this is deliberate.
+
+### 21.2 — The comment area
+
+Flat list, oldest → newest, on a joined Moove's card. No threading, no reply-to, no @mentions, no reactions on comments. Each entry: author avatar + name, body, relative time, "edited" marker where edited.
+
+- **Compose:** single field, **500 characters** (counter appears only near the limit).
+- **Edit and delete your own**, any time before expiry.
+- **States:** empty (joined, no comments — a plain prompt, never a nudge to post), populated, sending, failed-with-retry.
+
+### 21.3 — Notifications
+
+Push to **the author + everyone who is in, minus the commenter**. Reuses 15.3's pipeline wholesale: quiet hours, rate limiting, per-group mute semantics.
+
+- **Batched: at most one comment push per Moove, per recipient, per 60 minutes** (the existing cooldown). Never one push per comment.
+- **Aggregate copy** — *"3 new notes on Saturday hike"* — never the message body, never a rejection surface.
+- Opening it lands on that Moove. No badge, no dot, no count anywhere in the app.
+
+### 21.4 — Moderation
+
+The Moove's author may delete any comment on their own Moove; cancelling deletes all of them. That, plus friends-only, plus joined-only, plus the 3-hour lifetime, is the **entire** safety story — there is no reporting or blocking infrastructure in the app today, and this phase builds none.
+
+> **Recorded as a deliberate acceptance, not a gap nobody noticed.** Every other wall in this phase is structural — code cannot cross it. Safety is the one place relying on "these are friends who joined the same thing," with the short lifetime doing most of the work. Judged fine at current scale and **genuinely bad at ten times it**. Revisit before any growth step that widens who can see a Moove.
+
+### Data
+
+**New `plan_comments` table:** `id`, `plan_id` (FK → `plans`, `ON DELETE CASCADE`), `author_id` (FK → `users`, cascade), `body` (`CHECK char_length BETWEEN 1 AND 500`), `created_at`, `edited_at`; index on `(plan_id, created_at)`.
+
+RLS enabled, **no policies — service-role only**, matching `plans`. Access is enforced in the API route against `move_joins` where `plan_id = $1` — **never** the `plan_id IS NULL` green rows, which the Phase 20 amendment left in place and inert. **Not** added to the realtime publication.
+
+**Analytics:** `moove_comment_posted`, `moove_comment_area_viewed`. No counts surfaced to users.
+
+### Out of scope
+
+- Comments on greens — **structurally forbidden, not deferred.**
+- DMs or any person-to-person surface.
+- Threads, replies, mentions, reactions on comments.
+- Comment counts or badges on unjoined Mooves.
+- Realtime delivery.
+- Comment history, archive, or search.
+- Reporting, blocking, moderation queues.
+- Notifying anyone who has not joined.
+
+### Open questions
+
+1. ~~Exact character cap.~~ **Settled at mockup: 500**, counter appears at 50 left and counts down.
+2. ~~Always expanded or collapsed behind one tap.~~ **Settled at mockup:** dissolved by the single-disclosure merge — comments live under the who's-in arrow, and a collapsed card is unchanged from today.
+3. ~~Push copy wording.~~ **Settled at mockup:** title = the Moove, body = "3 new comments."
+
+None open.
+
+### Acceptance criteria
+
+- [ ] Comments appear only on Mooves; no comment affordance exists anywhere on a green, in any state.
+- [ ] A non-joiner sees no thread, no count, no badge, and no hint that comments exist.
+- [ ] Joining reveals the area; un-joining hides it again and stops pushes; prior comments persist until expiry.
+- [ ] The author always has access, whether or not they are "in".
+- [ ] Comments become unreachable exactly when the Moove expires or is cancelled, and are hard-deleted.
+- [ ] Post, edit, and delete your own all work; the Moove's author can delete any comment on it.
+- [ ] Body capped at 500 characters, enforced client **and** server side.
+- [ ] Push goes to author + joiners minus the commenter, batched at most once per Moove per recipient per 60 minutes, aggregate copy, respecting quiet hours.
+- [ ] No unread count, dot, or badge is introduced anywhere in the app.
+- [ ] `plan_comments` is service-role-only and absent from the realtime publication; the area does not live-update.
+- [ ] Every `move_joins` access check filters on `plan_id = $1` and never matches green rows.
+- [ ] `SKILL.md:72` is replaced with the amended rule text verbatim.
+
+**Added at mockup approval:**
+
+- [ ] The UI says **"comments"** everywhere, including the push body. The word "notes" appears nowhere.
+- [ ] **Exactly one expand/collapse control per Moove card.** The who's-in arrow opens people, then comments, then the field. There is no second disclosure.
+- [ ] A **collapsed** Moove card is visually unchanged from what ships today.
+- [ ] **No comment count is rendered anywhere**, for joiners or non-joiners.
+- [ ] With zero comments the section is the compose field alone, placeholder **"Add a comment"** — no explanatory copy, no label, no cow.
+- [ ] A visible **"···"** sits on your own comments (Edit / Delete) and on **every** comment of a Moove you host (Remove comment). Edit and delete are never long-press-only.
+- [ ] The counter appears at **50 characters left** and counts **down**; it is absent before that.
