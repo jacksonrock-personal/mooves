@@ -24,6 +24,7 @@ import GreenRail, { sortRail, type RailPerson } from './GreenRail'
 import PlanCard from './PlanCard'
 import PlanComposer, { type PlanPrefill } from './PlanComposer'
 import MooveActionsSheet from './MooveActionsSheet'
+import MooveSheet, { type MoovePane } from './MooveSheet'
 import FreeUntilSheet from './FreeUntilSheet'
 import type { Plan } from '@/lib/plans'
 import { type AnchoredMove } from './AnchoredMoveCard'
@@ -117,6 +118,9 @@ export default function FeedScreen() {
   const [composerOpen, setComposerOpen] = useState(false)
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null)
   const [actionsPlan, setActionsPlan] = useState<Plan | null>(null)
+  // Phase 21, second revision — one sheet for the whole feed, opened on the
+  // pane the tapped half of the card asked for.
+  const [sheet, setSheet] = useState<{ plan: Plan; pane: MoovePane } | null>(null)
   const [planPrefill, setPlanPrefill] = useState<PlanPrefill | null>(null)
   const [freeUntilOpen, setFreeUntilOpen] = useState(false)
   const [myStatusExpiresAt, setMyStatusExpiresAt] = useState<string | null>(null)
@@ -829,6 +833,7 @@ export default function FeedScreen() {
                         onToggleJoin={handleTogglePlanJoin}
                         onBlast={handlePlanBlast}
                         onActions={setActionsPlan}
+                        onOpenSheet={(plan, pane) => setSheet({ plan, pane })}
                       />
                     ))}
                   </>
@@ -975,6 +980,22 @@ export default function FeedScreen() {
             void refetchPlans()
           }}
           onClose={() => setActionsPlan(null)}
+        />
+      )}
+
+      {sheet && me && (
+        <MooveSheet
+          plan={sheet.plan}
+          meId={me.id}
+          initialPane={sheet.pane}
+          onClose={() => setSheet(null)}
+          onJoin={() => {
+            handleTogglePlanJoin(sheet.plan.id, false)
+            setSheet(null)
+          }}
+          onCountChange={(planId, count) =>
+            setPlans(prev => prev.map(p => (p.id === planId ? { ...p, commentCount: count } : p)))
+          }
         />
       )}
 
