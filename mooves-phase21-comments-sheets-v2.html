@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mooves — Phase 21 comments, two sheets</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg:#1C1730; --app-bg:#F8F6FF; --white:#FFFFFF;
+    --purple:#7C5CDB; --purple-100:#EDE9FF; --purple-700:#5F3FC4;
+    --green:#2ECC71; --green-700:#167A43;
+    --grey:#BDB5D4; --grey-100:#F1EEFA;
+    --ink:#1C1730; --ink-2:#6B628A; --border:#E8E4F5; --red:#E8405A;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); font-family:'Inter',sans-serif; color:#fff; min-height:100vh; padding:40px 20px 90px; -webkit-font-smoothing:antialiased; }
+  .page-title { text-align:center; font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:22px; letter-spacing:-.02em; margin-bottom:5px; }
+  .page-sub { text-align:center; color:#8B82AE; font-size:13px; margin-bottom:26px; }
+  .toggles { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; align-items:center; max-width:880px; margin:0 auto 30px; }
+  .grp-lbl { font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:rgba(255,255,255,.32); margin:0 4px; }
+  .toggle { background:#2A2340; color:#C9C1E4; border:1px solid #3A3355; font-weight:600; font-size:12.5px; padding:9px 15px; border-radius:999px; cursor:pointer; transition:all .15s; }
+  .toggle:hover { border-color:var(--purple); }
+  .toggle.active { background:var(--purple); color:#fff; border-color:var(--purple); }
+  .state { display:none; }
+  .state.active { display:flex; flex-direction:column; align-items:center; gap:15px; }
+
+  .phone { width:320px; height:680px; border-radius:44px; background:var(--app-bg); overflow:hidden; position:relative; box-shadow:0 30px 70px rgba(0,0,0,.45); border:1px solid #2E2748; display:flex; flex-direction:column; }
+  .caption { max-width:430px; text-align:center; font-size:12.5px; line-height:1.55; color:#9990BC; }
+  .caption b { color:#C9C1E4; font-weight:600; }
+  .screen-label { text-align:center; color:#6E6690; font-size:12px; letter-spacing:.04em; }
+  .note-box { max-width:720px; margin:26px auto 0; background:#241E3A; border:1px solid #342D52; border-radius:14px; padding:16px 20px; font-size:12.5px; color:#B3AAD2; line-height:1.7; }
+  .note-box b { color:#E6DEFF; }
+  .note-box h4 { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:13.5px; color:#fff; margin-bottom:8px; }
+  .note-box + .note-box { margin-top:12px; }
+
+  /* chrome */
+  .fhead { background:linear-gradient(160deg,#7C5CDB 0%,#9B7FE8 70%,#A98FF0 100%); padding:26px 16px 20px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .wm { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:23px; color:#fff; letter-spacing:-.02em; display:flex; align-items:center; }
+  .wm .oo { display:inline-flex; align-items:center; gap:2px; margin:0 1px; position:relative; top:1px; }
+  .wm .d1 { width:12px; height:12px; background:var(--green); border-radius:50%; box-shadow:0 0 6px rgba(46,204,113,.6); }
+  .wm .d2 { width:12px; height:12px; background:rgba(255,255,255,.35); border-radius:50%; }
+  .fbody { flex:1; overflow-y:auto; padding:13px 14px 96px; display:flex; flex-direction:column; }
+  .fab { position:absolute; right:15px; bottom:74px; width:58px; height:58px; border-radius:50%; background:var(--purple); display:flex; align-items:center; justify-content:center; box-shadow:0 8px 22px rgba(124,92,219,.5); z-index:4; border:2.5px solid var(--app-bg); }
+  .nav { position:absolute; bottom:0; left:0; right:0; background:var(--white); border-top:1px solid var(--border); display:flex; z-index:3; }
+  .nav a { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:9px 0 10px; font-size:10px; font-weight:600; color:var(--grey); text-decoration:none; }
+  .nav a.on { color:var(--purple); }
+  .seclbl { font-size:10.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-2); padding:2px 2px 9px; }
+
+  /* cards */
+  .card { border-radius:16px; padding:11px 12px; margin-bottom:8px; }
+  .card.plan { border:1.5px solid var(--border); background:var(--white); }
+  .crow { display:flex; align-items:center; gap:11px; }
+  .lead { width:46px; height:46px; flex-shrink:0; }
+  .lead.tile { border-radius:13px; background:var(--purple-100); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; }
+  .lead.tile .t1 { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:14px; color:var(--purple-700); line-height:1; letter-spacing:-.02em; }
+  .lead.tile .t2 { font-size:9px; font-weight:700; letter-spacing:.08em; color:var(--purple-700); opacity:.75; line-height:1; }
+  .cbody { flex:1; min-width:0; }
+  .ctitle { font-family:'Plus Jakarta Sans',sans-serif; font-weight:700; font-size:15px; color:var(--ink); line-height:1.25; letter-spacing:-.01em; }
+  .csub { font-size:12.5px; color:var(--ink-2); line-height:1.35; margin-top:2px; }
+  .cmeta { display:flex; align-items:center; gap:6px; margin-top:4px; }
+  .chip-t { font-size:10.5px; font-weight:700; color:var(--purple-700); background:var(--purple-100); padding:2px 7px; border-radius:100px; }
+  .btn-join { flex-shrink:0; padding:8px 13px; border-radius:100px; font-weight:700; font-size:12.5px; border:none; background:var(--purple); color:#fff; }
+  .btn-join.in { background:var(--green-700); }
+
+  /* ══ THE ACTION ROW — Venmo shape, two targets, one line ══ */
+  .arow { display:flex; align-items:center; margin-top:10px; padding-top:9px; border-top:1px solid rgba(28,23,48,.07); }
+  .a-who { display:flex; align-items:center; gap:8px; flex:1; min-width:0; cursor:pointer; }
+  .jav { width:23px; height:23px; border-radius:50%; border:2px solid var(--white); display:flex; align-items:center; justify-content:center; font-size:9.5px; font-weight:700; color:#fff; flex-shrink:0; }
+  .jav+.jav { margin-left:-8px; }
+  .a-who .lbl { font-size:11.5px; color:var(--ink-2); font-weight:600; }
+  .a-cm { display:flex; align-items:center; gap:5px; flex-shrink:0; padding:5px 10px; border-radius:100px; background:var(--grey-100); cursor:pointer; }
+  .a-cm svg { color:var(--ink-2); }
+  .a-cm .n { font-size:12px; font-weight:700; color:var(--ink-2); }
+
+  /* ══ SHEET ══ */
+  .scrim { position:absolute; inset:0; background:rgba(28,23,48,.45); z-index:6; }
+  .sheet { position:absolute; left:0; right:0; bottom:0; z-index:7; background:var(--white); border-radius:22px 22px 0 0; display:flex; flex-direction:column; height:76%; box-shadow:0 -8px 40px rgba(28,23,48,.18); }
+  .grab { width:44px; height:5px; border-radius:100px; background:#DDD8EC; margin:9px auto 0; flex-shrink:0; }
+
+  /* restated Moove — Venmo restates the transaction; we restate the Moove */
+  .sh-ctx { padding:16px 18px 14px; flex-shrink:0; }
+  .ctx-avs { display:flex; margin-bottom:11px; }
+  .ctx-avs .a { width:44px; height:44px; border-radius:50%; border:2.5px solid var(--white); display:flex; align-items:center; justify-content:center; font-family:'Plus Jakarta Sans',sans-serif; font-weight:700; font-size:16px; color:#fff; }
+  .ctx-avs .a+.a { margin-left:-14px; }
+  .ctx-line { font-size:16px; line-height:1.35; color:var(--ink); }
+  .ctx-line b { font-weight:700; }
+  .ctx-line span { color:var(--ink-2); }
+  .ctx-sub { font-size:13px; color:var(--ink-2); margin-top:6px; }
+
+  /* the toggle between the two sheets */
+  .seg { display:flex; gap:4px; margin:2px 18px 0; background:var(--grey-100); border-radius:100px; padding:3px; flex-shrink:0; }
+  .seg button { flex:1; padding:8px 0; border:none; background:none; border-radius:100px; font-family:'Inter',sans-serif; font-size:12.5px; font-weight:700; color:var(--ink-2); cursor:pointer; }
+  .seg button.on { background:var(--white); color:var(--ink); box-shadow:0 1px 3px rgba(28,23,48,.12); }
+  .seg .cnt { font-weight:700; opacity:.55; margin-left:3px; }
+
+  .sh-div { height:1px; background:var(--border); margin:14px 18px 0; flex-shrink:0; }
+  .sh-scroll { flex:1; overflow-y:auto; padding:12px 18px 6px; }
+
+  .who-row { display:flex; align-items:center; gap:11px; padding:7px 0; }
+  .who-row .av { width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:#fff; flex-shrink:0; }
+  .who-row .nm { font-size:15px; color:var(--ink); font-weight:500; }
+  .who-row .tag { font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-2); margin-left:auto; }
+
+  .cm-row { display:flex; gap:10px; padding:9px 0; align-items:flex-start; }
+  .cm-av { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12.5px; font-weight:700; color:#fff; flex-shrink:0; }
+  .cm-body { flex:1; min-width:0; }
+  .cm-meta { display:flex; align-items:baseline; gap:6px; }
+  .cm-name { font-size:13.5px; font-weight:700; color:var(--ink); }
+  .cm-name.me { color:var(--purple-700); }
+  .cm-time { font-size:11.5px; color:var(--grey); font-weight:500; }
+  .cm-edited { font-size:11.5px; color:var(--grey); font-style:italic; }
+  .cm-text { font-size:14px; color:var(--ink); line-height:1.5; margin-top:2px; word-wrap:break-word; }
+  .cm-dots { width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--grey); flex-shrink:0; margin-top:3px; cursor:pointer; }
+  .cm-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; gap:7px; padding-bottom:40px; }
+  .cm-empty p { font-size:13.5px; color:var(--grey); }
+
+  /* Venmo's compose is a soft pill pinned to the bottom */
+  .sh-compose { flex-shrink:0; padding:10px 16px 18px; display:flex; gap:9px; align-items:flex-end; background:var(--white); }
+  .c-field { flex:1; min-height:44px; border-radius:100px; background:var(--grey-100); padding:12px 17px; font-size:14.5px; color:var(--ink); line-height:1.35; }
+  .c-field.ph { color:var(--grey); }
+  .c-field.focus { border-radius:22px; background:var(--white); box-shadow:inset 0 0 0 1.5px var(--purple); }
+  .c-send { width:40px; height:40px; border-radius:50%; background:var(--purple); display:flex; align-items:center; justify-content:center; flex-shrink:0; border:none; }
+  .c-send.off { background:var(--grey); }
+  .c-count { text-align:right; font-size:10.5px; font-weight:600; color:var(--ink-2); padding:0 18px 8px; flex-shrink:0; }
+
+  .kbd { position:absolute; left:0; right:0; bottom:0; height:205px; background:#D6D2DE; border-top:1px solid #BFBACB; z-index:8; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:7px; }
+  .kbd .kr { display:flex; gap:5px; }
+  .kbd .kk { width:26px; height:33px; border-radius:5px; background:#fff; box-shadow:0 1px 0 rgba(0,0,0,.28); }
+  .kbd .kk.w { width:150px; }
+
+  .act-sheet { position:absolute; left:0; right:0; bottom:0; z-index:9; padding:0 8px 26px; display:flex; flex-direction:column; gap:8px; }
+  .act-grp { border-radius:16px; overflow:hidden; border:1px solid var(--border); background:rgba(248,246,255,.97); }
+  .act-grp .hd { font-size:12px; font-weight:500; color:var(--ink-2); text-align:center; padding:11px 14px 9px; border-bottom:1px solid var(--border); line-height:1.45; }
+  .act-grp button { width:100%; padding:15px; font-size:17px; font-weight:600; background:none; border:none; color:var(--purple); }
+  .act-grp button+button { border-top:1px solid var(--border); }
+  .act-grp button.danger { color:var(--red); }
+  .act-cancel { width:100%; padding:15px; border-radius:16px; border:1px solid var(--border); background:rgba(248,246,255,.97); font-size:17px; font-weight:700; color:var(--ink); }
+
+  .swipe-hint { position:absolute; left:0; right:0; bottom:96px; display:flex; justify-content:center; z-index:8; pointer-events:none; }
+  .swipe-hint div { background:rgba(28,23,48,.82); color:#fff; font-size:11.5px; font-weight:600; padding:7px 13px; border-radius:100px; }
+</style>
+</head>
+<body>
+  <div class="page-title">Phase 21 — comments, two sheets</div>
+  <div class="page-sub">Venmo shape · count on the card · swipe or tap between Who's in and Comments</div>
+
+  <div class="toggles">
+    <span class="grp-lbl">The card</span>
+    <button class="toggle active" data-state="card-in">Joined</button>
+    <button class="toggle" data-state="card-zero">No comments yet</button>
+    <button class="toggle" data-state="card-out">Not joined</button>
+    <span class="grp-lbl">The sheets</span>
+    <button class="toggle" data-state="sh-comments">Comments</button>
+    <button class="toggle" data-state="sh-who">Who's in</button>
+    <button class="toggle" data-state="sh-empty">Comments, empty</button>
+    <button class="toggle" data-state="sh-type">Composing</button>
+    <button class="toggle" data-state="sh-limit">Near the cap</button>
+    <button class="toggle" data-state="sh-dots">The "···"</button>
+    <span class="grp-lbl">The wall</span>
+    <button class="toggle" data-state="sh-out">Not joined, opened</button>
+  </div>
+
+  <!-- ══════ CARD — JOINED ══════ -->
+  <div class="state active" data-state="card-in">
+    <div class="phone">
+      <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+      <div class="fbody">
+        <div class="seclbl">Mooves</div>
+        <div class="card plan">
+          <div class="crow">
+            <span class="lead tile"><span class="t1">SAT</span><span class="t2">AUG 2</span></span>
+            <span class="cbody">
+              <span class="ctitle">Climbing at First Ascent</span>
+              <span class="csub">Saturday 9:00 AM, Avondale</span>
+              <span class="cmeta"><span class="chip-t">Priya</span></span>
+            </span>
+            <button class="btn-join in">You're in ✓</button>
+          </div>
+          <div class="arow">
+            <span class="a-who">
+              <span class="jav" style="background:#C9A87C;">P</span><span class="jav" style="background:#E8A0B4;">M</span><span class="jav" style="background:#7FA8E8;">T</span>
+              <span class="lbl">5 in</span>
+            </span>
+            <span class="a-cm">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+              <span class="n">4</span>
+            </span>
+          </div>
+        </div>
+
+        <div class="card plan">
+          <div class="crow">
+            <span class="lead tile"><span class="t1">THIS</span><span class="t2">WEEKEND</span></span>
+            <span class="cbody">
+              <span class="ctitle">Dinner somewhere new</span>
+              <span class="csub">This weekend, no place yet</span>
+              <span class="cmeta"><span class="chip-t">Tom</span></span>
+            </span>
+            <button class="btn-join">I'm in</button>
+          </div>
+        </div>
+      </div>
+      <div class="fab"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+      <div class="nav">
+        <a class="on"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Feed</a>
+        <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M16.2 7.8l-2.9 6.4-6.4 2.9 2.9-6.4z"/></svg>Discover</a>
+        <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>People</a>
+        <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+      </div>
+    </div>
+    <div class="caption"><b>Venmo's shape, one line instead of three.</b> Venmo has bubble, heart and emoji because it has likes and reactions. Mooves has neither, so the row carries the two things that exist: <b>who's going on the left, comments on the right</b>. Each is its own tap target, each opens the sheet on its own tab. No extra card height.</div>
+    <div class="screen-label">Screen 4 — The card, joined</div>
+  </div>
+
+  <!-- ══════ CARD — ZERO ══════ -->
+  <div class="state" data-state="card-zero">
+    <div class="phone">
+      <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+      <div class="fbody">
+        <div class="seclbl">Mooves</div>
+        <div class="card plan">
+          <div class="crow">
+            <span class="lead tile"><span class="t1">SAT</span><span class="t2">AUG 2</span></span>
+            <span class="cbody">
+              <span class="ctitle">Climbing at First Ascent</span>
+              <span class="csub">Saturday 9:00 AM, Avondale</span>
+              <span class="cmeta"><span class="chip-t">Priya</span></span>
+            </span>
+            <button class="btn-join in">You're in ✓</button>
+          </div>
+          <div class="arow">
+            <span class="a-who">
+              <span class="jav" style="background:#C9A87C;">P</span><span class="jav" style="background:#7FA8E8;">T</span>
+              <span class="lbl">3 in</span>
+            </span>
+            <span class="a-cm">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            </span>
+          </div>
+        </div>
+      </div>
+      <div class="fab"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+      <div class="nav">
+        <a class="on"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Feed</a>
+        <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M16.2 7.8l-2.9 6.4-6.4 2.9 2.9-6.4z"/></svg>Discover</a>
+        <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>People</a>
+        <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+      </div>
+    </div>
+    <div class="caption"><b>Zero shows the bubble with no number, not a "0".</b> A zero is a small accusation that nobody has said anything yet, and it is the one number in this design that could read as a nudge. The bubble alone still says "you can comment here".</div>
+    <div class="screen-label">Screen 4 — Joined, no comments yet</div>
+  </div>
+
+  <!-- ══════ CARD — NOT JOINED ══════ -->
+  <div class="state" data-state="card-out">
+    <div class="phone">
+      <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+      <div class="fbody">
+        <div class="seclbl">Mooves</div>
+        <div class="card plan">
+          <div class="crow">
+            <span class="lead tile"><span class="t1">SAT</span><span class="t2">AUG 2</span></span>
+            <span class="cbody">
+              <span class="ctitle">Climbing at First Ascent</span>
+              <span class="csub">Saturday 9:00 AM, Avondale</span>
+              <span class="cmeta"><span class="chip-t">Priya</span></span>
+            </span>
+            <button class="btn-join">I'm in</button>
+          </div>
+          <div class="arow">
+            <span class="a-who">
+              <span class="jav" style="background:#C9A87C;">P</span><span class="jav" style="background:#E8A0B4;">M</span><span class="jav" style="background:#7FA8E8;">T</span>
+              <span class="lbl">4 in</span>
+            </span>
+          </div>
+        </div>
+        <div class="card plan">
+          <div class="crow">
+            <span class="lead tile"><span class="t1">THIS</span><span class="t2">WEEKEND</span></span>
+            <span class="cbody">
+              <span class="ctitle">Dinner somewhere new</span>
+              <span class="csub">This weekend, no place yet</span>
+              <span class="cmeta"><span class="chip-t">Tom</span></span>
+            </span>
+            <button class="btn-join">I'm in</button>
+          </div>
+        </div>
+      </div>
+      <div class="fab"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+      <div class="nav">
+        <a class="on"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Feed</a>
+        <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M16.2 7.8l-2.9 6.4-6.4 2.9 2.9-6.4z"/></svg>Discover</a>
+        <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>People</a>
+        <a><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+      </div>
+    </div>
+    <div class="caption"><b>Wall 3, and this is where we part from Venmo.</b> Venmo shows the comment count to everyone. We cannot: there are <b>six comments on this Moove</b> and the card shows no bubble, no number, nothing. Wall 3 is why the count is a joiner-only object rather than a public one.</div>
+    <div class="screen-label">Screen 4 — Not joined</div>
+  </div>
+
+  <!-- ══════ SHEET — COMMENTS ══════ -->
+  <div class="state" data-state="sh-comments">
+    <div class="phone">
+      <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+      <div class="fbody"><div class="seclbl">Mooves</div></div>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="sh-ctx">
+          <div class="ctx-avs">
+            <span class="a" style="background:#C9A87C;">P</span>
+            <span class="a" style="background:#E8A0B4;">M</span>
+            <span class="a" style="background:#7FA8E8;">T</span>
+          </div>
+          <div class="ctx-line"><b>Priya</b> <span>is doing</span> <b>Climbing at First Ascent</b></div>
+          <div class="ctx-sub">Saturday, August 2 · 9:00 AM · Avondale</div>
+        </div>
+        <div class="seg">
+          <button>Who's in<span class="cnt">5</span></button>
+          <button class="on">Comments<span class="cnt">4</span></button>
+        </div>
+        <div class="sh-div"></div>
+        <div class="sh-scroll">
+          <div class="cm-row">
+            <span class="cm-av" style="background:#C9A87C;">P</span>
+            <span class="cm-body">
+              <span class="cm-meta"><span class="cm-name">Priya</span><span class="cm-time">Thu</span></span>
+              <span class="cm-text">Parking on Belmont fills up by nine, so leave a little early or take the street spots one block north.</span>
+            </span>
+          </div>
+          <div class="cm-row">
+            <span class="cm-av" style="background:#7FA8E8;">T</span>
+            <span class="cm-body">
+              <span class="cm-meta"><span class="cm-name">Tom</span><span class="cm-time">Thu</span></span>
+              <span class="cm-text">Taking the 9 up, happy to grab anyone at Damen on the way.</span>
+            </span>
+          </div>
+          <div class="cm-row">
+            <span class="cm-av" style="background:#8FBF9F;">A</span>
+            <span class="cm-body">
+              <span class="cm-meta"><span class="cm-name">Aaron</span><span class="cm-time">Fri</span><span class="cm-edited">edited</span></span>
+              <span class="cm-text">Bringing the good chalk this time.</span>
+            </span>
+          </div>
+          <div class="cm-row">
+            <span class="cm-av" style="background:var(--purple);">J</span>
+            <span class="cm-body">
+              <span class="cm-meta"><span class="cm-name me">You</span><span class="cm-time">2h</span></span>
+              <span class="cm-text">Running about ten minutes behind, start without me.</span>
+            </span>
+            <span class="cm-dots"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></span>
+          </div>
+        </div>
+        <div class="sh-compose">
+          <div class="c-field ph">Add a comment</div>
+          <button class="c-send off"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        </div>
+      </div>
+      <div class="swipe-hint"><div>← swipe between the two →</div></div>
+    </div>
+    <div class="caption"><b>Venmo's anatomy, kept.</b> The thing you are commenting on is restated at the top with the faces, then a divider, then the comments, then the pill pinned to the bottom. The <b>segmented control is the "two sheets"</b> — tap either side or swipe sideways, and the Moove header stays put so you never lose what you are looking at.</div>
+    <div class="screen-label">Screen 4 — Comments</div>
+  </div>
+
+  <!-- ══════ SHEET — WHO'S IN ══════ -->
+  <div class="state" data-state="sh-who">
+    <div class="phone">
+      <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+      <div class="fbody"><div class="seclbl">Mooves</div></div>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="sh-ctx">
+          <div class="ctx-avs">
+            <span class="a" style="background:#C9A87C;">P</span>
+            <span class="a" style="background:#E8A0B4;">M</span>
+            <span class="a" style="background:#7FA8E8;">T</span>
+          </div>
+          <div class="ctx-line"><b>Priya</b> <span>is doing</span> <b>Climbing at First Ascent</b></div>
+          <div class="ctx-sub">Saturday, August 2 · 9:00 AM · Avondale</div>
+        </div>
+        <div class="seg">
+          <button class="on">Who's in<span class="cnt">5</span></button>
+          <button>Comments<span class="cnt">4</span></button>
+        </div>
+        <div class="sh-div"></div>
+        <div class="sh-scroll">
+          <div class="who-row"><span class="av" style="background:#C9A87C;">P</span><span class="nm">Priya</span><span class="tag">Host</span></div>
+          <div class="who-row"><span class="av" style="background:#E8A0B4;">M</span><span class="nm">Maya</span></div>
+          <div class="who-row"><span class="av" style="background:#7FA8E8;">T</span><span class="nm">Tom</span></div>
+          <div class="who-row"><span class="av" style="background:#8FBF9F;">A</span><span class="nm">Aaron</span></div>
+          <div class="who-row"><span class="av" style="background:var(--purple);">J</span><span class="nm">You</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="caption"><b>No compose pill on this side</b>, so the two tabs never look like the same screen with different content. Tapping the avatars on the card lands here; tapping the bubble lands on Comments. Same sheet, different entry, which is why one control on the card was never the point.</div>
+    <div class="screen-label">Screen 4 — Who's in</div>
+  </div>
+
+  <!-- ══════ SHEET — EMPTY ══════ -->
+  <div class="state" data-state="sh-empty">
+    <div class="phone">
+      <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+      <div class="fbody"><div class="seclbl">Mooves</div></div>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="sh-ctx">
+          <div class="ctx-avs">
+            <span class="a" style="background:#C9A87C;">P</span>
+            <span class="a" style="background:#7FA8E8;">T</span>
+          </div>
+          <div class="ctx-line"><b>Priya</b> <span>is doing</span> <b>Climbing at First Ascent</b></div>
+          <div class="ctx-sub">Saturday, August 2 · 9:00 AM · Avondale</div>
+        </div>
+        <div class="seg">
+          <button>Who's in<span class="cnt">3</span></button>
+          <button class="on">Comments</button>
+        </div>
+        <div class="sh-div"></div>
+        <div class="sh-scroll">
+          <div class="cm-empty">
+            <p>No comments yet.</p>
+          </div>
+        </div>
+        <div class="sh-compose">
+          <div class="c-field ph">Add a comment</div>
+          <button class="c-send off"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        </div>
+      </div>
+    </div>
+    <div class="caption">Venmo leaves the space blank and lets the compose pill carry it, which is right. One line, centred, and <b>the tab drops its number rather than showing a zero</b>. No cow — a cow here would be decoration inside a plan.</div>
+    <div class="screen-label">Screen 4 — Comments, empty</div>
+  </div>
+
+  <!-- ══════ SHEET — COMPOSING ══════ -->
+  <div class="state" data-state="sh-type">
+    <div class="phone">
+      <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+      <div class="fbody"><div class="seclbl">Mooves</div></div>
+      <div class="scrim"></div>
+      <div class="sheet" style="height:auto; top:96px; bottom:205px;">
+        <div class="grab"></div>
+        <div class="sh-ctx" style="padding-bottom:10px;">
+          <div class="ctx-line"><b>Priya</b> <span>is doing</span> <b>Climbing at First Ascent</b></div>
+          <div class="ctx-sub">Saturday, August 2 · 9:00 AM · Avondale</div>
+        </div>
+        <div class="seg">
+          <button>Who's in<span class="cnt">5</span></button>
+          <button class="on">Comments<span class="cnt">4</span></button>
+        </div>
+        <div class="sh-div"></div>
+        <div class="sh-scroll">
+          <div class="cm-row">
+            <span class="cm-av" style="background:#7FA8E8;">T</span>
+            <span class="cm-body">
+              <span class="cm-meta"><span class="cm-name">Tom</span><span class="cm-time">Thu</span></span>
+              <span class="cm-text">Taking the 9 up, happy to grab anyone at Damen on the way.</span>
+            </span>
+          </div>
+          <div class="cm-row">
+            <span class="cm-av" style="background:#8FBF9F;">A</span>
+            <span class="cm-body">
+              <span class="cm-meta"><span class="cm-name">Aaron</span><span class="cm-time">Fri</span></span>
+              <span class="cm-text">Bringing the good chalk this time.</span>
+            </span>
+          </div>
+        </div>
+        <div class="sh-compose">
+          <div class="c-field focus">Running about ten minutes behind, start<span style="border-left:1.5px solid var(--purple);margin-left:2px;"></span></div>
+          <button class="c-send"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        </div>
+      </div>
+      <div class="kbd">
+        <div class="kr"><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i></div>
+        <div class="kr"><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i></div>
+        <div class="kr"><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i></div>
+        <div class="kr"><i class="kk w"></i></div>
+      </div>
+    </div>
+    <div class="caption">The sheet grows to meet the keyboard and the pill rides on top of it, so nothing needs scrolling into view. The pill <b>squares off from a circle to a rounded box</b> as it fills, which is how it signals it will grow to several lines rather than scroll sideways.</div>
+    <div class="screen-label">Screen 4 — Composing</div>
+  </div>
+
+  <!-- ══════ SHEET — NEAR CAP ══════ -->
+  <div class="state" data-state="sh-limit">
+    <div class="phone">
+      <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+      <div class="fbody"><div class="seclbl">Mooves</div></div>
+      <div class="scrim"></div>
+      <div class="sheet" style="height:auto; top:96px; bottom:205px;">
+        <div class="grab"></div>
+        <div class="sh-ctx" style="padding-bottom:10px;">
+          <div class="ctx-line"><b>Priya</b> <span>is doing</span> <b>Climbing at First Ascent</b></div>
+          <div class="ctx-sub">Saturday, August 2 · 9:00 AM · Avondale</div>
+        </div>
+        <div class="seg">
+          <button>Who's in<span class="cnt">5</span></button>
+          <button class="on">Comments<span class="cnt">4</span></button>
+        </div>
+        <div class="sh-div"></div>
+        <div class="sh-scroll" style="flex:0 1 auto;">
+          <div class="cm-row">
+            <span class="cm-av" style="background:#7FA8E8;">T</span>
+            <span class="cm-body">
+              <span class="cm-meta"><span class="cm-name">Tom</span><span class="cm-time">Thu</span></span>
+              <span class="cm-text">Taking the 9 up, happy to grab anyone at Damen on the way.</span>
+            </span>
+          </div>
+        </div>
+        <div class="sh-compose" style="padding-bottom:4px;">
+          <div class="c-field focus">Parking on Belmont fills up by nine, so leave early or take the street spots one block north. I have four extra harnesses and two pairs of shoes, sizes 9 and 11, so do not rent unless you need something specific. We start on the slab wall, then move to the overhang after lunch. If you get there late, text me and I will come let you in through the side door. The cafe on the corner opens at seven if anyone wants coffee first, and there is a decent breakfast pla<span style="border-left:1.5px solid var(--purple);margin-left:2px;"></span></div>
+          <button class="c-send"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        </div>
+        <div class="c-count">37 left</div>
+      </div>
+      <div class="kbd">
+        <div class="kr"><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i></div>
+        <div class="kr"><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i></div>
+        <div class="kr"><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i><i class="kk"></i></div>
+        <div class="kr"><i class="kk w"></i></div>
+      </div>
+    </div>
+    <div class="caption"><b>463 characters, and the feed behind it has not moved an inch.</b> This is the case that broke the inline version. The list shrinks, the pill grows, the counter appears under it at 50 left and counts down. Unchanged from what you approved: 500, counting down, hidden until the end.</div>
+    <div class="screen-label">Screen 4 — Near the cap</div>
+  </div>
+
+  <!-- ══════ SHEET — DOTS ══════ -->
+  <div class="state" data-state="sh-dots">
+    <div class="phone">
+      <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+      <div class="fbody"><div class="seclbl">Mooves</div></div>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="sh-ctx">
+          <div class="ctx-avs">
+            <span class="a" style="background:#C9A87C;">P</span>
+            <span class="a" style="background:#7FA8E8;">T</span>
+          </div>
+          <div class="ctx-line"><b>Priya</b> <span>is doing</span> <b>Climbing at First Ascent</b></div>
+          <div class="ctx-sub">Saturday, August 2 · 9:00 AM · Avondale</div>
+        </div>
+        <div class="seg">
+          <button>Who's in<span class="cnt">5</span></button>
+          <button class="on">Comments<span class="cnt">2</span></button>
+        </div>
+        <div class="sh-div"></div>
+        <div class="sh-scroll">
+          <div class="cm-row">
+            <span class="cm-av" style="background:#7FA8E8;">T</span>
+            <span class="cm-body">
+              <span class="cm-meta"><span class="cm-name">Tom</span><span class="cm-time">Thu</span></span>
+              <span class="cm-text">Taking the 9 up, happy to grab anyone at Damen on the way.</span>
+            </span>
+          </div>
+          <div class="cm-row">
+            <span class="cm-av" style="background:var(--purple);">J</span>
+            <span class="cm-body">
+              <span class="cm-meta"><span class="cm-name me">You</span><span class="cm-time">2h</span></span>
+              <span class="cm-text">Running about ten minutes behind, start without me.</span>
+            </span>
+            <span class="cm-dots" style="color:var(--ink-2);"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></span>
+          </div>
+        </div>
+        <div class="sh-compose">
+          <div class="c-field ph">Add a comment</div>
+          <button class="c-send off"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        </div>
+      </div>
+      <div class="act-sheet">
+        <div class="act-grp">
+          <div class="hd">Your comment, "Running about ten minutes behind, start without me."</div>
+          <button>Edit</button>
+          <button class="danger">Delete</button>
+        </div>
+        <button class="act-cancel">Cancel</button>
+      </div>
+    </div>
+    <div class="caption">The <b>"···"</b> on your own comments, and on every comment of a Moove you host. It stacks a second sheet on the first, which iOS does constantly and Venmo does here too. Everything else about moderation is unchanged.</div>
+    <div class="screen-label">Screen 4 — The "···"</div>
+  </div>
+
+  <!-- ══════ SHEET — NOT JOINED ══════ -->
+  <div class="state" data-state="sh-out">
+    <div class="phone">
+      <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+      <div class="fbody"><div class="seclbl">Mooves</div></div>
+      <div class="scrim"></div>
+      <div class="sheet" style="height:auto; top:auto; max-height:70%;">
+        <div class="grab"></div>
+        <div class="sh-ctx">
+          <div class="ctx-avs">
+            <span class="a" style="background:#C9A87C;">P</span>
+            <span class="a" style="background:#E8A0B4;">M</span>
+            <span class="a" style="background:#7FA8E8;">T</span>
+          </div>
+          <div class="ctx-line"><b>Priya</b> <span>is doing</span> <b>Climbing at First Ascent</b></div>
+          <div class="ctx-sub">Saturday, August 2 · 9:00 AM · Avondale</div>
+        </div>
+        <div class="sh-div" style="margin-top:2px;"></div>
+        <div class="sh-scroll">
+          <div class="who-row"><span class="av" style="background:#C9A87C;">P</span><span class="nm">Priya</span><span class="tag">Host</span></div>
+          <div class="who-row"><span class="av" style="background:#E8A0B4;">M</span><span class="nm">Maya</span></div>
+          <div class="who-row"><span class="av" style="background:#7FA8E8;">T</span><span class="nm">Tom</span></div>
+          <div class="who-row"><span class="av" style="background:#8FBF9F;">A</span><span class="nm">Aaron</span></div>
+        </div>
+        <div style="padding:8px 16px 20px;">
+          <button style="width:100%;padding:14px;border-radius:16px;background:var(--purple);color:#fff;font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:15px;border:none;">I'm in</button>
+        </div>
+      </div>
+    </div>
+    <div class="caption"><b>The strongest version of wall 3 yet.</b> A non joiner opens the sheet and there is <b>no segmented control at all</b> — nothing to toggle, so nothing to wonder about. Just who is going, and the way in. The tabs are not disabled or hidden, they do not exist, because a greyed-out "Comments" tab would be the biggest hint we have ever shown.</div>
+    <div class="screen-label">Screen 4 — Not joined, opened</div>
+  </div>
+
+  <div class="note-box">
+    <h4>The one spec change this needs</h4>
+    The approved spec says <b>"no comment count anywhere, for anyone."</b> That sentence was a side effect of the single-arrow merge, not one of the four walls. The wall is narrower and still holds here: <b>a non joiner sees no count and no hint.</b> A total shown to someone already in reads the same whether they have opened it ten times or never, so it is not an unread badge and cannot nag. If you approve this, that line in the spec gets amended to <b>"no comment count is shown to anyone who has not joined, and no count anywhere tracks what you have read."</b>
+  </div>
+
+  <div class="note-box">
+    <h4>Where this deliberately parts from Venmo</h4>
+    <b>No count for non joiners</b>, which is the whole of wall 3 and the one thing Venmo cannot teach us.<br><br>
+    <b>No heart and no emoji reactions.</b> Venmo's row has three buttons; ours has two targets because reactions were cut in Phase 20 and are out of scope here. A lone bubble on its own row looked thin, which is why the roster shares the line.<br><br>
+    <b>Venmo's feed is the product.</b> Ours is a departure lounge, so the sheet restates the Moove and offers a way out to the group text rather than inviting a scroll.
+  </div>
+
+  <div class="note-box">
+    <h4>What it costs to switch</h4>
+    The <b>migration and all four API routes are untouched</b> — the data model was right either way. <b>`PlanComments` moves</b> out of `WhosIn`'s footer into a sheet with two panes, <b>`WhosIn` reverts</b> to how it shipped, and the card row is rebuilt. One new thing the API does need: <b>a comment count per Moove in the feed payload</b>, joiner only, which today it does not return because we had decided never to show one.
+  </div>
+
+<script>
+  var toggles = document.querySelectorAll('.toggle');
+  var states = document.querySelectorAll('.state');
+  toggles.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      toggles.forEach(function (b) { b.classList.remove('active'); });
+      states.forEach(function (s) { s.classList.remove('active'); });
+      btn.classList.add('active');
+      document.querySelector('.state[data-state="' + btn.dataset.state + '"]').classList.add('active');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+
+  // the segmented control actually switches, so the toggle cost is real
+  document.querySelectorAll('.seg').forEach(function (seg) {
+    seg.querySelectorAll('button').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var target = b.textContent.indexOf("Who's in") === 0 ? 'sh-who' : 'sh-comments';
+        var t = document.querySelector('.toggle[data-state="' + target + '"]');
+        if (t) t.click();
+      });
+    });
+  });
+</script>
+</body>
+</html>

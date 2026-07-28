@@ -13,9 +13,8 @@
 import Avatar from '@/components/ui/Avatar'
 import { posthog } from '@/lib/posthog'
 import { planTile, planWhenLine, type Plan } from '@/lib/plans'
-import WhosIn from './WhosIn'
 import GroupLabel from './GroupLabel'
-import PlanComments from './PlanComments'
+import type { MoovePane } from './MooveSheet'
 
 interface PlanCardProps {
   plan: Plan
@@ -23,9 +22,18 @@ interface PlanCardProps {
   onToggleJoin: (planId: string, joined: boolean) => void
   onBlast: (plan: Plan) => void
   onActions: (plan: Plan) => void
+  /** Opens the Moove sheet on a specific pane — the row has a target for each. */
+  onOpenSheet: (plan: Plan, pane: MoovePane) => void
 }
 
-export default function PlanCard({ plan, meId, onToggleJoin, onBlast, onActions }: PlanCardProps) {
+export default function PlanCard({
+  plan,
+  meId,
+  onToggleJoin,
+  onBlast,
+  onActions,
+  onOpenSheet,
+}: PlanCardProps) {
   const start = new Date(plan.startAt)
   const tile = planTile(start, plan.hasTime, plan.timeMode)
   const when = planWhenLine(start, plan.hasTime, plan.locationText, new Date(), plan.timeMode)
@@ -106,25 +114,75 @@ export default function PlanCard({ plan, meId, onToggleJoin, onBlast, onActions 
         </p>
       )}
 
-      {/* Phase 21 — comments ride inside the who's-in disclosure, so the card
-          keeps exactly ONE expand control.
+      {/* Phase 21, second revision — the action row. Venmo's shape, one line.
+          Venmo carries bubble/heart/emoji; we have neither likes nor reactions,
+          so the roster shares the line with comments rather than leaving a lone
+          bubble on a row of its own.
 
-          Wall 3: a viewer who has not joined gets `undefined` here, which means
-          no thread, no count, no greyed-out row, no hint of any kind. Not
-          "hidden" — absent. If you could tell comments existed, they would
-          become a reason to join, and the count would be an unread badge in a
-          different hat. */}
-      <WhosIn
-        people={plan.joiners}
-        meId={meId}
-        hostId={plan.authorId}
-        hostLabel="Host"
-        footer={
-          plan.isMine || plan.joinedByMe ? (
-            <PlanComments planId={plan.id} meId={meId} isHost={plan.isMine} />
-          ) : undefined
-        }
-      />
+          Both halves open the same sheet on different panes. Neither is an
+          expand/collapse control, which is what made the inline version
+          unreadable — a ▾ promises the card will grow.
+
+          WALL 3: the bubble is rendered only for people who are in. A viewer
+          who has not joined sees the faces and a count of them, and nothing
+          whatsoever about comments. `commentCount` is 0 for them anyway —
+          get_plans refuses to send the real number — so this is belt and
+          braces, not the only guard. */}
+      <div className="flex items-center mt-2.5 pt-2.5 border-t border-grey-100">
+        <button
+          onClick={() => onOpenSheet(plan, 'who')}
+          aria-label="Who's in"
+          className="flex items-center gap-2 flex-1 min-w-0 text-left"
+        >
+          <div className="flex shrink-0">
+            {[
+              { id: plan.authorId, name: plan.authorName, url: plan.authorAvatar },
+              ...plan.joiners.slice(0, 2).map(j => ({ id: j.id, name: j.displayName, url: j.avatarUrl })),
+            ].map((p, i) => (
+              <Avatar
+                key={p.id}
+                src={p.url}
+                name={p.name ?? '?'}
+                size={23}
+                className={`ring-2 ring-white ${i > 0 ? '-ml-2' : ''}`}
+              />
+            ))}
+          </div>
+          <span className="font-sans text-[11.5px] font-semibold text-ink-500">
+            {plan.joiners.length + 1} in
+          </span>
+        </button>
+
+        {(plan.isMine || plan.joinedByMe) && (
+          <button
+            onClick={() => onOpenSheet(plan, 'comments')}
+            aria-label="Comments"
+            className="shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-grey-100"
+          >
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.1"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="text-ink-500"
+            >
+              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+            </svg>
+            {/* Zero shows the bubble alone. A "0" is a small accusation that
+                nobody has said anything, and the one number here that could
+                read as a nudge. */}
+            {plan.commentCount > 0 && (
+              <span className="font-sans text-[12px] font-bold text-ink-500">
+                {plan.commentCount}
+              </span>
+            )}
+          </button>
+        )}
+      </div>
 
       {canBlast && (
         <button

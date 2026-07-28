@@ -56,6 +56,14 @@ export interface Plan {
   visibleGroups: string[]
   joiners: PlanJoiner[]
   joinedByMe: boolean
+  /**
+   * Phase 21, second revision — a TOTAL, never an unread count.
+   *
+   * `get_plans` returns 0 unless the viewer is the author or has joined, so a
+   * non-joiner is never handed a number they then have to be trusted not to
+   * render. Wall 3 is enforced in the database, not here.
+   */
+  commentCount: number
 }
 
 export const PLAN_TITLE_MAX = 80
