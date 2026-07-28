@@ -87,21 +87,9 @@ export default function MyMoveCard({
         </button>
       )}
 
-      {/* 20.6 — collapsed by default, expands to name everyone. */}
-      <WhosIn people={joiners} meId={meId} tone="green" />
-
-      {joiners.length >= 2 && (
-        <button
-          onClick={onBlast}
-          className="w-full mt-3.5 py-3.5 rounded-[14px] bg-purple-500 text-white font-display font-extrabold text-[15px] tracking-[-0.01em] flex items-center justify-center gap-2 shadow-[0_4px_16px_rgba(124,92,219,0.3)]"
-        >
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
-          </svg>
-          Start a group chat
-        </button>
-      )}
-
+      {/* Greens no longer carry joiners or a group blast — those moved to
+          Mooves, which are the object you can actually commit to. This card is
+          now only the things nobody else can do for you. */}
       <button
         onClick={onGoGrey}
         className="block w-full text-center mt-3 font-sans text-[13px] font-medium text-ink-500"

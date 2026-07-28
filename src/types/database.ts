@@ -493,6 +493,8 @@ export type Database = {
           note: string | null
           visible_to: string[] | null
           sponsored_move_id: string | null
+          time_mode: string
+          show_groups: boolean
           created_at: string
           updated_at: string
           cancelled_at: string | null
@@ -500,6 +502,8 @@ export type Database = {
         Insert: {
           id?: string
           sponsored_move_id?: string | null
+          time_mode?: string
+          show_groups?: boolean
           author_id: string
           title: string
           start_at: string
@@ -515,6 +519,8 @@ export type Database = {
         Update: {
           id?: string
           sponsored_move_id?: string | null
+          time_mode?: string
+          show_groups?: boolean
           author_id?: string
           title?: string
           start_at?: string

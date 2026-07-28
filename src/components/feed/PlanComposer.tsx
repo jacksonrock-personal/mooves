@@ -13,7 +13,20 @@
 import { useEffect, useMemo, useState } from 'react'
 import { posthog } from '@/lib/posthog'
 import { combineStartAt, splitStartAt } from '@/lib/movetime'
-import { computePlanExpiry, PLAN_TITLE_MAX, PLAN_LOCATION_MAX, PLAN_NOTE_MAX, type Plan } from '@/lib/plans'
+import {
+  computePlanExpiry,
+  coarseSortAt,
+  coarseExpiry,
+  isCoarse,
+  isWeekModeAvailable,
+  COARSE_MODES,
+  TIME_MODE_LABEL,
+  PLAN_TITLE_MAX,
+  PLAN_LOCATION_MAX,
+  PLAN_NOTE_MAX,
+  type Plan,
+  type PlanTimeMode,
+} from '@/lib/plans'
 
 interface Group {
   id: string
@@ -59,6 +72,10 @@ export default function PlanComposer({
   const [location, setLocation] = useState('')
   const [note, setNote] = useState('')
   const [visibleTo, setVisibleTo] = useState<string[]>([])
+  const [showGroups, setShowGroups] = useState(false)
+  // Coarse is the default; `exact` swaps the chips for real pickers.
+  const [mode, setMode] = useState<PlanTimeMode>('weekend')
+  const [exact, setExact] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -67,28 +84,39 @@ export default function PlanComposer({
     if (!open) return
     if (editing) {
       const parts = splitStartAt(editing.startAt)
+      const coarse = isCoarse(editing.timeMode)
       setTitle(editing.title)
-      setDate(parts.date)
-      setTime(editing.hasTime ? parts.time : '')
+      setExact(!coarse)
+      setMode(editing.timeMode)
+      setDate(coarse ? '' : parts.date)
+      setTime(coarse || !editing.hasTime ? '' : parts.time)
       setLocation(editing.locationText ?? '')
       setNote(editing.note ?? '')
       setVisibleTo([])
+      setShowGroups(false)
     } else if (prefill) {
       // A dated sponsored move already has everything the composer asks for.
+      // A sponsored move already has a real date and time, so it opens exact.
       const parts = splitStartAt(prefill.startAt)
       setTitle(prefill.title)
+      setExact(!!prefill.startAt)
+      setMode('datetime')
       setDate(parts.date)
       setTime(parts.time)
       setLocation(prefill.locationText ?? '')
       setNote(prefill.note ?? '')
       setVisibleTo([])
+      setShowGroups(false)
     } else {
       setTitle('')
+      setExact(false)
+      setMode(isWeekModeAvailable() ? 'week' : 'weekend')
       setDate('')
       setTime('')
       setLocation('')
       setNote('')
       setVisibleTo([])
+      setShowGroups(false)
     }
     setError(null)
     posthog.capture(
@@ -97,26 +125,44 @@ export default function PlanComposer({
     )
   }, [open, editing, prefill])
 
-  const canSave = useMemo(() => title.trim().length > 0 && date.length > 0, [title, date])
+  // A coarse Moove needs only a title; an exact one also needs its date.
+  const canSave = useMemo(
+    () => title.trim().length > 0 && (!exact || date.length > 0),
+    [title, exact, date],
+  )
 
   async function handleSave() {
     if (!canSave || saving) return
     setSaving(true)
     setError(null)
 
-    const hasTime = time.length > 0
-    const startAt = combineStartAt(date, time)
-    if (!startAt) {
-      setError('That date did not look right.')
-      setSaving(false)
-      return
+    const hasTime = exact && time.length > 0
+    const timeMode: PlanTimeMode = exact ? (hasTime ? 'datetime' : 'date') : mode
+
+    // Coarse Mooves have no real start, so start_at is a SORT KEY stamped at
+    // the end of the window — that is what puts "Saturday 9am" above "sometime
+    // this weekend".
+    let startAt: string | null
+    let expiresAt: string
+    if (exact) {
+      startAt = combineStartAt(date, time)
+      if (!startAt) {
+        setError('That date did not look right.')
+        setSaving(false)
+        return
+      }
+      expiresAt = computePlanExpiry(new Date(startAt), hasTime).toISOString()
+    } else {
+      startAt = coarseSortAt(timeMode).toISOString()
+      expiresAt = coarseExpiry(timeMode).toISOString()
     }
-    const expiresAt = computePlanExpiry(new Date(startAt), hasTime).toISOString()
 
     const payload = {
       title: title.trim(),
       startAt,
       hasTime,
+      timeMode,
+      showGroups: visibleTo.length > 0 && showGroups,
       expiresAt,
       locationText: location.trim() || null,
       note: note.trim() || null,
@@ -220,21 +266,64 @@ export default function PlanComposer({
             className="w-full min-h-[46px] rounded-2xl border-[1.5px] border-[#E8E4F5] bg-surface-bg px-3.5 py-3 font-sans text-[16px] text-ink-900 outline-none mb-4 focus:border-purple-500"
           />
 
+          {/* Coarse by default. "Climbing this weekend" is a complete Moove, so
+              the exact date and time hide behind a "+" rather than sitting there
+              as two blank boxes that look required. One or the other, never
+              both, so the card always knows which to render. */}
           <Label>When</Label>
-          <div className="flex gap-2 mb-4">
-            <input
-              type="date"
-              value={date}
-              onChange={e => setDate(e.target.value)}
-              className="flex-1 min-w-0 min-h-[46px] rounded-2xl border-[1.5px] border-[#E8E4F5] bg-surface-bg px-3.5 py-3 font-sans text-[16px] text-ink-900 outline-none focus:border-purple-500"
-            />
-            <input
-              type="time"
-              value={time}
-              onChange={e => setTime(e.target.value)}
-              className="flex-1 min-w-0 min-h-[46px] rounded-2xl border-[1.5px] border-[#E8E4F5] bg-surface-bg px-3.5 py-3 font-sans text-[16px] text-ink-900 outline-none focus:border-purple-500"
-            />
-          </div>
+          {!exact && (
+            <>
+              <div className="flex gap-2 flex-wrap mb-3">
+                {COARSE_MODES.filter(m => m !== 'week' || isWeekModeAvailable()).map(m => (
+                  <Chip key={m} on={mode === m} onClick={() => setMode(m)}>
+                    {TIME_MODE_LABEL[m]}
+                  </Chip>
+                ))}
+              </div>
+              <button
+                onClick={() => setExact(true)}
+                className="flex items-center gap-1.5 font-sans text-[12.5px] font-semibold text-purple-500 mb-4"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                Add an exact date and time
+              </button>
+            </>
+          )}
+
+          {exact && (
+            <>
+              <div className="flex gap-2 mb-3">
+                <input
+                  type="date"
+                  value={date}
+                  onChange={e => setDate(e.target.value)}
+                  className="flex-1 min-w-0 min-h-[46px] rounded-2xl border-[1.5px] border-[#E8E4F5] bg-surface-bg px-3.5 py-3 font-sans text-[16px] text-ink-900 outline-none focus:border-purple-500"
+                />
+                <input
+                  type="time"
+                  value={time}
+                  onChange={e => setTime(e.target.value)}
+                  className="flex-1 min-w-0 min-h-[46px] rounded-2xl border-[1.5px] border-[#E8E4F5] bg-surface-bg px-3.5 py-3 font-sans text-[16px] text-ink-900 outline-none focus:border-purple-500"
+                />
+              </div>
+              <button
+                onClick={() => {
+                  setExact(false)
+                  setDate('')
+                  setTime('')
+                }}
+                className="flex items-center gap-1.5 font-sans text-[12.5px] font-semibold text-text-secondary mb-4"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                Use a rough time instead
+              </button>
+            </>
+          )}
 
           <Label optional>Where</Label>
           <input
@@ -264,6 +353,42 @@ export default function PlanComposer({
               </Chip>
             ))}
           </div>
+
+          {/* 18.2's toggle, reused. Appears only once a group is picked, and
+              defaults off. The viewer-side rule is unchanged: you only ever see
+              the names of groups you are in. */}
+          {visibleTo.length > 0 && (
+            <button
+              onClick={() => setShowGroups(s => !s)}
+              role="switch"
+              aria-checked={showGroups}
+              className="w-full flex items-center gap-2.5 border border-[#E8E4F5] bg-surface-bg rounded-2xl px-3.5 py-3 mb-4 text-left"
+            >
+              <span className="flex-1 min-w-0">
+                <span className="block font-sans text-[13px] font-semibold text-ink-900">
+                  Show who this is shared with
+                </span>
+                <span className="block font-sans text-[11.5px] text-text-secondary truncate">
+                  {groups
+                    .filter(g => visibleTo.includes(g.id))
+                    .map(g => g.name)
+                    .join(', ')}{' '}
+                  appears on the card
+                </span>
+              </span>
+              <span
+                className={`shrink-0 w-11 h-6 rounded-full relative transition-colors ${
+                  showGroups ? 'bg-green-700' : 'bg-grey-300'
+                }`}
+              >
+                <span
+                  className={`absolute top-[3px] w-[18px] h-[18px] rounded-full bg-white transition-all ${
+                    showGroups ? 'left-[23px]' : 'left-[3px]'
+                  }`}
+                />
+              </span>
+            </button>
+          )}
 
           {error && <p className="font-sans text-[13px] text-[#E8405A] mb-3">{error}</p>}
         </div>

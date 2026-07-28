@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mooves — Rail tap: two options</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet" />
+<style>
+  :root{--bg:#1C1730;--app-bg:#F8F6FF;--white:#FFF;--purple:#7C5CDB;--purple-100:#EDE9FF;--purple-700:#5F3FC4;
+    --green:#2ECC71;--green-700:#167A43;--grey:#BDB5D4;--grey-100:#F1EEFA;--ink:#1C1730;--ink-2:#6B628A;--border:#E8E4F5;--red:#E8405A;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);font-family:'Inter',sans-serif;color:#fff;min-height:100vh;padding:40px 20px 90px;-webkit-font-smoothing:antialiased}
+  .page-title{text-align:center;font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:22px;letter-spacing:-.02em;margin-bottom:5px}
+  .page-sub{text-align:center;color:#8B82AE;font-size:13px;margin-bottom:26px}
+  .toggles{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center;max-width:860px;margin:0 auto 28px}
+  .grp-lbl{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin:0 4px}
+  .grp-a{color:#8FE0B4}.grp-b{color:#C9B8FF}
+  .toggle{background:#2A2340;color:#C9C1E4;border:1px solid #3A3355;font-weight:600;font-size:12.5px;padding:9px 15px;border-radius:999px;cursor:pointer}
+  .toggle:hover{border-color:var(--purple)} .toggle.active{background:var(--purple);color:#fff;border-color:var(--purple)}
+  .state{display:none} .state.active{display:flex;flex-direction:column;align-items:center;gap:14px}
+  .phone{width:320px;height:660px;border-radius:44px;background:var(--app-bg);overflow:hidden;position:relative;box-shadow:0 30px 70px rgba(0,0,0,.45);border:1px solid #2E2748;display:flex;flex-direction:column}
+  .caption{max-width:400px;text-align:center;font-size:12.5px;line-height:1.55;color:#9990BC} .caption b{color:#C9C1E4;font-weight:600}
+  .screen-label{text-align:center;color:#6E6690;font-size:12px}
+  .step{display:inline-flex;align-items:center;gap:7px;background:#2A2340;border:1px solid #3A3355;border-radius:100px;padding:5px 13px;font-size:11.5px;font-weight:700;letter-spacing:.04em;color:#C9C1E4}
+  .step b{color:#fff}
+  .note{max-width:720px;margin:6px auto 0;background:#241E3A;border:1px solid #342D52;border-radius:14px;padding:14px 18px;font-size:12.5px;color:#B3AAD2;line-height:1.65}
+  .note b{color:#E6DEFF}
+  .verdict{max-width:720px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .vcol{background:#241E3A;border:1px solid #342D52;border-radius:14px;padding:14px 16px;font-size:12px;line-height:1.6;color:#B3AAD2}
+  .vcol h4{font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;margin-bottom:8px}
+  .vcol.a h4{color:#8FE0B4}.vcol.b h4{color:#C9B8FF}
+  .vcol ul{margin:0;padding-left:16px}.vcol li{margin-bottom:4px}
+
+  .fhead{background:linear-gradient(160deg,#7C5CDB 0%,#9B7FE8 70%,#A98FF0 100%);padding:24px 16px 18px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .wm{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:22px;color:#fff;letter-spacing:-.02em;display:flex;align-items:center}
+  .wm .oo{display:inline-flex;align-items:center;gap:2px;margin:0 1px;position:relative;top:1px}
+  .wm .d1{width:11px;height:11px;background:var(--green);border-radius:50%}
+  .wm .d2{width:11px;height:11px;background:rgba(255,255,255,.35);border-radius:50%}
+  .fbody{flex:1;overflow-y:auto;padding:13px 14px 70px}
+  .nav{position:absolute;bottom:0;left:0;right:0;background:var(--white);border-top:1px solid var(--border);display:flex;z-index:5}
+  .nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 0 10px;font-size:10px;font-weight:600;color:var(--grey)}
+  .nav a.on{color:var(--purple)}
+  .fab{position:absolute;right:15px;bottom:74px;width:54px;height:54px;border-radius:50%;background:var(--purple);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 22px rgba(124,92,219,.5);z-index:6;border:2.5px solid var(--app-bg)}
+
+  .rl{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);padding:0 2px 8px}
+  .rail{display:flex;gap:11px;overflow-x:auto;padding:2px 0 4px;margin-bottom:13px}
+  .ri{flex-shrink:0;width:58px;display:flex;flex-direction:column;align-items:center;gap:4px;position:relative}
+  .rav{width:54px;height:54px;border-radius:50%;position:relative;display:flex;align-items:center;justify-content:center;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:18px;color:#fff}
+  .rav::after{content:'';position:absolute;inset:-4px;border-radius:50%;border:2.5px solid var(--green)}
+  .ri.later .rav::after{border-color:rgba(46,204,113,.42)}
+  .ri.sel .rav::after{border-width:3px;box-shadow:0 0 0 2px rgba(46,204,113,.22)}
+  .ri.me .rav::after{border-style:dashed}
+  .rn{font-size:11px;font-weight:600;color:var(--ink-2);max-width:58px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ri.sel .rn{color:var(--ink);font-weight:700}
+  .rw{font-size:9.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--green-700)}
+  .ri.later .rw{color:var(--ink-2)}
+  .tapdot{position:absolute;top:-6px;left:-6px;width:66px;height:66px;border-radius:50%;border:2.5px dashed #fff;opacity:.9}
+  .tapnum{position:absolute;top:-13px;right:-6px;width:22px;height:22px;border-radius:50%;background:#fff;color:var(--ink);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+
+  .gcard{border-radius:16px;border:1.5px solid rgba(46,204,113,.28);background:rgba(46,204,113,.085);padding:11px 12px;margin-bottom:8px;position:relative}
+  .gtop{display:flex;align-items:flex-start;gap:11px}
+  .gname{font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:15px;color:var(--ink)}
+  .chipt{font-size:11px;font-weight:600;color:var(--purple-700);background:var(--purple-100);padding:2px 7px;border-radius:100px}
+  .txtline{display:flex;align-items:center;gap:5px;margin-top:6px;font-size:11.5px;font-weight:600;color:var(--purple-700)}
+  .join{flex-shrink:0;padding:8px 13px;border-radius:100px;font-weight:700;font-size:12.5px;border:none;background:var(--purple);color:#fff}
+  .who{margin-top:10px;padding-top:9px;border-top:1px solid rgba(46,204,113,.2);display:flex;align-items:center;gap:8px}
+  .jav{width:23px;height:23px;border-radius:50%;border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:700;color:#fff}
+  .jav+.jav{margin-left:-8px}
+  .whot{flex:1;font-size:11.5px;color:var(--ink-2);font-weight:600}
+
+  .card{border-radius:16px;border:1.5px solid var(--border);background:var(--white);padding:11px 12px;margin-bottom:8px}
+  .crow{display:flex;align-items:center;gap:11px}
+  .tile{width:46px;height:46px;border-radius:13px;background:var(--purple-100);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;flex-shrink:0}
+  .tile .t1{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:13px;color:var(--purple-700);line-height:1}
+  .tile .t2{font-size:8.5px;font-weight:700;letter-spacing:.06em;color:var(--purple-700);opacity:.75;line-height:1}
+  .cb{flex:1;min-width:0}
+  .ct{font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:15px;color:var(--ink);line-height:1.25}
+  .cs{font-size:12.5px;color:var(--ink-2);margin-top:2px}
+  .pill{font-size:10.5px;font-weight:700;color:var(--purple-700);background:var(--purple-100);padding:2px 7px;border-radius:100px;margin-top:5px;display:inline-block}
+  .seclbl{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);padding:2px 2px 9px}
+
+  /* stylised native Messages, clearly NOT Mooves */
+  .ios{flex:1;background:#fff;display:flex;flex-direction:column}
+  .ios-nav{background:#F6F6F6;border-bottom:1px solid #D8D8DC;padding:38px 14px 10px;display:flex;align-items:center;gap:10px}
+  .ios-back{color:#007AFF;font-size:15px;font-weight:500}
+  .ios-to{flex:1;font-size:13px;color:#3C3C43}
+  .ios-to b{color:#000;font-weight:600}
+  .ios-body{flex:1;background:#fff}
+  .ios-input{border-top:1px solid #D8D8DC;padding:10px 14px 26px;display:flex;align-items:center;gap:9px;background:#F6F6F6}
+  .ios-field{flex:1;height:34px;border-radius:100px;border:1px solid #D8D8DC;background:#fff;display:flex;align-items:center;padding:0 13px;font-size:14px;color:#B8B8BE}
+  .ios-send{width:30px;height:30px;border-radius:50%;background:#007AFF;display:flex;align-items:center;justify-content:center}
+  .outside{position:absolute;top:12px;left:0;right:0;text-align:center;z-index:9}
+  .outside span{background:rgba(28,23,48,.88);color:#fff;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:5px 12px;border-radius:100px}
+</style>
+</head>
+<body>
+  <div class="page-title">Rail tap — two options</div>
+  <div class="page-sub">What happens when you tap a face, once greens have no vibe note</div>
+
+  <div class="toggles">
+    <span class="grp-lbl grp-a">Option A · text-only</span>
+    <button class="toggle active" data-state="a1">1 · The feed</button>
+    <button class="toggle" data-state="a2">2 · Tap → Messages</button>
+    <button class="toggle" data-state="a3">Your own face</button>
+    <span class="grp-lbl grp-b">Option B · keep the card</span>
+    <button class="toggle" data-state="b1">1 · The feed</button>
+    <button class="toggle" data-state="b2">2 · Tap → card</button>
+    <button class="toggle" data-state="b3">3 · Tap → Messages</button>
+  </div>
+
+  <!-- ═══════ A1 ═══════ -->
+  <div class="state active" data-state="a1">
+    <span class="step">Option A · <b>before the tap</b></span>
+    <div class="phone">
+      <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+      <div class="fbody">
+        <div class="rl">Free</div>
+        <div class="rail">
+          <div class="ri me"><div class="rav" style="background:var(--purple)">J</div><div class="rn">You</div><div class="rw">Now</div></div>
+          <div class="ri"><div class="rav" style="background:#E8A0B4">M</div><div class="rn">Maya</div><div class="rw">Now</div></div>
+          <div class="ri"><div class="rav" style="background:#7FA8E8">T</div><div class="rn">Tom</div><div class="rw">Now</div></div>
+          <div class="ri later"><div class="rav" style="background:#C9A87C">P</div><div class="rn">Priya</div><div class="rw">Wknd</div></div>
+        </div>
+        <div class="seclbl">Mooves</div>
+        <div class="card"><div class="crow">
+          <span class="tile"><span class="t1">THIS</span><span class="t2">WEEKEND</span></span>
+          <span class="cb"><span class="ct">Climbing at First Ascent</span><span class="cs">This weekend, Avondale</span><span class="pill">Priya</span></span>
+          <button class="join">I'm in</button>
+        </div></div>
+        <div class="card"><div class="crow">
+          <span class="tile"><span class="t1">8:30</span><span class="t2">PM</span></span>
+          <span class="cb"><span class="ct">Trivia at Sportsman's</span><span class="cs">Tonight, Logan Square</span><span class="pill">Tom</span></span>
+          <button class="join">I'm in</button>
+        </div></div>
+      </div>
+      <div class="fab"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+      <div class="nav" data-nav></div>
+    </div>
+    <div class="caption"><b>No green card at all.</b> The rail is the complete answer to "who's free", and everything below it is a Moove. Notice the whole screen now has exactly one kind of card.</div>
+    <div class="screen-label">Option A — feed</div>
+  </div>
+
+  <!-- ═══════ A2 ═══════ -->
+  <div class="state" data-state="a2">
+    <span class="step">Option A · <b>one tap</b></span>
+    <div class="phone">
+      <div class="outside"><span>Native Messages, outside Mooves</span></div>
+      <div class="ios">
+        <div class="ios-nav"><span class="ios-back">‹ Back</span><span class="ios-to">To: <b>Maya</b></span></div>
+        <div class="ios-body"></div>
+        <div class="ios-input">
+          <span class="ios-field">Text Message</span>
+          <span class="ios-send"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></span>
+        </div>
+      </div>
+    </div>
+    <div class="caption"><b>Tap Maya's face, you're in Messages.</b> One tap, no intermediate screen, and you have left the app — which is the stated goal of the whole product.</div>
+    <div class="screen-label">Option A — tap a friend</div>
+  </div>
+
+  <!-- ═══════ A3 ═══════ -->
+  <div class="state" data-state="a3">
+    <span class="step">Option A · <b>tapping yourself</b></span>
+    <div class="phone">
+      <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+      <div class="fbody">
+        <div class="rl">Free</div>
+        <div class="rail">
+          <div class="ri me sel"><div class="rav" style="background:var(--purple)">J</div><div class="rn">You</div><div class="rw">Now</div><div class="tapdot"></div><div class="tapnum">1</div></div>
+          <div class="ri"><div class="rav" style="background:#E8A0B4">M</div><div class="rn">Maya</div><div class="rw">Now</div></div>
+          <div class="ri"><div class="rav" style="background:#7FA8E8">T</div><div class="rn">Tom</div><div class="rw">Now</div></div>
+        </div>
+        <div class="gcard">
+          <div class="gtop">
+            <span style="flex:1">
+              <span class="gname">You're free</span>
+              <span style="display:block;font-size:12.5px;color:var(--ink-2);margin-top:3px">Everyone can see this</span>
+            </span>
+            <span style="font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--green-700)">Now</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:11px;border:1px solid var(--border);background:#fff;border-radius:13px;padding:10px 12px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>
+            <span style="font-size:12px;font-weight:600;color:var(--ink-2)">Free until</span>
+            <span style="margin-left:auto;font-size:12.5px;font-weight:600;color:var(--ink)">11:00 PM</span>
+          </div>
+          <div style="text-align:center;margin-top:11px;font-size:13px;font-weight:500;color:var(--ink-2)">Tap to go grey</div>
+        </div>
+      </div>
+      <div class="fab"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+      <div class="nav" data-nav></div>
+    </div>
+    <div class="caption">You can't text yourself, so <b>your own face still opens a card</b> — the only green card left. It carries Free until and go grey, the two things only you can do.</div>
+    <div class="screen-label">Option A — your own green</div>
+  </div>
+
+  <!-- ═══════ B1 ═══════ -->
+  <div class="state" data-state="b1">
+    <span class="step">Option B · <b>before the tap</b></span>
+    <div class="phone">
+      <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+      <div class="fbody">
+        <div class="rl">Free</div>
+        <div class="rail">
+          <div class="ri me"><div class="rav" style="background:var(--purple)">J</div><div class="rn">You</div><div class="rw">Now</div></div>
+          <div class="ri sel"><div class="rav" style="background:#E8A0B4">M</div><div class="rn">Maya</div><div class="rw">Now</div></div>
+          <div class="ri"><div class="rav" style="background:#7FA8E8">T</div><div class="rn">Tom</div><div class="rw">Now</div></div>
+          <div class="ri later"><div class="rav" style="background:#C9A87C">P</div><div class="rn">Priya</div><div class="rw">Wknd</div></div>
+        </div>
+        <div class="gcard">
+          <div class="gtop">
+            <span style="flex:1">
+              <span style="display:flex;align-items:center;gap:8px"><span class="gname">Maya</span><span class="chipt">Now</span></span>
+              <span class="txtline">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                Tap to text Maya
+              </span>
+            </span>
+            <button class="join">I'm in</button>
+          </div>
+          <div class="who">
+            <span class="jav" style="background:#7FA8E8">T</span><span class="jav" style="background:#8FBF9F">A</span>
+            <span class="whot">2 in</span>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)" stroke-width="2.4" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+        </div>
+        <div class="seclbl">Mooves</div>
+        <div class="card"><div class="crow">
+          <span class="tile"><span class="t1">THIS</span><span class="t2">WEEKEND</span></span>
+          <span class="cb"><span class="ct">Climbing at First Ascent</span><span class="cs">This weekend, Avondale</span></span>
+          <button class="join">I'm in</button>
+        </div></div>
+      </div>
+      <div class="fab"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+      <div class="nav" data-nav></div>
+    </div>
+    <div class="caption"><b>This is the card with the note removed.</b> Name, a time chip the rail already showed, a text prompt, "I'm in", and the roster. Judge honestly whether that is worth a tap.</div>
+    <div class="screen-label">Option B — feed</div>
+  </div>
+
+  <!-- ═══════ B2 ═══════ -->
+  <div class="state" data-state="b2">
+    <span class="step">Option B · <b>tap 1 of 2</b></span>
+    <div class="phone">
+      <div class="fhead"><span class="wm">M<span class="oo"><span class="d1"></span><span class="d2"></span></span>VES</span></div>
+      <div class="fbody">
+        <div class="rl">Free</div>
+        <div class="rail">
+          <div class="ri me"><div class="rav" style="background:var(--purple)">J</div><div class="rn">You</div><div class="rw">Now</div></div>
+          <div class="ri"><div class="rav" style="background:#E8A0B4">M</div><div class="rn">Maya</div><div class="rw">Now</div></div>
+          <div class="ri sel"><div class="rav" style="background:#7FA8E8">T</div><div class="rn">Tom</div><div class="rw">Now</div><div class="tapdot"></div><div class="tapnum">1</div></div>
+          <div class="ri later"><div class="rav" style="background:#C9A87C">P</div><div class="rn">Priya</div><div class="rw">Wknd</div></div>
+        </div>
+        <div class="gcard">
+          <div class="gtop">
+            <span style="flex:1">
+              <span style="display:flex;align-items:center;gap:8px"><span class="gname">Tom</span><span class="chipt">Now</span></span>
+              <span class="txtline">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                Tap to text Tom
+              </span>
+            </span>
+            <button class="join">I'm in</button>
+          </div>
+          <div class="who">
+            <span class="jav" style="background:#C9A87C">P</span>
+            <span class="whot">1 in</span>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)" stroke-width="2.4" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+        </div>
+        <div class="seclbl">Mooves</div>
+        <div class="card"><div class="crow">
+          <span class="tile"><span class="t1">THIS</span><span class="t2">WEEKEND</span></span>
+          <span class="cb"><span class="ct">Climbing at First Ascent</span><span class="cs">This weekend, Avondale</span></span>
+          <button class="join">I'm in</button>
+        </div></div>
+      </div>
+      <div class="fab"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+      <div class="nav" data-nav></div>
+    </div>
+    <div class="caption">First tap <b>swaps the card</b> to Tom. You gain his roster and an "I'm in" button. You have not reached Tom.</div>
+    <div class="screen-label">Option B — first tap</div>
+  </div>
+
+  <!-- ═══════ B3 ═══════ -->
+  <div class="state" data-state="b3">
+    <span class="step">Option B · <b>tap 2 of 2</b></span>
+    <div class="phone">
+      <div class="outside"><span>Native Messages, outside Mooves</span></div>
+      <div class="ios">
+        <div class="ios-nav"><span class="ios-back">‹ Back</span><span class="ios-to">To: <b>Tom</b></span></div>
+        <div class="ios-body"></div>
+        <div class="ios-input">
+          <span class="ios-field">Text Message</span>
+          <span class="ios-send"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></span>
+        </div>
+      </div>
+    </div>
+    <div class="caption">Second tap, on the card or on Tom's face again, finally opens Messages. <b>Same destination as Option A, one tap later.</b></div>
+    <div class="screen-label">Option B — second tap</div>
+  </div>
+
+  <div class="verdict">
+    <div class="vcol a">
+      <h4>Option A — text-only</h4>
+      <ul>
+        <li>One tap from feed to Messages</li>
+        <li>One kind of card on the whole screen</li>
+        <li>Greens = availability, Mooves = commitment. Genuinely different objects</li>
+        <li><b>Deletes:</b> green joins, who's-in on greens, the 2+ green blast, joiners on your own move card, and the join-while-green prompt (20.5)</li>
+        <li>Green waves are unaffected — they detect concurrency, not joins</li>
+      </ul>
+    </div>
+    <div class="vcol b">
+      <h4>Option B — keep the card</h4>
+      <ul>
+        <li>Two taps to reach Messages</li>
+        <li>Nothing shipped gets deleted</li>
+        <li>Keeps "I'm in" and the roster on greens</li>
+        <li><b>Costs:</b> the card is now name + a chip the rail already showed + a button + a roster. It repeats the rail more than it adds to it</li>
+        <li>Second tap is discoverable but still a tap between you and the person</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>The question underneath both:</b> do people actually join a <i>green</i>, or do they just text? Joining made obvious sense when a green was the only object in the app and the 2+ gate produced the group blast. Now that Mooves exist and carry their own joins and their own blast, a green is the one thing that has no plan to commit to — you are committing to "someone is around". Prod currently has 5 green joins across all users, which is real but light.<br><br>
+    <b>Worth noting:</b> Option A does not remove joining from the app, it removes it from greens. Every Moove still has "I'm in", a roster and the 2+ group text.
+  </div>
+
+<script>
+  var ICONS={feed:'<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+    disc:'<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5 5-2Z"/>',
+    ppl:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/>',
+    set:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>'};
+  function tab(i,l,on){return '<a class="'+(on?'on':'')+'"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+ICONS[i]+'</svg>'+l+'</a>'}
+  var NAV=tab('feed','Feed',true)+tab('disc','Discover',false)+tab('ppl','People',false)+tab('set','Settings',false);
+  document.querySelectorAll('[data-nav]').forEach(function(e){e.innerHTML=NAV});
+  document.querySelectorAll('.toggle').forEach(function(b){
+    b.addEventListener('click',function(){
+      var s=b.dataset.state;
+      document.querySelectorAll('.toggle').forEach(function(x){x.classList.toggle('active',x===b)});
+      document.querySelectorAll('.state').forEach(function(x){x.classList.toggle('active',x.dataset.state===s)});
+    });
+  });
+</script>
+</body>
+</html>

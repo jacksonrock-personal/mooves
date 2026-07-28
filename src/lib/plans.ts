@@ -16,6 +16,29 @@ export interface PlanJoiner {
   phone: string | null
 }
 
+/**
+ * How precisely a Moove is scheduled.
+ *
+ * The coarse modes deliberately reuse the green vocabulary, and they are why
+ * "a Moove has a day, a green does not" is no longer the dividing line. The
+ * line is now: a green is YOU BEING FREE, a Moove is A THING YOU ARE DOING.
+ */
+export type PlanTimeMode = 'tonight' | 'week' | 'weekend' | 'date' | 'datetime'
+
+export const COARSE_MODES: PlanTimeMode[] = ['tonight', 'week', 'weekend']
+
+export const TIME_MODE_LABEL: Record<PlanTimeMode, string> = {
+  tonight: 'Tonight',
+  week: 'This week',
+  weekend: 'This weekend',
+  date: '',
+  datetime: '',
+}
+
+export function isCoarse(mode: PlanTimeMode): boolean {
+  return mode === 'tonight' || mode === 'week' || mode === 'weekend'
+}
+
 export interface Plan {
   id: string
   authorId: string
@@ -24,6 +47,7 @@ export interface Plan {
   title: string
   startAt: string
   hasTime: boolean
+  timeMode: PlanTimeMode
   locationText: string | null
   note: string | null
   isMine: boolean
@@ -40,6 +64,50 @@ export const PLAN_NOTE_MAX = 200
 
 /** Mirrors the Discover grace period so a Moove lingers briefly once it starts. */
 const GRACE_HOURS = 3
+
+const MONDAY = 1
+const FRIDAY = 5
+const SUNDAY = 0
+
+/** End of `d`'s local day. */
+function endOfDay(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999)
+}
+
+/** End of the next local day that falls on `weekday`, today included. */
+function endOfNextDay(from: Date, weekday: number): Date {
+  const d = new Date(from.getFullYear(), from.getMonth(), from.getDate())
+  while (d.getDay() !== weekday) d.setDate(d.getDate() + 1)
+  return endOfDay(d)
+}
+
+/**
+ * The sort key for a coarse Moove: the END of its window.
+ *
+ * Deliberate — it puts "Saturday 9am" above "sometime this weekend", so a
+ * concrete plan always outranks a vague one covering the same span.
+ *   tonight → end of today
+ *   week    → end of Thursday (Phase 18: week covers Mon–Thu, weekend takes Fri–Sun)
+ *   weekend → end of Sunday
+ */
+export function coarseSortAt(mode: PlanTimeMode, now: Date = new Date()): Date {
+  if (mode === 'tonight') return endOfDay(now)
+  if (mode === 'week') return endOfNextDay(now, FRIDAY - 1)
+  if (mode === 'weekend') return endOfNextDay(now, SUNDAY)
+  return endOfDay(now)
+}
+
+/** Coarse Mooves expire 3am after their window closes, matching the green chips. */
+export function coarseExpiry(mode: PlanTimeMode, now: Date = new Date()): Date {
+  const end = coarseSortAt(mode, now)
+  return new Date(end.getTime() + GRACE_HOURS * 60 * 60 * 1000)
+}
+
+/** Guard so a Monday "this week" and a Saturday "this weekend" stay sensible. */
+export function isWeekModeAvailable(now: Date = new Date()): boolean {
+  const day = now.getDay()
+  return day >= MONDAY && day < FRIDAY
+}
 
 /**
  * When a Moove drops out of the feed.
@@ -82,7 +150,15 @@ export function relativeDay(startAt: Date, now: Date = new Date()): string {
  *   time set  → "8:30" / "PM"
  *   date only → "SAT"  / "AUG 2"
  */
-export function planTile(startAt: Date, hasTime: boolean): { top: string; bottom: string } {
+export function planTile(
+  startAt: Date,
+  hasTime: boolean,
+  mode: PlanTimeMode = hasTime ? 'datetime' : 'date',
+): { top: string; bottom: string } {
+  // Coarse Mooves say so on the tile rather than showing a date they don't have.
+  if (mode === 'tonight') return { top: 'TO', bottom: 'NIGHT' }
+  if (mode === 'week') return { top: 'THIS', bottom: 'WEEK' }
+  if (mode === 'weekend') return { top: 'THIS', bottom: 'WEEKEND' }
   if (hasTime) {
     const [time, meridiem] = startAt
       .toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
@@ -101,9 +177,16 @@ export function planWhenLine(
   hasTime: boolean,
   locationText: string | null,
   now: Date = new Date(),
+  mode: PlanTimeMode = hasTime ? 'datetime' : 'date',
 ): string {
-  const day = relativeDay(startAt, now)
   const place = locationText?.trim()
+
+  if (isCoarse(mode)) {
+    const when = TIME_MODE_LABEL[mode]
+    return place ? `${when}, ${place}` : `${when}, no place yet`
+  }
+
+  const day = relativeDay(startAt, now)
   if (place) return `${day}, ${place}`
   return hasTime ? day : `${day}, no set time`
 }

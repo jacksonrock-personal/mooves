@@ -128,19 +128,11 @@ export default function GoGreenSheet({ open, onClose, groups, anchoredMove, onSu
             </div>
           </div>
         )}
-        <p className="font-sans text-[11px] font-semibold text-ink-500 uppercase tracking-[0.08em] mb-2.5">
-          What&apos;s the vibe?
-        </p>
-        <input
-          type="text"
-          value={note}
-          onChange={e => setNote(e.target.value.slice(0, 60))}
-          placeholder="up for anything, drinks?, etc."
-          className={`w-full h-[52px] rounded-2xl border-2 bg-purple-50 px-4 font-sans text-[16px] text-ink-900 placeholder:text-grey-300 outline-none transition-colors mb-5 ${
-            note ? 'border-purple-500' : 'border-[#E8E4F5] focus:border-purple-500'
-          }`}
-        />
-
+        {/* The vibe note is gone from this sheet on purpose. Going free should
+            ask only for decisions you want made BEFORE friends can see you —
+            who can see it, for how long, and roughly when. A note is not one of
+            those, and with it removed a green carries no text at all, which is
+            why tapping a face in the rail now goes straight to Messages. */}
         <p className="font-sans text-[11px] font-semibold text-ink-500 uppercase tracking-[0.08em] mb-2.5">
           When?
         </p>
