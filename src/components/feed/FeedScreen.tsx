@@ -14,7 +14,6 @@ import { initPostHog, posthog } from '@/lib/posthog'
 import { buildBlastHref, type WaveTime } from '@/lib/blast'
 import { isGreenExpired } from '@/lib/greenExpiry'
 import { markValueMoment } from '@/lib/pwa'
-import MyMoveCard from './MyMoveCard'
 import SwipeToGoGreen from './SwipeToGoGreen'
 import WaveStrip from './WaveStrip'
 import TipJar from './TipJar'
@@ -25,7 +24,8 @@ import PlanCard from './PlanCard'
 import PlanComposer, { type PlanPrefill } from './PlanComposer'
 import MooveActionsSheet from './MooveActionsSheet'
 import MooveSheet, { type MoovePane } from './MooveSheet'
-import FreeUntilSheet from './FreeUntilSheet'
+import GreenSheet from './GreenSheet'
+import type { PickableFriend } from '@/components/visibility/FriendPickerPane'
 import type { Plan } from '@/lib/plans'
 import { type AnchoredMove } from './AnchoredMoveCard'
 import GoGreenSheet from '@/components/go-green/GoGreenSheet'
@@ -38,7 +38,6 @@ import Sheet from '@/components/ui/Sheet'
 import BottomNav from '@/components/ui/BottomNav'
 import CowIllustration from '@/components/ui/CowIllustration'
 import Toast from '@/components/ui/Toast'
-import Wordmark from '@/components/ui/Wordmark'
 
 interface Joiner {
   id: string
@@ -86,6 +85,10 @@ export default function FeedScreen() {
   const [me, setMe] = useState<Me | null>(null)
   const [friends, setFriends] = useState<Friend[] | null>(null)
   const [totalFriendCount, setTotalFriendCount] = useState<number | null>(null)
+  // R16 — every friend, for the specific-friends picker. /api/friends was
+  // already being fetched on load and everything but the ids thrown away; the
+  // picker costs no extra round trip, only the names and avatars we discarded.
+  const [allFriends, setAllFriends] = useState<PickableFriend[]>([])
   const [groups, setGroups] = useState<Group[]>([])
   const [isAvailable, setIsAvailable] = useState(false)
   const [myStatusNote, setMyStatusNote] = useState<string | null>(null)
@@ -93,6 +96,8 @@ export default function FeedScreen() {
   // 18.2 — your own green's group scope. Names resolve client-side against the
   // groups list already loaded, so this needs no extra round trip.
   const [myVisibleGroupIds, setMyVisibleGroupIds] = useState<string[]>([])
+  // R16 — your own green's INDIVIDUAL scope, beside its group scope.
+  const [myVisibleUserIds, setMyVisibleUserIds] = useState<string[]>([])
   const [myShowGroups, setMyShowGroups] = useState(false)
   const [myAnchoredMove, setMyAnchoredMove] = useState<AnchoredMove | null>(null)
   const [pendingAnchor, setPendingAnchor] = useState<AnchoredMove | null>(null)
@@ -110,11 +115,8 @@ export default function FeedScreen() {
     null,
   )
   // ── Phase 20 ──────────────────────────────────────────────────────────────
-  // Rail is people, feed is Mooves. `railSelected` is which green's card shows
-  // under the rail; it defaults to the most recent one so the feed still opens
-  // with a note and an "I'm in" visible, exactly as it did before the rail.
+  // Rail is people, feed is Mooves.
   const [plans, setPlans] = useState<Plan[]>([])
-  const [railSelected, setRailSelected] = useState<string | null>(null)
   const [composerOpen, setComposerOpen] = useState(false)
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null)
   const [actionsPlan, setActionsPlan] = useState<Plan | null>(null)
@@ -132,7 +134,9 @@ export default function FeedScreen() {
    * refresh does not reopen it.
    */
   const [pendingPlanId, setPendingPlanId] = useState<string | null>(null)
-  const [freeUntilOpen, setFreeUntilOpen] = useState(false)
+  // R17 — "Your green", opened by tapping your own face in the rail. Replaces
+  // both MyMoveCard and the standalone Free-until sheet, which is now a pane.
+  const [greenSheetOpen, setGreenSheetOpen] = useState(false)
   const [myStatusExpiresAt, setMyStatusExpiresAt] = useState<string | null>(null)
   // 17.1 in-app wave strip. `wave` is the resolved group from the feed; dismissal
   // persists across app opens keyed by the wave's signature (its members + time), so
@@ -324,6 +328,7 @@ export default function FeedScreen() {
         statusSetAt?: string | null
         statusExpiresAt?: string | null
         visibleTo?: string[] | null
+        visibleUserIds?: string[] | null
         statusShowGroups?: boolean
         anchoredMove?: AnchoredMove | null
         referralCode?: string
@@ -358,6 +363,7 @@ export default function FeedScreen() {
       setMyStatusTime(greenExpired ? null : meData.statusTime ?? null)
       setMyAnchoredMove(greenExpired ? null : meData.anchoredMove ?? null)
       setMyVisibleGroupIds(greenExpired ? [] : meData.visibleTo ?? [])
+      setMyVisibleUserIds(greenExpired ? [] : meData.visibleUserIds ?? [])
       setMyShowGroups(greenExpired ? false : meData.statusShowGroups === true)
       setReferralCode(meData.referralCode ?? null)
 
@@ -367,7 +373,7 @@ export default function FeedScreen() {
       if (!mountedRef.current) return
 
       const [friendsRes, feedRes, groupsRes, plansRes] = await Promise.all([
-        fetch('/api/friends').then(r => r.json()) as Promise<{ friends: { id: string }[] }>,
+        fetch('/api/friends').then(r => r.json()) as Promise<{ friends: PickableFriend[] }>,
         fetch('/api/feed').then(r => r.json()) as Promise<{ friends: Friend[]; myJoiners: MyJoiner[]; ambient?: { activeNow: number; recentGreen: number }; wave?: Wave | null }>,
         fetch('/api/groups').then(r => r.json()) as Promise<{ groups: Group[] }>,
         // Phase 20 — Mooves are their own query. get_plans is a separate RPC on
@@ -380,6 +386,7 @@ export default function FeedScreen() {
 
       friendIdsRef.current = new Set(friendsRes.friends.map(f => f.id))
       setTotalFriendCount(friendIdsRef.current.size)
+      setAllFriends(friendsRes.friends ?? [])
       setFriends(feedRes.friends ?? [])
       setMyJoiners(greenExpired ? [] : feedRes.myJoiners ?? [])
       if (feedRes.ambient) setAmbient(feedRes.ambient)
@@ -570,14 +577,20 @@ export default function FeedScreen() {
     statusNote: string | null
     statusTime: string | null
     visibleGroupIds: string[]
+    visibleUserIds: string[]
     showGroups: boolean
+    expiresAt: string | null
   }) {
     setIsAvailable(true)
     setMyStatusNote(move.statusNote)
     setMyStatusTime(move.statusTime)
     // 18.2 — the sheet reports its own selection; /api/users/me isn't refetched here.
+    // R16: what it reports is what the SERVER stored, so ids dropped for not
+    // being real friendships never linger in the chip.
     setMyVisibleGroupIds(move.visibleGroupIds)
+    setMyVisibleUserIds(move.visibleUserIds)
     setMyShowGroups(move.showGroups)
+    setMyStatusExpiresAt(move.expiresAt)
     setMyAnchoredMove(pendingAnchor) // null for a normal go-green
     setPendingAnchor(null)
     setMyJoiners([])
@@ -653,7 +666,6 @@ export default function FeedScreen() {
 
   /** 20.7 — moves the deadline only; the time bucket is untouched. */
   async function handleSetFreeUntil(iso: string) {
-    setFreeUntilOpen(false)
     setMyStatusExpiresAt(iso)
     try {
       await fetch('/api/status', {
@@ -664,11 +676,64 @@ export default function FeedScreen() {
           statusNote: myStatusNote,
           statusTime: myStatusTime,
           visibleTo: myVisibleGroupIds.length > 0 ? myVisibleGroupIds : null,
+          // R16 — every /api/status write must carry BOTH scopes. Omitting this
+          // one would quietly drop the named friends off the green the next time
+          // its deadline moved.
+          visibleUserIds: myVisibleUserIds.length > 0 ? myVisibleUserIds : null,
           statusShowGroups: myShowGroups,
           statusExpiresAt: iso,
         }),
       })
     } catch {
+      setToastMessage("Couldn't update, try again.")
+    }
+  }
+
+  /**
+   * R17 — a visibility change made from the green modal, while already green.
+   *
+   * Optimistic, then reconciled against what the server actually stored: R16
+   * drops ids that are not real friendships, so trusting the local list would
+   * leave the chip claiming an audience that does not exist.
+   */
+  async function handleGreenVisibilityChange(next: {
+    visibleGroupIds: string[]
+    visibleUserIds: string[]
+    showGroups: boolean
+  }) {
+    const previous = {
+      visibleGroupIds: myVisibleGroupIds,
+      visibleUserIds: myVisibleUserIds,
+      showGroups: myShowGroups,
+    }
+    setMyVisibleGroupIds(next.visibleGroupIds)
+    setMyVisibleUserIds(next.visibleUserIds)
+    setMyShowGroups(next.showGroups)
+    try {
+      const res = await fetch('/api/status', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          isAvailable: true,
+          statusNote: myStatusNote,
+          statusTime: myStatusTime,
+          visibleTo: next.visibleGroupIds.length > 0 ? next.visibleGroupIds : null,
+          visibleUserIds: next.visibleUserIds.length > 0 ? next.visibleUserIds : null,
+          statusShowGroups: next.showGroups,
+          statusExpiresAt: myStatusExpiresAt,
+        }),
+      })
+      if (!res.ok) throw new Error('update failed')
+      const data = (await res.json()) as {
+        visibleTo: string[] | null
+        visibleUserIds: string[] | null
+      }
+      setMyVisibleGroupIds(data.visibleTo ?? [])
+      setMyVisibleUserIds(data.visibleUserIds ?? [])
+    } catch {
+      setMyVisibleGroupIds(previous.visibleGroupIds)
+      setMyVisibleUserIds(previous.visibleUserIds)
+      setMyShowGroups(previous.showGroups)
       setToastMessage("Couldn't update, try again.")
     }
   }
@@ -694,6 +759,7 @@ export default function FeedScreen() {
       setMyStatusTime(null)
       setMyAnchoredMove(null)
       setMyVisibleGroupIds([])
+      setMyVisibleUserIds([])
       setMyShowGroups(false)
       setMyJoiners([])
       posthog.capture('go_grey_confirmed')
@@ -752,27 +818,17 @@ export default function FeedScreen() {
     })),
   ]
 
-  // Default to the first rail entry so the feed still opens showing a note and
-  // an "I'm in" — a rail of bare avatars with nothing expanded would have hidden
-  // every note behind a tap, which is the regression the rail must not cause.
-  const sorted = sortRail(railPeople)
-  const effectiveRailSelection =
-    railSelected && railPeople.some(p => p.id === railSelected)
-      ? railSelected
-      : (sorted[0]?.id ?? null)
-
-  const selectedFriend =
-    effectiveRailSelection && effectiveRailSelection !== me?.id
-      ? (friends ?? []).find(f => f.id === effectiveRailSelection) ?? null
-      : null
-
+  // R17 — the rail's selection state is gone with the card it drove. It existed
+  // to say WHICH green's card was expanded below the rail; there are no green
+  // cards left. Your own face opens the green modal, a friend's face opens
+  // Messages, and neither is a selection. (`selectedFriend` went with it — it
+  // had already been dead code, declared and never rendered.)
   return (
     <div className="min-h-screen flex flex-col bg-purple-50">
-      <header className="bg-gradient-to-b from-purple-500 via-[#9B7FE8] to-[#A98FF0] px-5 pt-7 pb-6 flex items-center justify-center shrink-0">
-        <Wordmark variant="light" withCow />
-      </header>
-
-      <div className="flex-1 flex flex-col px-4 pt-4 pb-24">
+      {/* R14 — the gradient band and its lockup are gone entirely. The page
+          background now runs to the top edge under the status bar, and the
+          "Free" rail is the first thing on screen. */}
+      <div className="flex-1 flex flex-col px-4 [--safe-pt-base:0.75rem] safe-area-pt pb-[calc(114px+env(safe-area-inset-bottom))]">
         {loaded && me && (
           <>
             {/* 17.1 (refined 0008) — green wave: a connected group of 3+ green friends
@@ -802,8 +858,7 @@ export default function FeedScreen() {
                 then your own action, then everything later. */}
             <GreenRail
               people={railPeople}
-              selectedId={effectiveRailSelection}
-              onSelect={id => setRailSelected(id)}
+              onOpenMine={() => setGreenSheetOpen(true)}
               onText={id => {
                 const f = (friends ?? []).find(x => x.id === id)
                 if (!f?.phone) return
@@ -812,30 +867,11 @@ export default function FeedScreen() {
               }}
             />
 
-            {isAvailable ? (
-              // Your own green is the expanded state of your rail avatar, so the
-              // card only renders when you are the one selected.
-              effectiveRailSelection === me.id && (
-                <MyMoveCard
-                  statusNote={myStatusNote}
-                  statusTime={myStatusTime}
-                  visibleGroups={
-                    myShowGroups
-                      ? groups.filter(g => myVisibleGroupIds.includes(g.id)).map(g => g.name)
-                      : []
-                  }
-                  anchoredMove={myAnchoredMove}
-                  joiners={myJoiners}
-                  meId={me.id}
-                  statusExpiresAt={myStatusExpiresAt}
-                  onEditExpiry={() => setFreeUntilOpen(true)}
-                  onBlast={handleBlast}
-                  onGoGrey={() => setGreyOpen(true)}
-                />
-              )
-            ) : (
-              <SwipeToGoGreen onActivate={handleSwipeActivate} />
-            )}
+            {/* R17 — no card here any more. Being green is said by your own
+                avatar in the rail above, ringed and dashed; tapping it opens
+                everything you can do about it. Only the not-green state still
+                needs a control on the feed itself. */}
+            {!isAvailable && <SwipeToGoGreen onActivate={handleSwipeActivate} />}
 
             {totalFriendCount === 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center text-center px-4 pb-8">
@@ -903,6 +939,7 @@ export default function FeedScreen() {
           setPendingAnchor(null)
         }}
         groups={groups}
+        friends={allFriends}
         anchoredMove={pendingAnchor}
         onSuccess={handleGoGreenSuccess}
       />
@@ -991,6 +1028,7 @@ export default function FeedScreen() {
           setPlanPrefill(null)
         }}
         groups={groups}
+        friends={allFriends}
         editing={editingPlan}
         prefill={planPrefill}
         onSaved={() => {
@@ -1032,13 +1070,25 @@ export default function FeedScreen() {
         />
       )}
 
-      {freeUntilOpen && (
-        <FreeUntilSheet
-          currentExpiresAt={myStatusExpiresAt}
-          onPick={iso => void handleSetFreeUntil(iso)}
-          onClose={() => setFreeUntilOpen(false)}
-        />
-      )}
+      {/* R17 — everything you can do about your own green, in one sheet. */}
+      <GreenSheet
+        open={greenSheetOpen && isAvailable}
+        onClose={() => setGreenSheetOpen(false)}
+        statusTime={myStatusTime}
+        statusExpiresAt={myStatusExpiresAt}
+        anchoredMove={myAnchoredMove}
+        groups={groups}
+        friends={allFriends}
+        visibleGroupIds={myVisibleGroupIds}
+        visibleUserIds={myVisibleUserIds}
+        showGroups={myShowGroups}
+        onVisibilityChange={next => void handleGreenVisibilityChange(next)}
+        onExpiryChange={iso => void handleSetFreeUntil(iso)}
+        onGoGrey={() => {
+          setGreenSheetOpen(false)
+          setGreyOpen(true)
+        }}
+      />
 
 
       {/* 19.1 — post-join confirmation. Undo lives here and nowhere else. */}

@@ -3,6 +3,7 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { sendGroupGreenPush, sendGreenWave } from '@/lib/push'
+import { sanitizeVisibleUserIds } from '@/lib/visibility'
 
 const TIME_VALUES = ['now', 'tonight', 'week', 'weekend'] as const
 type StatusTime = (typeof TIME_VALUES)[number]
@@ -35,6 +36,8 @@ export async function PATCH(req: Request) {
     isAvailable: boolean
     statusNote?: string | null
     visibleTo?: string[] | null
+    /** R16 — individual friends, unioned with the groups above. */
+    visibleUserIds?: string[] | null
     statusTime?: string | null
     statusMoveId?: string | null
     statusExpiresAt?: string | null
@@ -49,6 +52,7 @@ export async function PATCH(req: Request) {
     is_available: boolean
     status_note: string | null
     visible_to: string[] | null
+    visible_user_ids: string[] | null
     status_time: StatusTime | null
     status_move_id: string | null
     status_set_at: string
@@ -78,6 +82,9 @@ export async function PATCH(req: Request) {
       is_available: false,
       status_note: null,
       visible_to: null,
+      // R16 — cleared with the rest of the move. A stale individual scope
+      // surviving go-grey would silently apply to your NEXT green.
+      visible_user_ids: null,
       status_time: null,
       status_move_id: null,
       status_set_at: new Date().toISOString(),
@@ -88,10 +95,13 @@ export async function PATCH(req: Request) {
     const note = body.statusNote?.trim() ?? null
     const nowDate = new Date()
     const now = nowDate.toISOString()
+    // R16 — only people you are actually friends with, checked server-side.
+    const visibleUserIds = await sanitizeVisibleUserIds(supabase, userId, body.visibleUserIds)
     updates = {
       is_available: true,
       status_note: note && note.length > 0 ? note.slice(0, 60) : null,
       visible_to: body.visibleTo ?? null,
+      visible_user_ids: visibleUserIds,
       status_time: normalizeTime(body.statusTime),
       status_move_id: anchoredMoveId,
       status_set_at: now,
@@ -118,7 +128,7 @@ export async function PATCH(req: Request) {
     .from('users')
     .update(updates)
     .eq('id', userId)
-    .select('is_available, status_note, status_time, status_move_id')
+    .select('is_available, status_note, status_time, status_move_id, visible_to, visible_user_ids')
     .single()
 
   if (error || !data) return NextResponse.json({ error: 'Update failed' }, { status: 500 })
@@ -131,6 +141,11 @@ export async function PATCH(req: Request) {
       const waved = await sendGreenWave(userId)
       // 15.3 anonymous per-group push, minus anyone the wave already reached this
       // event (the escalation-ladder supersede).
+      //
+      // R16: individually-scoped greens deliberately send NOTHING here. A push
+      // to an audience of one is de-anonymized by definition, and "Jackson
+      // picked you specifically" carries social weight this app has never sent.
+      // Naming someone changes who can SEE the green, and nothing else.
       if (updates.visible_to && updates.visible_to.length > 0) {
         await sendGroupGreenPush(userId, updates.visible_to, waved)
       }
@@ -151,5 +166,11 @@ export async function PATCH(req: Request) {
     statusNote: data.status_note,
     statusTime: data.status_time,
     statusMoveId: data.status_move_id,
+    // Echo the scope the SERVER settled on, not the one the client asked for.
+    // R16 drops ids that are not really friends, so the client must reconcile
+    // against what was stored or its chip would claim an audience that is not
+    // there.
+    visibleTo: data.visible_to,
+    visibleUserIds: data.visible_user_ids,
   })
 }

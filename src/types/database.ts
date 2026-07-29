@@ -203,6 +203,7 @@ export type Database = {
           status_show_groups: boolean
           status_time: string | null
           visible_to: string[] | null
+          visible_user_ids: string[] | null
           wave_push_enabled: boolean
           timezone: string | null
           week_ritual_day: number
@@ -232,6 +233,7 @@ export type Database = {
           status_show_groups?: boolean
           status_time?: string | null
           visible_to?: string[] | null
+          visible_user_ids?: string[] | null
           wave_push_enabled?: boolean
           timezone?: string | null
           week_ritual_day?: number
@@ -261,6 +263,7 @@ export type Database = {
           status_show_groups?: boolean
           status_time?: string | null
           visible_to?: string[] | null
+          visible_user_ids?: string[] | null
           wave_push_enabled?: boolean
           timezone?: string | null
           week_ritual_day?: number
@@ -572,6 +575,7 @@ export type Database = {
           location_text: string | null
           note: string | null
           visible_to: string[] | null
+          visible_user_ids: string[] | null
           sponsored_move_id: string | null
           time_mode: string
           show_groups: boolean
@@ -592,6 +596,7 @@ export type Database = {
           location_text?: string | null
           note?: string | null
           visible_to?: string[] | null
+          visible_user_ids?: string[] | null
           created_at?: string
           updated_at?: string
           cancelled_at?: string | null
@@ -609,6 +614,7 @@ export type Database = {
           location_text?: string | null
           note?: string | null
           visible_to?: string[] | null
+          visible_user_ids?: string[] | null
           created_at?: string
           updated_at?: string
           cancelled_at?: string | null

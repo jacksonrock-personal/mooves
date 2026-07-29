@@ -13,6 +13,7 @@ import { createServiceClient } from '@/lib/supabase/server'
 import { checkRateLimit, tooManyRequests } from '@/lib/ratelimit'
 import { PLAN_TITLE_MAX, PLAN_LOCATION_MAX, PLAN_NOTE_MAX, type Plan } from '@/lib/plans'
 import { sendPlanPush } from '@/lib/push'
+import { sanitizeVisibleUserIds } from '@/lib/visibility'
 
 // A Moove may be scheduled up to a year out; anything past that is a typo or an
 // attempt to park a row in the feed forever.
@@ -76,6 +77,8 @@ export async function POST(req: Request) {
     locationText?: string | null
     note?: string | null
     visibleTo?: string[] | null
+    /** R16 — individual friends, unioned with the groups above. */
+    visibleUserIds?: string[] | null
     sponsoredMoveId?: string | null
   }
 
@@ -91,6 +94,9 @@ export async function POST(req: Request) {
     Array.isArray(body.visibleTo) && body.visibleTo.length > 0 ? body.visibleTo : null
 
   const supabase = createServiceClient()
+
+  // R16 — only people the author is actually friends with, checked server-side.
+  const visibleUserIds = await sanitizeVisibleUserIds(supabase, userId, body.visibleUserIds)
 
   // 13.8 — only attach an origin we can actually verify, so the "Sponsored"
   // disclosure on the friend feed can never be forged by a hand-built request.
@@ -120,6 +126,7 @@ export async function POST(req: Request) {
       location_text: trimmed(body.locationText, PLAN_LOCATION_MAX),
       note: trimmed(body.note, PLAN_NOTE_MAX),
       visible_to: visibleTo,
+      visible_user_ids: visibleUserIds,
       sponsored_move_id: sponsoredMoveId,
     })
     .select('id')
@@ -141,6 +148,9 @@ export async function POST(req: Request) {
 
   // Group-scoped Mooves notify that group, under the same 60-minute per-group
   // cooldown as group-scoped greens. Never allowed to fail the write.
+  //
+  // R16: individually-scoped Mooves send NOTHING. Naming somebody changes who
+  // can see the Moove and nothing else — see the same note in /api/status.
   if (visibleTo) {
     try {
       await sendPlanPush(userId, visibleTo, title, 'created')

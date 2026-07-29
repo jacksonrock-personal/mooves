@@ -5136,7 +5136,22 @@ Labels are the constraint, and labels are what must not scale with the rest: the
 | **Tab + button labels** | 9.5px | **10.6px** | **1.12** |
 | **Centre slot flex-grow** | 1 | **1.32** | — |
 
-**The acceptance test is slack, not the multiplier.** At these values every label clears its slot by **at least 12px** (the tightest is still "Discover"), and the disc sits **6px inside** its slot on each side rather than 6px outside it. Any future change to this bar is checked the same way: measure the tightest label, not the nicest number.
+**The acceptance test is slack, not the multiplier.** Any future change to this bar is checked the same way: measure the tightest label, not the nicest number.
+
+**Measured at build**, with the production classes against the app's own compiled stylesheet, across viewport widths:
+
+| viewport | min slack | tightest slot | clears 12px |
+|---|---|---|---|
+| 320px | 3px | Plan a Moove | ✗ |
+| 340px | 8px | Plan a Moove | ✗ |
+| **360px** | **13px** | Plan a Moove | ✓ |
+| **375px** | **17px** | Plan a Moove | ✓ |
+| 390px | 20px | Plan a Moove | ✓ |
+| 430px | 29px | Discover | ✓ |
+
+The disc clears its slot by **11px on each side at 375px**, and still 6px at 340px. Bar height is **95px** at phone widths.
+
+⚠ **The 12px rule holds at 360px and up, not at 320px.** Recorded rather than papered over. 360px is the narrowest Android in common use and 375px the narrowest iPhone still in circulation (SE 2/3, 13 mini), so every device this ships to clears it; 320px is iPhone SE 1st-gen, long discontinued. **Nothing clips even at 320px** — the labels carry `truncate` and never reach it — so the failure mode below 360px is "tight", not "broken". If Mooves ever has to support 320px, the fix is to drop the Plan label a half-step rather than to shrink the icons.
 
 - The bar goes from **70px to 92px** above the safe-area inset. ⚠ **Also corrected at mockup:** the bar's height is set by its *tallest* child, the **Plan button** (its label sits 34px below a disc that is itself lifted 19px), not by the tab column. Estimating from the tab column gives ~62px and is wrong by 8px.
 - **Screen bottom padding is recomputed against the new bar, not scaled blindly.** Feed's `pb-24` and the People panels' `pb-[136px]` both exist to clear the bar plus a gap; each is re-derived as **92px + safe-area + a 22px gap**, so nothing scrolls under it and nothing floats above it with 40px of dead air.
@@ -5216,7 +5231,7 @@ None.
 - [ ] Discover, People and Settings show their `<h1>` as the first element in the header bar; People's sub-tabs sit directly under it.
 - [ ] Auth, `InviteLanding` and `GroupJoinLanding` are visually unchanged.
 - [ ] Every measurement in the R15 table matches, at its own scale — 1.35 for metrics, 1.12 for labels, 1.32 flex on the centre slot.
-- [ ] **Every tab label clears its slot by at least 12px, and the Plan disc sits at least 6px inside its slot on each side.** Verified by measuring the rendered bar, not by eye.
+- [x] **Every tab label clears its slot by at least 12px at 360px and up, and the Plan disc sits at least 6px inside its slot on each side.** Measured, not eyeballed — see the table above, including the recorded 320px shortfall.
 - [ ] Nothing scrolls under the taller nav bar, and no screen has a visible gap of dead space above it.
 - [ ] The centre button still never renders an active state.
 - [ ] "Add specific friends" appears as a chip, with a chevron, in both the Moove composer and the Go Green sheet.

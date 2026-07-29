@@ -8,8 +8,8 @@ import { posthog } from '@/lib/posthog'
 function HomeIcon() {
   return (
     <svg
-      width="22"
-      height="22"
+      width="30"
+      height="30"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -26,8 +26,8 @@ function HomeIcon() {
 function DiscoverIcon() {
   return (
     <svg
-      width="22"
-      height="22"
+      width="30"
+      height="30"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -44,8 +44,8 @@ function DiscoverIcon() {
 function PeopleIcon() {
   return (
     <svg
-      width="22"
-      height="22"
+      width="30"
+      height="30"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -64,8 +64,8 @@ function PeopleIcon() {
 function SettingsIcon() {
   return (
     <svg
-      width="22"
-      height="22"
+      width="30"
+      height="30"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -110,12 +110,12 @@ export default function BottomNav({ onPlanTap }: BottomNavProps = {}) {
       <Link
         key={href}
         href={href}
-        className={`flex-1 flex flex-col items-center py-3 gap-1 text-[9.5px] font-sans font-semibold tracking-[0.02em] ${
+        className={`flex-1 min-w-0 flex flex-col items-center py-[16px] px-[3px] gap-[5.5px] text-[10.5px] font-sans font-semibold tracking-[0.01em] ${
           active ? 'text-mooves-purple' : 'text-status-grey'
         }`}
       >
         <Icon />
-        <span>{label}</span>
+        <span className="max-w-full truncate">{label}</span>
       </Link>
     )
   }
@@ -133,21 +133,26 @@ export default function BottomNav({ onPlanTap }: BottomNavProps = {}) {
       {/* Not a tab: no href, no active state. It opens a sheet and leaves you
           where you were, and a nav item that lights up on the same page is a
           small lie. The cow says whose button it is; the "+" says what it does. */}
+      {/* R15 — `grow-[1.32]` is load-bearing, not decoration. "Plan a Moove" is
+          roughly three times the width of "Feed", and forcing it into an equal
+          fifth is what made the first 1.5× build collide: at that size
+          "Discover" needed 62px of the 61px its slot left it, and this disc
+          overhung its own slot by 6px on each side onto its neighbours. */}
       <button
         type="button"
         onClick={handlePlan}
         aria-label="Plan a Moove"
-        className="flex-1 relative flex flex-col items-center justify-end py-3 gap-1 text-[9.5px] font-sans font-bold tracking-[0.02em] text-mooves-purple"
+        className="flex-1 grow-[1.32] min-w-0 relative flex flex-col items-center justify-end py-[16px] px-[3px] gap-[5.5px] text-[10.5px] font-sans font-bold tracking-[0.01em] text-mooves-purple"
       >
-        <span className="absolute -top-[19px] w-[52px] h-[52px] rounded-full bg-mooves-purple border-4 border-white shadow-[0_6px_16px_rgba(124,92,219,0.42)] flex items-center justify-center">
-          <CowMark size={34} />
-          <span className="absolute -right-[3px] -bottom-[3px] w-[21px] h-[21px] rounded-full bg-white border-[2.5px] border-white flex items-center justify-center">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#7C5CDB" strokeWidth="3.6" strokeLinecap="round">
+        <span className="absolute -top-[26px] w-[70px] h-[70px] rounded-full bg-mooves-purple border-[5.5px] border-white shadow-[0_8px_22px_rgba(124,92,219,0.42)] flex items-center justify-center">
+          <CowMark size={46} />
+          <span className="absolute -right-[4px] -bottom-[4px] w-[28px] h-[28px] rounded-full bg-white border-[3.5px] border-white flex items-center justify-center">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7C5CDB" strokeWidth="3.6" strokeLinecap="round">
               <path d="M12 5v14M5 12h14" />
             </svg>
           </span>
         </span>
-        <span className="mt-[34px] whitespace-nowrap">Plan a Moove</span>
+        <span className="mt-[46px] whitespace-nowrap">Plan a Moove</span>
       </button>
 
       {RIGHT_TABS.map(tab)}

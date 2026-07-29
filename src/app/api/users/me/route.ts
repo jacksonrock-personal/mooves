@@ -14,7 +14,7 @@ export async function GET(req: Request) {
   const supabase = createServiceClient()
   const { data, error } = await supabase
     .from('users')
-    .select('id, phone, display_name, avatar_url, referral_code, is_available, is_admin, status_note, status_time, status_move_id, status_set_at, status_expires_at, status_show_groups, visible_to, onboarding_complete, area_zip, interests, wave_push_enabled, timezone, week_ritual_day, week_push_enabled')
+    .select('id, phone, display_name, avatar_url, referral_code, is_available, is_admin, status_note, status_time, status_move_id, status_set_at, status_expires_at, status_show_groups, visible_to, visible_user_ids, onboarding_complete, area_zip, interests, wave_push_enabled, timezone, week_ritual_day, week_push_enabled')
     .eq('id', userId)
     .single()
 
@@ -60,6 +60,9 @@ export async function GET(req: Request) {
     statusShowGroups: data.status_show_groups, // 18.2
     anchoredMove,
     visibleTo: data.visible_to,
+    // R16 — your own green's individual scope, so the green modal can reopen
+    // showing who it is ACTUALLY shared with rather than guessing "Everyone".
+    visibleUserIds: data.visible_user_ids,
     onboardingComplete: data.onboarding_complete,
     areaZip: data.area_zip,
     areaCity: area?.city ?? null,

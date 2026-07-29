@@ -8,7 +8,6 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { initPostHog, posthog } from '@/lib/posthog'
 import BottomNav from '@/components/ui/BottomNav'
-import Wordmark from '@/components/ui/Wordmark'
 import CowIllustration from '@/components/ui/CowIllustration'
 import Toast from '@/components/ui/Toast'
 import InterestPicker from './InterestPicker'
@@ -162,10 +161,9 @@ export default function DiscoverScreen() {
 
   return (
     <div className="min-h-screen flex flex-col bg-purple-50">
-      <header className="bg-white px-5 pt-10 pb-3 border-b border-[#E8E4F5] shrink-0">
-        <div className="flex justify-center mb-2.5">
-          <Wordmark withCow />
-        </div>
+      {/* R14 — lockup removed; "Discover" and its area chip are the top row now
+          rather than the second one. */}
+      <header className="bg-white px-5 [--safe-pt-base:0.875rem] safe-area-pt pb-3 border-b border-[#E8E4F5] shrink-0">
         <div className="flex items-center justify-between">
           <h1 className="font-display font-extrabold text-[24px] text-ink-900 tracking-tight">Discover</h1>
           {area && (
@@ -183,7 +181,7 @@ export default function DiscoverScreen() {
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto px-4 pt-4 pb-24">
+      <div className="flex-1 overflow-y-auto px-4 pt-4 pb-[calc(114px+env(safe-area-inset-bottom))]">
         {loading && (
           <div className="flex justify-center pt-16">
             <div className="w-8 h-8 rounded-full border-[3px] border-purple-100 border-t-purple-500 animate-spin" />

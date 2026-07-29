@@ -1,26 +1,30 @@
 'use client'
 
-// Phase 20.7 — "Free until": make your own green's deadline visible and editable.
+// Phase 20.7's "Free until", converted from a bottom sheet into a PANE (R17).
 //
-// Deliberately NOT on the swipe. 20.1 exists to make going free a single
-// decision-free gesture, and a time picker inside it would put the decision
-// straight back. Greens already auto-expire (9.5); this only surfaces and
-// adjusts that deadline afterwards.
+// The presets and their rules are unchanged from FreeUntilSheet: it moves the
+// deadline only, never the time bucket, so a `now` green stays a `now` green
+// and stays in the rail. What changed is where it lives — it is now a pane of
+// the green modal and of the Go Green sheet, rather than a sheet of its own
+// stacked on top of one of them.
 //
-// It moves the deadline only — it never changes the time bucket, so a `now`
-// green stays a `now` green and stays in the rail.
+// R17 also gives it a second job: it is reachable BEFORE you commit, from the
+// Go Green sheet, so the deadline is something you can see and adjust rather
+// than something you discover afterwards.
 
 import { posthog } from '@/lib/posthog'
-import { useSheetDrag } from '@/lib/useSheetDrag'
-import SheetGrabber from '@/components/ui/SheetGrabber'
+import { PaneBack } from '@/components/ui/PaneTrack'
 
-interface FreeUntilSheetProps {
+interface FreeUntilPaneProps {
   currentExpiresAt: string | null
   onPick: (iso: string) => void
-  onClose: () => void
+  onBack: () => void
 }
 
-function fmt(d: Date): string {
+export function formatUntil(iso: string | null): string | null {
+  if (!iso) return null
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return null
   return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
 }
 
@@ -31,12 +35,11 @@ function next3am(from: Date): Date {
   return d
 }
 
-export default function FreeUntilSheet({ currentExpiresAt, onPick, onClose }: FreeUntilSheetProps) {
+export default function FreeUntilPane({ currentExpiresAt, onPick, onBack }: FreeUntilPaneProps) {
   const now = new Date()
   const current = currentExpiresAt ? new Date(currentExpiresAt) : null
-  const drag = useSheetDrag(onClose)
 
-  // Presets first, because the point of this sheet is speed.
+  // Presets first, because the point of this pane is speed.
   const options = [
     { key: 'hour', label: 'Another hour', at: new Date(now.getTime() + 60 * 60 * 1000) },
     { key: 'tonight', label: 'Tonight', at: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 0, 0, 0) },
@@ -50,25 +53,18 @@ export default function FreeUntilSheet({ currentExpiresAt, onPick, onClose }: Fr
 
   return (
     <>
-      <div className="fixed inset-0 bg-text-primary/50 z-40"
-        style={{ opacity: drag.scrimOpacity }} onClick={onClose} aria-hidden="true" />
-      <div
-        className="fixed bottom-0 left-0 right-0 z-50 bg-card-white rounded-t-3xl px-5 pt-3 [--safe-pb-base:1.875rem] safe-area-pb"
-        {...drag.sheetProps}
-        role="dialog"
-        aria-modal="true"
-      >
-        <SheetGrabber drag={drag} className="mb-[22px]" />
-        <h2 className="font-display font-extrabold text-[18px] text-text-primary tracking-tight mb-1.5">
-          Free until
-        </h2>
-        <p className="font-sans text-[13.5px] text-text-secondary leading-relaxed mb-4">
+      <div className="shrink-0 px-5 pb-1">
+        <PaneBack onBack={onBack} label="Free until" />
+        <p className="font-sans text-[13.5px] text-ink-500 leading-relaxed mb-4">
           Your move drops off on its own then, so nobody texts you about something that&apos;s over.
         </p>
+      </div>
 
+      <div className="flex-1 min-h-0 overflow-y-auto px-5">
         {options.map(o => (
           <button
             key={o.key}
+            type="button"
             onClick={() => {
               posthog.capture('free_until_set', { preset: o.key })
               onPick(o.at.toISOString())
@@ -78,7 +74,9 @@ export default function FreeUntilSheet({ currentExpiresAt, onPick, onClose }: Fr
             }`}
           >
             <span className="flex-1 font-sans text-[14.5px] font-semibold text-ink-900">{o.label}</span>
-            <span className="font-sans text-[12.5px] text-text-secondary">{fmt(o.at)}</span>
+            <span className="font-sans text-[12.5px] text-ink-500">
+              {o.at.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+            </span>
             {isCurrent(o.at) && (
               <span className="w-5 h-5 rounded-full bg-purple-500 flex items-center justify-center shrink-0">
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round">
@@ -88,10 +86,13 @@ export default function FreeUntilSheet({ currentExpiresAt, onPick, onClose }: Fr
             )}
           </button>
         ))}
+      </div>
 
+      <div className="shrink-0 px-5 pt-3 [--safe-pb-base:1.625rem] safe-area-pb">
         <button
-          onClick={onClose}
-          className="w-full py-3.5 rounded-2xl bg-surface-bg text-text-secondary font-sans font-semibold text-[15px] mt-1"
+          type="button"
+          onClick={onBack}
+          className="w-full py-3.5 rounded-2xl bg-surface-bg text-ink-500 font-sans font-semibold text-[15px]"
         >
           Never mind
         </button>

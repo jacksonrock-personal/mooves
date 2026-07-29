@@ -91,7 +91,7 @@ export default function GroupsPanel() {
     <div className="flex-1 flex flex-col min-h-0">
       {loaded &&
         (isEmpty ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-center px-8 pb-[136px] bg-surface-bg">
+          <div className="flex-1 flex flex-col items-center justify-center text-center px-8 pb-[calc(114px+env(safe-area-inset-bottom))] bg-surface-bg">
             <div className="w-[52px] h-[52px] rounded-2xl bg-purple-tint flex items-center justify-center text-[26px] leading-none mb-4">
               👥
             </div>
@@ -103,7 +103,7 @@ export default function GroupsPanel() {
             </p>
           </div>
         ) : (
-          <div className="flex-1 overflow-y-auto pb-[136px] bg-card-white">
+          <div className="flex-1 overflow-y-auto pb-[calc(114px+env(safe-area-inset-bottom))] bg-card-white">
             {groups.map(g => (
               <GroupRow
                 key={g.id}
