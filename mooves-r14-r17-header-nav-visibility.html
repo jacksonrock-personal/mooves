@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mooves — header removal, the bar, specific friends, the green modal</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --green-100:#E3F9EC; --green-500:#2ECC71; --green-700:#167A43;
+    --purple-50:#F8F6FF; --purple-100:#EDE9FF; --purple-500:#7C5CDB; --purple-700:#5F3FC4;
+    --ink-900:#1C1730; --ink-500:#6B628A;
+    --grey-100:#F1EEFA; --grey-300:#BDB5D4; --hair:#E8E4F5;
+    --ease:cubic-bezier(.22,.9,.3,1);
+    /* R14 — what the removed header is replaced by: the notch, and nothing else. */
+    --safetop:44px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:Inter,sans-serif;background:#0F0C1A;color:#fff;padding:34px 18px 80px;-webkit-font-smoothing:antialiased}
+  h1{font-family:'Plus Jakarta Sans',sans-serif;font-size:25px;font-weight:800;letter-spacing:-.02em;text-align:center}
+  .sub{text-align:center;color:#9990BC;font-size:13.5px;margin-top:7px;max-width:660px;margin-left:auto;margin-right:auto;line-height:1.55}
+
+  .knobs{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin:24px auto 0;max-width:840px}
+  .kbtn{background:#1D1733;border:1.5px solid #332B52;color:#CFC6EC;font-family:inherit;font-size:12.5px;font-weight:600;
+        padding:9px 15px;border-radius:99px;cursor:pointer;transition:.16s}
+  .kbtn:hover{border-color:var(--purple-500)}
+  .kbtn.on{background:var(--purple-500);border-color:var(--purple-500);color:#fff}
+  .kbtn small{display:block;font-size:10px;font-weight:500;opacity:.72;letter-spacing:.03em}
+  .rule{width:100%;height:1px;background:#241D3C;max-width:840px;margin:18px auto 0}
+  .knoblbl{text-align:center;font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#5E5480;margin:16px 0 -8px}
+
+  .stage{display:flex;flex-wrap:wrap;gap:38px;justify-content:center;margin-top:26px;align-items:flex-start}
+  .caption{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#7C6FA8;margin-bottom:10px;text-align:center}
+  .note{font-size:12.5px;color:#9990BC;line-height:1.65;margin-top:16px;width:392px;max-width:100%}
+  .note b{color:#CFC6EC;font-weight:600}
+  .note code{font-family:ui-monospace,monospace;font-size:11.5px;color:#B9AEE4}
+  .metrics{margin-top:16px;width:392px;max-width:100%;border:1px solid #241D3C;border-radius:14px;overflow:hidden}
+  .metrics table{width:100%;border-collapse:collapse;font-size:11.5px}
+  .metrics th{background:#17122A;color:#7C6FA8;font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:9.5px;padding:8px 10px;text-align:right}
+  .metrics th:first-child{text-align:left}
+  .metrics td{padding:7px 10px;color:#9990BC;border-top:1px solid #1F1936;text-align:right}
+  .metrics td:first-child{text-align:left;color:#CFC6EC;font-weight:600}
+  .metrics td.hot{color:#FF8FA3}
+  .metrics td.ok{color:#6FD79B}
+
+  /* ── phone shell ───────────────────────────────────────────────── */
+  .phone{position:relative;width:352px;height:722px;border-radius:44px;background:var(--purple-50);
+         border:9px solid #241D3C;overflow:hidden;box-shadow:0 26px 60px rgba(0,0,0,.5);color:var(--ink-900)}
+  .screen{position:absolute;inset:0;display:none;flex-direction:column;overflow:hidden}
+  .screen.on{display:flex}
+  .body{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  /* Bottom clearance is DERIVED from the measured bar, never guessed. The bar's
+     height is set by its TALLEST child, the Plan button, not by the tab column. */
+  .body.clearnav{padding-bottom:calc(70px*var(--ns) + 22px)}
+
+  /* ── R14: the header that goes, and what replaces it ───────────── */
+  .oldhead{flex:0 0 auto;background:linear-gradient(180deg,#7C5CDB 0%,#9B7FE8 62%,#A98FF0 100%);
+           padding:calc(var(--safetop) - 16px) 20px 24px;display:flex;align-items:center;justify-content:center}
+  .wm{display:inline-flex;align-items:center;gap:9px}
+  .wmtext{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:24px;letter-spacing:-.02em;color:#fff;display:inline-flex;align-items:center}
+  .wmdots{display:inline-flex;gap:1px;margin:0 1px;position:relative;top:.5px}
+  .wmdots i{width:13px;height:13px;border-radius:99px;display:block}
+  .newhead{flex:0 0 auto;background:#fff;border-bottom:1px solid var(--hair);padding:calc(var(--safetop) + 10px) 20px 12px}
+  .newhead h1{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:24px;letter-spacing:-.02em;text-align:left;color:var(--ink-900)}
+  .feedpad{padding:0 16px}
+  .feedpad.top{padding-top:calc(var(--safetop) + 12px)}
+  .feedpad.oldtop{padding-top:16px}
+
+  .subtabs{display:flex;margin-top:14px}
+  .subtabs button{flex:1;background:none;border:0;border-bottom:2px solid transparent;font-family:inherit;font-size:14px;
+                  font-weight:600;color:var(--ink-500);padding-bottom:10px;cursor:pointer}
+  .subtabs button.on{color:var(--purple-500);border-color:var(--purple-500)}
+
+  /* ── rail ──────────────────────────────────────────────────────── */
+  .eyebrow{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-500);padding:2px 2px 8px}
+  .rail{display:flex;gap:11px;overflow-x:auto;padding:2px 0 4px;scrollbar-width:none}
+  .rail::-webkit-scrollbar{display:none}
+  .rp{flex:0 0 auto;width:58px;display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:0;cursor:pointer;font-family:inherit}
+  .rp .ring{position:relative}
+  .av{width:54px;height:54px;border-radius:99px;display:flex;align-items:center;justify-content:center;
+      font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:19px;color:#fff}
+  .rp .ring::after{content:'';position:absolute;inset:-4px;border-radius:99px;border:2.5px solid var(--green-500)}
+  .rp.later .ring::after{border-color:rgba(46,204,113,.4)}
+  .rp.me .ring::after{border-style:dashed}
+  .rp .nm{max-width:58px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:600;color:var(--ink-500)}
+  .rp.me .nm{font-weight:700;color:var(--ink-900)}
+  .rp .wh{font-size:9.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--green-700)}
+  .rp.later .wh{color:var(--ink-500)}
+
+  /* ── cards ─────────────────────────────────────────────────────── */
+  .mycard{border:1.5px solid rgba(46,204,113,.25);background:rgba(46,204,113,.09);border-radius:20px;padding:16px;margin-bottom:20px}
+  .mycard .r1{display:flex;align-items:center;gap:8px}
+  .dot{width:10px;height:10px;border-radius:99px;background:var(--green-500);box-shadow:0 0 0 4px rgba(46,204,113,.16);flex:0 0 auto}
+  .mycard h3{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:16px;color:var(--green-700);letter-spacing:-.01em}
+  .pill{margin-left:auto;font-size:12px;font-weight:600;color:var(--purple-700);background:var(--purple-100);padding:4px 10px;border-radius:99px}
+  .rowbtn{width:100%;display:flex;align-items:center;gap:9px;border:1px solid var(--hair);
+          background:var(--purple-50);border-radius:14px;padding:12px 13px;text-align:left;cursor:pointer;font-family:inherit}
+  .rowbtn+.rowbtn{margin-top:9px}
+  .rowbtn .k{font-size:12.5px;font-weight:600;color:var(--ink-500)}
+  .rowbtn .v{margin-left:auto;font-size:12.5px;font-weight:600;color:var(--ink-900);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .greybtn{display:block;width:100%;text-align:center;margin-top:12px;background:none;border:0;font-family:inherit;font-size:13px;font-weight:500;color:var(--ink-500);cursor:pointer}
+
+  .plan{background:#fff;border:1.5px solid var(--hair);border-radius:18px;padding:14px;margin-bottom:10px}
+  .plan .top{display:flex;gap:11px;align-items:flex-start}
+  .plan h4{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:15.5px;letter-spacing:-.01em}
+  .plan .meta{font-size:12.5px;color:var(--ink-500);margin-top:3px}
+  .plan .roster{display:flex;align-items:center;gap:7px;margin-top:12px;padding-top:11px;border-top:1px solid var(--grey-100)}
+  .stack{display:flex}
+  .stack .av{width:24px;height:24px;font-size:10px;border:2px solid #fff;margin-left:-7px}
+  .stack .av:first-child{margin-left:0}
+  .plan .roster span{font-size:12px;color:var(--ink-500)}
+  .imin{margin-left:auto;border:1.5px solid var(--purple-500);color:var(--purple-700);background:#fff;border-radius:99px;
+        padding:6px 14px;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer}
+
+  .listrow{display:flex;align-items:center;gap:13px;background:#fff;border-bottom:1px solid var(--hair);padding:11px 20px}
+  .listrow .nm{flex:1;min-width:0;font-size:15px;font-weight:500}
+  .listrow .sm{font-size:12px;color:var(--ink-500)}
+
+  /* ══ R15: the bar ════════════════════════════════════════════════
+     TWO scales, not one. --ns drives the metrics (icons, disc, padding);
+     --ls drives the LABELS. Scaling both by the same 1.5 is what made this
+     cramped: "Plan a Moove" is three times the width of "Feed", so at 14.25px
+     it burst its slot and shoved its neighbours. Labels now grow less than
+     the icons do, and the centre slot is given more width than the other four
+     because it carries a wider word. Nothing here transitions: a transition on
+     a width that comes from a custom property does not fire in this renderer,
+     so the old size stays painted and the A/B control silently lies. */
+  .nav{flex:0 0 auto;position:relative;background:#fff;border-top:1px solid var(--hair);display:flex;z-index:30}
+  .nav a,.nav .plan-btn{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;
+       gap:calc(4px*var(--ns));padding:calc(12px*var(--ns)) calc(2px*var(--ns));
+       font-size:calc(9.5px*var(--ls));font-weight:600;letter-spacing:.01em;color:var(--grey-300);text-decoration:none;
+       font-family:inherit;background:none;border:0;cursor:pointer}
+  .nav a span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .nav a.on{color:var(--purple-500)}
+  .nav svg.ic{flex:0 0 auto;width:calc(22px*var(--ns));height:calc(22px*var(--ns))}
+  /* The centre slot carries "Plan a Moove", so it gets the width to hold it. */
+  .nav .plan-btn{position:relative;justify-content:flex-end;font-weight:700;color:var(--purple-500);flex:var(--planflex)}
+  .disc{position:absolute;top:calc(-19px*var(--ns));width:calc(52px*var(--ns));height:calc(52px*var(--ns));border-radius:99px;
+        background:var(--purple-500);border:calc(4px*var(--ns)) solid #fff;
+        box-shadow:0 calc(6px*var(--ns)) calc(16px*var(--ns)) rgba(124,92,219,.42);
+        display:flex;align-items:center;justify-content:center}
+  .disc svg.cow{width:calc(34px*var(--ns));height:calc(34px*var(--ns))}
+  .badge{position:absolute;right:calc(-3px*var(--ns));bottom:calc(-3px*var(--ns));
+         width:calc(21px*var(--ns));height:calc(21px*var(--ns));border-radius:99px;background:#fff;
+         border:calc(2.5px*var(--ns)) solid #fff;display:flex;align-items:center;justify-content:center}
+  .badge svg{width:calc(11px*var(--ns));height:calc(11px*var(--ns))}
+  .plan-btn .lbl{margin-top:calc(34px*var(--ns));white-space:nowrap}
+  body.showgaps .nav a,body.showgaps .nav .plan-btn{outline:1px dashed rgba(124,92,219,.55);outline-offset:-1px}
+  body.showgaps .nav a span,body.showgaps .plan-btn .lbl{background:rgba(232,64,90,.16)}
+
+  /* ══ sheets ══════════════════════════════════════════════════════ */
+  .scrim{position:absolute;inset:0;background:rgba(28,23,48,.5);opacity:0;pointer-events:none;transition:opacity .3s ease;z-index:40}
+  .scrim.on{opacity:1;pointer-events:auto}
+  .sheet{position:absolute;left:0;right:0;bottom:0;z-index:50;background:#fff;border-radius:26px 26px 0 0;
+         display:flex;flex-direction:column;transform:translateY(102%);transition:transform .34s var(--ease);
+         box-shadow:0 -10px 40px rgba(28,23,48,.18);overflow:hidden}
+  .sheet.open{transform:translateY(0)}
+  .grab{flex:0 0 auto;height:40px;display:flex;align-items:center;justify-content:center;cursor:grab}
+  .grab i{display:block;width:38px;height:5px;border-radius:99px;background:#DDD8EC}
+
+  /* ── the pane track. ONE sheet, one height, panes slide sideways ──
+     The picker used to be a second bottom sheet on top of the first, which on
+     the green modal meant three of them stacked. A sheet is a place; sliding
+     sideways inside it says "still the same place, further in", and it needs
+     no second scrim, no second grabber and no second height. */
+  .track{flex:1;min-height:0;display:flex;transition:transform .32s var(--ease)}
+  .pane{flex:0 0 100%;width:100%;min-width:0;display:flex;flex-direction:column;min-height:0}
+  .pane[aria-hidden="true"]{visibility:hidden}
+  .pane-head{flex:0 0 auto;padding:0 20px 4px}
+  .pane-body{flex:1;min-height:0;overflow-y:auto;padding:0 20px}
+  .pane-body.flush{padding:0}
+  .pane-foot{flex:0 0 auto;padding:12px 20px 26px;border-top:1px solid var(--grey-100)}
+  .pane h2{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:18px;letter-spacing:-.02em}
+  .pane p.blurb{font-size:13.5px;color:var(--ink-500);line-height:1.55}
+  .backrow{display:flex;align-items:center;gap:9px;margin-bottom:5px}
+  .back{flex:0 0 auto;width:32px;height:32px;margin-left:-7px;border-radius:99px;border:0;background:none;cursor:pointer;
+        display:flex;align-items:center;justify-content:center;color:var(--ink-500)}
+  .back:hover{background:var(--purple-50)}
+
+  label.lab{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-500);margin-bottom:9px}
+  label.lab em{font-style:normal;text-transform:none;letter-spacing:0;font-weight:400}
+  .inp{width:100%;min-height:46px;border-radius:16px;border:1.5px solid var(--hair);background:var(--purple-50);
+       padding:12px 14px;font-family:inherit;font-size:16px;color:var(--ink-900);outline:none;margin-bottom:16px}
+  .inp::placeholder{color:var(--grey-300)}
+
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .chip{padding:8px 14px;border-radius:99px;font-family:inherit;font-size:12.5px;font-weight:600;
+        border:1.5px solid var(--hair);background:#fff;color:var(--ink-500);cursor:pointer;
+        transition:background .18s,border-color .18s,color .18s;display:inline-flex;align-items:center;gap:6px}
+  .chip.on{background:var(--purple-100);border-color:var(--purple-500);color:var(--purple-700)}
+  .chip.friends svg{width:13px;height:13px;flex:0 0 auto}
+  .chip .caret{opacity:.55}
+  .cta{width:100%;padding:15px;border:0;border-radius:16px;background:var(--purple-500);color:#fff;
+       font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:15.5px;letter-spacing:-.02em;cursor:pointer;
+       box-shadow:0 6px 18px rgba(124,92,219,.3)}
+  .cta.green{background:var(--green-700);box-shadow:0 4px 20px rgba(22,122,67,.28)}
+  .cta.ghost{background:var(--purple-50);color:var(--ink-500);box-shadow:none;font-family:inherit;font-weight:600;font-size:15px}
+  .toggle{width:100%;display:flex;align-items:flex-start;gap:10px;border:1.5px solid var(--hair);background:var(--purple-50);
+          border-radius:16px;padding:12px 14px;margin-bottom:16px;text-align:left;cursor:pointer;font-family:inherit}
+  .toggle .t1{display:block;font-size:13px;font-weight:600;color:var(--ink-900);line-height:1.35}
+  .toggle .t2{display:block;font-size:11.5px;color:var(--ink-500);line-height:1.35;margin-top:2px}
+  .knob{flex:0 0 auto;margin-top:2px;width:44px;height:24px;border-radius:99px;background:var(--grey-300);position:relative;transition:background .2s}
+  .knob i{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:99px;background:#fff;transition:left .2s}
+  .toggle.on .knob{background:var(--green-700)}
+  .toggle.on .knob i{left:23px}
+
+  .freeline{width:100%;display:flex;align-items:center;gap:9px;border:1.5px solid var(--hair);background:var(--purple-50);
+            border-radius:16px;padding:12px 14px;margin-bottom:18px;cursor:pointer;font-family:inherit;text-align:left}
+  .freeline .k{font-size:12.5px;font-weight:600;color:var(--ink-500)}
+  .freeline .v{margin-left:auto;font-size:13px;font-weight:700;color:var(--ink-900)}
+  .freeline .edit{font-size:11.5px;font-weight:600;color:var(--purple-500)}
+
+  /* picker pane */
+  .search{position:relative;padding:0 20px 10px;flex:0 0 auto}
+  .search input{width:100%;background:var(--purple-50);border-radius:12px;border:1.5px solid var(--hair);
+                padding:10px 12px 10px 34px;font-family:inherit;font-size:14px;color:var(--ink-900);outline:none}
+  .search input:focus{border-color:var(--purple-500)}
+  .search svg{position:absolute;left:31px;top:9px;width:15px;height:15px;color:var(--ink-500)}
+  .prow{width:100%;display:flex;align-items:center;gap:13px;padding:10px 20px;border-top:1px solid var(--hair);
+        background:#fff;border-left:0;border-right:0;border-bottom:0;text-align:left;cursor:pointer;font-family:inherit}
+  .prow .nm{flex:1;min-width:0;font-size:15px;font-weight:500;color:var(--ink-900);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .box{flex:0 0 auto;width:22px;height:22px;border-radius:99px;border:2px solid var(--hair);display:flex;align-items:center;justify-content:center}
+  .prow.on .box{background:var(--purple-500);border-color:var(--purple-500)}
+  .prow.on .box svg{display:block}
+  .box svg{display:none;width:11px;height:11px}
+  .empty{padding:26px 20px;text-align:center;font-size:13px;color:var(--ink-500)}
+  .fupick{width:100%;display:flex;align-items:center;gap:9px;border:1.5px solid var(--hair);background:var(--purple-50);
+          border-radius:16px;padding:14px;margin-bottom:9px;cursor:pointer;font-family:inherit;text-align:left}
+  .fupick.on{border-color:var(--purple-500);background:var(--purple-100)}
+  .fupick .k{font-size:14.5px;font-weight:600;color:var(--ink-900)}
+  .fupick .v{margin-left:auto;font-size:12.5px;color:var(--ink-500)}
+
+  .cal{position:absolute;left:50%;transform:translateX(-50%);top:0;width:132px;height:26px;background:#241D3C;border-radius:0 0 16px 16px;z-index:60}
+  .lbl-screen{text-align:center;color:#7C6FA8;font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-top:16px}
+</style>
+</head>
+<body>
+
+<h1>R14–R17</h1>
+<p class="sub">The header is gone, the bar is bigger without being cramped, visibility can name a person, and your green's controls left the feed.</p>
+
+<div class="knobs" id="states"></div>
+<div class="rule"></div>
+
+<p class="knoblbl">Bottom bar</p>
+<div class="knobs" id="sizes"></div>
+<div class="knobs" style="margin-top:9px">
+  <button class="kbtn" id="gaps">Show slot bounds<small>where each label actually sits</small></button>
+</div>
+
+<div class="stage">
+  <div>
+    <div class="caption" id="cap">Feed, today</div>
+    <div class="phone">
+      <div class="cal"></div>
+
+      <!-- ══ 1. FEED, TODAY ══════════════════════════════════════════ -->
+      <section class="screen" data-s="before">
+        <div class="oldhead">
+          <span class="wm">
+            <span class="cowslot" data-size="36"></span>
+            <span class="wmtext">M<span class="wmdots"><i style="background:#2ECC71;box-shadow:0 0 6px rgba(46,204,113,.6)"></i><i style="background:rgba(255,255,255,.35)"></i></span>VES</span>
+          </span>
+        </div>
+        <div class="body clearnav">
+          <div class="feedpad oldtop">
+            <div class="eyebrow">Free</div>
+            <div class="rail" data-rail></div>
+            <div class="mycard">
+              <div class="r1"><span class="dot"></span><h3>You're free</h3><span class="pill">Tonight</span></div>
+              <div style="margin-top:12px"><button class="rowbtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7C5CDB" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg><span class="k">Free until</span><span class="v">9:00 PM</span></button></div>
+              <button class="greybtn">Tap to go grey</button>
+            </div>
+            <div class="eyebrow" style="padding-top:2px">Mooves</div>
+            <div data-plans></div>
+          </div>
+        </div>
+        <nav class="nav" data-nav data-active="feed" data-pinned="1"></nav>
+      </section>
+
+      <!-- ══ 2. FEED, AFTER ══════════════════════════════════════════ -->
+      <section class="screen" data-s="after">
+        <div class="body clearnav">
+          <div class="feedpad top">
+            <div class="eyebrow">Free</div>
+            <div class="rail" data-rail data-tapme="1"></div>
+            <div class="eyebrow" style="padding-top:6px">Mooves</div>
+            <div data-plans></div>
+          </div>
+        </div>
+        <nav class="nav" data-nav data-active="feed"></nav>
+        <div class="scrim" data-scrim></div>
+
+        <!-- R17 — ONE sheet, three panes. Was three stacked sheets. -->
+        <div class="sheet" data-sheet="green" style="height:70%">
+          <div class="grab"><i></i></div>
+          <div class="track" data-track data-pane="0">
+
+            <!-- pane 0 — Your green -->
+            <div class="pane">
+              <div class="pane-head">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                  <span class="dot"></span><h2 style="color:var(--green-700)">You're free</h2>
+                  <span class="pill" style="margin-left:auto">Tonight</span>
+                </div>
+                <p class="blurb" style="margin-bottom:16px">Nobody is waiting on you. This is just where you change it.</p>
+              </div>
+              <div class="pane-body">
+                <button class="rowbtn" data-to="2">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7C5CDB" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>
+                  <span class="k">Free until</span><span class="v" data-greenuntil>9:00 PM</span>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#BDB5D4" stroke-width="2.6" stroke-linecap="round"><polyline points="9 5 16 12 9 19"/></svg>
+                </button>
+                <div style="height:18px"></div>
+                <!-- Visibility is INLINE here now, not another sheet down. -->
+                <label class="lab">Who can see this?</label>
+                <div class="chips" data-vis="green"></div>
+                <div data-grouptoggle="green"></div>
+              </div>
+              <div class="pane-foot"><button class="cta ghost">Go grey</button></div>
+            </div>
+
+            <!-- pane 1 — the friend picker -->
+            <div class="pane" data-picker="green"></div>
+
+            <!-- pane 2 — free until -->
+            <div class="pane">
+              <div class="pane-head">
+                <div class="backrow">
+                  <button class="back" data-to="0"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 5 8 12 15 19"/></svg></button>
+                  <h2>Free until</h2>
+                </div>
+                <p class="blurb" style="margin-bottom:16px">Your move drops off on its own then, so nobody texts you about something that's over.</p>
+              </div>
+              <div class="pane-body">
+                <button class="fupick" data-fu="8:12 PM"><span class="k">Another hour</span><span class="v">8:12 PM</span></button>
+                <button class="fupick on" data-fu="11:00 PM"><span class="k">Tonight</span><span class="v">11:00 PM</span></button>
+                <button class="fupick" data-fu="3:00 AM"><span class="k">Late</span><span class="v">3:00 AM</span></button>
+              </div>
+              <div class="pane-foot"><button class="cta ghost" data-to="0">Never mind</button></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ 3. GO GREEN ════════════════════════════════════════════ -->
+      <section class="screen" data-s="gogreen">
+        <div class="body clearnav">
+          <div class="feedpad top">
+            <div class="eyebrow">Free</div>
+            <div class="rail" data-rail data-nome="1"></div>
+            <div class="eyebrow" style="padding-top:6px">Mooves</div>
+            <div data-plans></div>
+          </div>
+        </div>
+        <nav class="nav" data-nav data-active="feed"></nav>
+        <div class="scrim on"></div>
+        <div class="sheet open" data-sheet="gg" style="height:72%">
+          <div class="grab"><i></i></div>
+          <div class="track" data-track data-pane="0">
+            <div class="pane">
+              <div class="pane-body">
+                <label class="lab">When?</label>
+                <div class="chips" data-when>
+                  <button class="chip on" data-t="now" data-until="9:00 PM">Right now</button>
+                  <button class="chip" data-t="tonight" data-until="11:00 PM">Tonight</button>
+                  <button class="chip" data-t="week" data-until="Sun 3:00 AM">This week</button>
+                  <button class="chip" data-t="weekend" data-until="Sun 3:00 AM">This weekend</button>
+                </div>
+                <button class="freeline" data-to="2">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7C5CDB" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>
+                  <span class="k">Free until</span><span class="v" data-untilval>9:00 PM</span><span class="edit">Change</span>
+                </button>
+                <label class="lab">Who can see this?</label>
+                <div class="chips" data-vis="gg"></div>
+                <div data-grouptoggle="gg"></div>
+              </div>
+              <div class="pane-foot"><button class="cta green">I'm free</button></div>
+            </div>
+            <div class="pane" data-picker="gg"></div>
+            <div class="pane">
+              <div class="pane-head">
+                <div class="backrow">
+                  <button class="back" data-to="0"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 5 8 12 15 19"/></svg></button>
+                  <h2>Free until</h2>
+                </div>
+                <p class="blurb" style="margin-bottom:16px">Your move drops off on its own then, so nobody texts you about something that's over.</p>
+              </div>
+              <div class="pane-body">
+                <button class="fupick on" data-fu="9:00 PM"><span class="k">Tonight</span><span class="v">9:00 PM</span></button>
+                <button class="fupick" data-fu="11:00 PM"><span class="k">Later tonight</span><span class="v">11:00 PM</span></button>
+                <button class="fupick" data-fu="3:00 AM"><span class="k">Late</span><span class="v">3:00 AM</span></button>
+              </div>
+              <div class="pane-foot"><button class="cta ghost" data-to="0">Never mind</button></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ 4. COMPOSER ════════════════════════════════════════════ -->
+      <section class="screen" data-s="composer">
+        <div class="body clearnav">
+          <div class="feedpad top">
+            <div class="eyebrow">Free</div>
+            <div class="rail" data-rail data-nome="1"></div>
+          </div>
+        </div>
+        <nav class="nav" data-nav data-active="feed"></nav>
+        <div class="scrim on"></div>
+        <div class="sheet open" data-sheet="comp" style="height:86%">
+          <div class="grab"><i></i></div>
+          <div class="track" data-track data-pane="0">
+            <div class="pane">
+              <div class="pane-head">
+                <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:6px">
+                  <h2 style="flex:1">Plan a Moove</h2>
+                  <button style="background:none;border:0;font-family:inherit;font-size:14px;font-weight:600;color:var(--ink-500);cursor:pointer">Cancel</button>
+                </div>
+                <p class="blurb" style="margin-bottom:16px">Got something in mind? Throw it out there! This does not make you free right now.</p>
+              </div>
+              <div class="pane-body">
+                <label class="lab">What is it</label>
+                <input class="inp" value="Bouldering, then tacos" />
+                <label class="lab">When</label>
+                <div class="chips">
+                  <button class="chip">Tonight</button><button class="chip">This week</button><button class="chip on">This weekend</button>
+                </div>
+                <label class="lab">Who can see this?</label>
+                <div class="chips" data-vis="comp"></div>
+                <div data-grouptoggle="comp"></div>
+                <label class="lab">Where <em>(optional)</em></label>
+                <input class="inp" placeholder="First Ascent, Avondale" />
+                <label class="lab">Anything else <em>(optional)</em></label>
+                <input class="inp" placeholder="Bring shoes if you have them" />
+              </div>
+              <div class="pane-foot"><button class="cta">Post this Moove</button></div>
+            </div>
+            <div class="pane" data-picker="comp"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ 5. PEOPLE ══════════════════════════════════════════════ -->
+      <section class="screen" data-s="people">
+        <div class="newhead">
+          <h1>People</h1>
+          <div class="subtabs"><button class="on">Groups</button><button>Friends</button></div>
+        </div>
+        <div class="body clearnav" style="background:#fff">
+          <div class="listrow"><span class="av" style="background:#EDE9FF;color:#5F3FC4;width:40px;height:40px;font-size:18px">🧗</span><span class="nm">Climbing crew<span class="sm" style="display:block">6 people</span></span></div>
+          <div class="listrow"><span class="av" style="background:#EDE9FF;color:#5F3FC4;width:40px;height:40px;font-size:18px">🍺</span><span class="nm">Thursday<span class="sm" style="display:block">4 people</span></span></div>
+          <div class="listrow"><span class="av" style="background:#EDE9FF;color:#5F3FC4;width:40px;height:40px;font-size:18px">🏠</span><span class="nm">Block<span class="sm" style="display:block">9 people</span></span></div>
+        </div>
+        <nav class="nav" data-nav data-active="people"></nav>
+      </section>
+
+      <!-- ══ 6. DISCOVER ════════════════════════════════════════════ -->
+      <section class="screen" data-s="discover">
+        <div class="newhead" style="padding-bottom:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <h1>Discover</h1>
+            <span style="display:inline-flex;align-items:center;gap:6px;background:var(--purple-50);border:1px solid var(--hair);border-radius:99px;padding:6px 12px;font-size:12px;font-weight:600;color:var(--purple-700)">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z" stroke="#5F3FC4" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.5" stroke="#5F3FC4" stroke-width="2"/></svg>
+              Near 60622
+            </span>
+          </div>
+        </div>
+        <div class="body clearnav"><div class="feedpad" style="padding-top:16px">
+          <div class="plan"><div class="top"><span class="av" style="background:#CEAD6A;width:46px;height:46px;border-radius:13px">🎧</span><div><h4>Backyard set, Logan Square</h4><p class="meta">Sponsored · Rev Bar · Friday 8pm</p></div></div></div>
+          <div class="plan"><div class="top"><span class="av" style="background:#7A7282;width:46px;height:46px;border-radius:13px">🏃</span><div><h4>Saturday morning 5k</h4><p class="meta">Sponsored · Fleet Feet · Saturday 8am</p></div></div></div>
+        </div></div>
+        <nav class="nav" data-nav data-active="discover"></nav>
+      </section>
+
+      <!-- ══ 7. SETTINGS ════════════════════════════════════════════ -->
+      <section class="screen" data-s="settings">
+        <div class="newhead"><h1>Settings</h1></div>
+        <div class="body clearnav">
+          <div style="background:#fff;padding:18px 20px;display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--hair)">
+            <span class="av" style="background:#7C5CDB">J</span>
+            <div><div style="font-family:'Plus Jakarta Sans';font-weight:800;font-size:17px">Jackson</div><div style="font-size:12.5px;color:var(--ink-500)">(312) 555 0148</div></div>
+          </div>
+          <div style="height:22px"></div>
+          <div class="eyebrow" style="padding-left:20px">Discovery</div>
+          <div class="listrow"><span class="nm">Your area<span class="sm" style="display:block">60622, Chicago</span></span></div>
+          <div class="listrow"><span class="nm">Interests<span class="sm" style="display:block">Climbing, live music, running</span></span></div>
+        </div>
+        <nav class="nav" data-nav data-active="settings"></nav>
+      </section>
+    </div>
+    <div class="lbl-screen" id="screenlabel">Screens 4, 5, 8, 10 — R14–R17</div>
+  </div>
+
+  <div>
+    <div class="note" id="notes"></div>
+    <div class="metrics" id="metrics"></div>
+  </div>
+</div>
+
+<script>
+// ── data ──────────────────────────────────────────────────────────────────
+const FRIENDS = [
+  {id:'d', n:'Dana Ruiz',      c:'#E8405A'},
+  {id:'m', n:'Marcus Webb',    c:'#167A43'},
+  {id:'p', n:'Priya Nair',     c:'#7C5CDB'},
+  {id:'s', n:'Sam Okafor',     c:'#CEAD6A'},
+  {id:'t', n:'Tess Lindqvist', c:'#5F3FC4'},
+  {id:'j', n:'Jonah Park',     c:'#7A7282'},
+  {id:'a', n:'Ana Silva',      c:'#E8405A'},
+];
+const GROUPS = [{id:'g1',e:'🧗',n:'Climbing crew'},{id:'g2',e:'🍺',n:'Thursday'},{id:'g3',e:'🏠',n:'Block'}];
+const RAIL = [
+  {id:'me', n:'You',    c:'#7C5CDB', wh:'Tonight', later:true, me:true},
+  {id:'d',  n:'Dana',   c:'#E8405A', wh:'Now',   later:false},
+  {id:'m',  n:'Marcus', c:'#167A43', wh:'Now',   later:false},
+  {id:'p',  n:'Priya',  c:'#7C5CDB', wh:'Wknd',  later:true},
+];
+const COW = `<svg class="cow" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+<ellipse cx="11" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(-28 11 33)"/><ellipse cx="109" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(28 109 33)"/>
+<ellipse cx="11" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(-28 11 34)"/><ellipse cx="109" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(28 109 34)"/>
+<ellipse cx="38" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(-14 38 19)"/><ellipse cx="82" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(14 82 19)"/>
+<rect x="15" y="20" width="90" height="92" rx="30" fill="#F5F0ED"/>
+<ellipse cx="41" cy="44" rx="19" ry="13" fill="#7A7282" transform="rotate(-10 41 44)"/><ellipse cx="79" cy="69" rx="14" ry="9" fill="#7A7282" transform="rotate(16 79 69)"/>
+<circle cx="44" cy="57" r="6" fill="#2A1E38"/><circle cx="76" cy="57" r="6" fill="#2A1E38"/>
+<circle cx="46.5" cy="54.5" r="2.2" fill="white"/><circle cx="78.5" cy="54.5" r="2.2" fill="white"/>
+<ellipse cx="60" cy="90" rx="27" ry="20" fill="#F0AABB"/><circle cx="50" cy="91" r="9" fill="#2ECC71"/><circle cx="70" cy="91" r="9" fill="#BDB5D4"/></svg>`;
+const ICONS = {
+  feed:'<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+  discover:'<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5 5-2Z"/>',
+  people:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>'
+};
+const ic = k => `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[k]}</svg>`;
+const tab = (k,l,a) => `<a href="#" class="${a===k?'on':''}">${ic(k)}<span>${l}</span></a>`;
+const navHTML = a => tab('feed','Feed',a)+tab('discover','Discover',a)
+  +`<button class="plan-btn"><span class="disc">${COW}<span class="badge">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#7C5CDB" stroke-width="3.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    </span></span><span class="lbl">Plan a Moove</span></button>`
+  +tab('people','People',a)+tab('settings','Settings',a);
+
+// ── R15: the three candidate bars ─────────────────────────────────────────
+// ns scales the METRICS, ls scales the LABELS, planflex widens the centre slot.
+// Chosen by measuring all five slots, not by eye. At a straight 1.5× "Discover"
+// needs 62px of a 61px space (slack −1px, actually overflowing) and the disc
+// overhangs its own slot by 6px on each side, shoving Discover and People. The
+// middle setting is the largest icons and disc that still leave every label
+// 12px of slack and keep the disc 6px clear of its neighbours.
+const SIZES = {
+  today:   {label:'Today',        ns:1,    ls:1,    planflex:1,    hint:'what ships now'},
+  comfort: {label:'Comfortable',  ns:1.35, ls:1.12, planflex:1.32, hint:'bigger, 12px slack'},
+  full:    {label:'Straight 1.5×',ns:1.5,  ls:1.5,  planflex:1,    hint:'what you saw, cramped'},
+};
+let size = 'comfort';
+
+function applySize(){
+  const s = SIZES[size];
+  document.querySelectorAll('.screen').forEach(sc=>{
+    const t = sc.dataset.pinned || sc.dataset.s==='before' ? SIZES.today : s;
+    // Set on the SCREEN, not on :root. Inheritance from the root left the nav
+    // painted at its old size while sibling rules reading the same variable
+    // updated, so the control looked like it worked and did not.
+    sc.style.setProperty('--ns', t.ns);
+    sc.style.setProperty('--ls', t.ls);
+    sc.style.setProperty('--planflex', t.planflex);
+  });
+  document.querySelectorAll('#sizes .kbtn').forEach(b=>b.classList.toggle('on', b.dataset.size===size));
+  requestAnimationFrame(measure);
+}
+
+// Does any label actually fit its slot? Measured, not eyeballed.
+function measure(){
+  const sc = document.querySelector('.screen.on');
+  const nav = sc && sc.querySelector('[data-nav]');
+  if(!nav){ document.getElementById('metrics').innerHTML=''; return; }
+  const rows = [...nav.children].map(slot=>{
+    const txt = slot.querySelector('span:last-child');
+    const slotW = slot.clientWidth;
+    const padX = parseFloat(getComputedStyle(slot).paddingLeft)*2;
+    const avail = slotW - padX;
+    const need = txt ? Math.ceil(txt.scrollWidth) : 0;
+    return {n:txt?txt.textContent:'', slotW:Math.round(slotW), need, slack:Math.round(avail-need)};
+  });
+  const barH = Math.round(nav.getBoundingClientRect().height);
+  document.getElementById('metrics').innerHTML = `
+    <table>
+      <tr><th>Slot</th><th>Width</th><th>Label</th><th>Slack</th></tr>
+      ${rows.map(r=>`<tr><td>${r.n}</td><td>${r.slotW}px</td><td>${r.need}px</td>
+        <td class="${r.slack<6?'hot':'ok'}">${r.slack>=0?'+':''}${r.slack}px</td></tr>`).join('')}
+      <tr><td>Bar height</td><td colspan="3" style="text-align:right;color:#CFC6EC">${barH}px</td></tr>
+    </table>`;
+}
+
+// ── visibility state ──────────────────────────────────────────────────────
+const V = { gg:{groups:[],people:[],showGroups:false}, comp:{groups:[],people:[],showGroups:false}, green:{groups:[],people:[],showGroups:false} };
+let pickerFor=null, draft=[];
+const nFriends = n => n+(n===1?' friend':' friends');
+
+function scopeLabel(v){
+  if(!v.groups.length && !v.people.length) return 'Everyone';
+  const p=[];
+  if(v.groups.length) p.push(GROUPS.filter(g=>v.groups.includes(g.id)).map(g=>g.n).join(', '));
+  if(v.people.length) p.push(nFriends(v.people.length));
+  return p.join(' + ');
+}
+
+function renderVis(key){
+  const v = V[key];
+  document.querySelectorAll(`[data-vis="${key}"]`).forEach(box=>{
+    const everyone = !v.groups.length && !v.people.length;
+    let h = `<button class="chip ${everyone?'on':''}" data-act="everyone">Everyone</button>`;
+    h += `<button class="chip friends ${v.people.length?'on':''}" data-act="pick">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+        ${v.people.length?'':'<path d="M19 8v6M22 11h-6"/>'}
+      </svg>
+      ${v.people.length ? nFriends(v.people.length) : 'Add specific friends'}
+      <svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px"><polyline points="9 5 16 12 9 19"/></svg>
+    </button>`;
+    GROUPS.forEach(g=>{ h += `<button class="chip ${v.groups.includes(g.id)?'on':''}" data-act="group" data-id="${g.id}">${g.e} ${g.n}</button>`; });
+    box.innerHTML = h;
+  });
+  document.querySelectorAll(`[data-grouptoggle="${key}"]`).forEach(box=>{
+    box.innerHTML = v.groups.length ? `<button class="toggle ${v.showGroups?'on':''}" data-act="showgroups">
+      <span style="flex:1;min-width:0">
+        <span class="t1">Show who this is shared with</span>
+        <span class="t2">${v.showGroups
+          ? GROUPS.filter(g=>v.groups.includes(g.id)).map(g=>g.n).join(', ')+' appears on the card. Friends you picked by name never do.'
+          : 'Off, nobody sees which groups you picked.'}</span>
+      </span><span class="knob"><i></i></span></button>` : '';
+  });
+}
+
+// ── the picker, as a PANE ─────────────────────────────────────────────────
+function renderPicker(key, q=''){
+  const el = document.querySelector(`[data-picker="${key}"]`);
+  if(!el) return;
+  const list = FRIENDS.filter(f=>f.n.toLowerCase().includes(q.trim().toLowerCase()));
+  el.innerHTML = `
+    <div class="pane-head">
+      <div class="backrow">
+        <button class="back" data-back><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 5 8 12 15 19"/></svg></button>
+        <h2>Add specific friends</h2>
+      </div>
+      <p class="blurb" style="margin-bottom:14px">They will see it. They will not be told you picked them, and their names never show on the card.</p>
+    </div>
+    <div class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input placeholder="Search friends" value="${q}" data-search />
+    </div>
+    <div class="pane-body flush">
+      ${list.length ? list.map(f=>`
+        <button class="prow ${draft.includes(f.id)?'on':''}" data-id="${f.id}">
+          <span class="av" style="background:${f.c};width:36px;height:36px;font-size:14px">${f.n[0]}</span>
+          <span class="nm">${f.n}</span>
+          <span class="box"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+        </button>`).join('') : `<p class="empty">Nobody by that name.</p>`}
+    </div>
+    <div class="pane-foot"><button class="cta" data-act="done">${draft.length ? 'Done, '+nFriends(draft.length) : 'Done'}</button></div>`;
+}
+
+// ── panes ─────────────────────────────────────────────────────────────────
+function goPane(track, i){
+  track.dataset.pane = i;
+  track.style.transform = `translateX(-${i*100}%)`;
+  [...track.children].forEach((p,k)=>p.setAttribute('aria-hidden', k!==i));
+}
+function trackOf(el){ return el.closest('.sheet').querySelector('[data-track]'); }
+
+// ── render ────────────────────────────────────────────────────────────────
+document.querySelectorAll('.cowslot').forEach(s=>{
+  s.innerHTML = COW; const g=s.querySelector('svg'); g.style.width=s.dataset.size+'px'; g.style.height=s.dataset.size+'px';
+});
+document.querySelectorAll('[data-nav]').forEach(n=>n.innerHTML = navHTML(n.dataset.active));
+document.querySelectorAll('[data-rail]').forEach(r=>{
+  (r.dataset.nome ? RAIL.filter(p=>!p.me) : RAIL).forEach(p=>{
+    r.insertAdjacentHTML('beforeend', `<button class="rp ${p.later?'later':''} ${p.me?'me':''}" ${p.me?'data-me="1"':''}>
+      <span class="ring"><span class="av" style="background:${p.c}">${p.n[0]}</span></span>
+      <span class="nm">${p.n}</span><span class="wh">${p.wh}</span></button>`);
+  });
+});
+document.querySelectorAll('[data-plans]').forEach(c=>{
+  c.innerHTML = `
+    <div class="plan"><div class="top">
+      <span class="av" style="background:#167A43;width:38px;height:38px;font-size:15px">M</span>
+      <div style="flex:1"><h4>Bouldering, then tacos</h4><p class="meta">Marcus · Saturday · First Ascent</p></div></div>
+      <div class="roster"><span class="stack"><span class="av" style="background:#E8405A">D</span><span class="av" style="background:#7C5CDB">P</span></span><span>2 in</span><button class="imin">I'm in</button></div>
+    </div>
+    <div class="plan"><div class="top">
+      <span class="av" style="background:#E8405A;width:38px;height:38px;font-size:15px">D</span>
+      <div style="flex:1"><h4>Trivia at the Rev</h4><p class="meta">Dana · This week</p></div></div>
+      <div class="roster"><span class="stack"><span class="av" style="background:#CEAD6A">S</span></span><span>1 in</span><button class="imin">I'm in</button></div>
+    </div>`;
+});
+['gg','comp','green'].forEach(renderVis);
+document.querySelectorAll('[data-track]').forEach(t=>goPane(t,0));
+
+document.getElementById('sizes').innerHTML = Object.entries(SIZES)
+  .map(([k,v])=>`<button class="kbtn" data-size="${k}">${v.label}<small>${v.hint}</small></button>`).join('');
+
+// ── states ────────────────────────────────────────────────────────────────
+const STATES = [
+  {k:'before', cap:'Feed, today', lbl:'Screen 4 — before', note:`
+    <b>What R14 and R17 are measured against.</b> The top ~90px names the app you are already inside, and your own green card sits under the rail
+    the entire time you are free, holding controls you touch roughly never.
+    <br><br>This bar is <b>pinned at today's size</b> whatever the Bottom bar control says, so it stays a fixed reference.`},
+  {k:'after', cap:'Feed, after', lbl:'Screen 4 — R14, R15, R17', note:`
+    <b>R14.</b> No band, no lockup. "Free" is first on screen, clearing the notch with <code>safe-area-inset-top</code> and nothing else.
+    <br><br><b>R17, rebuilt.</b> <b>Tap your own dashed circle.</b> Your green is now <b>one sheet with panes</b>, not three sheets stacked:
+    visibility is inline in the first pane, and Free until and the friend picker <b>slide in sideways</b> with a back chevron.
+    One height, one grabber, one scrim. Tapping Dana or Marcus still goes straight to Messages.
+    <br><br><b>R15.</b> Bottom padding is derived from the measured bar, so the last card clears it by 22px at any size.`},
+  {k:'gogreen', cap:'Go green', lbl:'Screen 5 — R16, R17', note:`
+    <b>R17.</b> "Free until" shows <i>before</i> you commit and follows the When chip, so tap through Right now, Tonight, This week and watch it move.
+    Tapping it slides to the picker rather than stacking a sheet on top.
+    <br><br><b>R16.</b> "Add specific friends" is second in the row, beside Everyone, and now carries a <b>chevron</b> because it opens something instead of toggling.`},
+  {k:'composer', cap:'Plan a Moove', lbl:'Screen 4 — R16', note:`
+    <b>R16 in the composer.</b> Same chip, same pane, same rules. The composer keeps R9's one fixed height, and sliding sideways never changes it.
+    <br><br>Pick a group <i>and</i> a friend, then read the toggle's sub-line: friends picked by name <b>never</b> appear on the card.`},
+  {k:'people', cap:'People', lbl:'Screen 8 — R14, R15', note:`<b>R14.</b> The white header bar stays, the lockup goes, "People" moves up into the space and the sub-tabs follow it.`},
+  {k:'discover', cap:'Discover', lbl:'Screen 13 — R14, R15', note:`<b>R14.</b> Same treatment. "Discover" and its area chip are the top row now instead of the second one.`},
+  {k:'settings', cap:'Settings', lbl:'Screen 10 — R14, R15', note:`<b>R14.</b> Same again. Your profile card is ~90px closer to your thumb.`},
+];
+document.getElementById('states').innerHTML = STATES.map((s,i)=>`<button class="kbtn ${i===0?'on':''}" data-go="${s.k}">${s.cap}</button>`).join('');
+
+function show(k){
+  const s = STATES.find(x=>x.k===k);
+  document.querySelectorAll('.screen').forEach(el=>el.classList.toggle('on', el.dataset.s===k));
+  document.querySelectorAll('#states .kbtn').forEach(b=>b.classList.toggle('on', b.dataset.go===k));
+  document.getElementById('cap').textContent = s.cap;
+  document.getElementById('screenlabel').textContent = s.lbl;
+  document.getElementById('notes').innerHTML = s.note;
+  // reset the feed's sheet + every track
+  document.querySelector('[data-s="after"] [data-sheet="green"]').classList.remove('open');
+  document.querySelector('[data-s="after"] [data-scrim]').classList.remove('on');
+  document.querySelectorAll('[data-track]').forEach(t=>goPane(t,0));
+  requestAnimationFrame(measure);
+}
+
+applySize();
+show('before');
+
+// ── events ────────────────────────────────────────────────────────────────
+document.getElementById('sizes').addEventListener('click', e=>{
+  const b = e.target.closest('[data-size]'); if(!b) return;
+  size = b.dataset.size; applySize();
+});
+document.getElementById('gaps').onclick = e=>{
+  document.body.classList.toggle('showgaps');
+  e.currentTarget.classList.toggle('on', document.body.classList.contains('showgaps'));
+};
+
+document.addEventListener('click', e=>{
+  const t = e.target;
+
+  const go = t.closest('[data-go]'); if(go){ show(go.dataset.go); return; }
+
+  // R17 — your own rail circle opens the modal. Friends' circles do not.
+  const me = t.closest('[data-me]');
+  if(me && me.closest('[data-tapme]')){
+    const sec = document.querySelector('[data-s="after"]');
+    sec.querySelector('[data-sheet="green"]').classList.add('open');
+    sec.querySelector('[data-scrim]').classList.add('on');
+    goPane(sec.querySelector('[data-track]'), 0);
+    return;
+  }
+  if(t.matches('[data-scrim]')){
+    t.classList.remove('on');
+    document.querySelector('[data-s="after"] [data-sheet="green"]').classList.remove('open');
+    return;
+  }
+
+  // pane navigation
+  const to = t.closest('[data-to]'); if(to){ goPane(trackOf(to), +to.dataset.to); return; }
+  const back = t.closest('[data-back]'); if(back){ goPane(trackOf(back), 0); return; }
+
+  // free-until presets
+  const fu = t.closest('[data-fu]');
+  if(fu){
+    fu.parentElement.querySelectorAll('.fupick').forEach(x=>x.classList.remove('on'));
+    fu.classList.add('on');
+    const sheet = fu.closest('.sheet');
+    const out = sheet.querySelector('[data-greenuntil], [data-untilval]');
+    if(out) out.textContent = fu.dataset.fu;
+    goPane(trackOf(fu), 0);
+    return;
+  }
+
+  // When chips drive Free until
+  const when = t.closest('[data-when] .chip');
+  if(when){
+    when.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
+    when.classList.add('on');
+    document.querySelector('[data-untilval]').textContent = when.dataset.until;
+    return;
+  }
+
+  // R16 chips
+  const chip = t.closest('[data-vis] .chip');
+  if(chip){
+    const key = chip.closest('[data-vis]').dataset.vis, v = V[key];
+    if(chip.dataset.act==='everyone'){ v.groups=[]; v.people=[]; v.showGroups=false; }
+    if(chip.dataset.act==='group'){
+      const id = chip.dataset.id;
+      v.groups = v.groups.includes(id) ? v.groups.filter(x=>x!==id) : [...v.groups,id];
+      if(!v.groups.length) v.showGroups=false;
+    }
+    if(chip.dataset.act==='pick'){
+      pickerFor = key; draft = [...v.people];
+      renderPicker(key);
+      goPane(trackOf(chip), 1);
+      return;
+    }
+    renderVis(key); return;
+  }
+  const tog = t.closest('[data-act="showgroups"]');
+  if(tog){ const k = tog.closest('[data-grouptoggle]').dataset.grouptoggle; V[k].showGroups = !V[k].showGroups; renderVis(k); return; }
+
+  // picker
+  const prow = t.closest('.prow');
+  if(prow){
+    const id = prow.dataset.id;
+    draft = draft.includes(id) ? draft.filter(x=>x!==id) : [...draft,id];
+    const q = document.querySelector(`[data-picker="${pickerFor}"] [data-search]`);
+    renderPicker(pickerFor, q ? q.value : '');
+    return;
+  }
+  const done = t.closest('[data-act="done"]');
+  if(done){
+    V[pickerFor].people = [...draft];
+    renderVis(pickerFor);
+    goPane(trackOf(done), 0);
+    return;
+  }
+});
+
+document.addEventListener('input', e=>{
+  if(e.target.matches('[data-search]')){
+    const el = e.target, pos = el.selectionStart;
+    renderPicker(pickerFor, el.value);
+    const next = document.querySelector(`[data-picker="${pickerFor}"] [data-search]`);
+    if(next){ next.focus(); next.setSelectionRange(pos,pos); }
+  }
+});
+window.addEventListener('resize', measure);
+</script>
+</body>
+</html>

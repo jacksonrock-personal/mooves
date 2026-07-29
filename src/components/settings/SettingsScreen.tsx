@@ -12,7 +12,6 @@ import { firebaseAuth } from '@/lib/firebase/client'
 import { initPostHog, posthog } from '@/lib/posthog'
 import BottomNav from '@/components/ui/BottomNav'
 import Toast from '@/components/ui/Toast'
-import Wordmark from '@/components/ui/Wordmark'
 import ProfileCard from './ProfileCard'
 import AreaControl from './AreaControl'
 import NotificationSettings from './NotificationSettings'
@@ -243,18 +242,15 @@ export default function SettingsScreen() {
 
   return (
     <div className="min-h-screen flex flex-col bg-surface-bg">
-      {/* Header */}
-      <header className="bg-white px-5 pt-14 pb-3.5 border-b border-[#E8E4F5] shrink-0">
-        <div className="flex justify-center mb-3">
-          <Wordmark withCow />
-        </div>
+      {/* R14 — lockup removed, "Settings" moves up into the space it left. */}
+      <header className="bg-white px-5 [--safe-pt-base:0.875rem] safe-area-pt pb-3.5 border-b border-[#E8E4F5] shrink-0">
         <h1 className="font-display font-extrabold text-[24px] text-ink-900 tracking-tight">
           Settings
         </h1>
       </header>
 
       {/* Body */}
-      <div className="flex-1 overflow-y-auto pb-24">
+      <div className="flex-1 overflow-y-auto pb-[calc(114px+env(safe-area-inset-bottom))]">
         {loaded && (
           <>
             <ProfileCard

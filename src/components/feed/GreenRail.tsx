@@ -21,8 +21,6 @@ export interface RailPerson {
 
 interface GreenRailProps {
   people: RailPerson[]
-  selectedId: string | null
-  onSelect: (id: string) => void
   /**
    * ONE tap on a friend's face opens Messages.
    *
@@ -30,11 +28,17 @@ interface GreenRailProps {
    * no longer carry a note — the go-green sheet is visibility, when, and free-
    * until — so there was nothing left to read and the intermediate card was
    * just a tax on the core loop.
-   *
-   * Your own face still selects rather than texting, because you cannot text
-   * yourself and your card is where Free-until and go-grey live.
    */
   onText?: (id: string) => void
+  /**
+   * R17 — your own face opens "Your green" instead, because you cannot text
+   * yourself and that sheet is where Free until, visibility and go-grey live.
+   *
+   * The rail no longer has a SELECTION at all. `selectedId`/`onSelect` existed
+   * to say which green's card was expanded underneath, and there are no green
+   * cards left on the feed.
+   */
+  onOpenMine?: () => void
 }
 
 const ORDER: Record<string, number> = { now: 0, tonight: 1, week: 2, weekend: 3 }
@@ -59,7 +63,7 @@ export function sortRail(people: RailPerson[]): RailPerson[] {
   })
 }
 
-export default function GreenRail({ people, selectedId, onSelect, onText }: GreenRailProps) {
+export default function GreenRail({ people, onText, onOpenMine }: GreenRailProps) {
   if (people.length === 0) return null
 
   return (
@@ -71,15 +75,14 @@ export default function GreenRail({ people, selectedId, onSelect, onText }: Gree
         {sortRail(people).map(p => {
           const bucket = bucketOf(p.statusTime)
           const later = bucket !== 'now'
-          const selected = p.id === selectedId
           return (
             <button
               key={p.id}
               onClick={() => {
-                if (!p.isMe && onText) onText(p.id)
-                else onSelect(p.id)
+                if (p.isMe) onOpenMine?.()
+                else onText?.(p.id)
               }}
-              aria-pressed={selected}
+              aria-label={p.isMe ? 'Your green' : `Text ${p.displayName ?? 'friend'}`}
               className="shrink-0 w-[58px] flex flex-col items-center gap-1"
             >
               <span className="relative">
@@ -87,14 +90,12 @@ export default function GreenRail({ people, selectedId, onSelect, onText }: Gree
                 <span
                   className={`absolute -inset-1 rounded-full pointer-events-none ${
                     later ? 'border-[2.5px] border-green-500/40' : 'border-[2.5px] border-green-500'
-                  } ${selected ? 'border-[3px] ring-2 ring-green-500/20' : ''} ${
-                    p.isMe ? 'border-dashed' : ''
-                  }`}
+                  } ${p.isMe ? 'border-dashed' : ''}`}
                 />
               </span>
               <span
                 className={`max-w-[58px] truncate font-sans text-[11px] ${
-                  selected ? 'font-bold text-ink-900' : 'font-semibold text-ink-500'
+                  p.isMe ? 'font-bold text-ink-900' : 'font-semibold text-ink-500'
                 }`}
               >
                 {p.isMe ? 'You' : (p.displayName ?? 'Friend')}

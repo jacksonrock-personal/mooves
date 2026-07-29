@@ -125,7 +125,7 @@
 
 ## Product Principles (Anti-Patterns to Protect)
 
-1. No in-app messaging, ever
+1. No in-app messaging, ever — **one bounded exception, amended in daylight**: Moove comments (Phase 21), behind four walls. Wall 2 was widened by R11 (2026-07-28) so a comment may **tag** a friend who has not joined, provided they can already see that Moove. Reading the thread is still joiners-only. See `mooves-prd.md` §21.0 and "Refinements R9–R13".
 2. No streaks, unread counts, red dots, or engagement bait
 3. Status is ephemeral — going green is a moment, not a trait
 4. Mutual friending only — no one sees you without your consent

@@ -9,6 +9,7 @@ import { createServiceClient } from '@/lib/supabase/server'
 import type { Database } from '@/types/database'
 import { PLAN_TITLE_MAX, PLAN_LOCATION_MAX, PLAN_NOTE_MAX } from '@/lib/plans'
 import { sendPlanCancelledPush } from '@/lib/push'
+import { sanitizeVisibleUserIds } from '@/lib/visibility'
 
 const MAX_AHEAD_MS = 365 * 24 * 60 * 60 * 1000
 
@@ -55,6 +56,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     locationText?: string | null
     note?: string | null
     visibleTo?: string[] | null
+    /** R16 — individual friends, unioned with the groups above. */
+    visibleUserIds?: string[] | null
   }
 
   type PlanUpdate = Database['public']['Tables']['plans']['Update']
@@ -98,6 +101,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     // in the same branch as visible_to so the pair can never drift apart —
     // show_groups true with visible_to null was reachable before this.
     updates.show_groups = body.showGroups === true && !!visibleTo
+  }
+
+  // R16 — its own `in body` guard, matching the one above. An edit that does not
+  // mention the individual scope must LEAVE IT ALONE rather than null it out;
+  // silently widening a Moove on save is precisely the R12 bug.
+  if ('visibleUserIds' in body) {
+    updates.visible_user_ids = await sanitizeVisibleUserIds(supabase, userId, body.visibleUserIds)
   }
 
   const { error } = await supabase.from('plans').update(updates).eq('id', id)

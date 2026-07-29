@@ -14,6 +14,9 @@ import { useEffect, useMemo, useState } from 'react'
 import { posthog } from '@/lib/posthog'
 import { useSheetDrag } from '@/lib/useSheetDrag'
 import SheetGrabber from '@/components/ui/SheetGrabber'
+import PaneTrack from '@/components/ui/PaneTrack'
+import VisibilityRow from '@/components/visibility/VisibilityRow'
+import FriendPickerPane, { type PickableFriend } from '@/components/visibility/FriendPickerPane'
 import { combineStartAt, splitStartAt } from '@/lib/movetime'
 import {
   computePlanExpiry,
@@ -70,6 +73,8 @@ interface PlanComposerProps {
   open: boolean
   onClose: () => void
   groups: Group[]
+  /** R16 — the pool for the specific-friends picker. */
+  friends: PickableFriend[]
   /** Present = edit mode. */
   editing?: Plan | null
   prefill?: PlanPrefill | null
@@ -80,6 +85,7 @@ export default function PlanComposer({
   open,
   onClose,
   groups,
+  friends,
   editing,
   prefill,
   onSaved,
@@ -90,7 +96,11 @@ export default function PlanComposer({
   const [location, setLocation] = useState('')
   const [note, setNote] = useState('')
   const [visibleTo, setVisibleTo] = useState<string[]>([])
+  // R16 — individual friends, unioned with the groups above.
+  const [visibleUserIds, setVisibleUserIds] = useState<string[]>([])
   const [showGroups, setShowGroups] = useState(false)
+  /** 0 = the form, 1 = the friend picker. R16: a pane, never a second sheet. */
+  const [pane, setPane] = useState(0)
   // Coarse is the default; `exact` swaps the chips for real pickers.
   //
   // R3 — starts NULL rather than preselected. A preselected chip meant "When"
@@ -123,6 +133,10 @@ export default function PlanComposer({
       // to all of the author's friends. `visibleTo` is now returned to the
       // author for exactly this.
       setVisibleTo(editing.visibleTo ?? [])
+      // R16, same reason as visibleTo above (the R12 bug): without restoring the
+      // individual scope, editing a Moove would write "nobody" over the friends
+      // it was actually shared with.
+      setVisibleUserIds(editing.visibleUserIds ?? [])
       setShowGroups(editing.showGroups)
     } else if (prefill) {
       // A dated sponsored move already has everything the composer asks for.
@@ -136,6 +150,7 @@ export default function PlanComposer({
       setLocation(prefill.locationText ?? '')
       setNote(prefill.note ?? '')
       setVisibleTo([])
+      setVisibleUserIds([])
       setShowGroups(false)
     } else {
       setTitle('')
@@ -146,8 +161,10 @@ export default function PlanComposer({
       setLocation('')
       setNote('')
       setVisibleTo([])
+      setVisibleUserIds([])
       setShowGroups(false)
     }
+    setPane(0)
     setError(null)
     posthog.capture(
       editing ? 'plan_edit_opened' : prefill ? 'plan_composer_prefilled' : 'plan_composer_opened',
@@ -211,6 +228,7 @@ export default function PlanComposer({
       locationText: location.trim() || null,
       note: note.trim() || null,
       visibleTo: visibleTo.length > 0 ? visibleTo : null,
+      visibleUserIds: visibleUserIds.length > 0 ? visibleUserIds : null,
       // Carries 13.8's disclosure requirement through to the friend feed.
       sponsoredMoveId: !editing && prefill ? prefill.sponsoredMoveId : null,
     }
@@ -241,10 +259,6 @@ export default function PlanComposer({
     } finally {
       setSaving(false)
     }
-  }
-
-  function toggleGroup(id: string) {
-    setVisibleTo(prev => (prev.includes(id) ? prev.filter(g => g !== id) : [...prev, id]))
   }
 
   if (!open) return null
@@ -300,6 +314,11 @@ export default function PlanComposer({
           </p>
         </div>
 
+        {/* R16 — the header above stays put; only the body below slides. The
+            friend picker is pane 1 of this same sheet, which is why the 86%
+            height can stay the one number nothing rendered inside can move. */}
+        <PaneTrack pane={pane}>
+        <>
         {/* The form scrolls; the commit button never does. It is also the third
             drag target — but only from the very top of the scroll and only
             downward, so scrolling back up through the form never yanks the
@@ -417,53 +436,19 @@ export default function PlanComposer({
           <Step shown={showRest} stagger>
             <div>
               <Label>Who can see this?</Label>
-              <div className="flex gap-2 flex-wrap mb-4">
-                <Chip on={visibleTo.length === 0} onClick={() => setVisibleTo([])}>
-                  Everyone
-                </Chip>
-                {groups.map(g => (
-                  <Chip key={g.id} on={visibleTo.includes(g.id)} onClick={() => toggleGroup(g.id)}>
-                    {g.emoji ? `${g.emoji} ` : ''}
-                    {g.name}
-                  </Chip>
-                ))}
-              </div>
-
-              {/* 18.2's toggle, reused. Appears only once a group is picked, and
-                  defaults off. It belongs directly under the chips it qualifies —
-                  see the block below, which is now unreachable and removed. */}
-              {visibleTo.length > 0 && (
-                <button
-                  onClick={() => setShowGroups(s => !s)}
-                  role="switch"
-                  aria-checked={showGroups}
-                  className="w-full flex items-center gap-2.5 border border-[#E8E4F5] bg-surface-bg rounded-2xl px-3.5 py-3 mb-4 text-left"
-                >
-                  <span className="flex-1 min-w-0">
-                    <span className="block font-sans text-[13px] font-semibold text-ink-900">
-                      Show who this is shared with
-                    </span>
-                    <span className="block font-sans text-[11.5px] text-text-secondary truncate">
-                      {groups
-                        .filter(g => visibleTo.includes(g.id))
-                        .map(g => g.name)
-                        .join(', ')}{' '}
-                      appears on the card
-                    </span>
-                  </span>
-                  <span
-                    className={`shrink-0 w-11 h-6 rounded-full relative transition-colors ${
-                      showGroups ? 'bg-green-700' : 'bg-grey-300'
-                    }`}
-                  >
-                    <span
-                      className={`absolute top-[3px] w-[18px] h-[18px] rounded-full bg-white transition-all ${
-                        showGroups ? 'left-[23px]' : 'left-[3px]'
-                      }`}
-                    />
-                  </span>
-                </button>
-              )}
+              <VisibilityRow
+                groups={groups}
+                selectedGroupIds={visibleTo}
+                selectedUserIds={visibleUserIds}
+                showGroups={showGroups}
+                onGroupsChange={setVisibleTo}
+                onUserIdsChange={setVisibleUserIds}
+                onShowGroupsChange={setShowGroups}
+                onPickFriends={() => {
+                  posthog.capture('visibility_friends_opened', { surface: 'composer' })
+                  setPane(1)
+                }}
+              />
 
               <Label optional>Where</Label>
               <input
@@ -495,6 +480,20 @@ export default function PlanComposer({
             {editing ? 'Save changes' : 'Post this Moove'}
           </button>
         </div>
+        </>
+
+        <FriendPickerPane
+          friends={friends}
+          selected={visibleUserIds}
+          active={pane === 1}
+          onCancel={() => setPane(0)}
+          onDone={ids => {
+            posthog.capture('visibility_friends_confirmed', { count: ids.length, surface: 'composer' })
+            setVisibleUserIds(ids)
+            setPane(0)
+          }}
+        />
+        </PaneTrack>
       </div>
     </>
   )

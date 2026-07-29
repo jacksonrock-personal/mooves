@@ -57,6 +57,16 @@
   .safe-area-pb {
     padding-bottom: calc(var(--safe-pb-base, 0px) + env(safe-area-inset-bottom, 0px));
   }
+
+  /* R14 — the mirror of the above, for the top. With the wordmark header gone
+     from Feed, Discover, People and Settings, the only thing that padding was
+     ever really for is the notch, so it stops being a hardcoded `pt-14` guess
+     and becomes the inset plus a deliberate gap (`--safe-pt-base`). On a device
+     with no inset it collapses to just the gap, so content sits where the
+     designer put it rather than 30px below it. */
+  .safe-area-pt {
+    padding-top: calc(var(--safe-pt-base, 0px) + env(safe-area-inset-top, 0px));
+  }
 }
 
 /* Phase 8.3 — suppress the floating Firebase reCAPTCHA badge everywhere.

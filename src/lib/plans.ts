@@ -65,6 +65,16 @@ export interface Plan {
    * a group-scoped Moove to all of the author's friends.
    */
   visibleTo: string[] | null
+  /**
+   * R16 — the individual friends this Moove is scoped to, unioned with the
+   * groups above. AUTHOR ONLY, and null for everyone else, exactly like
+   * `visibleTo` and for the same reason: without it the edit composer cannot
+   * know who the Moove reaches and would write its guess back over the truth.
+   *
+   * It is never rendered on a card. Naming individuals is a visibility rule,
+   * not a label — 18.2's "shared with" line stays groups-only.
+   */
+  visibleUserIds: string[] | null
   /** Author only. Pairs with `visibleTo` so an edit round-trips both. */
   showGroups: boolean
   joiners: PlanJoiner[]

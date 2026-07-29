@@ -7,7 +7,6 @@
 
 import { useState } from 'react'
 import BottomNav from '@/components/ui/BottomNav'
-import Wordmark from '@/components/ui/Wordmark'
 import FriendsPanel from './FriendsPanel'
 import GroupsPanel from './GroupsPanel'
 
@@ -18,11 +17,9 @@ export default function PeopleScreen() {
 
   return (
     <div className="min-h-screen flex flex-col bg-purple-50">
-      {/* Header */}
-      <header className="bg-white px-5 pt-14 border-b border-[#E8E4F5] shrink-0">
-        <div className="flex justify-center mb-3">
-          <Wordmark withCow />
-        </div>
+      {/* R14 — the wordmark lockup is gone; "People" is the first thing here now
+          and the bar clears the notch rather than a hardcoded pt-14. */}
+      <header className="bg-white px-5 [--safe-pt-base:0.875rem] safe-area-pt border-b border-[#E8E4F5] shrink-0">
         <div className="flex items-center min-h-11 mb-1.5">
           <h1 className="font-display font-extrabold text-[24px] text-ink-900 tracking-tight">
             People

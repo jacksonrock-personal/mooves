@@ -133,7 +133,7 @@ export default function FriendsPanel() {
       )}
 
       {/* Body */}
-      <div className="flex-1 flex flex-col pb-[136px]">
+      <div className="flex-1 flex flex-col pb-[calc(114px+env(safe-area-inset-bottom))]">
         {loaded &&
           (count === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center text-center px-8">
