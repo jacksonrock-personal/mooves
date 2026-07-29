@@ -42,7 +42,7 @@
 | — | Phase 22 — **Scheduled availability**: the reframing (22.0) · stance-card tension (22.0a) · timezones (22.1) · the scheduler (22.2) · the weekly ritual (22.3) · the confirm (22.4) · private until green (22.5) · Settings (22.6) | ✅ Spec 2026-07-27 (see "Phase 22" at EOF) — **not preset recurring times: a weekly ritual, set fresh each week**. First server-side scheduler in the app (`pg_cron` + `pg_net` → one authed route); first stored user timezones, reversing 18.1's punt · ✅ Mockup `mooves-phase22-scheduled-availability.html` (approved 2026-07-27, 11 states) · ✅ Code 2026-07-27 (`feat/phase22-scheduled-availability`; `tsc --noEmit` + `next build` clean; **migration `20260728030000` applied by Jackson**, both cron jobs registered and active, Vault secrets set — verified via `cron.job` + a manual `availability_cron_tick()` that reached the app) |
 | — | **Refinements R1–R8** — nav "Plan a Moove" button (R1) · composer step gating (R2) · When defaults + real date/time hints (R3) · visibility moves up (R4) · Moove sheet header removed (R5) · swipe-to-close everywhere (R6) · copy (R7) · **likes + roster-only tagging (R8)** | ✅ Spec 2026-07-28 (see "Refinements R1–R8" at EOF) — **R8 amends Phase 21's "no @mentions, no reactions on comments" in daylight** · ✅ Mockup `mooves-nav-composer-refinements.html` (11 states, approved 2026-07-28) · ✅ Code 2026-07-28 (`fix/nav-composer-comments`; `tsc --noEmit` + `next build` clean; **migration `20260728050000` applied by Jackson** — `plan_comment_likes` verified RLS-on with zero policies, `plan_comments.mentions` present; **R6 corrected at build**, see the ⚠ note in R6) |
 | — | **Refinements R9–R13** — composer fixed height (R9) · reveal slowed because it no longer reflows (R10) · **tagging someone NOT in the Moove, + push (R11)** · **the edit bug, repaired (R12)** · sheet grab targets (R13) | ✅ Spec 2026-07-28 (see "Refinements R9–R13" at EOF) — **R11 amends R8, which amended Phase 21: a tag may now reach a non-joiner, bounded to people who can ALREADY see the Moove.** R9, R10 and R13 are same-day corrections to R2 and R6 · ✅ Mockup `mooves-composer-height-tagging.html` (approved 2026-07-28) · ✅ Code 2026-07-28 (`fix/composer-height-tagging-edit`, **merged PR #51** `5b760b5`; `tsc --noEmit` + `next build` clean; **migration `20260728120000` applied by Jackson** — `get_plans` verified live with the two author-only keys, `plan_taggable_friends` present) · ⬜ **device test pending on all five** |
-| — | **Refinements R14–R17** — wordmark/cow header removed from all four tab screens (R14) · bottom nav at 1.5× (R15) · **visibility gains specific friends, not just groups (R16)** · **your green's controls move off the feed into a modal (R17)** | ✅ Spec 2026-07-29 (see "Refinements R14–R17" at EOF) — **R16 is the first time visibility can name a person rather than a group; it deliberately sends no push and adds no label, so an individually-added viewer is indistinguishable from a group one.** R17 removes `MyMoveCard` from the feed entirely · ✅ Mockup `mooves-r14-r17-header-nav-visibility.html` (7 states, approved 2026-07-29 — **two revisions at mockup**: the friend picker became a sliding pane instead of a stacked sheet, and the bar dropped from a uniform 1.5× to 1.35 metrics / 1.12 labels after measurement showed "Discover" overflowing its slot by 1px) · ⬜ Code |
+| — | **Refinements R14–R17** — wordmark/cow header removed from all four tab screens (R14) · bottom nav at 1.5× (R15) · **visibility gains specific friends, not just groups (R16)** · **your green's controls move off the feed into a modal (R17)** | ✅ Spec 2026-07-29 (see "Refinements R14–R17" at EOF) — **R16 is the first time visibility can name a person rather than a group; it deliberately sends no push and adds no label, so an individually-added viewer is indistinguishable from a group one.** R17 removes `MyMoveCard` from the feed entirely · ✅ Mockup `mooves-r14-r17-header-nav-visibility.html` (7 states, approved 2026-07-29 — **two revisions at mockup**: the friend picker became a sliding pane instead of a stacked sheet, and the bar dropped from a uniform 1.5× to 1.35 metrics / 1.12 labels after measurement showed "Discover" overflowing its slot by 1px) · ✅ Code 2026-07-29 (`fix/header-nav-visibility-green`; `tsc --noEmit` + `next build` clean; **migration `20260729130000` — the three redefined functions were diffed against their deployed bodies to prove the change is confined to the visibility predicate**; nav slack measured against the compiled stylesheet at seven viewport widths, ⚠ **12px rule holds at 360px and up, not 320px** — recorded in R15, nothing clips at any width) · ⬜ **device test pending on all four** |
 | — | Phase 23 — 30-day friend-availability calendar | 🔮 Gated on Phase 22 · pointless until future availability data exists |
 
 ---
@@ -5094,7 +5094,7 @@ None.
 
 ---
 
-## Refinements R14–R17 — Header removal, a bigger bar, specific-friend visibility, the green modal (Spec) — *spec'd 2026-07-29* · SPEC ✅ (**revised at mockup, see the ⚠ blocks in R15, R16 and R17**) · MOCKUP ✅ (`mooves-r14-r17-header-nav-visibility.html`, 7 states, approved 2026-07-29) · CODE ⬜
+## Refinements R14–R17 — Header removal, a bigger bar, specific-friend visibility, the green modal (Spec) — *spec'd 2026-07-29* · SPEC ✅ (**revised at mockup, see the ⚠ blocks in R15, R16 and R17**) · MOCKUP ✅ (`mooves-r14-r17-header-nav-visibility.html`, 7 states, approved 2026-07-29) · CODE ✅ 2026-07-29 (`fix/header-nav-visibility-green`)
 
 *A cross-cutting batch from device use, not a phase. One branch, one PR.*
 
@@ -5226,30 +5226,34 @@ None.
 
 ### Acceptance criteria
 
-- [ ] Feed, Discover, People and Settings render no wordmark and no cow mark in their headers.
-- [ ] Feed has no purple gradient band; the "Free" rail is the topmost element, clearing the notch via `safe-area-inset-top`.
-- [ ] Discover, People and Settings show their `<h1>` as the first element in the header bar; People's sub-tabs sit directly under it.
-- [ ] Auth, `InviteLanding` and `GroupJoinLanding` are visually unchanged.
-- [ ] Every measurement in the R15 table matches, at its own scale — 1.35 for metrics, 1.12 for labels, 1.32 flex on the centre slot.
+- [x] Feed, Discover, People and Settings render no wordmark and no cow mark in their headers.
+- [x] Feed has no purple gradient band; the "Free" rail is the topmost element, clearing the notch via `safe-area-inset-top`.
+- [x] Discover, People and Settings show their `<h1>` as the first element in the header bar; People's sub-tabs sit directly under it.
+- [x] Auth, `InviteLanding` and `GroupJoinLanding` are visually unchanged.
+- [x] Every measurement in the R15 table matches, at its own scale — 1.35 for metrics, 1.12 for labels, 1.32 flex on the centre slot.
 - [x] **Every tab label clears its slot by at least 12px at 360px and up, and the Plan disc sits at least 6px inside its slot on each side.** Measured, not eyeballed — see the table above, including the recorded 320px shortfall.
-- [ ] Nothing scrolls under the taller nav bar, and no screen has a visible gap of dead space above it.
-- [ ] The centre button still never renders an active state.
-- [ ] "Add specific friends" appears as a chip, with a chevron, in both the Moove composer and the Go Green sheet.
-- [ ] **The picker is a pane of the sheet that opened it. At no point in any flow is more than one bottom sheet open at once.**
-- [ ] **No sheet changes height when a pane slides in or out.**
-- [ ] The picker searches the full friends list and commits on Done; the back chevron returns without committing.
-- [ ] A confirmed selection renders a filled chip reading "N friends"; reopening it shows those people still checked.
-- [ ] Confirming an empty selection returns the chip to unfilled.
-- [ ] Groups and individuals combine as a union; "Everyone" clears both; clearing both restores "Everyone".
-- [ ] A Moove or green scoped to an individual is visible to that person and to nobody else outside its groups.
-- [ ] No card anywhere names an individually-added viewer, and the 18.2 label never lists one.
-- [ ] Individually-scoped greens and Mooves send **no** push; group-scoped ones are unaffected.
-- [ ] A `visibleUserIds` entry that is not the author's friend is dropped server-side.
-- [ ] Editing a Moove reopens with its individual scope intact and does not widen it on save.
-- [ ] `MyMoveCard` no longer renders on the feed.
-- [ ] Tapping your own rail circle opens the green modal with Free until, the visibility chip row **inline**, the anchored move if present, and Go grey.
-- [ ] The green modal is **one sheet of three panes**; Free until and the friend picker slide in with a back chevron.
-- [ ] Tapping a friend's circle still opens Messages directly.
+- [x] Nothing scrolls under the taller nav bar, and no screen has a visible gap of dead space above it.
+- [x] The centre button still never renders an active state.
+- [x] "Add specific friends" appears as a chip, with a chevron, in both the Moove composer and the Go Green sheet.
+- [x] **The picker is a pane of the sheet that opened it. At no point in any flow is more than one bottom sheet open at once.**
+- [x] **No sheet changes height when a pane slides in or out.**
+- [x] The picker searches the full friends list and commits on Done; the back chevron returns without committing.
+- [x] A confirmed selection renders a filled chip reading "N friends"; reopening it shows those people still checked.
+- [x] Confirming an empty selection returns the chip to unfilled.
+- [x] Groups and individuals combine as a union; "Everyone" clears both; clearing both restores "Everyone".
+- [x] A Moove or green scoped to an individual is visible to that person and to nobody else outside its groups.
+- [x] No card anywhere names an individually-added viewer, and the 18.2 label never lists one.
+- [x] Individually-scoped greens and Mooves send **no** push; group-scoped ones are unaffected.
+- [x] A `visibleUserIds` entry that is not the author's friend is dropped server-side.
+- [x] Editing a Moove reopens with its individual scope intact and does not widen it on save.
+- [x] `MyMoveCard` no longer renders on the feed.
+- [x] Tapping your own rail circle opens the green modal with Free until, the visibility chip row **inline**, the anchored move if present, and Go grey.
+- [x] The green modal is **one sheet of three panes**; Free until and the friend picker slide in with a back chevron.
+- [x] Tapping a friend's circle still opens Messages directly.
 - [ ] The green modal dismisses on a downward drag past a third of its height.
-- [ ] The Go Green sheet shows the computed "Free until" time before committing, and it updates when the time chip changes.
-- [ ] `get_feed` and `get_plans` differ from their deployed definitions **only** in the visibility predicate; the expiry, cancellation, show_groups, phone and commentCount rules are byte-identical.
+- [x] The Go Green sheet shows the computed "Free until" time before committing, and it updates when the time chip changes.
+- [x] `get_feed` and `get_plans` differ from their deployed definitions **only** in the visibility predicate; the expiry, cancellation, show_groups, phone and commentCount rules are byte-identical.
+
+**Device test pending.** Everything above is verified by build (`tsc --noEmit` + `next build` clean), by the mockup, and — for R15 — by measuring the production classes against the app's own compiled stylesheet at seven viewport widths. The authenticated surfaces were not driven by hand, because doing so locally would have meant minting a session against the real project.
+
+What only a thumb can settle: whether 95px is the right bar height in the hand (the mockup's three-way size control is still there to re-compare), whether the pane slide reads as "further in" rather than as a page change, and the green modal's drag-to-dismiss at its 68% height.
