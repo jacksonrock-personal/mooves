@@ -770,11 +770,30 @@ export default function FeedScreen() {
   }
 
   // 9.5 Part B — sheet heading from the real joiner names.
+  //
+  // "…are in" alone never said in for WHAT, which on a feed with more than one
+  // Moove is a question the reader has to go and answer themselves.
+  //
+  // `myJoiners` cannot answer it: get_feed returns it as one flat list of
+  // everyone who has joined anything of yours, greens and Mooves together, with
+  // no plan_id to group by. Rather than redefine get_feed for a heading — it has
+  // been silently broken twice by redefinition — the title is derived here from
+  // the plans already loaded: your own live Moove with the most joiners, which
+  // is overwhelmingly the one those names came from. With no such Moove the
+  // suffix is dropped rather than guessed.
+  function joinedMooveTitle(): string | null {
+    const mine = plans.filter(p => p.isMine && p.joiners.length > 0)
+    if (mine.length === 0) return null
+    return mine.reduce((a, b) => (b.joiners.length > a.joiners.length ? b : a)).title
+  }
+
   function joinedHeading(): string {
     const names = myJoiners.map(j => j.displayName ?? 'A friend')
-    if (names.length === 1) return `${names[0]} is in`
-    if (names.length === 2) return `${names[0]} and ${names[1]} are in`
-    return `${names[0]}, ${names[1]} and ${names.length - 2} more are in`
+    const title = joinedMooveTitle()
+    const suffix = title ? ` for ${title}` : ''
+    if (names.length === 1) return `${names[0]} is in${suffix}`
+    if (names.length === 2) return `${names[0]} and ${names[1]} are in${suffix}`
+    return `${names[0]}, ${names[1]} and ${names.length - 2} more are in${suffix}`
   }
 
   async function handleInviteTap() {
@@ -828,7 +847,7 @@ export default function FeedScreen() {
       {/* R14 — the gradient band and its lockup are gone entirely. The page
           background now runs to the top edge under the status bar, and the
           "Free" rail is the first thing on screen. */}
-      <div className="flex-1 flex flex-col px-4 [--safe-pt-base:0.75rem] safe-area-pt pb-[calc(114px+env(safe-area-inset-bottom))]">
+      <div className="flex-1 flex flex-col px-4 [--safe-pt-base:0.75rem] safe-area-pt pb-[calc(var(--nav-h)+22px+env(safe-area-inset-bottom))]">
         {loaded && me && (
           <>
             {/* 17.1 (refined 0008) — green wave: a connected group of 3+ green friends
@@ -991,8 +1010,8 @@ export default function FeedScreen() {
             {joinedHeading()}
           </h2>
           <p className="font-sans text-[14px] text-ink-500 leading-relaxed mb-5">
-            Sounds like something came together. Go grey to wrap up this move, or keep it open for
-            more.
+            Sounds like something came together. Go grey if that&apos;ll be it for the night, or keep
+            it open for more.
           </p>
         </div>
         <button

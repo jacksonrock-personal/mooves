@@ -6,6 +6,18 @@
 /* Plus Jakarta Sans: headings/display | Inter: all body/UI */
 
 @layer base {
+  /* R15 — the bar's height, in ONE place.
+     Every sticky element above the bottom nav used to hardcode its own guess at
+     how tall that bar was (`bottom-[72px]`, `pb-[136px]`, `pb-24`). Growing the
+     bar therefore buried the "New group" and "Invite" bars underneath it, which
+     is exactly what the device test found. Anything that has to clear the nav
+     now derives from this, so resizing the bar again cannot silently hide a
+     control. Excludes the safe-area inset, which the nav adds separately — add
+     `env(safe-area-inset-bottom)` alongside it. */
+  :root {
+    --nav-h: 95px;
+  }
+
   body {
     @apply bg-surface-bg text-text-primary font-sans;
     -webkit-font-smoothing: antialiased;

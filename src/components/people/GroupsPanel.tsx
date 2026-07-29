@@ -91,7 +91,7 @@ export default function GroupsPanel() {
     <div className="flex-1 flex flex-col min-h-0">
       {loaded &&
         (isEmpty ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-center px-8 pb-[calc(114px+env(safe-area-inset-bottom))] bg-surface-bg">
+          <div className="flex-1 flex flex-col items-center justify-center text-center px-8 pb-[calc(var(--nav-h)+95px+22px+env(safe-area-inset-bottom))] bg-surface-bg">
             <div className="w-[52px] h-[52px] rounded-2xl bg-purple-tint flex items-center justify-center text-[26px] leading-none mb-4">
               👥
             </div>
@@ -103,7 +103,7 @@ export default function GroupsPanel() {
             </p>
           </div>
         ) : (
-          <div className="flex-1 overflow-y-auto pb-[calc(114px+env(safe-area-inset-bottom))] bg-card-white">
+          <div className="flex-1 overflow-y-auto pb-[calc(var(--nav-h)+95px+22px+env(safe-area-inset-bottom))] bg-card-white">
             {groups.map(g => (
               <GroupRow
                 key={g.id}
@@ -124,7 +124,13 @@ export default function GroupsPanel() {
         ))}
 
       {/* Sticky create bar (above bottom nav) — mirrors FriendsPanel's invite bar */}
-      <div className="fixed bottom-[72px] left-0 right-0 z-30 bg-card-white border-t border-[#E8E4F5] px-4 py-2.5">
+      {/* ⚠ pb-[34px], not py-2.5. Sitting this bar at exactly --nav-h is not
+          enough: the Plan disc is lifted 26px ABOVE the nav's top edge and the
+          nav paints after this bar, so the cow landed on top of the button. The
+          device test found it burying "New group" outright. The extra bottom
+          padding lifts the button clear while the bar's white background runs on
+          underneath, so the disc rests on it exactly as it does on the nav. */}
+      <div className="fixed bottom-[calc(var(--nav-h)+env(safe-area-inset-bottom))] left-0 right-0 z-30 bg-card-white border-t border-[#E8E4F5] px-4 pt-2.5 pb-[34px]">
         <button
           onClick={handleCreate}
           className="w-full py-3.5 rounded-2xl bg-mooves-purple text-white font-display font-bold text-[15px] tracking-tight flex items-center justify-center gap-2"
