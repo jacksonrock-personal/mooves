@@ -250,7 +250,7 @@ export default function SettingsScreen() {
       </header>
 
       {/* Body */}
-      <div className="flex-1 overflow-y-auto pb-[calc(114px+env(safe-area-inset-bottom))]">
+      <div className="flex-1 overflow-y-auto pb-[calc(var(--nav-h)+22px+env(safe-area-inset-bottom))]">
         {loaded && (
           <>
             <ProfileCard
