@@ -18,6 +18,7 @@ import SwipeToGoGreen from './SwipeToGoGreen'
 import WaveStrip from './WaveStrip'
 import TipJar from './TipJar'
 import AmbientTier from './AmbientTier'
+import MoovesEmpty from './MoovesEmpty'
 import RoundupJoinedSheet from './RoundupJoinedSheet'
 import GreenRail, { sortRail, type RailPerson } from './GreenRail'
 import PlanCard from './PlanCard'
@@ -915,23 +916,34 @@ export default function FeedScreen() {
                     goes straight to Messages. Greens carry availability,
                     Mooves carry commitment — so "I'm in", rosters and the group
                     blast now live only on Mooves. */}
-                {plans.length > 0 && (
-                  <>
-                    <p className="font-sans text-[10.5px] font-bold text-ink-500 uppercase tracking-[0.1em] px-0.5 pt-1 pb-2.5">
-                      Mooves
-                    </p>
-                    {plans.map(p => (
-                      <PlanCard
-                        key={p.id}
-                        plan={p}
-                        meId={me.id}
-                        onToggleJoin={handleTogglePlanJoin}
-                        onBlast={handlePlanBlast}
-                        onActions={setActionsPlan}
-                        onOpenSheet={(plan, pane) => setSheet({ plan, pane })}
-                      />
-                    ))}
-                  </>
+                {/* The label is unconditional in this branch. It used to render
+                    only alongside cards, so a viewer with green friends and no
+                    Mooves got no label AND no cards — a blank slab of feed that
+                    read as broken rather than as empty. */}
+                <p className="font-sans text-[10.5px] font-bold text-ink-500 uppercase tracking-[0.1em] px-0.5 pt-1 pb-2.5">
+                  Mooves
+                </p>
+                {plans.length > 0 ? (
+                  plans.map(p => (
+                    <PlanCard
+                      key={p.id}
+                      plan={p}
+                      meId={me.id}
+                      onToggleJoin={handleTogglePlanJoin}
+                      onBlast={handlePlanBlast}
+                      onActions={setActionsPlan}
+                      onOpenSheet={(plan, pane) => setSheet({ plan, pane })}
+                    />
+                  ))
+                ) : (
+                  <MoovesEmpty
+                    onPlan={() => {
+                      posthog.capture('mooves_empty_plan_tapped')
+                      setEditingPlan(null)
+                      setPlanPrefill(null)
+                      setComposerOpen(true)
+                    }}
+                  />
                 )}
 
                 {/* Phase 14.1: tip jar at the very bottom, only when 3+ moves are

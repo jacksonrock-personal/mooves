@@ -33,16 +33,25 @@ export default function PaneTrack({ pane, children }: PaneTrackProps) {
   const panes = Array.isArray(children) ? children : [children]
 
   return (
-    <div className="flex-1 min-h-0 flex overflow-hidden">
+    // The track's width must be DEFINITE, which is why the clipper is a block
+    // and not a flex row. As a flex row it made the track a flex item sized
+    // `flex: 1 1 0%`, and a percentage flex-basis inside an indefinite main
+    // size is resolved differently by every engine: Chrome gave the track the
+    // container's width, WEBKIT SIZED IT TO ITS CONTENT — three panes' worth —
+    // so every pane was ~1.8x the screen and the whole sheet rendered cut off
+    // on iPhones. Measured in WebKit at 393px: track 713px before, 393px after.
+    // Widths here now resolve against a block ancestor, so no engine has to
+    // guess.
+    <div className="flex-1 min-h-0 overflow-hidden">
       <div
-        className="flex-1 min-h-0 flex transition-transform duration-[320ms] ease-[cubic-bezier(.22,.9,.3,1)]"
+        className="h-full w-full flex transition-transform duration-[320ms] ease-[cubic-bezier(.22,.9,.3,1)]"
         style={{ transform: `translateX(-${pane * 100}%)` }}
       >
         {panes.map((child, i) => (
           <div
             key={i}
             aria-hidden={i !== pane}
-            className={`shrink-0 grow-0 basis-full min-w-0 min-h-0 flex flex-col ${
+            className={`shrink-0 grow-0 basis-full w-full min-w-0 min-h-0 flex flex-col ${
               i === pane ? '' : 'invisible pointer-events-none'
             }`}
           >
