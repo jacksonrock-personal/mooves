@@ -43,6 +43,7 @@
 | — | **Refinements R1–R8** — nav "Plan a Moove" button (R1) · composer step gating (R2) · When defaults + real date/time hints (R3) · visibility moves up (R4) · Moove sheet header removed (R5) · swipe-to-close everywhere (R6) · copy (R7) · **likes + roster-only tagging (R8)** | ✅ Spec 2026-07-28 (see "Refinements R1–R8" at EOF) — **R8 amends Phase 21's "no @mentions, no reactions on comments" in daylight** · ✅ Mockup `mooves-nav-composer-refinements.html` (11 states, approved 2026-07-28) · ✅ Code 2026-07-28 (`fix/nav-composer-comments`; `tsc --noEmit` + `next build` clean; **migration `20260728050000` applied by Jackson** — `plan_comment_likes` verified RLS-on with zero policies, `plan_comments.mentions` present; **R6 corrected at build**, see the ⚠ note in R6) |
 | — | **Refinements R9–R13** — composer fixed height (R9) · reveal slowed because it no longer reflows (R10) · **tagging someone NOT in the Moove, + push (R11)** · **the edit bug, repaired (R12)** · sheet grab targets (R13) | ✅ Spec 2026-07-28 (see "Refinements R9–R13" at EOF) — **R11 amends R8, which amended Phase 21: a tag may now reach a non-joiner, bounded to people who can ALREADY see the Moove.** R9, R10 and R13 are same-day corrections to R2 and R6 · ✅ Mockup `mooves-composer-height-tagging.html` (approved 2026-07-28) · ✅ Code 2026-07-28 (`fix/composer-height-tagging-edit`, **merged PR #51** `5b760b5`; `tsc --noEmit` + `next build` clean; **migration `20260728120000` applied by Jackson** — `get_plans` verified live with the two author-only keys, `plan_taggable_friends` present) · ⬜ **device test pending on all five** |
 | — | **Refinements R14–R17** — wordmark/cow header removed from all four tab screens (R14) · bottom nav at 1.5× (R15) · **visibility gains specific friends, not just groups (R16)** · **your green's controls move off the feed into a modal (R17)** | ✅ Spec 2026-07-29 (see "Refinements R14–R17" at EOF) — **R16 is the first time visibility can name a person rather than a group; it deliberately sends no push and adds no label, so an individually-added viewer is indistinguishable from a group one.** R17 removes `MyMoveCard` from the feed entirely · ✅ Mockup `mooves-r14-r17-header-nav-visibility.html` (7 states, approved 2026-07-29 — **two revisions at mockup**: the friend picker became a sliding pane instead of a stacked sheet, and the bar dropped from a uniform 1.5× to 1.35 metrics / 1.12 labels after measurement showed "Discover" overflowing its slot by 1px) · ✅ Code 2026-07-29 (`fix/header-nav-visibility-green`; `tsc --noEmit` + `next build` clean; **migration `20260729130000` — the three redefined functions were diffed against their deployed bodies to prove the change is confined to the visibility predicate**; nav slack measured against the compiled stylesheet at seven viewport widths, ⚠ **12px rule holds at 360px and up, not 320px** — recorded in R15, nothing clips at any width) · ⬜ **device test pending on all four** |
+| — | **Refinements R18–R20** — **the WebKit pane-width bug (R18)** · the Mooves list has no empty state (R19) · **the landing page sells half the product (R20)** | ✅ Spec 2026-07-30 (see "Refinements R18–R20" at EOF) — **R18 is a real defect, root-caused and reproduced in WebKit, not a style tweak**: `PaneTrack`'s track was a flex item with a percentage flex-basis inside an indefinite main size, which WebKit sized to its content, so every pane in the Go Green sheet and the green modal rendered ~1.8× the screen width on iPhones. R19 fills the empty state §20.4 never defined. R20 rewrites the landing page around planned Mooves, joining and Discover · ⬜ no mockup — R18/R19 verified by measurement and screenshot in WebKit, R20 reviewed as the live page · ✅ Code 2026-07-30 (`tsc --noEmit` + `next build` clean; no migration; cut off `origin/main` @ `e5783b5`, after R14–R17 merged as PR #53) · ⬜ **device test pending on R18** |
 | — | Phase 23 — 30-day friend-availability calendar | 🔮 Gated on Phase 22 · pointless until future availability data exists |
 
 ---
@@ -5257,3 +5258,66 @@ None.
 **Device test pending.** Everything above is verified by build (`tsc --noEmit` + `next build` clean), by the mockup, and — for R15 — by measuring the production classes against the app's own compiled stylesheet at seven viewport widths. The authenticated surfaces were not driven by hand, because doing so locally would have meant minting a session against the real project.
 
 What only a thumb can settle: whether 95px is the right bar height in the hand (the mockup's three-way size control is still there to re-compare), whether the pane slide reads as "further in" rather than as a page change, and the green modal's drag-to-dismiss at its 68% height.
+
+---
+
+## Refinements R18–R20 — The WebKit pane bug, the missing empty state, the landing page (Spec) — *spec'd 2026-07-30* · SPEC ✅ · MOCKUP — *(none: R18/R19 were verified by measurement in a real WebKit engine, R20 was reviewed as the live page)* · CODE ✅ 2026-07-30
+
+*One reported bug, one gap found chasing it, one page that had fallen behind the product. No migration.*
+
+### R18 — The Go Green sheet renders ~1.8× the screen width on iPhones *(fixes R16/R17)*
+
+**Problem, reported:** a friend's screenshot of the Go Green sheet with the When grid's second column, the visibility chips and the whole "I'm free" button running off the right edge of the screen. The feed behind it was laid out correctly. It did not reproduce on Jackson's phone.
+
+**Root cause — `PaneTrack`, shipped with R16/R17.** The clipper was a flex **row**, which made the sliding track a flex item sized `flex: 1 1 0%`, and the panes inside it `flex: 0 0 100%`. A percentage flex-basis resolved against an **indefinite** main size is the one place the engines genuinely disagree: Chrome gave the track the container's width, **WebKit sized it to its content** — three panes' worth — and every pane inherited that width.
+
+**Measured against the real component in WebKit at a 393px viewport:**
+
+| | before | after |
+|---|---|---|
+| sheet | 393px | 393px |
+| track | **713px** | 393px |
+| pane 0 | **713px** | 393px |
+| "I'm free" button | 673px, right edge at 693 | 353px, right edge at 373 |
+
+**Why only some people saw it:** 713px is *content*-derived, so it depends on what is in the panes — the longest group name in the visibility row, the longest friend name in the picker. Short names fit inside the viewport and the bug is invisible; one long one and the sheet blows out. It was never a device difference.
+
+**The fix:** the clipper becomes a **block** with `overflow-hidden`, the track takes `w-full h-full`, and the panes keep `basis-full` plus an explicit `w-full`. Every width in the chain now resolves against a definite ancestor, so no engine has to guess. Panes verified still at `0 / +393 / +786` and sliding to `−393 / 0 / +393` on the friend picker; Chrome unchanged at 393 throughout.
+
+**Both sheets are fixed by the one change** — `GoGreenSheet` and `GreenSheet` share `PaneTrack`.
+
+### R19 — The Mooves list has no empty state *(fills a gap in §20.4)*
+
+**Problem, observed:** with green friends in the rail and nothing planned, everything below the swipe is white space. It reads as a screen that failed to load.
+
+§20.4 defined exactly one empty state — `AmbientTier`, shown when the rail **and** the Mooves list are both empty. That is correct as far as it goes, and it leaves the most common state of all undesigned: the rail is full, so `AmbientTier` is correctly suppressed, and the Mooves list is empty, so nothing renders at all. Not a regression — a state that was never specced.
+
+- **The "Mooves" section label becomes unconditional** in that branch. It previously rendered only alongside cards, so the blank slab had no label either.
+- **New `MoovesEmpty`** beneath it: a dashed replica of the 46px purple tile a real Moove card leads with, "Nothing planned yet.", "Friends are free up there. Give them something to join.", and a **Plan a Moove** button opening the same composer as the nav disc.
+- Deliberately **quieter than `AmbientTier`**, which is a hero state for a feed with no signal in it at all. This one sits under a rail of live faces; it only has to name the surface and offer the action.
+- **`AmbientTier`'s copy now names both actions** — "Go free, or plan something for later." §20.4 asked for exactly that once Mooves existed, and the shipped copy still only named the swipe.
+- PostHog: `mooves_empty_plan_tapped`.
+
+### R20 — The landing page sells half the product
+
+**Problem:** `/` still describes the Phase 9 app — go green, friends see it, text them. Since then the product grew a second object (planned Mooves), the join flow hanging off it, and Discover. A visitor was being shown roughly half of what they would find after signing up.
+
+- **Hero subhead** is now the whole product in one line: *"Go green when you're free. Or create a last-minute plan and let your friends join up. **No big invites, just simple hangs.**"*
+- **"Three taps from bored to booked" → "Two ways to get something going"** — two cards, because there are two objects. **Go green** (with a replica of the swipe control) and **Plan a Moove** (with a replica of `PlanCard`), the second saying out loud that only the day is required and that visibility is per-Moove.
+- **New section: "Your friends just tap 'I'm in'"** — the join flow, which the page never mentioned. Three beats (it shows up → one tap to join → it moves to text, at 2+) beside a replica of a joined card carrying the roster row and the group-text button.
+- **New section: Discover** — a short list of things actually happening nearby, filtered to your interests, and **"Go with friends"** turning one into your own Moove. Carries the disclosure plainly: *local spots pay to be listed, it says so on the card, they never appear in your friends' feed and they never see who you are.* Guardrail #4 stated on the marketing page, not just enforced in code.
+- **"No feed to scroll" reworded** — the app now shows what's planned as well as who's free, and the old copy claimed less than ships.
+- **The card visuals are static replicas**, not the components: `PlanCard` and `SponsoredCard` need a live plan, handlers and a session. **Known cost, recorded so it is not discovered later:** when either card's design changes, the landing replicas need the same edit or the page quietly starts lying.
+- `mooves-phase14-landing.html` is **superseded** by the live page and was not regenerated.
+
+### Acceptance
+
+- [x] At a 393px viewport in WebKit, the Go Green sheet's track and every pane measure exactly the viewport width, and the "I'm free" button's right edge sits one padding step inside it.
+- [x] The friend-picker pane still slides in from the right and the panes stay 393px apart.
+- [x] Chrome's measurements are unchanged by the fix.
+- [x] A feed with green friends and zero Mooves shows the "Mooves" label and the empty card, not blank space.
+- [x] The empty card's button opens the same composer as the nav's Plan disc.
+- [x] `AmbientTier` names both the swipe and the composer.
+- [x] The landing page describes greens, planned Mooves, joining, the group-text handoff and Discover, and shows what a Moove card looks like.
+- [x] The landing page has no horizontal overflow at 393px or 1280px.
+- [ ] **Device test:** the Go Green sheet and the green modal on the reporter's own phone, with the long group name that triggered it.

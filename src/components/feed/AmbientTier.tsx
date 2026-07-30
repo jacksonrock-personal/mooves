@@ -40,7 +40,9 @@ export default function AmbientTier({ activeNow, recentGreen }: AmbientTierProps
             <span className={`w-[7px] h-[7px] rounded-full bg-grey-300 ${signal.live ? 'shadow-[0_0_0_4px_rgba(189,181,212,0.35)]' : ''}`} />
             <span><b className="font-bold">{signal.count} friends</b> {signal.label}</span>
           </p>
-          <p className="font-sans text-[14px] text-ink-500">Go free to get in on the action.</p>
+          {/* §20.4 asked this copy to name BOTH available actions once Mooves
+              existed; it still only named the swipe. */}
+          <p className="font-sans text-[14px] text-ink-500">Go free, or plan something for later.</p>
         </>
       ) : (
         <>
@@ -48,7 +50,7 @@ export default function AmbientTier({ activeNow, recentGreen }: AmbientTierProps
             People want to hang out.
           </p>
           <p className="font-sans text-[14px] text-ink-500 leading-relaxed">
-            Be the first to go free and get in on the action.
+            Be the first to go free, or plan something for later.
           </p>
         </>
       )}
