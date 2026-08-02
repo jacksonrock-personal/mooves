@@ -308,13 +308,14 @@ function RailVisual() {
     { initial: 'A', name: 'Ana', tone: 'bg-purple-700', when: null },
   ]
   return (
-    <div className="flex w-full gap-[9px] overflow-hidden">
+    <div className="flex w-full gap-[12px] overflow-hidden">
       <div className="flex w-[46px] shrink-0 flex-col items-center gap-1">
         <span className="relative">
           <span className="flex h-[44px] w-[44px] items-center justify-center rounded-full bg-purple-500 font-display text-[16px] font-extrabold text-white grayscale opacity-[0.48]">
             Y
           </span>
-          <span className="absolute -bottom-0.5 -right-0.5 flex h-[18px] w-[18px] items-center justify-center rounded-full border-2 border-white bg-purple-500">
+          <span className="absolute -inset-1 rounded-full border-[1px] border-grey-300" />
+          <span className="absolute -bottom-0.5 -right-0.5 z-[1] flex h-[18px] w-[18px] items-center justify-center rounded-full border-2 border-white bg-purple-500">
             <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.6" strokeLinecap="round">
               <path d="M12 5v14M5 12h14" />
             </svg>
@@ -333,13 +334,13 @@ function RailVisual() {
             >
               {p.initial}
             </span>
-            {p.when && (
-              <span
-                className={`absolute -inset-1 rounded-full border-2 ${
-                  p.later ? 'border-green-500/40' : 'border-green-500'
-                }`}
-              />
-            )}
+            <span
+              className={`absolute -inset-1 rounded-full ${
+                p.when
+                  ? `border-2 ${p.later ? 'border-green-500/40' : 'border-green-500'}`
+                  : 'border-[1px] border-grey-300'
+              }`}
+            />
           </span>
           <span className="text-[9.5px] font-semibold text-ink-500">{p.name}</span>
           <span

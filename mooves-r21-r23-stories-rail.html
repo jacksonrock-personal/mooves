@@ -14,6 +14,8 @@
     --ease:cubic-bezier(.22,.9,.3,1);
     --safetop:44px;
     --ns:1.35; --ls:1.12; --planflex:1.32;
+    /* R21b — the grey ring, and the room the rail needs once every tile has one. */
+    --railgap:14px; --greyring:1.25px; --greytone:#BDB5D4;
   }
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
   body{font-family:Inter,sans-serif;background:#0F0C1A;color:#fff;padding:34px 18px 80px;-webkit-font-smoothing:antialiased}
@@ -51,7 +53,7 @@
   .eyebrow{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-500);padding:2px 2px 8px}
 
   /* ══ THE RAIL ════════════════════════════════════════════════════ */
-  .rail{display:flex;gap:11px;overflow-x:auto;padding:3px 0 5px;scrollbar-width:none}
+  .rail{display:flex;gap:var(--railgap);overflow-x:auto;padding:3px 0 5px;scrollbar-width:none}
   .rail::-webkit-scrollbar{display:none}
   .rp{flex:0 0 auto;width:58px;display:flex;flex-direction:column;align-items:center;gap:4px;
       background:none;border:0;padding:0;font-family:inherit;text-align:center}
@@ -59,11 +61,17 @@
   .rp .ring{position:relative;display:block}
   .av{width:54px;height:54px;border-radius:99px;display:flex;align-items:center;justify-content:center;
       font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:19px;color:#fff;transition:filter .28s ease,opacity .28s ease}
+  /* Every tile carries a ring at the same inset; only its WEIGHT and colour
+     say whether the person is free. A bare circle photo against the page read
+     as cut out and sharp — the halo is what softens it. */
+  .rp .ring::after{content:'';position:absolute;inset:-4px;border-radius:99px;pointer-events:none}
   /* Green is the RING. Nothing else in the rail is allowed to be green. */
-  .rp.on .ring::after{content:'';position:absolute;inset:-4px;border-radius:99px;border:2.5px solid var(--green-500)}
+  .rp.on .ring::after{border:2.5px solid var(--green-500)}
   .rp.on.later .ring::after{border-color:rgba(46,204,113,.4)}
   .rp.me.on .ring::after{border-style:dashed}
-  /* Not free: greyscale, ringless, and nothing to press. */
+  /* Not free: greyscale, a thinner grey ring, and nothing to press. Half the
+     green ring's weight, so the two never read as the same signal. */
+  .rp.off .ring::after{border:var(--greyring) solid var(--greytone)}
   .rp.off .av{filter:grayscale(1);opacity:.48}
   .rp .nm{max-width:58px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:600;color:var(--ink-500)}
   .rp.me .nm{font-weight:700;color:var(--ink-900)}
@@ -71,8 +79,11 @@
      as people go green and grey. */
   .rp .wh{min-height:13px;font-size:9.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--green-700)}
   .rp.later .wh{color:var(--ink-500)}
+  /* z-index because the ring is an ::after on the same element and would
+     otherwise paint a grey hairline across the badge. Its own purple-50 border
+     then punches the ring out where the two cross. */
   .plus{position:absolute;right:-3px;bottom:-3px;width:22px;height:22px;border-radius:99px;background:var(--purple-500);
-        border:2.5px solid var(--purple-50);display:flex;align-items:center;justify-content:center;
+        border:2.5px solid var(--purple-50);display:flex;align-items:center;justify-content:center;z-index:1;
         box-shadow:0 2px 6px rgba(124,92,219,.42)}
   .plus svg{width:11px;height:11px}
   /* Measurement aid, off by default: what is actually pressable. */
@@ -271,6 +282,23 @@
   <button class="kbtn" id="reshuffle">New app open<small>reseed the grey tail</small></button>
   <button class="kbtn" id="gogreenmarcus">Sam goes free<small>watch the greys hold still</small></button>
   <button class="kbtn" id="taps">Outline what's tappable<small>off</small></button>
+</div>
+
+<div class="knoblbl">R21b — the grey ring, and the room it needs</div>
+<div class="knobs" id="ringknobs">
+  <button class="kbtn" data-ring="0">None<small>what shipped</small></button>
+  <button class="kbtn on" data-ring="1.25">1.25px<small>half the green ring</small></button>
+  <button class="kbtn" data-ring="1.5">1.5px<small>a shade firmer</small></button>
+  <button class="kbtn" data-ring="2">2px<small>close to green's weight</small></button>
+</div>
+<div class="knobs" id="gapknobs">
+  <button class="kbtn" data-gap="11">Gap 11px<small>what shipped</small></button>
+  <button class="kbtn on" data-gap="14">Gap 14px<small>recommended</small></button>
+  <button class="kbtn" data-gap="17">Gap 17px<small>airier</small></button>
+  <button class="kbtn" data-tone="soft">Softer grey<small>60% opacity</small></button>
+</div>
+<div class="knobs">
+  <div class="note" id="ringmetrics" style="margin-top:6px;text-align:center;width:auto"></div>
 </div>
 
 <div class="stage">
@@ -778,7 +806,43 @@ document.getElementById('taps').onclick = (e) => {
   e.currentTarget.innerHTML = `Outline what's tappable<small>${on?'on, purple presses, red does not':'off'}</small>`;
 };
 
+// ── R21b: ring weight + rail gap ──────────────────────────────────────────
+// The number that actually matters is neither knob on its own: it is how much
+// clear page is left BETWEEN two rings, since each ring sits 4px outside a 54px
+// avatar inside a 58px tile. That is what is measured and shown.
+function ringMetrics(){
+  const cs = getComputedStyle(document.documentElement);
+  const gap = parseFloat(cs.getPropertyValue('--railgap'));
+  const ring = parseFloat(cs.getPropertyValue('--greyring'));
+  const overhang = 4 - (58 - 54) / 2;           // ring reaches 2px past the tile edge
+  const between = gap - overhang * 2;
+  document.getElementById('ringmetrics').innerHTML =
+    `Gap <b>${gap}px</b> between tiles, rings overhang <b>${overhang}px</b> each side, so <b>${between}px</b> of clear page between two rings. ` +
+    (ring === 0 ? `Grey ring <b>off</b>.` : `Grey ring <b>${ring}px</b>, green <b>2.5px</b>.`) +
+    (between < 8 ? ` <span style="color:#FF8FA3">Under 8px the row starts reading as one strip.</span>` : '');
+}
+document.querySelectorAll('#ringknobs .kbtn').forEach(b=>{
+  b.onclick = () => {
+    document.documentElement.style.setProperty('--greyring', b.dataset.ring + 'px');
+    document.querySelectorAll('#ringknobs .kbtn').forEach(x=>x.classList.toggle('on', x===b));
+    ringMetrics();
+  };
+});
+document.querySelectorAll('#gapknobs .kbtn[data-gap]').forEach(b=>{
+  b.onclick = () => {
+    document.documentElement.style.setProperty('--railgap', b.dataset.gap + 'px');
+    document.querySelectorAll('#gapknobs .kbtn[data-gap]').forEach(x=>x.classList.toggle('on', x===b));
+    ringMetrics();
+  };
+});
+document.querySelector('[data-tone]').onclick = (e) => {
+  const on = e.currentTarget.classList.toggle('on');
+  document.documentElement.style.setProperty('--greytone', on ? 'rgba(189,181,212,.6)' : '#BDB5D4');
+  ringMetrics();
+};
+
 renderRails();
+ringMetrics();
 show('feed');
 </script>
 </body>

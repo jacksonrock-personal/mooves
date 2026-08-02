@@ -113,13 +113,14 @@ export default function MoovesLoop() {
               that turns it green, so it has to show the before. */}
           <div className="w-1/5 h-full flex flex-col items-center justify-center px-8 text-center">
             <div className="w-[200px] h-[168px] rounded-[28px] bg-green-100 flex items-center justify-center mb-8">
-              <div className="flex gap-[7px]">
+              <div className="flex gap-[11px]">
                 <div className="w-11 flex flex-col items-center gap-1">
                   <span className="relative">
                     <span className="w-[42px] h-[42px] rounded-full bg-purple-500 flex items-center justify-center font-display font-extrabold text-[15px] text-white grayscale opacity-[0.48]">
                       Y
                     </span>
-                    <span className="absolute -right-0.5 -bottom-0.5 w-[17px] h-[17px] rounded-full bg-purple-500 border-2 border-green-100 flex items-center justify-center">
+                    <span className="absolute -inset-1 rounded-full border-[1px] border-grey-300" />
+                    <span className="absolute -right-0.5 -bottom-0.5 z-[1] w-[17px] h-[17px] rounded-full bg-purple-500 border-2 border-green-100 flex items-center justify-center">
                       <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.6" strokeLinecap="round">
                         <path d="M12 5v14M5 12h14" />
                       </svg>
@@ -132,10 +133,13 @@ export default function MoovesLoop() {
                   { i: 'R', c: 'bg-[#5FB0E8]' },
                 ].map(f => (
                   <div key={f.i} className="w-11 flex flex-col items-center gap-1">
-                    <span
-                      className={`w-[42px] h-[42px] rounded-full ${f.c} flex items-center justify-center font-display font-extrabold text-[15px] text-white grayscale opacity-[0.48]`}
-                    >
-                      {f.i}
+                    <span className="relative">
+                      <span
+                        className={`w-[42px] h-[42px] rounded-full ${f.c} flex items-center justify-center font-display font-extrabold text-[15px] text-white grayscale opacity-[0.48]`}
+                      >
+                        {f.i}
+                      </span>
+                      <span className="absolute -inset-1 rounded-full border-[1px] border-grey-300" />
                     </span>
                     <span className="font-sans text-[9.5px] font-semibold text-text-secondary">
                       {f.i === 'D' ? 'Dana' : 'Ray'}
@@ -155,7 +159,7 @@ export default function MoovesLoop() {
               now it is the real thing, so what you learn here is what you see. */}
           <div className="w-1/5 h-full flex flex-col items-center justify-center px-8 text-center">
             <div className="w-[200px] h-[168px] rounded-[28px] bg-green-100 flex items-center justify-center mb-8">
-              <div className="flex gap-[7px]">
+              <div className="flex gap-[11px]">
                 {[
                   { i: 'D', n: 'Dana', c: 'bg-[#E8A0B4]', when: 'Now', later: false },
                   { i: 'P', n: 'Priya', c: 'bg-purple-500', when: 'Wknd', later: true },
@@ -170,13 +174,13 @@ export default function MoovesLoop() {
                       >
                         {f.i}
                       </span>
-                      {f.when && (
-                        <span
-                          className={`absolute -inset-1 rounded-full border-2 ${
-                            f.later ? 'border-green-500/40' : 'border-green-500'
-                          }`}
-                        />
-                      )}
+                      <span
+                        className={`absolute -inset-1 rounded-full ${
+                          f.when
+                            ? `border-2 ${f.later ? 'border-green-500/40' : 'border-green-500'}`
+                            : 'border-[1px] border-grey-300'
+                        }`}
+                      />
                     </span>
                     <span className="font-sans text-[9.5px] font-semibold text-text-secondary">{f.n}</span>
                     <span

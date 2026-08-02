@@ -5371,6 +5371,16 @@ What only a thumb can settle: whether 95px is the right bar height in the hand (
 
 **Analytics:** `go_green_sheet_opened` gains `source: 'rail_tile'`.
 
+### R21b — The grey ring, and the room it needs *(refines R21, 2026-08-02)*
+
+**Observed by Jackson on the built rail:** the grey photos "look pretty sharp and not soft enough". Correct — R21 gave greens a ring and everyone else nothing, so a bare circular photo sat against the page looking cut out.
+
+- **Every tile now carries a ring at the same 4px inset.** Only its weight and colour say whether the person is free, so going green is a *change in the ring* rather than a ring appearing from nowhere.
+- **Grey ring = 1.25px `grey-300`, exactly half the green's 2.5px** (Jackson's call, to differentiate the two at a glance). *Caveat worth recording: sub-pixel snapping means the rendered ratio is not exactly half on every display — measured at DPR 1.5 the grey ring resolves to one device pixel (0.67px) against green's 2px. On a 3× phone it lands much closer to a true half.*
+- **Rail gap 11px → 14px.** The number that actually governs this is neither value alone: a ring reaches 4px past a 54px avatar inside a 58px tile, so it overhangs the tile by 2px per side. At 11px that left **7px** of clear page between two rings — fine when only greens were ringed, and one continuous strip once every tile is. 14px leaves **10px**, measured in the browser, matching the derivation. 17px was compared and read as a gallery rather than a rail.
+- **The `+` badge gains `z-[1]`.** It overlaps the ring and its background-coloured border punches the ring out where they cross, which only works while the badge paints last. It does here by DOM order, but in the mockup the ring was an `::after` — which paints after every child — and drew a grey hairline across the badge. The z-index pins the outcome against a future reorder.
+- Applied to all three surfaces that draw a rail: `Rail.tsx`, onboarding cards 1 and 2 (gap 7px → 11px, ring 1px against green's 2px at that scale), and the landing replica (gap 9px → 12px).
+
 ### R23 — Everything that still teaches the slide
 
 The slide appears in nine places outside the deleted component. All of them change, plus one gap this round exposed (`MoovesLoop` card 3):
@@ -5407,6 +5417,7 @@ Story *content* — a green is a state, not a post, and there is nothing to view
 - [ ] Grey: your tile shows a purple `+` and reads "Go free"; tapping opens the Go Green sheet. Green: the `+` is gone, it reads "You", and tapping opens "Your green".
 - [ ] `SwipeToGoGreen` no longer exists in the codebase.
 - [ ] The "FREE" label is gone, and the rail does not change height as people go green.
+- [ ] Every tile carries a ring: 2.5px green when free, 1.25px `grey-300` when not, at the same inset; the rail gap is 14px and the `+` badge paints above the ring.
 - [ ] `AmbientTier` still shows only when there are no visible green friends and no Mooves.
 - [ ] All nine artifacts in R23 describe the tap, not the slide.
 - [ ] Onboarding teaches **both** creation gestures: card 1 points at your own face, card 3 points at the cow disc in the nav.
