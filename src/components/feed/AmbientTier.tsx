@@ -41,7 +41,9 @@ export default function AmbientTier({ activeNow, recentGreen }: AmbientTierProps
             <span><b className="font-bold">{signal.count} friends</b> {signal.label}</span>
           </p>
           {/* §20.4 asked this copy to name BOTH available actions once Mooves
-              existed; it still only named the swipe. */}
+              existed; it only named the one. R23 checked it again after the
+              swipe was deleted: "Go free" names the action, not the gesture, so
+              it survived R22 unchanged. */}
           <p className="font-sans text-[14px] text-ink-500">Go free, or plan something for later.</p>
         </>
       ) : (

@@ -2,28 +2,28 @@
 
 All values reference `tokens/tokens.css` / `tailwind.theme.js`. Colors given as token names — resolve hex from tokens files.
 
-## Status toggle (primary interaction — swipe to go green)
+## Status toggle (primary interaction — your own tile in the rail)
 
-**Shape**: pill track, `border-radius: pill (9999px in practice; spec drew 20-28px per screen density)`, full width of its container, `height: 56px` fixed (never resizes across states).
+> **Superseded 2026-08-02 (R22).** This section described a full-width swipe track. That control is **deleted**; going free is a tap on your own avatar at the head of the rail. The old anatomy is kept nowhere — read the rail below.
 
-**Off / default**
-- `background: purple-50`, `border: 1.5px solid #E8E4F5`
-- Center label: "Swipe to go green →", `body-md` weight 700, color `ink-500`, centered absolutely (fades as thumb drags)
-- Thumb: 48×48px circle, `background: purple-500`, `4px` inset from track edges, `box-shadow: 0 2px 8px rgba(0,0,0,0.15)`
+**Shape**: a 58px-wide tile at the head of the rail, first and never sorted. Avatar 54px, name beneath, a time-label slot beneath that which always holds its height (so the rail does not change height as people go green and grey).
 
-**Mid-swipe (dragging)**
-- Thumb translates horizontally with the drag (`transform: translateX(px)`, no transition while dragging)
-- Thumb color interpolates to `green-700` once past 70% of track width (the commit threshold)
-- Label opacity fades to 0 as thumb approaches ~60% progress
+**Off / default (you are not free)**
+- Avatar rendered greyscale at 48% opacity, **no ring**
+- `+` badge bottom-right: 22px circle, `background: purple-500`, `2.5px` border in `purple-50` (the page background, punching it out of the rail)
+- Label: **"Go free"**, `body-sm` weight 700, `ink-900` — the word, not your name, because a bare `+` is too quiet to carry the app's most important action
+- Tap opens the Go Green sheet. **The sheet's "I'm free" button is the commit** — the tile only opens it
 
-**Commit / on (free)**
-- Track becomes solid `background: green-700`, `box-shadow: glow-green`, animates in with `transform 0.25s cubic-bezier(.2,.8,.2,1)`
-- Content: dot (10px, white) + "You're free" (`display` 800 15px, white) left-aligned; "Tap to end" (body-sm 700, white/85%) right-aligned
-- Glow pulses on a slow **2.4s loop** (ambient, never alert-cadence) — see `@keyframes glowPulse`
+**On (free)**
+- Avatar full colour, ring `2.5px solid green-500`, **dashed** (yours alone; friends' rings are solid)
+- Ring drops to `green-500/40` when the green is not `now`
+- `+` badge is **gone** — purple on a green ring would put an action colour where availability lives
+- Label: "You", with the time label (*Now · Tonight · This wk · Wknd*) beneath in `green-700`, or `ink-500` when later
+- Tap opens "Your green" (R17): free-until, visibility, go grey
 
-**Going grey (tap target, separate from swipe)**
-- Tapping "Tap to end" opens a bottom confirm sheet (native iOS action-sheet pattern): message row + red "Go grey" action + "Cancel"
-- `border-radius: lg (20px)` sheet, `1px solid #E8E4F5`, no backdrop blur required at spec level (implementation detail)
+**Friends' tiles**
+- Green: solid ring, name in `ink-500`, time label. One tap opens Messages
+- Not free: greyscale, ringless, no label, and **not a button** — no press state, no focus ring, not a tab stop
 
 **Motion/haptics**: no haptic on go-green commit (keep it soft); a single light-impact haptic recommended on go-grey confirm only.
 

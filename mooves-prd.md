@@ -44,6 +44,7 @@
 | — | **Refinements R9–R13** — composer fixed height (R9) · reveal slowed because it no longer reflows (R10) · **tagging someone NOT in the Moove, + push (R11)** · **the edit bug, repaired (R12)** · sheet grab targets (R13) | ✅ Spec 2026-07-28 (see "Refinements R9–R13" at EOF) — **R11 amends R8, which amended Phase 21: a tag may now reach a non-joiner, bounded to people who can ALREADY see the Moove.** R9, R10 and R13 are same-day corrections to R2 and R6 · ✅ Mockup `mooves-composer-height-tagging.html` (approved 2026-07-28) · ✅ Code 2026-07-28 (`fix/composer-height-tagging-edit`, **merged PR #51** `5b760b5`; `tsc --noEmit` + `next build` clean; **migration `20260728120000` applied by Jackson** — `get_plans` verified live with the two author-only keys, `plan_taggable_friends` present) · ⬜ **device test pending on all five** |
 | — | **Refinements R14–R17** — wordmark/cow header removed from all four tab screens (R14) · bottom nav at 1.5× (R15) · **visibility gains specific friends, not just groups (R16)** · **your green's controls move off the feed into a modal (R17)** | ✅ Spec 2026-07-29 (see "Refinements R14–R17" at EOF) — **R16 is the first time visibility can name a person rather than a group; it deliberately sends no push and adds no label, so an individually-added viewer is indistinguishable from a group one.** R17 removes `MyMoveCard` from the feed entirely · ✅ Mockup `mooves-r14-r17-header-nav-visibility.html` (7 states, approved 2026-07-29 — **two revisions at mockup**: the friend picker became a sliding pane instead of a stacked sheet, and the bar dropped from a uniform 1.5× to 1.35 metrics / 1.12 labels after measurement showed "Discover" overflowing its slot by 1px) · ✅ Code 2026-07-29 (`fix/header-nav-visibility-green`; `tsc --noEmit` + `next build` clean; **migration `20260729130000` — the three redefined functions were diffed against their deployed bodies to prove the change is confined to the visibility predicate**; nav slack measured against the compiled stylesheet at seven viewport widths, ⚠ **12px rule holds at 360px and up, not 320px** — recorded in R15, nothing clips at any width) · ⬜ **device test pending on all four** |
 | — | **Refinements R18–R20** — **the WebKit pane-width bug (R18)** · the Mooves list has no empty state (R19) · **the landing page sells half the product (R20)** | ✅ Spec 2026-07-30 (see "Refinements R18–R20" at EOF) — **R18 is a real defect, root-caused and reproduced in WebKit, not a style tweak**: `PaneTrack`'s track was a flex item with a percentage flex-basis inside an indefinite main size, which WebKit sized to its content, so every pane in the Go Green sheet and the green modal rendered ~1.8× the screen width on iPhones. R19 fills the empty state §20.4 never defined. R20 rewrites the landing page around planned Mooves, joining and Discover · ⬜ no mockup — R18/R19 verified by measurement and screenshot in WebKit, R20 reviewed as the live page · ✅ Code 2026-07-30 (`tsc --noEmit` + `next build` clean; no migration; cut off `origin/main` @ `e5783b5`, after R14–R17 merged as PR #53) · ⬜ **device test pending on R18** |
+| — | **Refinements R21–R23** — **the rail holds everyone, permanently (R21)** · **going free is your own tile; the slide is deleted (R22)** · every artifact that still teaches the slide (R23) | ✅ Spec 2026-07-31 (see "Refinements R21–R23" at EOF) — **modelled on Instagram's story rail**: the rail is permanent and holds every friend, green is the ring, greens jump to the front by immediacy bucket and the grey tail is shuffled once per app open. Grey faces are deliberately **inert** — green is what makes someone contactable. **`SwipeToGoGreen` is deleted**; the `+` on your own tile is the only path to green, labelled "Go free" so the app's most important action stays discoverable. **No migration, no new endpoint** — `/api/friends` is already fetched on load · ✅ Mockup `mooves-r21-r23-stories-rail.html` (13 states, approved 2026-08-02 — **one amendment at mockup**: R23 gained `MoovesLoop` card 3, which taught what a Moove *is* and never said where one comes from; onboarding now teaches both creation gestures, tap your own face and tap the cow) · ✅ Code 2026-08-02 (`feat/r21-r23-stories-rail`, **stacked on `fix/webkit-panes-empty-state-landing`** — R18–R20 rewrote the same three files and is not yet merged; `tsc --noEmit` + `next build` clean; no migration; `GreenRail`→`Rail`, `SwipeToGoGreen` deleted, new `src/lib/rail.ts` with **17 tsx acceptance checks passing**; rail height measured stable at 91.5px across all four states after a 1.25px label-slot defect was found and fixed) · ⬜ **device test pending** |
 | — | Phase 23 — 30-day friend-availability calendar | 🔮 Gated on Phase 22 · pointless until future availability data exists |
 
 ---
@@ -3339,7 +3340,8 @@ None.
 ✅ **Coded 2026-07-17 (Jackson: "ship it")** — `tsc --noEmit` + `next build` clean; dev server boots clean. **DB migration applied by Jackson in Supabase:** `users.status_time` (now/tonight/weekend) + `move_joins` table (mover_id, joiner_id) + realtime publication + RLS select policy. New: `api/moves/join` (POST/DELETE toggle), `lib/blast.ts` (native `sms:` deep link, no body), `SwipeToGoGreen`, `MyMoveCard`, `Joiners`, `TimeChips`. Modified: `types/database.ts` (+move_joins/+status_time, fully typed), `api/status` (time + clears joins on grey), `api/feed` (per-friend joiners + `myJoiners`), `api/users/me`, `GoGreenSheet` (time chips), `FriendCard` (I'm in/You're in + joiners), `FeedScreen` (swipe + MyMoveCard + joins realtime + blast + prompt). `AvailRow.tsx` retired. Presence realtime = `move_joins`+`users` subscription → debounced `/api/feed` refetch. **Build-time verification only** — the two-account join/blast flow + the multi-recipient `sms:` POC (iOS single-thread) need on-device testing by Jackson. **Not yet committed at time of this note** (committed + pushed immediately after).
 
 ### Amendments locked at mockup approval (2026-07-17) — override the spec above where noted
-- **A1 — Swipe-to-go-green folded into Phase 9.** (Was an adopted-but-unscheduled DS v1 decision.) The **home-feed top status control becomes a swipe-to-go-free** control. Swiping opens the existing go-green sheet; the sheet's CTA stays a **tap "I'm free" button** (no second slide). Go-grey stays tap + confirm. **Build must include an accessible fallback** — a tappable confirm for screen readers / reduced-motion, so the slide is never the only path.
+- **A1 — Swipe-to-go-green folded into Phase 9.** ⛔ **SUPERSEDED 2026-08-02 by R22 — the swipe is DELETED.** Going free is a tap on your own tile at the head of the rail; the sheet's "I'm free" button is still the commit, as it always was, so the a11y fallback this amendment demanded is now the only path rather than a second one.
+  *Original text:* (Was an adopted-but-unscheduled DS v1 decision.) The **home-feed top status control becomes a swipe-to-go-free** control. Swiping opens the existing go-green sheet; the sheet's CTA stays a **tap "I'm free" button** (no second slide). Go-grey stays tap + confirm. **Build must include an accessible fallback** — a tappable confirm for screen readers / reduced-motion, so the slide is never the only path.
 - **A2 — Visibility control RETAINED on go-green** (Everyone / scope to specific groups). This **reverses the DS v1 "green is global / drop visibility chips" assumption** — greens can be scoped. Matches the shipped `visible_to` model, so no data change.
 - **A3 — Blast button copy = "Start a group chat"** (not "Start group text"). "I'm in" = **purple** (action color); once joined the chip reads **"You're in ✓"** in **green** (green-700, AA-safe). Time chips single-select; the "Your move" card uses a green tint + green-700 label (a11y — no solid-green-on-white text).
 - **A4 — Group-chat blast carries NO prefilled/templatized text.** The native composer opens pre-addressed to exactly the current joiners with an **empty** message body; the user writes it. This **overrides 9.3's** "body prefilled with the mover's name + vibe/time."
@@ -4387,7 +4389,7 @@ Let the app express two things it currently conflates: **"I'm free right now"** 
 
 Some people generate plans; some are simply open to being pulled into one. Today both must squeeze into a 60-character `status_note` plus a coarse time chip — greens are asked to carry planning they were never designed for.
 
-### 20.1 — The lighter swipe
+### 20.1 — The lighter swipe ⛔ *(SUPERSEDED 2026-08-02 by R22 — there is no swipe. Your own tile in the rail replaces it.)*
 
 **Swipe = "I'm free right now and want to be contacted."** Nothing else.
 
@@ -4397,7 +4399,7 @@ Some people generate plans; some are simply open to being pulled into one. Today
 - **Adding a time chip moves your card out of the rail and into the feed.** A feature, not a side effect: "make it a later thing" visibly demotes it from immediate to scheduled.
 - The swipe control appears **only when you are grey**.
 
-### 20.2 — The rail *(REVISED — now holds ALL greens, not just `now`)*
+### 20.2 — The rail *(REVISED — now holds ALL greens, not just `now`)* ⛔ *(SUPERSEDED 2026-08-02 by R21 — the rail holds EVERYONE, green or not, and never hides.)*
 
 A horizontal avatar rail at the top of the feed holding ~~only "free right now" greens~~ **every green the viewer can see**, ordered by immediacy (`now` → `tonight` → `week` → `weekend`). A green with no time chip counts as `now` (already the rule in `wave_group_for_viewer`).
 
@@ -4421,7 +4423,7 @@ A horizontal avatar rail at the top of the feed holding ~~only "free right now" 
 - **Group-scoped plans fire the existing group push** under the same 60-minute per-group cooldown.
 - Plans **never** appear in Discover, and **never** form or join a green wave.
 
-### 20.4 — The feed *(REVISED — was "the interleaved feed")*
+### 20.4 — The feed *(REVISED — was "the interleaved feed")* ⚠ *(AMENDED 2026-08-02 by R21: "the rail hides entirely when nobody is green" is dead. `AmbientTier`'s trigger is unchanged — no visible green friends AND no Mooves — but a permanently full rail is no longer a proxy for emptiness.)*
 
 ~~The vertical feed holds everything with a future time, fully interleaved.~~ **Superseded at mockup.**
 
@@ -5321,3 +5323,90 @@ What only a thumb can settle: whether 95px is the right bar height in the hand (
 - [x] The landing page describes greens, planned Mooves, joining, the group-text handoff and Discover, and shows what a Moove card looks like.
 - [x] The landing page has no horizontal overflow at 393px or 1280px.
 - [ ] **Device test:** the Go Green sheet and the green modal on the reporter's own phone, with the long group name that triggered it.
+
+---
+
+## Refinements R21–R23 — The stories rail, going free from your own tile, the artifacts that still teach the slide (Spec) — *spec'd 2026-07-31* · SPEC ✅ (**amended at mockup — see the R23 table's card-3 row**) · MOCKUP ✅ (`mooves-r21-r23-stories-rail.html`, 13 states, approved 2026-08-02) · CODE ✅ 2026-08-02 (`feat/r21-r23-stories-rail`, stacked on `fix/webkit-panes-empty-state-landing`)
+
+*Feedback round: the slide never sat right against the rail-plus-feed structure Phase 20 landed on. The replacement is modelled on Instagram's story rail — a permanent row of everyone, green as the ring, and going free is your own tile.*
+
+### R21 — The rail holds everyone *(supersedes §20.2, and §20.4's "the rail hides entirely when nobody is green")*
+
+**Problem.** The rail exists only when somebody is green, so the app's most common state — nobody free right now — renders a feed with no people in it at all. And the slide bar and the rail are two controls competing for the top of the screen: one for who is free, one for you.
+
+**Model.** Instagram's story rail. The rail is permanent, holds **every friend plus you**, always, and green is the ring rather than the price of admission.
+
+**Order — one rule, three tiers:**
+
+1. **You, always first.** Never sorted, never scrolled past.
+2. **Greens**, by immediacy bucket (`now` → `tonight` → `week` → `weekend`), and within a bucket most recently gone green first.
+3. **Everyone else**, shuffled.
+
+**The shuffle is seeded once per app open** and held for the life of the screen. Realtime updates and feed refetches re-sort the green front; they must never reorder the grey tail underneath the user's thumb.
+
+**Presentation.**
+
+- **Green tiles are unchanged from shipped:** `green-500` ring, softer ring for non-`now` greens, time label (*Now · Tonight · This wk · Wknd*) beneath the name.
+- **Grey tiles:** avatar desaturated to greyscale at reduced opacity, **no ring**, name in `ink-500`, **no time label** — but the label slot holds its height, so the rail does not change height as people go green and grey.
+- **The "FREE" section label is deleted.** The rail is the first thing on the screen and the rings do the talking. (R14 already removed the header above it.)
+
+**Tapping.**
+
+- **Green friend → Messages.** Unchanged from Phase 20's second revision.
+- **Your tile → "Go free" or "Your green".** See R22.
+- **Grey friend → nothing.** Not a button, not a tab stop, no press state. Green is what makes someone contactable; a rail where every face opens Messages would make going green decorative.
+
+**A friend who is green but scoped away from you appears grey, with nothing that distinguishes them from a friend who simply is not free.** The rail must never leak the existence of a green you were not included in — the same rule R16 held for individually-scoped viewers.
+
+**Edges.** No cap — horizontal scroll, and greens always lead so they cannot be scrolled out of reach; the rail starts at scroll-left on every load. Zero friends → the rail is your tile alone, and the "Your friends aren't here yet" state below is unchanged. **`AmbientTier`'s trigger is unchanged** (no visible green friends *and* no Mooves): a permanently full rail is no longer a proxy for emptiness. `WaveStrip` is untouched.
+
+### R22 — Going free is your own tile *(deletes §9 amendment A1 and the swipe of §20.1)*
+
+`SwipeToGoGreen` is **deleted**. There is no slide anywhere in the product.
+
+- **Grey:** your avatar leads the rail, greyscale, with a **`purple-500` `+` badge** at bottom-right. The label beneath reads **"Go free"** in bold `ink-900` — not your name — because this is the app's single most important action and a bare `+` is too quiet to carry it. Tapping opens the same Go Green sheet the slide opened.
+- **Green:** unchanged from R17 — green dashed ring, label "You" plus your time label, tapping opens the "Your green" modal. **The `+` is gone.** A purple `+` on a green ring would put an action colour where availability lives.
+
+**On accidental greens.** `docs/design/direction-and-rationale.md` justifies the slide as *"a deliberate physical gesture makes accidental green essentially impossible."* Nothing actually regresses: the slide only ever **opened the sheet**, and the sheet's "I'm free" button has always been the commit. The protection was the sheet all along. That document is corrected rather than left quietly contradicted (R23).
+
+**Analytics:** `go_green_sheet_opened` gains `source: 'rail_tile'`.
+
+### R23 — Everything that still teaches the slide
+
+The slide appears in nine places outside the deleted component. All of them change, plus one gap this round exposed (`MoovesLoop` card 3):
+
+| Artifact | Change |
+|---|---|
+| `MoovesLoop` card 1 | Slide visual → your rail tile with the `+`; "Slide across when you're around" → the tap. Still five cards. |
+| `MoovesLoop` card 2 | Redrawn as a real rail — greens jumped ahead of a grey tail — instead of a bare avatar stack. |
+| **`MoovesLoop` card 3** | **Gains the gesture.** Not a slide artifact — a gap this round exposed: card 3 teaches what a Moove *is* and never says where one comes from. R1 moved planning into the cow disc in the middle of the nav and onboarding never followed. The visual gains a replica of that disc beneath the Moove card, and the copy names the tap. Cards 1 and 3 then teach the app's two creation gestures symmetrically: **tap your own face, tap the cow.** |
+| `LandingScreen` "Go green" card | `SwipeVisual` → a static rail replica; *"One swipe when you're around"* → *"One tap"*. |
+| `AmbientTier` | Comment only. Its **user-facing copy is already action-neutral** ("Be the first to go free, or plan something for later.") — verified, no copy change needed. |
+| `GoGreenSheet` header comment | Says it is opened by the swipe. |
+| `docs/design/component-anatomy.md` | "Status toggle (primary interaction — swipe to go green)" replaced with the rail tile's anatomy. |
+| `docs/design/direction-and-rationale.md` #1 | The "why swipe, not tap" rationale rewritten per R22. |
+| `docs/design-system.md` | "Go-green = swipe-to-go-green" corrected. |
+| `mooves-prd.md` | §9 A1, §20.1, §20.2 and §20.4 marked superseded by this section; screen-index row added. |
+
+The landing page's cards are **static replicas** of the real components. R20 recorded that a card redesign would force an edit here or the page starts lying; this is that bill arriving, one round later.
+
+### Data
+
+**No migration. No new endpoint.** The rail is `/api/friends` — already fetched on feed load for the visibility picker, returning `id`, `displayName`, `avatarUrl` for every mutual friend — merged with the green friends `get_feed` already returns. **`get_feed` is not touched**; it has been silently broken twice by redefinition.
+
+### Out of scope
+
+Story *content* — a green is a state, not a post, and there is nothing to view · any "seen" or viewed state, ever (guardrail #1) · tapping a grey friend · pinning, ranking or ordering friends by activity · non-friends in the rail · any change to what the Go Green sheet contains.
+
+### Acceptance criteria
+
+- [ ] The rail renders on every load, including when nobody is green and when you have zero friends.
+- [ ] Order is you → greens (bucket, then most recent) → shuffled greys; the grey order does not change on refetch or when somebody goes green.
+- [ ] Grey tiles are greyscale, ringless and unlabelled, and are neither tappable nor focusable.
+- [ ] A friend who is green but not visible to you is indistinguishable from a friend who is not free.
+- [ ] Grey: your tile shows a purple `+` and reads "Go free"; tapping opens the Go Green sheet. Green: the `+` is gone, it reads "You", and tapping opens "Your green".
+- [ ] `SwipeToGoGreen` no longer exists in the codebase.
+- [ ] The "FREE" label is gone, and the rail does not change height as people go green.
+- [ ] `AmbientTier` still shows only when there are no visible green friends and no Mooves.
+- [ ] All nine artifacts in R23 describe the tap, not the slide.
+- [ ] Onboarding teaches **both** creation gestures: card 1 points at your own face, card 3 points at the cow disc in the nav.

@@ -1,8 +1,11 @@
 'use client'
 
 // Screen 5: Go Green Sheet — when, free-until, and who can see it.
-// Opened by the swipe-to-go-green control on the feed (amendment A1); the "I'm
-// free" button here is the commit.
+// R22 — opened by tapping your OWN tile in the rail, which is now the only way
+// to go free (the swipe of amendment A1 is deleted). The "I'm free" button here
+// is still the commit, and always was: the slide only ever opened this sheet,
+// which is why replacing a drag with a tap costs no protection against an
+// accidental green.
 //
 // R16 — visibility can now name a PERSON, via a pane rather than a second sheet.
 // R17 — the deadline is visible BEFORE you commit, and adjustable, instead of

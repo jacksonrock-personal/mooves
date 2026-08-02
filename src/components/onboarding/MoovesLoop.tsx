@@ -8,6 +8,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import CowMark from '@/components/ui/CowMark'
 import { posthog } from '@/lib/posthog'
 
 const CARD_COUNT = 5
@@ -107,69 +108,132 @@ export default function MoovesLoop() {
       <div className="flex-1 overflow-hidden" onPointerDown={onPointerDown} onPointerUp={onPointerUp}>
         <div className={`flex w-[500%] h-full transition-transform duration-[420ms] ease-out ${TRACK_TX[idx]}`}>
 
-          {/* Card 1 — Go green (slide teaching visual) */}
+          {/* Card 1 — Go free (R22: the slide is gone, your own tile is the way).
+              Your face is greyscale here on purpose: the card teaches the tap
+              that turns it green, so it has to show the before. */}
           <div className="w-1/5 h-full flex flex-col items-center justify-center px-8 text-center">
             <div className="w-[200px] h-[168px] rounded-[28px] bg-green-100 flex items-center justify-center mb-8">
-              <div className="relative w-[176px] h-[56px] rounded-full bg-green-700/10 border-[1.5px] border-green-700/20 flex items-center">
-                <span className="absolute left-1 top-1 w-12 h-12 rounded-full bg-green-700 flex items-center justify-center shadow-[0_2px_8px_rgba(22,122,67,0.35)]">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="4 6 10 12 4 18" opacity="0.45" />
-                    <polyline points="10 6 16 12 10 18" />
-                  </svg>
-                </span>
-                <span className="w-full text-center pl-11 font-display font-extrabold text-[15px] text-green-700 tracking-tight">
-                  Slide to go free
-                </span>
+              <div className="flex gap-[7px]">
+                <div className="w-11 flex flex-col items-center gap-1">
+                  <span className="relative">
+                    <span className="w-[42px] h-[42px] rounded-full bg-purple-500 flex items-center justify-center font-display font-extrabold text-[15px] text-white grayscale opacity-[0.48]">
+                      Y
+                    </span>
+                    <span className="absolute -right-0.5 -bottom-0.5 w-[17px] h-[17px] rounded-full bg-purple-500 border-2 border-green-100 flex items-center justify-center">
+                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.6" strokeLinecap="round">
+                        <path d="M12 5v14M5 12h14" />
+                      </svg>
+                    </span>
+                  </span>
+                  <span className="font-sans text-[9.5px] font-bold text-ink-900">Go free</span>
+                </div>
+                {[
+                  { i: 'D', c: 'bg-[#E8A0B4]' },
+                  { i: 'R', c: 'bg-[#5FB0E8]' },
+                ].map(f => (
+                  <div key={f.i} className="w-11 flex flex-col items-center gap-1">
+                    <span
+                      className={`w-[42px] h-[42px] rounded-full ${f.c} flex items-center justify-center font-display font-extrabold text-[15px] text-white grayscale opacity-[0.48]`}
+                    >
+                      {f.i}
+                    </span>
+                    <span className="font-sans text-[9.5px] font-semibold text-text-secondary">
+                      {f.i === 'D' ? 'Dana' : 'Ray'}
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
             <div className="font-sans text-[12px] font-bold tracking-[0.12em] uppercase text-mooves-purple mb-2.5">The Mooves Loop · 1</div>
-            <h1 className="font-display font-extrabold text-[27px] text-text-primary tracking-tight mb-3 leading-[1.1]">Go green</h1>
+            <h1 className="font-display font-extrabold text-[27px] text-text-primary tracking-tight mb-3 leading-[1.1]">Go free</h1>
             <p className="font-sans text-[15px] leading-relaxed text-text-secondary max-w-[250px]">
-              Slide across when you&apos;re around. No status updates, no essays, just green.
+              Tap your own face when you&apos;re around. No status updates, no essays, just green.
             </p>
           </div>
 
-          {/* Card 2 — Friends see it (avatar stack) */}
+          {/* Card 2 — the rail. Was three overlapping circles standing in for it;
+              now it is the real thing, so what you learn here is what you see. */}
           <div className="w-1/5 h-full flex flex-col items-center justify-center px-8 text-center">
             <div className="w-[200px] h-[168px] rounded-[28px] bg-green-100 flex items-center justify-center mb-8">
-              <div className="flex">
-                <div className="relative w-[52px] h-[52px] rounded-full border-[3px] border-green-100 bg-purple-500 flex items-center justify-center font-display font-extrabold text-[19px] text-white">
-                  M<span className="absolute -bottom-px -right-px w-[15px] h-[15px] rounded-full border-[2.5px] border-green-100 bg-green-500" />
-                </div>
-                <div className="relative -ml-3.5 w-[52px] h-[52px] rounded-full border-[3px] border-green-100 bg-[#E8A0B4] flex items-center justify-center font-display font-extrabold text-[19px] text-white">
-                  J<span className="absolute -bottom-px -right-px w-[15px] h-[15px] rounded-full border-[2.5px] border-green-100 bg-green-500" />
-                </div>
-                <div className="-ml-3.5 w-[52px] h-[52px] rounded-full border-[3px] border-green-100 bg-[#5FB0E8] flex items-center justify-center font-display font-extrabold text-[19px] text-white">
-                  R
-                </div>
+              <div className="flex gap-[7px]">
+                {[
+                  { i: 'D', n: 'Dana', c: 'bg-[#E8A0B4]', when: 'Now', later: false },
+                  { i: 'P', n: 'Priya', c: 'bg-purple-500', when: 'Wknd', later: true },
+                  { i: 'J', n: 'Jonah', c: 'bg-[#5FB0E8]', when: null, later: false },
+                ].map(f => (
+                  <div key={f.i} className="w-11 flex flex-col items-center gap-1">
+                    <span className="relative">
+                      <span
+                        className={`w-[42px] h-[42px] rounded-full ${f.c} flex items-center justify-center font-display font-extrabold text-[15px] text-white ${
+                          f.when ? '' : 'grayscale opacity-[0.48]'
+                        }`}
+                      >
+                        {f.i}
+                      </span>
+                      {f.when && (
+                        <span
+                          className={`absolute -inset-1 rounded-full border-2 ${
+                            f.later ? 'border-green-500/40' : 'border-green-500'
+                          }`}
+                        />
+                      )}
+                    </span>
+                    <span className="font-sans text-[9.5px] font-semibold text-text-secondary">{f.n}</span>
+                    <span
+                      className={`h-[10px] leading-[10px] font-sans text-[8px] font-bold uppercase tracking-[0.04em] ${
+                        f.later ? 'text-text-secondary' : 'text-green-700'
+                      }`}
+                    >
+                      {f.when ?? ''}
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
             <div className="font-sans text-[12px] font-bold tracking-[0.12em] uppercase text-mooves-purple mb-2.5">The Mooves Loop · 2</div>
             <h1 className="font-display font-extrabold text-[27px] text-text-primary tracking-tight mb-3 leading-[1.1]">
-              Whoever&apos;s free<br />sits up top
+              Whoever&apos;s free<br />jumps to the front
             </h1>
             <p className="font-sans text-[15px] leading-relaxed text-text-secondary max-w-[250px]">
-              Tap a face to text them. No public feed, no strangers, and no reason to hang around in
-              here.
+              Everyone sits in the rail, and the green ring is the whole signal. Tap a face to text
+              them, no public feed and no reason to hang around in here.
             </p>
           </div>
 
-          {/* Card 3 — Mooves. Replaces "Plan over text": the second object has
-              to be taught or the "+" is a mystery button. The text handoff moved
-              into cards 2 and 3, since it is now the payoff of both objects
-              rather than a step of its own. */}
+          {/* Card 3 — Mooves, and WHERE THEY COME FROM.
+              This card taught what a Moove is and never said how to make one:
+              R1 moved planning into the cow disc in the middle of the nav and
+              onboarding never followed, so people finished the loop able to go
+              free and unable to find the other half of the product. The disc
+              sits at the bottom of the visual, where it sits on the real
+              screen, with the card it produces above it. */}
           <div className="w-1/5 h-full flex flex-col items-center justify-center px-8 text-center">
             <div className="w-[200px] h-[168px] rounded-[28px] bg-purple-tint flex items-center justify-center mb-8">
-              <div className="w-[168px] rounded-2xl bg-white border-[1.5px] border-[#E8E4F5] p-2.5 flex items-center gap-2.5 shadow-[0_1px_3px_rgba(28,23,48,0.08)]">
-                <div className="w-[38px] h-[38px] shrink-0 rounded-[11px] bg-purple-100 flex flex-col items-center justify-center">
-                  <span className="font-display font-extrabold text-[11px] leading-none text-purple-700">THIS</span>
-                  <span className="font-sans text-[7px] font-bold tracking-[0.04em] leading-none text-purple-700/75 mt-px">
-                    WEEKEND
-                  </span>
+              <div className="flex flex-col items-center gap-[7px]">
+                <div className="w-[168px] rounded-2xl bg-white border-[1.5px] border-[#E8E4F5] p-2.5 flex items-center gap-2.5 shadow-[0_1px_3px_rgba(28,23,48,0.08)]">
+                  <div className="w-[36px] h-[36px] shrink-0 rounded-[10px] bg-purple-100 flex flex-col items-center justify-center">
+                    <span className="font-display font-extrabold text-[10px] leading-none text-purple-700">THIS</span>
+                    <span className="font-sans text-[6.5px] font-bold tracking-[0.04em] leading-none text-purple-700/75 mt-px">
+                      WEEKEND
+                    </span>
+                  </div>
+                  <div className="min-w-0 text-left">
+                    <div className="font-display font-bold text-[11.5px] text-ink-900 truncate">Climbing, anyone?</div>
+                    <div className="font-sans text-[9.5px] text-ink-500 truncate">This weekend, Avondale</div>
+                  </div>
                 </div>
-                <div className="min-w-0 text-left">
-                  <div className="font-display font-bold text-[12px] text-ink-900 truncate">Climbing, anyone?</div>
-                  <div className="font-sans text-[10px] text-ink-500 truncate">This weekend, Avondale</div>
+
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7C5CDB" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" className="opacity-50">
+                  <polyline points="6 15 12 9 18 15" />
+                </svg>
+
+                {/* The nav, as it really looks, with the disc it really carries. */}
+                <div className="relative w-[168px] h-[42px] rounded-[13px] bg-white border-[1.5px] border-[#E8E4F5] flex items-end justify-center">
+                  <span className="absolute -top-6 w-[54px] h-[54px] rounded-full border-2 border-dashed border-purple-500/45" />
+                  <span className="absolute -top-[17px] w-10 h-10 rounded-full bg-mooves-purple border-[3px] border-white shadow-[0_4px_12px_rgba(124,92,219,0.42)] flex items-center justify-center">
+                    <CowMark size={26} />
+                  </span>
+                  <span className="font-sans text-[8.5px] font-bold text-mooves-purple pb-1.5">Plan a Moove</span>
                 </div>
               </div>
             </div>
@@ -178,8 +242,8 @@ export default function MoovesLoop() {
               Got an idea?<br />Post it
             </h1>
             <p className="font-sans text-[15px] leading-relaxed text-text-secondary max-w-[250px]">
-              A Moove is a thing you want to do. Rough as &quot;this weekend&quot;, or exact as
-              Saturday at 9. Friends tap in, and you text from there.
+              Tap the cow in the middle of the bar. A Moove can be rough as &quot;this weekend&quot;,
+              or exact as Saturday at 9. Friends tap in, and you text from there.
             </p>
           </div>
 

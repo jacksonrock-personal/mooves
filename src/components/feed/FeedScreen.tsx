@@ -14,13 +14,13 @@ import { initPostHog, posthog } from '@/lib/posthog'
 import { buildBlastHref, type WaveTime } from '@/lib/blast'
 import { isGreenExpired } from '@/lib/greenExpiry'
 import { markValueMoment } from '@/lib/pwa'
-import SwipeToGoGreen from './SwipeToGoGreen'
 import WaveStrip from './WaveStrip'
 import TipJar from './TipJar'
 import AmbientTier from './AmbientTier'
 import MoovesEmpty from './MoovesEmpty'
 import RoundupJoinedSheet from './RoundupJoinedSheet'
-import GreenRail, { sortRail, type RailPerson } from './GreenRail'
+import Rail from './Rail'
+import { railSeed, type RailPerson } from '@/lib/rail'
 import PlanCard from './PlanCard'
 import PlanComposer, { type PlanPrefill } from './PlanComposer'
 import MooveActionsSheet from './MooveActionsSheet'
@@ -163,6 +163,11 @@ export default function FeedScreen() {
       return []
     }
   })
+
+  // R21 — the grey tail's shuffle, seeded ONCE per app open. Lazy so it is not
+  // recomputed on every render. The rail only mounts after the fetches resolve,
+  // so this never reaches the server pass and cannot desync hydration.
+  const [seed] = useState(railSeed)
 
   const meIdRef = useRef<string | null>(null)
   const friendIdsRef = useRef<Set<string>>(new Set())
@@ -569,8 +574,9 @@ export default function FeedScreen() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  function handleSwipeActivate() {
-    posthog.capture('go_green_sheet_opened')
+  // R22 — the slide is gone; your own tile in the rail is the way to green.
+  function handleGoFreeTap() {
+    posthog.capture('go_green_sheet_opened', { source: 'rail_tile' })
     setSheetOpen(true)
   }
 
@@ -823,19 +829,56 @@ export default function FeedScreen() {
 
   const loaded = friends !== null && totalFriendCount !== null && me !== null
 
-  // ── Phase 20 rail derivation ───────────────────────────────────────────────
-  // Every green goes in the rail, you first. The feed below is Mooves only.
-  const railPeople: RailPerson[] = [
-    ...(isAvailable && me
-      ? [{ id: me.id, displayName: me.displayName, avatarUrl: me.avatarUrl, statusTime: myStatusTime, isMe: true }]
-      : []),
-    ...(friends ?? []).map(f => ({
+  // ── R21 rail derivation ────────────────────────────────────────────────────
+  //
+  // Everyone, always: `allFriends` is the whole friend list, `friends` is the
+  // subset get_feed says is green AND visible to you. Layering the second over
+  // the first is what makes the privacy rule structural — a friend whose green
+  // is scoped away from you is simply absent from `friends`, so they land in
+  // the grey tail with nothing to distinguish them, and there is no filter here
+  // that anyone could later forget to apply.
+  //
+  // It is a UNION, not a lookup over `allFriends` alone. `allFriends` is
+  // fetched once on mount; a friendship formed mid-session would otherwise make
+  // a live green invisible, which is far worse than the accepted cost of a
+  // grey face arriving late.
+  const greenById = new Map((friends ?? []).map(f => [f.id, f]))
+  const railFriends: RailPerson[] = allFriends.map(f => {
+    const green = greenById.get(f.id)
+    return {
       id: f.id,
       displayName: f.displayName,
       avatarUrl: f.avatarUrl,
+      isGreen: !!green,
+      statusTime: green?.statusTime ?? null,
+      greenSince: green?.statusSetAt ? Date.parse(green.statusSetAt) : null,
+    }
+  })
+  const known = new Set(allFriends.map(f => f.id))
+  for (const f of friends ?? []) {
+    if (known.has(f.id)) continue
+    railFriends.push({
+      id: f.id,
+      displayName: f.displayName,
+      avatarUrl: f.avatarUrl,
+      isGreen: true,
       statusTime: f.statusTime ?? null,
-      isMe: false,
-    })),
+      greenSince: f.statusSetAt ? Date.parse(f.statusSetAt) : null,
+    })
+  }
+  const railPeople: RailPerson[] = [
+    ...(me
+      ? [{
+          id: me.id,
+          displayName: me.displayName,
+          avatarUrl: me.avatarUrl,
+          isGreen: isAvailable,
+          statusTime: myStatusTime,
+          greenSince: null,
+          isMe: true,
+        }]
+      : []),
+    ...railFriends,
   ]
 
   // R17 — the rail's selection state is gone with the card it drove. It existed
@@ -874,11 +917,14 @@ export default function FeedScreen() {
                 />
               )
             })()}
-            {/* 20.2 — the rail sits ABOVE the swipe: who is free comes first,
-                then your own action, then everything later. */}
-            <GreenRail
+            {/* R21/R22 — one surface at the top of the screen instead of two.
+                The rail holds everyone and never hides, and your own tile is
+                both how you say you are free and how you change it. There is no
+                separate control on the feed any more, in either state. */}
+            <Rail
               people={railPeople}
-              onOpenMine={() => setGreenSheetOpen(true)}
+              seed={seed}
+              onOpenMine={() => (isAvailable ? setGreenSheetOpen(true) : handleGoFreeTap())}
               onText={id => {
                 const f = (friends ?? []).find(x => x.id === id)
                 if (!f?.phone) return
@@ -886,12 +932,6 @@ export default function FeedScreen() {
                 window.location.href = `sms:${f.phone}`
               }}
             />
-
-            {/* R17 — no card here any more. Being green is said by your own
-                avatar in the rail above, ringed and dashed; tapping it opens
-                everything you can do about it. Only the not-green state still
-                needs a control on the feed itself. */}
-            {!isAvailable && <SwipeToGoGreen onActivate={handleSwipeActivate} />}
 
             {totalFriendCount === 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center text-center px-4 pb-8">
