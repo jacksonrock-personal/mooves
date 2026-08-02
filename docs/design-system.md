@@ -25,7 +25,7 @@ The DS scale is now the **canonical** vocabulary in `tailwind.config.ts` (`green
 - Colorblind check so far is a CSS-filter approximation; do a certified pass (Stark / Sim Daltonism) before claiming "passes colorblind."
 
 ## Key adopted decisions
-- **Go-green = swipe-to-go-green** (replaces the tap+sheet flow). *Note: this pass proposed dropping the visibility chips ("green stays global"); that was **reversed by Phase 9 A2** — the `visible_to` group-scoping chips are retained.* Go-grey stays a tap + confirm-sheet.
+- **Go-green = your own tile in the rail** — tap your greyscale avatar (carrying a purple `+`, labelled "Go free") at the head of the rail, which opens the Go Green sheet. *Two reversals recorded rather than rewritten: this pass originally chose **swipe**-to-go-green over the tap+sheet flow, and that swipe was **deleted by R22** (2026-08-02) — the sheet was always the commit, so the drag protected nothing. The same pass proposed dropping the visibility chips ("green stays global"), which was **reversed by Phase 9 A2** — the `visible_to` scoping is retained, and R16 widened it to name individual friends.* Go-grey stays a tap + confirm-sheet.
 - **Empty feed = ambient tier** (pulsing ring + aggregate social-proof copy + green-700 CTA) — implements Phase 10.
 - **Brand mark** = cow app icon matching `CowIllustration.tsx` geometry, legible 180→29px.
 

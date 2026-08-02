@@ -98,12 +98,12 @@ export default function LandingScreen() {
             {/* Go green */}
             <div className="flex flex-1 flex-col rounded-[20px] bg-white p-6 shadow-[0_1px_2px_rgba(28,23,48,0.06)]">
               <div className="mb-5 flex min-h-[76px] items-center">
-                <SwipeVisual />
+                <RailVisual />
               </div>
               <h3 className="mb-2 font-display text-[19px] font-extrabold tracking-[-0.01em] text-ink-900">Go green</h3>
               <p className="text-[14.5px] leading-[1.5] text-ink-500">
-                One swipe when you&apos;re around. The friends you picked see you&apos;re free — now, tonight, or all
-                weekend — and they can just text you. No status update, no essay, no plan required.
+                One tap on your own face when you&apos;re around. The friends you picked see you&apos;re free — now,
+                tonight, or all weekend — and they can just text you. No status update, no essay, no plan required.
               </p>
             </div>
 
@@ -295,19 +295,62 @@ export default function LandingScreen() {
    Marketing screenshots that can't go stale silently — they're built from the
    same tokens as the components they mirror, so a token change moves both. */
 
-/** SwipeToGoGreen, at rest. */
-function SwipeVisual() {
+/**
+ * The rail, at rest (R21/R22). Replaces the slide control, which no longer
+ * exists in the product: your own tile with the "+" leads, whoever is free
+ * follows with a green ring, and everybody else sits behind them in grey.
+ */
+function RailVisual() {
+  const people: { initial: string; name: string; tone: string; when: string | null; later?: boolean }[] = [
+    { initial: 'D', name: 'Dana', tone: 'bg-[#E8A0B4]', when: 'Now' },
+    { initial: 'S', name: 'Sam', tone: 'bg-[#CEAD6A]', when: 'Wknd', later: true },
+    { initial: 'J', name: 'Jonah', tone: 'bg-[#5FB0E8]', when: null },
+    { initial: 'A', name: 'Ana', tone: 'bg-purple-700', when: null },
+  ]
   return (
-    <div className="w-full rounded-full border-[1.5px] border-green-500/35 bg-green-100 p-[5px] shadow-[0_1px_2px_rgba(28,23,48,0.06)]">
-      <div className="flex items-center">
-        <span className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-full bg-green-700 text-[15px] font-bold text-white">
-          »
+    <div className="flex w-full gap-[9px] overflow-hidden">
+      <div className="flex w-[46px] shrink-0 flex-col items-center gap-1">
+        <span className="relative">
+          <span className="flex h-[44px] w-[44px] items-center justify-center rounded-full bg-purple-500 font-display text-[16px] font-extrabold text-white grayscale opacity-[0.48]">
+            Y
+          </span>
+          <span className="absolute -bottom-0.5 -right-0.5 flex h-[18px] w-[18px] items-center justify-center rounded-full border-2 border-white bg-purple-500">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.6" strokeLinecap="round">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+          </span>
         </span>
-        <span className="flex-1 text-center font-display text-[15px] font-extrabold tracking-[-0.01em] text-green-700">
-          Slide to go free
-        </span>
-        <span className="w-[38px] shrink-0" />
+        <span className="text-[9.5px] font-bold text-ink-900">Go free</span>
+        <span className="h-[10px] leading-[10px] text-[8px] font-bold uppercase tracking-[0.04em]" />
       </div>
+      {people.map(p => (
+        <div key={p.initial} className="flex w-[46px] shrink-0 flex-col items-center gap-1">
+          <span className="relative">
+            <span
+              className={`flex h-[44px] w-[44px] items-center justify-center rounded-full ${p.tone} font-display text-[16px] font-extrabold text-white ${
+                p.when ? '' : 'grayscale opacity-[0.48]'
+              }`}
+            >
+              {p.initial}
+            </span>
+            {p.when && (
+              <span
+                className={`absolute -inset-1 rounded-full border-2 ${
+                  p.later ? 'border-green-500/40' : 'border-green-500'
+                }`}
+              />
+            )}
+          </span>
+          <span className="text-[9.5px] font-semibold text-ink-500">{p.name}</span>
+          <span
+            className={`h-[10px] leading-[10px] text-[8px] font-bold uppercase tracking-[0.04em] ${
+              p.later ? 'text-ink-500' : 'text-green-700'
+            }`}
+          >
+            {p.when ?? ''}
+          </span>
+        </div>
+      ))}
     </div>
   )
 }
