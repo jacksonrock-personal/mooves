@@ -19,6 +19,7 @@ import TipJar from './TipJar'
 import AmbientTier from './AmbientTier'
 import MoovesEmpty from './MoovesEmpty'
 import MooveCard from './MooveCard'
+import MooveDetailSheet from '@/components/discover/MooveDetailSheet'
 import { feedCardCount } from '@/lib/nearMatch'
 import type { NearMove } from '@/app/api/discover/route'
 import RoundupJoinedSheet from './RoundupJoinedSheet'
@@ -132,6 +133,7 @@ export default function FeedScreen() {
   // nobody visited. Fetched once at the maximum any state needs (3) and sliced
   // by feedCardCount, so going green does not trigger a refetch.
   const [nearMoves, setNearMoves] = useState<NearMove[]>([])
+  const [nearDetail, setNearDetail] = useState<NearMove | null>(null)
   /**
    * ?plan=<id> — where the "tagged you in a Moove" push lands.
    *
@@ -1005,7 +1007,7 @@ export default function FeedScreen() {
                     {nearMoves
                       .slice(0, feedCardCount({ hasFriends: false, anyGreen: false, anyPlans: false }))
                       .map(m => (
-                        <MooveCard key={m.id} move={m} onMakeMoove={handleMakeMoove} />
+                        <MooveCard key={m.id} move={m} onMakeMoove={handleMakeMoove} onOpenDetail={setNearDetail} />
                       ))}
                   </div>
                 )}
@@ -1027,7 +1029,7 @@ export default function FeedScreen() {
                     {nearMoves
                       .slice(0, feedCardCount({ hasFriends: true, anyGreen: false, anyPlans: false }))
                       .map(m => (
-                        <MooveCard key={m.id} move={m} onMakeMoove={handleMakeMoove} />
+                        <MooveCard key={m.id} move={m} onMakeMoove={handleMakeMoove} onOpenDetail={setNearDetail} />
                       ))}
                   </div>
                 )}
@@ -1099,7 +1101,7 @@ export default function FeedScreen() {
                         }),
                       )
                       .map(m => (
-                        <MooveCard key={m.id} move={m} onMakeMoove={handleMakeMoove} />
+                        <MooveCard key={m.id} move={m} onMakeMoove={handleMakeMoove} onOpenDetail={setNearDetail} />
                       ))}
                   </div>
                 )}
@@ -1341,6 +1343,21 @@ export default function FeedScreen() {
           }}
         />
       )}
+
+      {/* 24.7 — full description, provenance, and "I'd go". It lives in a sheet
+          because the card carries one CTA and one CTA only. */}
+      <MooveDetailSheet
+        move={nearDetail}
+        onClose={() => setNearDetail(null)}
+        onInterestedChange={(id, interested) => {
+          setNearMoves(prev => prev.map(m => (m.id === id ? { ...m, interestedByMe: interested } : m)))
+          setNearDetail(prev => (prev && prev.id === id ? { ...prev, interestedByMe: interested } : prev))
+        }}
+        onMakeMoove={move => {
+          setNearDetail(null)
+          handleMakeMoove(move)
+        }}
+      />
 
       {toastMessage && (
         <Toast message={toastMessage} onDismiss={() => setToastMessage(null)} />

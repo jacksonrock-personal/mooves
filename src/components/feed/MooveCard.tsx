@@ -28,6 +28,12 @@ interface MooveCardProps {
   move: NearMove
   /** Opens the planned-Moove composer, prefilled and carrying the anchor. */
   onMakeMoove: (move: NearMove) => void
+  /**
+   * Opens the detail sheet — full description, provenance, and "I'd go".
+   * Bound to the card BODY, not to a button: "one CTA per card, always" (24.7)
+   * means the only thing that may look pressable is Make it a Moove.
+   */
+  onOpenDetail: (move: NearMove) => void
 }
 
 function initial(name: string | null) {
@@ -106,7 +112,7 @@ function Social({ social }: { social: SocialLine }) {
   )
 }
 
-export default function MooveCard({ move, onMakeMoove }: MooveCardProps) {
+export default function MooveCard({ move, onMakeMoove, onOpenDetail }: MooveCardProps) {
   const paid = move.origin === 'sponsor'
 
   const facts = [
@@ -115,7 +121,10 @@ export default function MooveCard({ move, onMakeMoove }: MooveCardProps) {
   ].filter(Boolean) as string[]
 
   return (
-    <div className="bg-white border-[1.5px] border-[#E8E4F5] rounded-[18px] overflow-hidden mb-2.5">
+    <div
+      onClick={() => onOpenDetail(move)}
+      className="bg-white border-[1.5px] border-[#E8E4F5] rounded-[18px] overflow-hidden mb-2.5 cursor-pointer"
+    >
       {/* The label sits on the image, same shape for both kinds. Community and
           Sponsored differ only in colour, so the distinction is read rather than
           felt as an interruption — and a shelf that is mostly community events
@@ -171,7 +180,10 @@ export default function MooveCard({ move, onMakeMoove }: MooveCardProps) {
             The sheet lands in 2b; until then declared lines render from
             existing move_interested rows but nothing new can be declared. */}
         <button
-          onClick={() => onMakeMoove(move)}
+          onClick={e => {
+            e.stopPropagation() // the card body opens the sheet; this must not
+            onMakeMoove(move)
+          }}
           className="w-full mt-3 py-3 rounded-[14px] bg-purple-500 text-white font-display font-extrabold text-[14.5px] tracking-[-0.01em]"
         >
           Make it a Moove
