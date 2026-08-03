@@ -20,6 +20,8 @@ import AmbientTier from './AmbientTier'
 import MoovesEmpty from './MoovesEmpty'
 import MooveCard from './MooveCard'
 import MooveDetailSheet from '@/components/discover/MooveDetailSheet'
+import RecruitAskSheet from './RecruitAskSheet'
+import { statusTimeLabel } from '@/lib/greenExpiry'
 import { feedCardCount } from '@/lib/nearMatch'
 import type { NearMove } from '@/app/api/discover/route'
 import RoundupJoinedSheet from './RoundupJoinedSheet'
@@ -134,6 +136,10 @@ export default function FeedScreen() {
   // by feedCardCount, so going green does not trigger a refetch.
   const [nearMoves, setNearMoves] = useState<NearMove[]>([])
   const [nearDetail, setNearDetail] = useState<NearMove | null>(null)
+  // 24.3 — the one recruit ask. Null here means it has never been shown; the
+  // crew step spends it too, so a cold-start user is never asked twice.
+  const [recruitAskSpent, setRecruitAskSpent] = useState(true)
+  const [recruitAskOpen, setRecruitAskOpen] = useState(false)
   /**
    * ?plan=<id> — where the "tagged you in a Moove" push lands.
    *
@@ -349,8 +355,10 @@ export default function FeedScreen() {
         referralCode?: string
         timezone?: string | null
         weekRitualDay?: number
+        recruitAskShownAt?: string | null
       }
       if (!mountedRef.current) return
+      setRecruitAskSpent(!!meData.recruitAskShownAt)
       if (meData.onboardingComplete === false) {
         router.replace('/onboarding')
         return
@@ -622,6 +630,21 @@ export default function FeedScreen() {
     setMyAnchoredMove(pendingAnchor) // null for a normal go-green
     setPendingAnchor(null)
     setMyJoiners([])
+
+    // 24.3 — the one recruit ask, at the moment it is motivated: they have just
+    // made something and its reach is bounded by the people they have. Fires for
+    // users who HAVE friends; a friendless user is already looking at the
+    // cold-start invite CTA and does not need a sheet on top of it.
+    if (!recruitAskSpent && (totalFriendCount ?? 0) > 0) {
+      setRecruitAskSpent(true) // spend it immediately — never twice, even if the write fails
+      setRecruitAskOpen(true)
+      posthog.capture('recruit_ask_shown', { reach: totalFriendCount })
+      void fetch('/api/users/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ recruitAskShown: true }),
+      })
+    }
     setSheetOpen(false)
     setToastMessage("You're free! 🎉")
     void refetchFeed()
@@ -1356,6 +1379,18 @@ export default function FeedScreen() {
         onMakeMoove={move => {
           setNearDetail(null)
           handleMakeMoove(move)
+        }}
+      />
+
+      <RecruitAskSheet
+        open={recruitAskOpen}
+        reach={totalFriendCount ?? 0}
+        timeLabel={statusTimeLabel(myStatusTime)}
+        cameFromGroup={groups.length > 0}
+        onClose={() => setRecruitAskOpen(false)}
+        onPath={path => {
+          setRecruitAskOpen(false)
+          router.push(path === 'group' ? '/people/groups/new' : '/people/add')
         }}
       />
 

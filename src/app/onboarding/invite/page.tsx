@@ -48,7 +48,10 @@ function InviteContent() {
     void fetch('/api/users/me', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ onboardingComplete: true }),
+      // 24.3 — completing (or skipping) the crew step spends the one recruit
+      // ask. A cold-start user has just been asked for their people; asking
+      // again the first time they go green would be the same request twice.
+      body: JSON.stringify({ onboardingComplete: true, recruitAskShown: true }),
     })
     posthog.capture('onboarding_completed', { path: 'cold' })
     router.replace(inviteCode ? `/feed?invite=${inviteCode}` : '/feed')
