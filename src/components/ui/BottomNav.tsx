@@ -23,24 +23,6 @@ function HomeIcon() {
   )
 }
 
-function DiscoverIcon() {
-  return (
-    <svg
-      width="30"
-      height="30"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="12" cy="12" r="9" />
-      <path d="M15.5 8.5l-2 5-5 2 2-5 5-2Z" />
-    </svg>
-  )
-}
-
 function PeopleIcon() {
   return (
     <svg
@@ -79,16 +61,20 @@ function SettingsIcon() {
   )
 }
 
-// R1 — five slots. "Plan a Moove" sits in the middle, Venmo-style, because the
-// floating "+" covered feed content (it sat on top of the roster row and the
-// comment control of the card beneath it) and never said what it did.
-const LEFT_TABS = [
-  { href: '/feed', label: 'Feed', Icon: HomeIcon },
-  { href: '/discover', label: 'Discover', Icon: DiscoverIcon },
-]
+// R1 — "Plan a Moove" sits in the middle, Venmo-style, because the floating "+"
+// covered feed content (it sat on top of the roster row and the comment control
+// of the card beneath it) and never said what it did.
+//
+// 24.6 — four slots, not five. Discover is GONE and nothing replaces it: asking
+// people to remember to visit the revenue surface was the thing that failed, so
+// Community and Sponsored Mooves moved into the feed itself and browse became a
+// pushed screen off it. Feed takes the whole left side (`grow-[2]`, the two
+// slots it used to share), which also retires R15's crowding problem — the
+// 1.5×-scale collision was "Discover" needing 62px of a 61px slot.
+const LEFT_TABS = [{ href: '/feed', label: 'Feed', Icon: HomeIcon, wide: true }]
 const RIGHT_TABS = [
-  { href: '/people', label: 'People', Icon: PeopleIcon },
-  { href: '/settings', label: 'Settings', Icon: SettingsIcon },
+  { href: '/people', label: 'People', Icon: PeopleIcon, wide: false },
+  { href: '/settings', label: 'Settings', Icon: SettingsIcon, wide: false },
 ]
 
 interface BottomNavProps {
@@ -104,15 +90,15 @@ export default function BottomNav({ onPlanTap }: BottomNavProps = {}) {
   const pathname = usePathname()
   const router = useRouter()
 
-  function tab({ href, label, Icon }: (typeof LEFT_TABS)[number]) {
+  function tab({ href, label, Icon, wide }: (typeof LEFT_TABS)[number]) {
     const active = pathname.startsWith(href)
     return (
       <Link
         key={href}
         href={href}
         className={`flex-1 min-w-0 flex flex-col items-center py-[16px] px-[3px] gap-[5.5px] text-[10.5px] font-sans font-semibold tracking-[0.01em] ${
-          active ? 'text-mooves-purple' : 'text-status-grey'
-        }`}
+          wide ? 'grow-[2]' : ''
+        } ${active ? 'text-mooves-purple' : 'text-status-grey'}`}
       >
         <Icon />
         <span className="max-w-full truncate">{label}</span>
