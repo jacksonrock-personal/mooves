@@ -14,7 +14,7 @@ export async function GET(req: Request) {
   const supabase = createServiceClient()
   const { data, error } = await supabase
     .from('users')
-    .select('id, phone, display_name, avatar_url, referral_code, is_available, is_admin, status_note, status_time, status_move_id, status_set_at, status_expires_at, status_show_groups, visible_to, visible_user_ids, onboarding_complete, area_zip, interests, wave_push_enabled, timezone, week_ritual_day, week_push_enabled, recruit_ask_shown_at')
+    .select('id, phone, display_name, avatar_url, referral_code, is_available, is_admin, status_note, status_time, status_move_id, status_set_at, status_expires_at, status_show_groups, visible_to, visible_user_ids, onboarding_complete, area_zip, interests, wave_push_enabled, timezone, week_ritual_day, week_push_enabled, recruit_ask_shown_at, hide_from_matches')
     .eq('id', userId)
     .single()
 
@@ -67,6 +67,8 @@ export async function GET(req: Request) {
     // 24.3 — non-null means the one recruit ask has already been shown. It is
     // never cleared, and nothing persists after dismissal.
     recruitAskShownAt: data.recruit_ask_shown_at,
+    // 24.0 wall 4 — false means they appear in computed lines, the default.
+    hideFromMatches: data.hide_from_matches,
     areaZip: data.area_zip,
     areaCity: area?.city ?? null,
     areaState: area?.state ?? null,
@@ -90,6 +92,7 @@ export async function PATCH(req: Request) {
     avatarUrl?: string | null
     onboardingComplete?: boolean
     recruitAskShown?: boolean
+    hideFromMatches?: boolean
     interests?: string[]
     wavePushEnabled?: boolean
     timezone?: string
@@ -102,6 +105,7 @@ export async function PATCH(req: Request) {
     avatar_url?: string | null
     onboarding_complete?: boolean
     recruit_ask_shown_at?: string
+    hide_from_matches?: boolean
     interests?: string[]
     wave_push_enabled?: boolean
     timezone?: string
@@ -120,6 +124,7 @@ export async function PATCH(req: Request) {
   if (body.onboardingComplete !== undefined) updates.onboarding_complete = body.onboardingComplete
   // Write-once: the client can mark it shown, never unshow it.
   if (body.recruitAskShown === true) updates.recruit_ask_shown_at = new Date().toISOString()
+  if (body.hideFromMatches !== undefined) updates.hide_from_matches = body.hideFromMatches
   if (body.interests !== undefined) {
     // Keep only known curated slugs; de-dupe.
     updates.interests = [...new Set(body.interests.filter(s => INTEREST_SLUGS.includes(s)))]

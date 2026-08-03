@@ -9,6 +9,7 @@
 
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
+import { markActivated } from '@/lib/activation'
 
 async function loadJoinablePlan(
   supabase: ReturnType<typeof createServiceClient>,
@@ -80,6 +81,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     console.error('plan join failed:', error)
     return NextResponse.json({ error: 'Join failed' }, { status: 500 })
   }
+
+  // 24.4 — the reciprocal event. Both sides activate: the joiner did something
+  // with a friend, the author had something land. Fire-and-forget, because
+  // failing to record activation must never fail the join that caused it.
+  void markActivated(supabase, [userId, gate.plan.author_id])
+
   return NextResponse.json({ joined: true })
 }
 

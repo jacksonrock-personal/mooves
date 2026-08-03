@@ -26,6 +26,7 @@ interface Me {
   displayName: string | null
   avatarUrl: string | null
   areaZip: string | null
+  hideFromMatches: boolean
   areaCity: string | null
   areaState: string | null
   interests: string[]
@@ -64,6 +65,7 @@ export default function SettingsScreen() {
           displayName: string | null
           avatarUrl: string | null
           areaZip: string | null
+          hideFromMatches?: boolean
           areaCity: string | null
           areaState: string | null
           interests: string[]
@@ -83,6 +85,7 @@ export default function SettingsScreen() {
         displayName: profile.displayName,
         avatarUrl: profile.avatarUrl,
         areaZip: profile.areaZip,
+        hideFromMatches: profile.hideFromMatches ?? false,
         areaCity: profile.areaCity,
         areaState: profile.areaState,
         interests: profile.interests ?? [],
@@ -118,6 +121,26 @@ export default function SettingsScreen() {
     } catch {
       setMe(previous)
       setToastMessage("Couldn't update name, try again.")
+    }
+  }
+
+  // 24.0 wall 4. Optimistic, rolled back on failure — a switch that silently
+  // fails to save is worse than one that says so, because the user believes
+  // they are hidden when they are not.
+  async function handleHideFromMatchesChange(next: boolean) {
+    const previous = me
+    setMe(prev => (prev ? { ...prev, hideFromMatches: next } : prev))
+    try {
+      const res = await fetch('/api/users/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hideFromMatches: next }),
+      })
+      if (!res.ok) throw new Error('save failed')
+      posthog.capture('settings_hide_from_matches', { hidden: next })
+    } catch {
+      setMe(previous)
+      setToastMessage("Couldn't save that, try again.")
     }
   }
 
@@ -280,6 +303,55 @@ export default function SettingsScreen() {
                 Pick what you want to see in Discover.
               </div>
               <InterestPicker selected={me.interests} onChange={handleInterestsChange} />
+            </div>
+
+            <div className="h-3.5" />
+
+            {/* 24.0, wall 4 — the switch that makes the computed signal
+                defensible. One tap and the user disappears from every "would
+                probably go" line, everywhere, immediately.
+
+                The description names the constraint rather than reassuring:
+                friends cannot see it unless you are ALREADY free, because green
+                overlap is the confidence floor. A guess is never made about
+                someone who has declared nothing. */}
+            <div className="bg-white border border-[#E8E4F5] rounded-[20px] p-4 mx-4 flex items-start gap-3">
+              <span className="flex-1">
+                <span className="block font-sans font-bold text-[15px] text-ink-900">
+                  Suggest me for things
+                </span>
+                <span className="block font-sans text-[13px] text-ink-500 mt-1 leading-[1.45]">
+                  When you&apos;re free and something nearby fits, your friends can see you&apos;d
+                  probably go. They can&apos;t see it unless you&apos;re already free.
+                </span>
+              </span>
+              <button
+                onClick={() => void handleHideFromMatchesChange(!me.hideFromMatches)}
+                role="switch"
+                aria-checked={!me.hideFromMatches}
+                aria-label="Suggest me for things"
+                className={`shrink-0 w-[46px] h-[28px] rounded-full relative transition-colors ${
+                  me.hideFromMatches ? 'bg-grey-300' : 'bg-green-500'
+                }`}
+              >
+                <span
+                  className={`absolute top-[3px] w-[22px] h-[22px] rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.2)] transition-all ${
+                    me.hideFromMatches ? 'left-[3px]' : 'left-[21px]'
+                  }`}
+                />
+              </button>
+            </div>
+
+            {/* Not a control. The thing that did NOT change, stated next to the
+                thing that did — which is what keeps the 24.0 amendment honest
+                rather than quietly expanded. */}
+            <div className="bg-white border border-[#E8E4F5] rounded-[20px] p-4 mx-4 mt-3.5">
+              <span className="block font-sans font-bold text-[15px] text-ink-900">
+                Sponsors never see you
+              </span>
+              <span className="block font-sans text-[13px] text-ink-500 mt-1 leading-[1.45]">
+                They get counts, never names. That hasn&apos;t changed and it won&apos;t.
+              </span>
             </div>
 
             <div className="h-3.5" />

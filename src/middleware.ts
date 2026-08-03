@@ -14,6 +14,10 @@ const PUBLIC_PREFIXES = [
   '/api/invite/',
   '/api/auth/verify',
   '/api/sms/inbound',
+  // 24.9 — the seeding routine is a scheduled agent, not a signed-in person, so
+  // it cannot carry a mooves-token. Both routes self-gate on a bearer secret
+  // (INGEST_TOKEN) and refuse outright when it is unset.
+  '/api/ingest/',
   '/api/stripe/webhook', // Stripe calls this unauthenticated; gated by signature
   '/api/cron/',     // Phase 22: pg_cron calls these from Postgres, so there is no
                     // session cookie to check. Each self-gates on CRON_SECRET and
