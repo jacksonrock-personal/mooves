@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mooves — Community and Sponsored Mooves, folded into the feed</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --green-100:#E3F9EC; --green-500:#2ECC71; --green-700:#167A43;
+    --purple-50:#F8F6FF; --purple-100:#EDE9FF; --purple-500:#7C5CDB; --purple-700:#5F3FC4;
+    --ink-900:#1C1730; --ink-500:#6B628A;
+    --grey-100:#F1EEFA; --grey-300:#BDB5D4; --hair:#E8E4F5;
+    --safetop:44px;
+    --ns:1.35; --ls:1.12; --planflex:1.32;
+    --railgap:14px; --greyring:1.25px; --greytone:#BDB5D4;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:Inter,sans-serif;background:#0F0C1A;color:#fff;padding:34px 18px 80px;-webkit-font-smoothing:antialiased}
+  h1{font-family:'Plus Jakarta Sans',sans-serif;font-size:25px;font-weight:800;letter-spacing:-.02em;text-align:center}
+  .sub{text-align:center;color:#9990BC;font-size:13.5px;margin-top:7px;max-width:660px;margin-left:auto;margin-right:auto;line-height:1.55}
+
+  .knobs{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin:14px auto 0;max-width:900px}
+  .kbtn{background:#1D1733;border:1.5px solid #332B52;color:#CFC6EC;font-family:inherit;font-size:12.5px;font-weight:600;
+        padding:9px 15px;border-radius:99px;cursor:pointer;transition:.16s}
+  .kbtn:hover{border-color:var(--purple-500)}
+  .kbtn.on{background:var(--purple-500);border-color:var(--purple-500);color:#fff}
+  .kbtn small{display:block;font-size:10px;font-weight:500;opacity:.72;letter-spacing:.03em}
+  .knoblbl{text-align:center;font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#5E5480;margin:20px 0 0}
+  .rule{width:100%;height:1px;background:#241D3C;max-width:900px;margin:20px auto 0}
+
+  .stage{display:flex;flex-wrap:wrap;gap:38px;justify-content:center;margin-top:26px;align-items:flex-start}
+  .col{display:flex;flex-direction:column;align-items:center}
+  .caption{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#7C6FA8;margin-bottom:10px;text-align:center}
+  .note{font-size:12.5px;color:#9990BC;line-height:1.65;margin-top:16px;width:392px;max-width:100%}
+  .note b{color:#CFC6EC;font-weight:600}
+  .note+.note{margin-top:10px}
+  .lbl-screen{text-align:center;color:#7C6FA8;font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-top:16px}
+  .measure{display:inline-block;margin-top:14px;padding:7px 13px;border-radius:10px;background:#1D1733;border:1px solid #332B52;
+           font-size:11.5px;color:#9990BC}
+  .measure b{color:#8FE3B0;font-weight:700}
+
+  /* ── phone shell ───────────────────────────────────────────────── */
+  .phone{position:relative;width:352px;height:722px;border-radius:44px;background:var(--purple-50);
+         border:9px solid #241D3C;overflow:hidden;box-shadow:0 26px 60px rgba(0,0,0,.5);color:var(--ink-900)}
+  .cal{position:absolute;left:50%;transform:translateX(-50%);top:0;width:132px;height:26px;background:#241D3C;border-radius:0 0 16px 16px;z-index:60}
+  .screen{position:absolute;inset:0;display:none;flex-direction:column;overflow:hidden}
+  .screen.on{display:flex}
+  .body{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .body.clearnav{padding-bottom:calc(70px*var(--ns) + 22px)}
+  .feedpad{padding:0 16px}
+  .feedpad.top{padding-top:calc(var(--safetop) + 12px)}
+  .eyebrow{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-500);padding:2px 2px 8px}
+  .eyebrow.row{display:flex;align-items:baseline;justify-content:space-between}
+  .eyebrow .more{font-size:10.5px;font-weight:700;color:var(--purple-500);letter-spacing:.04em;text-transform:none}
+
+  /* ── rail (R21, unchanged) ─────────────────────────────────────── */
+  .rail{display:flex;gap:var(--railgap);overflow-x:auto;padding:3px 0 5px;scrollbar-width:none}
+  .rail::-webkit-scrollbar{display:none}
+  .rp{flex:0 0 auto;width:58px;display:flex;flex-direction:column;align-items:center;gap:4px;
+      background:none;border:0;padding:0;font-family:inherit;text-align:center}
+  .rp .ring{position:relative;display:block}
+  .av{width:54px;height:54px;border-radius:99px;display:flex;align-items:center;justify-content:center;
+      font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:19px;color:#fff}
+  .rp .ring::after{content:'';position:absolute;inset:-4px;border-radius:99px;pointer-events:none}
+  .rp.on .ring::after{border:2.5px solid var(--green-500)}
+  .rp.on.later .ring::after{border-color:rgba(46,204,113,.4)}
+  .rp.me.on .ring::after{border-style:dashed}
+  .rp.off .ring::after{border:var(--greyring) solid var(--greytone)}
+  .rp.off .av{filter:grayscale(1);opacity:.48}
+  .rp .nm{max-width:58px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:600;color:var(--ink-500)}
+  .rp.me .nm{font-weight:700;color:var(--ink-900)}
+  .rp .wh{min-height:13px;font-size:9.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--green-700)}
+  .rp.later .wh{color:var(--ink-500)}
+  .plus{position:absolute;right:-3px;bottom:-3px;width:22px;height:22px;border-radius:99px;background:var(--purple-500);
+        border:2.5px solid var(--purple-50);display:flex;align-items:center;justify-content:center;z-index:1;
+        box-shadow:0 2px 6px rgba(124,92,219,.42)}
+  .plus svg{width:11px;height:11px}
+
+  /* ── friend plan card (unchanged) ──────────────────────────────── */
+  .plan{background:#fff;border:1.5px solid var(--hair);border-radius:18px;padding:14px;margin-bottom:10px}
+  .plan .top{display:flex;gap:11px;align-items:flex-start}
+  .tile{flex:0 0 auto;width:46px;height:46px;border-radius:13px;background:var(--purple-100);display:flex;flex-direction:column;
+        align-items:center;justify-content:center;color:var(--purple-700)}
+  .tile b{font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;line-height:1}
+  .tile span{font-size:8px;font-weight:700;letter-spacing:.04em;margin-top:2px;opacity:.8}
+  .plan h4{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:15.5px;letter-spacing:-.01em}
+  .plan .meta{font-size:12.5px;color:var(--ink-500);margin-top:3px}
+  .plan .roster{display:flex;align-items:center;gap:7px;margin-top:12px;padding-top:11px;border-top:1px solid var(--grey-100)}
+  .stack{display:flex}
+  .stack .av{width:24px;height:24px;font-size:10px;border:2px solid #fff;margin-left:-7px}
+  .stack .av:first-child{margin-left:0}
+  .plan .roster span{font-size:12px;color:var(--ink-500)}
+  .imin{margin-left:auto;border:1.5px solid var(--purple-500);color:var(--purple-700);background:#fff;border-radius:99px;
+        padding:6px 14px;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer}
+
+  /* ══ NEW: MOOVES NEAR YOU ════════════════════════════════════════
+     Two treatments of the same content. Which one renders is decided by
+     how much of the screen the user's own people are already using. */
+
+  /* There is no horizontal treatment. The rail is the only side-to-side
+     gesture on this screen, and everything below it scrolls north/south
+     like the rest of the app. */
+
+  /* -- full: a stacked card. Used when the feed has room. ------------ */
+  .fcard{background:#fff;border:1.5px solid var(--hair);border-radius:18px;overflow:hidden;margin-bottom:10px}
+  .fcard .ph{height:104px;position:relative;display:flex;align-items:flex-end;padding:9px}
+  .fcard .in{padding:13px 14px 14px}
+  .fcard h4{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:16px;letter-spacing:-.01em;line-height:1.2;color:var(--ink-900)}
+  .fcard .facts{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:6px;font-size:12.5px;color:var(--ink-500)}
+  .fcard .facts i{width:3px;height:3px;border-radius:99px;background:var(--grey-300);display:block}
+  .fcard .facts .price{font-weight:700;color:var(--ink-900)}
+  .fcard .blurb{font-size:12.5px;color:var(--ink-500);line-height:1.45;margin-top:8px}
+  .askbtn{width:100%;margin-top:12px;padding:12px;border:0;border-radius:14px;background:var(--purple-500);color:#fff;
+          font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:14.5px;letter-spacing:-.01em;cursor:pointer}
+
+  /* -- the photo well. No real images in a mockup, so a tinted well
+        with the category glyph stands in for one. ---------------------- */
+  .ph{background:linear-gradient(135deg,#EDE9FF,#DCD3F7)}
+  .ph.warm{background:linear-gradient(135deg,#FBEBD9,#F5D9BD)}
+  .ph.cool{background:linear-gradient(135deg,#DDEFF7,#C4E1F0)}
+  .ph.leaf{background:linear-gradient(135deg,#E3F9EC,#C7EFD8)}
+  .ph .glyph{position:absolute;right:9px;top:8px;opacity:.42}
+
+  /* -- the label. Community and Sponsored are the SAME shape, so the
+        distinction is read, not felt as an interruption. --------------- */
+  .tag{display:inline-flex;align-items:center;gap:4px;border-radius:99px;padding:3px 8px;
+       font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+       background:rgba(255,255,255,.92);color:var(--ink-500);backdrop-filter:blur(4px)}
+  .tag.paid{color:var(--purple-700)}
+  .tag .d{width:5px;height:5px;border-radius:99px;background:var(--grey-300)}
+  .tag.paid .d{background:var(--purple-500)}
+
+  /* -- the social line. Declared and computed must never look alike. -- */
+  .social{display:flex;align-items:center;gap:8px;margin-top:11px;padding-top:11px;border-top:1px solid var(--grey-100)}
+  .social .stack .av{width:22px;height:22px;font-size:9px;border:2px solid #fff;margin-left:-7px}
+  .social .stack .av:first-child{margin-left:0}
+  .social .t{font-size:12px;color:var(--ink-500);line-height:1.3}
+  .social .t b{color:var(--ink-900);font-weight:700}
+  /* Declared: solid ring, ink text. Somebody said this. */
+  .social.said .stack .av{box-shadow:0 0 0 1.5px var(--green-500)}
+  /* Computed: dashed ring, dimmed face, lighter text, and it ALWAYS ends
+     in an ask. A guess that just sits there is gossip; one with a button
+     is a suggestion to you. */
+  .social.guess .stack .av{opacity:.5;filter:grayscale(.5);border-style:dashed;border-color:var(--grey-300)}
+  .social.guess .t{color:var(--grey-300)}
+  .social.guess .t b{color:var(--ink-500);font-weight:600}
+  /* The computed line carries NO button of its own. One CTA per card, and
+     it is the CTA that does the asking: it opens the composer with the
+     named people already picked. */
+  /* Group fit: the strongest computed signal there is, so it gets a band
+     rather than a line. */
+  .fit{display:flex;align-items:center;gap:8px;margin-top:11px;background:var(--green-100);border-radius:12px;padding:9px 11px}
+  .fit .t{font-size:12px;color:var(--green-700);line-height:1.3;font-weight:600}
+  .fit .t b{font-weight:800}
+
+  /* ── hero / empties ────────────────────────────────────────────── */
+  .hero{display:flex;flex-direction:column;align-items:center;text-align:center;padding:26px 24px 22px}
+  .pulse{position:relative;width:88px;height:88px;display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+  .pulse i{position:absolute;width:88px;height:88px;border-radius:99px;border:2px solid rgba(189,181,212,.6);animation:amb 2.6s ease-out infinite}
+  .pulse i:nth-child(2){animation-delay:1.3s}
+  @keyframes amb{0%{transform:scale(.42);opacity:.9}100%{transform:scale(1);opacity:0}}
+  .pulse .core{position:relative;width:38px;height:38px;border-radius:99px;background:rgba(189,181,212,.25);display:flex;align-items:center;justify-content:center}
+  .pulse .core i{position:static;width:14px;height:14px;border:0;background:var(--grey-300);animation:none}
+  .hero h3{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:19px;letter-spacing:-.02em;margin-bottom:7px}
+  .hero p{font-size:13.5px;color:var(--ink-500);line-height:1.5;max-width:250px}
+  .hero .cta2{width:100%;margin-top:20px;padding:15px;border:0;border-radius:16px;background:var(--purple-500);color:#fff;
+              font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:15.5px;letter-spacing:-.02em;cursor:pointer}
+  .divider{display:flex;align-items:center;gap:11px;padding:6px 2px 12px}
+  .divider i{flex:1;height:1px;background:var(--hair)}
+  .divider span{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--grey-300)}
+
+  /* ── nav (R15 metrics, unchanged) ──────────────────────────────── */
+  .nav{flex:0 0 auto;position:relative;background:#fff;border-top:1px solid var(--hair);display:flex;z-index:30}
+  .nav a,.nav .plan-btn{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;
+       gap:calc(4px*var(--ns));padding:calc(12px*var(--ns)) calc(2px*var(--ns));
+       font-size:calc(9.5px*var(--ls));font-weight:600;color:var(--grey-300);text-decoration:none;
+       font-family:inherit;background:none;border:0;cursor:pointer}
+  .nav a span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .nav a.on{color:var(--purple-500)}
+  /* Feed holds the whole left side, the two slots Discover used to share. */
+  .nav a.wide{flex:2}
+  .nav svg.ic{flex:0 0 auto;width:calc(22px*var(--ns));height:calc(22px*var(--ns))}
+  .nav .plan-btn{position:relative;justify-content:flex-end;font-weight:700;color:var(--purple-500);flex:var(--planflex)}
+  .disc{position:absolute;top:calc(-19px*var(--ns));width:calc(52px*var(--ns));height:calc(52px*var(--ns));border-radius:99px;
+        background:var(--purple-500);border:calc(4px*var(--ns)) solid #fff;
+        box-shadow:0 calc(6px*var(--ns)) calc(16px*var(--ns)) rgba(124,92,219,.42);display:flex;align-items:center;justify-content:center}
+  .disc svg.cow{width:calc(34px*var(--ns));height:calc(34px*var(--ns))}
+  .badge{position:absolute;right:calc(-3px*var(--ns));bottom:calc(-3px*var(--ns));width:calc(21px*var(--ns));height:calc(21px*var(--ns));
+         border-radius:99px;background:#fff;border:calc(2.5px*var(--ns)) solid #fff;display:flex;align-items:center;justify-content:center}
+  .badge svg{width:calc(11px*var(--ns));height:calc(11px*var(--ns))}
+  .plan-btn .lbl{margin-top:calc(34px*var(--ns));white-space:nowrap}
+
+  /* ══ BROWSE, the screen behind "See all" ═════════════════════════
+     A pushed screen off the feed, not a tab. This is where search and
+     filters live, so the feed itself never has to carry them. */
+  .bhead{flex:0 0 auto;background:#fff;border-bottom:1px solid var(--hair);padding:calc(var(--safetop) + 6px) 16px 12px}
+  .btop{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .back{width:30px;height:30px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+        background:none;border:0;color:var(--purple-700);cursor:pointer;margin-left:-7px}
+  .bhead h2{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:19px;letter-spacing:-.02em;flex:1}
+  .areachip{flex:0 0 auto;display:inline-flex;align-items:center;gap:5px;background:var(--purple-50);border:1px solid var(--hair);
+            border-radius:99px;padding:6px 11px;font-size:11.5px;font-weight:600;color:var(--purple-700);cursor:pointer}
+  .search{display:flex;align-items:center;gap:8px;background:var(--purple-50);border:1.5px solid var(--hair);
+          border-radius:13px;padding:0 12px;height:40px;margin-bottom:10px}
+  .search input{flex:1;min-width:0;border:0;background:none;outline:none;font-family:inherit;font-size:13.5px;color:var(--ink-900)}
+  .search input::placeholder{color:var(--grey-300)}
+  /* Time first, because time is the strongest signal we have. */
+  .seg{display:flex;background:var(--grey-100);border-radius:11px;padding:3px;margin-bottom:9px}
+  .seg button{flex:1;border:0;background:none;font-family:inherit;font-size:12px;font-weight:600;color:var(--ink-500);
+              padding:7px 2px;border-radius:9px;cursor:pointer;white-space:nowrap}
+  .seg button.on{background:#fff;color:var(--ink-900);font-weight:700;box-shadow:0 1px 3px rgba(28,23,48,.1)}
+  .fchips{display:flex;gap:7px}
+  .fchip{border:1.5px solid var(--hair);background:#fff;color:var(--ink-500);border-radius:99px;padding:6px 13px;
+         font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+  .fchip.on{background:var(--purple-100);border-color:var(--purple-500);color:var(--purple-700)}
+  .bcount{font-size:12px;color:var(--ink-500);padding:14px 2px 10px}
+  .bcount b{color:var(--ink-900);font-weight:700}
+  .daylbl{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-500);padding:6px 2px 9px}
+  .daylbl.gap{padding-top:16px}
+  .bempty{display:flex;flex-direction:column;align-items:center;text-align:center;padding:44px 30px}
+  .bempty h4{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:17px;margin:14px 0 6px}
+  .bempty p{font-size:13px;color:var(--ink-500);line-height:1.5;margin-bottom:16px}
+
+  /* ── anatomy panel ─────────────────────────────────────────────── */
+  .anat{padding:calc(var(--safetop) + 14px) 16px 20px}
+  .anatlbl{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--purple-500);padding:14px 2px 7px}
+  .anatlbl:first-child{padding-top:0}
+</style>
+</head>
+<body>
+
+<h1>Community and Sponsored Mooves, in the feed</h1>
+<p class="sub">
+  The Discover tab folded into the home feed. Everything below the rail scrolls north/south, no carousels and no
+  side-scrollers. The same content in three states, so the question is answerable by looking: how much room does it
+  take when your friends are busy, when they are quiet, and when you have none yet.
+</p>
+
+<p class="knoblbl">Feed state</p>
+<div class="knobs" id="states">
+  <button class="kbtn on" data-go="green">1 &middot; Friends free<small>the busy case</small></button>
+  <button class="kbtn" data-go="quiet">2 &middot; Nobody free<small>friends exist</small></button>
+  <button class="kbtn" data-go="cold">3 &middot; No friends yet<small>cold start</small></button>
+  <button class="kbtn" data-go="anatomy">4 &middot; Card anatomy<small>every variant</small></button>
+  <button class="kbtn" data-go="browse">5 &middot; See all<small>browse, interactive</small></button>
+</div>
+
+<div class="rule"></div>
+
+<div class="stage">
+  <div class="col">
+    <div class="phone">
+      <div class="cal"></div>
+
+      <!-- ═══ 1. FRIENDS FREE ════════════════════════════════════════
+           Your people are using the screen, so community content is one
+           card in last position. Scrolled north/south like everything
+           else: the rail is already this screen's horizontal gesture and
+           a second one below it muddies what horizontal means. -->
+      <section class="screen on" data-s="green">
+        <div class="body clearnav">
+          <div class="feedpad top">
+            <div class="rail" data-rail data-me="green"></div>
+            <div class="eyebrow" style="padding-top:12px">Mooves</div>
+            <div data-plans></div>
+
+            <div class="eyebrow row" style="padding-top:14px">
+              <span>Near you tonight</span><span class="more">See all</span>
+            </div>
+            <div data-near></div>
+          </div>
+        </div>
+        <nav class="nav" data-nav data-active="feed"></nav>
+      </section>
+
+      <!-- ═══ 2. NOBODY FREE ═════════════════════════════════════════
+           The friends exist but the screen is empty. This is the moment
+           the app currently loses people. Community content fills it. -->
+      <section class="screen" data-s="quiet">
+        <div class="body clearnav">
+          <div class="feedpad top">
+            <div class="rail" data-rail data-me="grey" data-mode="nogreens"></div>
+          </div>
+          <div class="hero" style="padding-bottom:14px">
+            <div class="pulse"><i></i><i></i><span class="core"><i></i></span></div>
+            <h3>Nobody's free yet.</h3>
+            <p>Here's what's happening near you, if you want to start something.</p>
+          </div>
+          <div class="feedpad">
+            <div data-full="quiet"></div>
+          </div>
+        </div>
+        <nav class="nav" data-nav data-active="feed"></nav>
+      </section>
+
+      <!-- ═══ 3. NO FRIENDS YET ══════════════════════════════════════
+           Inviting stays the one primary action. Community content sits
+           below it, so the screen has something in it besides a request. -->
+      <section class="screen" data-s="cold">
+        <div class="body clearnav">
+          <div class="feedpad top">
+            <div class="rail" data-rail data-me="grey" data-mode="solo"></div>
+          </div>
+          <div class="hero">
+            <svg viewBox="0 0 120 120" style="width:72px;height:72px;margin-bottom:16px" xmlns="http://www.w3.org/2000/svg">
+              <ellipse cx="11" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(-28 11 33)"/><ellipse cx="109" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(28 109 33)"/>
+              <ellipse cx="38" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(-14 38 19)"/><ellipse cx="82" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(14 82 19)"/>
+              <rect x="15" y="20" width="90" height="92" rx="30" fill="#F5F0ED"/>
+              <ellipse cx="41" cy="44" rx="19" ry="13" fill="#7A7282" transform="rotate(-10 41 44)"/>
+              <circle cx="44" cy="57" r="6" fill="#2A1E38"/><circle cx="76" cy="57" r="6" fill="#2A1E38"/>
+              <circle cx="46.5" cy="54.5" r="2.2" fill="white"/><circle cx="78.5" cy="54.5" r="2.2" fill="white"/>
+              <ellipse cx="60" cy="90" rx="27" ry="20" fill="#F0AABB"/><circle cx="50" cy="91" r="9" fill="#2ECC71"/><circle cx="70" cy="91" r="9" fill="#BDB5D4"/>
+            </svg>
+            <h3>Your friends aren't<br>here yet.</h3>
+            <p>They should be.</p>
+            <button class="cta2">Invite your friends</button>
+          </div>
+          <div class="feedpad" style="padding-top:14px">
+            <div class="divider"><i></i><span>Meanwhile, near you</span><i></i></div>
+            <div data-full="cold"></div>
+          </div>
+        </div>
+        <nav class="nav" data-nav data-active="feed"></nav>
+      </section>
+
+      <!-- ═══ 5. BROWSE ══════════════════════════════════════════════
+           Where "See all" goes. Everything near you, all seven days,
+           day-grouped. Search and filters live here so the feed does
+           not have to carry them. Fully interactive: type in the field,
+           tap the segments and chips, over-filter to reach the empty. -->
+      <section class="screen" data-s="browse">
+        <div class="bhead">
+          <div class="btop">
+            <button class="back">
+              <svg width="10" height="17" viewBox="0 0 9 15" fill="none"><path d="M8 1L1.5 7.5L8 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <h2>Near you</h2>
+            <button class="areachip">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z" stroke="#5F3FC4" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.5" stroke="#5F3FC4" stroke-width="2"/></svg>
+              60647
+            </button>
+          </div>
+          <div class="search">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#BDB5D4" stroke-width="2.3" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input id="q" placeholder="Search moves, places" />
+          </div>
+          <div class="seg" id="seg">
+            <button data-when="all" class="on">All week</button>
+            <button data-when="Tonight">Tonight</button>
+            <button data-when="Tomorrow">Tomorrow</button>
+            <button data-when="weekend">Weekend</button>
+          </div>
+          <div class="fchips">
+            <button class="fchip" data-f="free">Free</button>
+            <button class="fchip" data-f="friends">Friends in</button>
+          </div>
+        </div>
+        <div class="body clearnav">
+          <div class="feedpad" id="bresults"></div>
+        </div>
+        <nav class="nav" data-nav data-active="feed"></nav>
+      </section>
+
+      <!-- ═══ 4. CARD ANATOMY ════════════════════════════════════════ -->
+      <section class="screen" data-s="anatomy">
+        <div class="body">
+          <div class="anat">
+            <div class="anatlbl">Community, nobody signalled</div>
+            <div data-anat="plain"></div>
+            <div class="anatlbl">Sponsored, friends declared</div>
+            <div data-anat="paid"></div>
+            <div class="anatlbl">Community, computed guess</div>
+            <div data-anat="guess"></div>
+            <div class="anatlbl">Community, group fit</div>
+            <div data-anat="fit"></div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+    <p class="lbl-screen">Screen 4 — Home Feed, with Mooves near you</p>
+    <div class="measure" id="measure"></div>
+  </div>
+
+  <div style="width:392px;max-width:100%">
+    <p class="caption" style="text-align:left">What to look at</p>
+    <p class="note" id="notes"></p>
+  </div>
+</div>
+
+<script>
+const COW = `<svg class="cow" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+<ellipse cx="11" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(-28 11 33)"/><ellipse cx="109" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(28 109 33)"/>
+<ellipse cx="11" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(-28 11 34)"/><ellipse cx="109" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(28 109 34)"/>
+<ellipse cx="38" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(-14 38 19)"/><ellipse cx="82" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(14 82 19)"/>
+<rect x="15" y="20" width="90" height="92" rx="30" fill="#F5F0ED"/>
+<ellipse cx="41" cy="44" rx="19" ry="13" fill="#7A7282" transform="rotate(-10 41 44)"/><ellipse cx="79" cy="69" rx="14" ry="9" fill="#7A7282" transform="rotate(16 79 69)"/>
+<circle cx="44" cy="57" r="6" fill="#2A1E38"/><circle cx="76" cy="57" r="6" fill="#2A1E38"/>
+<circle cx="46.5" cy="54.5" r="2.2" fill="white"/><circle cx="78.5" cy="54.5" r="2.2" fill="white"/>
+<ellipse cx="60" cy="90" rx="27" ry="20" fill="#F0AABB"/><circle cx="50" cy="91" r="9" fill="#2ECC71"/><circle cx="70" cy="91" r="9" fill="#BDB5D4"/></svg>`;
+
+const ICONS = {
+  feed:'<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+  people:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>'
+};
+
+/* Discover is GONE from the nav and nothing replaces it. Feed takes the
+   whole left side, People and Settings hold the right, the disc stays in
+   the middle. Three tabs and the disc. */
+const tab = (k,label,active,wide)=>
+  `<a class="${k===active?'on':''}${wide?' wide':''}"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[k]}</svg><span>${label}</span></a>`;
+
+document.querySelectorAll('[data-nav]').forEach(n=>{
+  const a = n.dataset.active;
+  n.innerHTML = tab('feed','Feed',a,true)
+    +`<button class="plan-btn"><span class="disc">${COW}<span class="badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#7C5CDB" stroke-width="3.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      </span></span><span class="lbl">Plan a Moove</span></button>`
+    +tab('people','People',a)+tab('settings','Settings',a);
+});
+
+/* ── the rail ──────────────────────────────────────────────────── */
+const PEOPLE = [
+  {n:'Maya', c:'#7C5CDB', g:'now',   w:'Til 10'},
+  {n:'Dev',  c:'#E8845A', g:'now',   w:'Til 9'},
+  {n:'Sam',  c:'#4AA3DF', g:'later', w:'Thu'},
+  {n:'Jo',   c:'#D96BA0'},
+  {n:'Ali',  c:'#5EBB8A'},
+  {n:'Ren',  c:'#B07CC6'},
+  {n:'Kit',  c:'#DFA83F'}
+];
+const PLUS = `<span class="plus"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>`;
+
+function tile(p,{me=false,forceGrey=false}={}){
+  const green = !forceGrey && !!p.g;
+  const cls = ['rp', green?'on':'off', p.g==='later'?'later':'', me?'me':''].filter(Boolean).join(' ');
+  return `<div class="${cls}"><span class="ring"><span class="av" style="background:${p.c}">${p.n[0]}</span>${me?PLUS:''}</span>
+          <span class="nm">${me?'You':p.n}</span><span class="wh">${green?(p.w||''):''}</span></div>`;
+}
+
+document.querySelectorAll('[data-rail]').forEach(r=>{
+  const mode = r.dataset.mode, meState = r.dataset.me;
+  const me = {n:'You', c:'#5F3FC4', g:meState==='green'?'now':null, w:'Til 11'};
+  if(mode==='solo'){ r.innerHTML = tile(me,{me:true}); return; }
+  const grey = mode==='nogreens';
+  const list = grey ? PEOPLE : [...PEOPLE].sort((a,b)=>(b.g?1:0)-(a.g?1:0));
+  r.innerHTML = tile(me,{me:true}) + list.map(p=>tile(p,{forceGrey:grey})).join('');
+});
+
+/* ── friend plans ──────────────────────────────────────────────── */
+document.querySelectorAll('[data-plans]').forEach(el=>{
+  el.innerHTML = `
+  <div class="plan"><div class="top">
+    <span class="tile"><b>THU</b><span>8 PM</span></span>
+    <div style="flex:1;min-width:0"><h4>Bouldering, then tacos</h4><div class="meta">Maya &middot; First Ascent</div></div>
+  </div><div class="roster">
+    <span class="stack"><span class="av" style="background:#7C5CDB">M</span><span class="av" style="background:#4AA3DF">S</span></span>
+    <span>Maya and Sam are in</span><button class="imin">I'm in</button>
+  </div></div>`;
+});
+
+/* ── Mooves near you ───────────────────────────────────────────── */
+const GLYPHS = {
+  trivia:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#7C5CDB" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.6 2.6 0 1 1 3.4 2.5c-.6.2-.9.8-.9 1.4v.4"/><circle cx="12" cy="17" r=".8" fill="#7C5CDB"/></svg>',
+  food:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#C67A3E" stroke-width="1.8" stroke-linecap="round"><path d="M5 3v8a2.5 2.5 0 0 0 5 0V3M7.5 11v10"/><path d="M17 3c-1.5 2-2 3.5-2 6h4c0-2.5-.5-4-2-6ZM17 9v12"/></svg>',
+  bike:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#3E8FBF" stroke-width="1.8" stroke-linecap="round"><circle cx="6" cy="17" r="3.4"/><circle cx="18" cy="17" r="3.4"/><path d="M6 17l4-8h5l3 8M9.5 9h4"/></svg>',
+  mic:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#3E9E6E" stroke-width="1.8" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 12a6.5 6.5 0 0 0 13 0M12 18.5V21"/></svg>'
+};
+
+/* Ten moves across four days. That is deliberately close to the seeding
+   target of five to ten per metro per day, so "all" is an honest volume
+   rather than an infinite scroll that will never exist. */
+const MOOVES = [
+  {id:'trivia', tone:'',     g:'trivia', paid:false, day:'Tonight', free:true, social:'fit',
+   t:'Trivia night at Emporium', when:'Tonight, 8:00 PM', where:'Logan Square', price:'Free',
+   blurb:'Teams of up to six, no signup. Back bar has the good machines.'},
+  {id:'oyster', tone:'warm', g:'food',   paid:true,  brand:'Maplewood', day:'Tonight', free:false, social:'guess',
+   t:'Half-price oysters', when:'Tonight, 5 to 7 PM', where:'Wicker Park', price:'$$',
+   blurb:'Every Thursday. Gets loud after six, which is the point.'},
+  {id:'bike',   tone:'cool', g:'bike',   paid:false, day:'Tomorrow', free:true, social:null,
+   t:'Ride the 606 at sunset', when:'Friday, 7:30 PM',  where:'Bucktown', price:'Free',
+   blurb:'Meet at the Damen entrance. Four miles, flat, lights on the way back.'},
+  {id:'comedy', tone:'leaf', g:'mic',    paid:true,  brand:'The Crowd Room', day:'Saturday', free:false, social:'fit',
+   t:'Comedy in the back room', when:'Saturday, 9:00 PM', where:'Logan Square', price:'$10',
+   blurb:'Eight comics, one hour. Two-drink minimum, cash at the door.'},
+
+  {id:'run',    tone:'leaf', g:'bike',   paid:false, day:'Tonight', free:true, social:null,
+   t:'Open run, five kilometre loop', when:'Tonight, 6:30 PM', where:'Humboldt Park', price:'Free',
+   blurb:'Every pace welcome, nobody gets dropped. Bag drop at the boathouse.'},
+  {id:'vinyl',  tone:'',     g:'mic',    paid:false, day:'Tomorrow', free:true, social:'said',
+   t:'Vinyl night on the back patio', when:'Friday, 8:00 PM', where:'Logan Square', price:'Free',
+   blurb:'Bring a record, they will play it. Patio is heated.'},
+  {id:'tacos',  tone:'warm', g:'food',   paid:true,  brand:'Sabor Tours', day:'Tomorrow', free:false, social:null,
+   t:'Taco crawl, four stops', when:'Friday, 7:00 PM', where:'Avondale', price:'$$',
+   blurb:'Four kitchens in three hours. Walkable, ends at a bar.'},
+  {id:'market', tone:'leaf', g:'food',   paid:false, day:'Saturday', free:true, social:null,
+   t:'Farmers market, then coffee', when:'Saturday, 9:00 AM', where:'Logan Square', price:'Free',
+   blurb:'Under the blue line tracks. Go early, the bread sells out.'},
+  {id:'bowl',   tone:'cool', g:'trivia', paid:true,  brand:'Fireside Lanes', day:'Saturday', free:false, social:'guess',
+   t:'Open lanes, league night off', when:'Saturday, 7:00 PM', where:'Avondale', price:'$',
+   blurb:'Lanes go free after seven. Shoes are five dollars.'},
+  {id:'soccer', tone:'leaf', g:'bike',   paid:false, day:'Sunday', free:true, social:'said',
+   t:'Pickup soccer on the turf', when:'Sunday, 11:00 AM', where:'Humboldt Park', price:'Free',
+   blurb:'Shirts and skins, rolling subs. Turf field by the fieldhouse.'}
+];
+const DAYS = ['Tonight','Tomorrow','Saturday','Sunday'];
+
+const tagFor = m => m.paid
+  ? `<span class="tag paid"><span class="d"></span>Sponsored &middot; ${m.brand}</span>`
+  : `<span class="tag"><span class="d"></span>Community Moove</span>`;
+
+/* compact — friends are using the screen, so this is a side-scroller */
+function compact(m){
+  return `<button class="ncard">
+    <span class="ph ${m.tone}" style="display:flex">${tagFor(m)}<span class="glyph">${GLYPHS[m.g]}</span></span>
+    <span class="in" style="display:block">
+      <h5>${m.t}</h5>
+      <span class="when" style="display:block">${m.when}</span>
+      <span class="where" style="display:block">${m.where} &middot; ${m.price}</span>
+    </span></button>`;
+}
+
+/* social lines — declared, computed, and group fit */
+const SOCIAL = {
+  said:`<div class="social said">
+    <span class="stack"><span class="av" style="background:#7C5CDB">M</span><span class="av" style="background:#E8845A">D</span></span>
+    <span class="t"><b>Maya</b> and <b>Dev</b> are in</span></div>`,
+  guess:`<div class="social guess">
+    <span class="stack"><span class="av" style="background:#4AA3DF">S</span></span>
+    <span class="t"><b>Sam</b> would probably go</span></div>`,
+  fit:`<div class="fit">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#167A43" stroke-width="2" stroke-linecap="round" style="flex:0 0 auto">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>
+    <span class="t">3 of <b>Wednesday Crew</b> are free Friday</span></div>`
+};
+
+/* full — the feed has room, so the card takes it */
+function full(m, social){
+  return `<div class="fcard">
+    <div class="ph ${m.tone}">${tagFor(m)}<span class="glyph">${GLYPHS[m.g]}</span></div>
+    <div class="in">
+      <h4>${m.t}</h4>
+      <div class="facts"><span>${m.when}</span><i></i><span>${m.where}</span><i></i><span class="price">${m.price}</span></div>
+      <div class="blurb">${m.blurb}</div>
+      ${social ? SOCIAL[social] : ''}
+      <button class="askbtn">Make it a Moove</button>
+    </div></div>`;
+}
+
+/* State 1: ONE full-width card, scrolled the same direction as everything
+   else. Prominence scales with how busy your friends are through card
+   COUNT, not through a second layout mode. */
+document.querySelector('[data-near]').innerHTML = full(MOOVES[0],'fit');
+
+/* State 2 leads with the card that has a group fit, because that is the
+   one that turns an empty evening into a plan. State 3 has no friends,
+   so nothing social can appear on any card. */
+document.querySelector('[data-full="quiet"]').innerHTML =
+  full(MOOVES[0],'fit') + full(MOOVES[1],'guess') + full(MOOVES[2]);
+document.querySelector('[data-full="cold"]').innerHTML =
+  full(MOOVES[0]) + full(MOOVES[2]);
+
+/* ── browse: search + filters, day-grouped ─────────────────────── */
+const F = {when:'all', free:false, friends:false, q:''};
+
+function matches(m){
+  if(F.free && !m.free) return false;
+  if(F.friends && !m.social) return false;
+  if(F.when === 'weekend'){ if(m.day!=='Saturday' && m.day!=='Sunday') return false; }
+  else if(F.when !== 'all' && m.day !== F.when) return false;
+  if(F.q){
+    const hay = (m.t+' '+m.where+' '+m.blurb+' '+(m.brand||'')).toLowerCase();
+    if(!hay.includes(F.q.toLowerCase())) return false;
+  }
+  return true;
+}
+
+function renderBrowse(){
+  const hits = MOOVES.filter(matches);
+  const el = document.getElementById('bresults');
+  if(!hits.length){
+    el.innerHTML = `<div class="bempty">
+      <svg viewBox="0 0 120 120" style="width:70px;height:70px" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="11" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(-28 11 33)"/><ellipse cx="109" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(28 109 33)"/>
+        <ellipse cx="38" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(-14 38 19)"/><ellipse cx="82" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(14 82 19)"/>
+        <rect x="15" y="20" width="90" height="92" rx="30" fill="#F5F0ED"/>
+        <ellipse cx="41" cy="44" rx="19" ry="13" fill="#7A7282" transform="rotate(-10 41 44)"/>
+        <circle cx="44" cy="57" r="6" fill="#2A1E38"/><circle cx="76" cy="57" r="6" fill="#2A1E38"/>
+        <circle cx="46.5" cy="54.5" r="2.2" fill="white"/><circle cx="78.5" cy="54.5" r="2.2" fill="white"/>
+        <ellipse cx="60" cy="90" rx="27" ry="20" fill="#F0AABB"/><circle cx="50" cy="91" r="9" fill="#BDB5D4"/><circle cx="70" cy="91" r="9" fill="#BDB5D4"/></svg>
+      <h4>Nothing matches that.</h4>
+      <p>Try a wider stretch of the week, or drop a filter.</p>
+      <button class="pillbtn" id="clearf">Clear filters</button></div>`;
+    document.getElementById('clearf').onclick = ()=>{
+      F.when='all'; F.free=false; F.friends=false; F.q='';
+      document.getElementById('q').value='';
+      syncControls(); renderBrowse();
+    };
+    return;
+  }
+  let html = `<div class="bcount"><b>${hits.length}</b> near you this week</div>`;
+  DAYS.forEach((d,i)=>{
+    const inDay = hits.filter(m=>m.day===d);
+    if(!inDay.length) return;
+    html += `<div class="daylbl${i>0?' gap':''}">${d}</div>` + inDay.map(m=>full(m, m.social)).join('');
+  });
+  el.innerHTML = html;
+}
+
+function syncControls(){
+  document.querySelectorAll('#seg button').forEach(b=>b.classList.toggle('on', b.dataset.when===F.when));
+  document.querySelectorAll('.fchip').forEach(b=>b.classList.toggle('on', F[b.dataset.f]));
+}
+
+document.querySelectorAll('#seg button').forEach(b=>b.onclick=()=>{ F.when=b.dataset.when; syncControls(); renderBrowse(); });
+document.querySelectorAll('.fchip').forEach(b=>b.onclick=()=>{ F[b.dataset.f]=!F[b.dataset.f]; syncControls(); renderBrowse(); });
+document.getElementById('q').addEventListener('input', e=>{ F.q=e.target.value; renderBrowse(); });
+renderBrowse();
+
+document.querySelector('[data-anat="plain"]').innerHTML = full(MOOVES[2]);
+document.querySelector('[data-anat="paid"]').innerHTML  = full(MOOVES[1],'said');
+document.querySelector('[data-anat="guess"]').innerHTML = full(MOOVES[0],'guess');
+document.querySelector('[data-anat="fit"]').innerHTML   = full(MOOVES[3],'fit');
+
+/* ── state switching + the measurement readout ─────────────────── */
+const NOTES = {
+  green:`<b>The busy case.</b> One full-width card, scrolled north/south like everything else. There is <b>no
+    horizontal treatment anywhere below the rail</b>, and no carousel.
+    <br><br><b>Why.</b> The rail is already this screen's side-to-side gesture. Anything horizontal directly beneath
+    it teaches two meanings for the same swipe, and the lower one loses. Vertical also means prominence scales
+    through <b>card count</b> rather than through a second layout mode, which is one less thing to specify.
+    <br><br>Cost is <b>332px</b> of a 722px screen, in last position. "See all" carries the rest, so nothing is
+    hidden, it is one flick further away.
+    <br><br>The section reads <b>"Near you tonight"</b>, not "Sponsored". The label lives on each card rather than on
+    the section, so a shelf that is mostly community events does not get branded as advertising wholesale.
+    <br><br><b>Discover is gone from the nav and nothing replaces it.</b> Feed takes the whole left side, People and
+    Settings hold the right, the disc stays in the middle. Three tabs instead of four. "See all" opens full browse
+    as a pushed screen off the feed, not a tab.`,
+  quiet:`<b>The case this is really for.</b> Friends exist, none are free, and today this screen is a cow and one
+    line of copy. That is the moment people close the app.
+    <br><br>The empty state keeps its voice and stays on top, then the cards fill the space underneath it. They are
+    <b>vertical here</b>, because the room is free and there is nothing to compete with.
+    <br><br><b>Judge this number:</b> three full cards measure <b>945px</b>, which is 1.3 screens. The whole state
+    scrolls to about 1.8 screens. That is a lot of sponsored surface for one empty evening, and the honest
+    alternative is two cards plus "See all", which lands under one screen. I went with three because in this state
+    the user has nothing else and a third option costs one thumb flick, but it is a real call and it is yours.
+    <br><br>The first card carries the group fit band: <b>3 of Wednesday Crew are free Friday</b>. That is computed,
+    it is the strongest signal in the system, and it is the line that turns browsing into a plan.`,
+  cold:`<b>Cold start.</b> Inviting stays the single primary action, unchanged and above the fold. The cards sit
+    below a divider so they read as <b>context, not as the ask</b>.
+    Two cards, <b>584px</b> including the divider.
+    <br><br>No social line appears on any card, because there is nobody to put on it. That is the honest version,
+    and it is also the argument for inviting: this screen gets materially better the moment one friend joins.
+    <br><br>The tradeoff to judge: does having something on the screen make the invite feel less desperate, or does
+    it dilute the one thing you want them to do.`,
+  anatomy:`<b>Every card variant, stacked.</b>
+    <br><br><b>1. Community, no signal.</b> Image, title, day and time, neighbourhood, price, one line. Nothing else.
+    <br><br><b>2. Sponsored, declared.</b> The paid label is the same shape as the community one, purple instead of
+    grey. Solid avatars with a green ring: <b>these people said so.</b>
+    <br><br><b>3. Community, computed.</b> Dashed ring, greyscale face, dimmed text, "would <b>probably</b> go".
+    <b>No second button.</b> The line is display only, and the single CTA does the asking: tapping <b>Make it a
+    Moove</b> opens the composer with Sam already picked. The guess still terminates in an ask, so Sam only learns
+    about it if you actually invite him, but the card never carries two things to press.
+    <br><br><b>4. Group fit.</b> The one computed signal strong enough to get a band instead of a line, because it
+    is anchored in greens people actually declared.
+    <br><br>Compare 2 and 3 at a glance. If they read as the same kind of statement, the design has failed and the
+    declared signal loses its value.`,
+  browse:`<b>Where "See all" goes.</b> A pushed screen off the feed with a back arrow, not a tab. <b>This one is
+    live</b>, type in the field and tap the controls.
+    <br><br><b>Everything near you, all seven days, grouped by day.</b> Ten moves here, which is close to the seeding
+    target of five to ten per metro per day, so "all" is an honest volume rather than an infinite scroll that will
+    never exist. Community and Sponsored are mixed in the same list and sorted by day, never segregated and never
+    ranked by who paid.
+    <br><br><b>Search and filters live here and only here.</b> That was the point of pushing this off the feed: the
+    feed stays a feed, and the browse controls you asked for get a screen with room for them.
+    <br><br><b>Time is the first control</b>, because time is the strongest signal in the system. All week, Tonight,
+    Tomorrow, Weekend. Then two chips: <b>Free</b>, which is the filter people actually use, and <b>Friends in</b>,
+    which narrows to cards carrying a social line. Interests are deliberately <b>not</b> a filter here, they shape
+    what gets pulled and how things rank, not what you sort by.
+    <br><br>Search something that is not out there to reach the empty state. Worth noting that no combination of
+    the filters alone empties this list, which is a small argument that the filter set is the right size: every
+    control narrows without stranding you. The empty offers to clear rather than leaving you stuck.
+    <br><br>The area chip stays top right, so changing your zip is one tap from the thing that is wrong.`
+};
+const MEASURES = {
+  green:'Measured: <b>332px</b> of a 722px screen &middot; last position &middot; 1 card',
+  quiet:'Measured: <b>945px</b> (1.3 screens) &middot; below the empty state &middot; 3 cards',
+  cold:'Measured: <b>584px</b> &middot; below the invite CTA &middot; 2 cards',
+  anatomy:'Four variants at full size',
+  browse:'10 moves &middot; 4 day groups &middot; search + 4 time segments + 2 chips'
+};
+function go(s){
+  document.querySelectorAll('.screen').forEach(el=>el.classList.toggle('on', el.dataset.s===s));
+  document.querySelectorAll('#states .kbtn').forEach(b=>b.classList.toggle('on', b.dataset.go===s));
+  document.getElementById('notes').innerHTML = NOTES[s];
+  document.getElementById('measure').innerHTML = MEASURES[s];
+}
+document.querySelectorAll('#states .kbtn').forEach(b=>b.onclick=()=>go(b.dataset.go));
+go('green');
+</script>
+</body>
+</html>

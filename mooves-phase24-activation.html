@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mooves — Phase 24: activation, onboarding, the recruit ask, seeding</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --green-100:#E3F9EC; --green-500:#2ECC71; --green-700:#167A43;
+    --purple-50:#F8F6FF; --purple-100:#EDE9FF; --purple-500:#7C5CDB; --purple-700:#5F3FC4;
+    --ink-900:#1C1730; --ink-500:#6B628A;
+    --grey-100:#F1EEFA; --grey-300:#BDB5D4; --hair:#E8E4F5;
+    --safetop:44px; --ns:1.35; --ls:1.12; --planflex:1.32;
+    --railgap:14px; --greyring:1.25px; --greytone:#BDB5D4;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:Inter,sans-serif;background:#0F0C1A;color:#fff;padding:34px 18px 80px;-webkit-font-smoothing:antialiased}
+  h1{font-family:'Plus Jakarta Sans',sans-serif;font-size:25px;font-weight:800;letter-spacing:-.02em;text-align:center}
+  .sub{text-align:center;color:#9990BC;font-size:13.5px;margin-top:7px;max-width:680px;margin-left:auto;margin-right:auto;line-height:1.55}
+
+  .knobs{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin:12px auto 0;max-width:920px}
+  .kbtn{background:#1D1733;border:1.5px solid #332B52;color:#CFC6EC;font-family:inherit;font-size:12.5px;font-weight:600;
+        padding:9px 15px;border-radius:99px;cursor:pointer;transition:.16s}
+  .kbtn:hover{border-color:var(--purple-500)}
+  .kbtn.on{background:var(--purple-500);border-color:var(--purple-500);color:#fff}
+  .kbtn small{display:block;font-size:10px;font-weight:500;opacity:.72;letter-spacing:.03em}
+  .knoblbl{text-align:center;font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#5E5480;margin:22px 0 0}
+  .rule{width:100%;height:1px;background:#241D3C;max-width:920px;margin:20px auto 0}
+
+  .stage{display:flex;flex-wrap:wrap;gap:38px;justify-content:center;margin-top:26px;align-items:flex-start}
+  .col{display:flex;flex-direction:column;align-items:center}
+  .caption{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#7C6FA8;margin-bottom:10px}
+  .note{font-size:12.5px;color:#9990BC;line-height:1.65;width:392px;max-width:100%}
+  .note b{color:#CFC6EC;font-weight:600}
+  .note code{font-family:ui-monospace,monospace;font-size:11.5px;color:#B9AEE4}
+  .lbl-screen{text-align:center;color:#7C6FA8;font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-top:16px}
+
+  /* ── phone shell ───────────────────────────────────────────────── */
+  .phone{position:relative;width:352px;height:722px;border-radius:44px;background:var(--purple-50);
+         border:9px solid #241D3C;overflow:hidden;box-shadow:0 26px 60px rgba(0,0,0,.5);color:var(--ink-900)}
+  .cal{position:absolute;left:50%;transform:translateX(-50%);top:0;width:132px;height:26px;background:#241D3C;border-radius:0 0 16px 16px;z-index:60}
+  .screen{position:absolute;inset:0;display:none;flex-direction:column;overflow:hidden}
+  .screen.on{display:flex}
+  .body{flex:1;min-height:0;overflow-y:auto}
+  .body.clearnav{padding-bottom:calc(70px*var(--ns) + 22px)}
+  .pad{padding:0 16px}
+  .pad.top{padding-top:calc(var(--safetop) + 12px)}
+  .eyebrow{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-500);padding:2px 2px 8px}
+
+  .hdr{flex:0 0 auto;background:#fff;border-bottom:1px solid var(--hair);padding:calc(var(--safetop) + 6px) 16px 12px;display:flex;align-items:center;gap:10px}
+  .back{width:30px;height:30px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;background:none;border:0;color:var(--purple-700);cursor:pointer;margin-left:-7px}
+  .hdr h2{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:17px;letter-spacing:-.02em;flex:1}
+
+  /* ── onboarding canvas ─────────────────────────────────────────── */
+  .ob{flex:1;display:flex;flex-direction:column;padding:calc(var(--safetop) + 26px) 26px 0;min-height:0}
+  .ob .k{font-size:11.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--purple-500);margin-bottom:11px}
+  .ob h1{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:25px;letter-spacing:-.025em;line-height:1.14;text-align:left;color:var(--ink-900)}
+  .ob p{font-size:14px;line-height:1.55;color:var(--ink-500);margin-top:11px}
+  .obfoot{flex:0 0 auto;padding:14px 26px 30px}
+  .dots{display:flex;gap:6px;justify-content:center;padding-bottom:16px}
+  .dots i{width:6px;height:6px;border-radius:99px;background:var(--grey-300)}
+  .dots i.on{background:var(--purple-500);width:18px}
+  .cta{width:100%;padding:16px;border:0;border-radius:16px;background:var(--purple-500);color:#fff;
+       font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:16px;letter-spacing:-.02em;cursor:pointer}
+  .cta:disabled{opacity:.4}
+  .cta.ghost{background:var(--purple-100);color:var(--purple-700)}
+  .skip{display:block;width:100%;text-align:center;margin-top:13px;background:none;border:0;font-family:inherit;
+        font-size:13.5px;font-weight:500;color:var(--ink-500);cursor:pointer}
+
+  /* time chips, big enough to be the whole step */
+  .bigchips{display:flex;flex-wrap:wrap;gap:9px;margin-top:26px}
+  .bigchip{padding:14px 19px;border-radius:15px;border:1.5px solid var(--hair);background:#fff;color:var(--ink-900);
+           font-family:inherit;font-size:14.5px;font-weight:600;cursor:pointer}
+  .bigchip.on{background:var(--green-100);border-color:var(--green-500);color:var(--green-700);font-weight:700}
+  .bigchip.gone{opacity:.24;text-decoration:line-through;pointer-events:none}
+
+  /* ── the reveal ────────────────────────────────────────────────── */
+  .revealrail{display:flex;gap:var(--railgap);align-items:flex-start;margin:30px 0 6px}
+  .ghost-slot{flex:0 0 auto;width:54px;height:54px;border-radius:99px;border:1.5px dashed var(--grey-300);opacity:.55}
+  .revealcap{font-size:11.5px;color:var(--grey-300);font-weight:500}
+
+  /* ── rail ──────────────────────────────────────────────────────── */
+  .rail{display:flex;gap:var(--railgap);overflow-x:auto;padding:3px 0 5px;scrollbar-width:none}
+  .rail::-webkit-scrollbar{display:none}
+  .rp{flex:0 0 auto;width:58px;display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:0;padding:0;font-family:inherit;text-align:center}
+  .rp .ring{position:relative;display:block}
+  .av{width:54px;height:54px;border-radius:99px;display:flex;align-items:center;justify-content:center;
+      font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:19px;color:#fff}
+  .rp .ring::after{content:'';position:absolute;inset:-4px;border-radius:99px;pointer-events:none}
+  .rp.on .ring::after{border:2.5px solid var(--green-500)}
+  .rp.me.on .ring::after{border-style:dashed}
+  .rp.off .ring::after{border:var(--greyring) solid var(--greytone)}
+  .rp.off .av{filter:grayscale(1);opacity:.48}
+  .rp .nm{max-width:58px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:600;color:var(--ink-500)}
+  .rp.me .nm{font-weight:700;color:var(--ink-900)}
+  .rp .wh{min-height:13px;font-size:9.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--green-700)}
+  .plus{position:absolute;right:-3px;bottom:-3px;width:22px;height:22px;border-radius:99px;background:var(--purple-500);
+        border:2.5px solid var(--purple-50);display:flex;align-items:center;justify-content:center;z-index:1;box-shadow:0 2px 6px rgba(124,92,219,.42)}
+  .plus svg{width:11px;height:11px}
+
+  /* ── situational rows (24.1) ───────────────────────────────────── */
+  .qhead{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:20px;letter-spacing:-.02em;padding:18px 2px 4px;line-height:1.2}
+  .qsub{font-size:13px;color:var(--ink-500);padding:0 2px 16px;line-height:1.5}
+  .srow{width:100%;display:flex;align-items:flex-start;gap:13px;background:#fff;border:1.5px solid var(--hair);
+        border-radius:18px;padding:15px 15px;text-align:left;font-family:inherit;cursor:pointer;margin-bottom:10px}
+  .srow:hover{border-color:var(--purple-500)}
+  .sic{flex:0 0 auto;width:42px;height:42px;border-radius:13px;background:var(--purple-100);display:flex;align-items:center;justify-content:center;color:var(--purple-700)}
+  .srow h4{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:15.5px;letter-spacing:-.01em;color:var(--ink-900)}
+  .srow p{font-size:12.5px;color:var(--ink-500);line-height:1.45;margin-top:3px}
+  .chev{flex:0 0 auto;align-self:center;color:var(--grey-300)}
+  .srow.compact{padding:12px 14px;border-radius:15px;margin-bottom:8px}
+  .srow.compact .sic{width:34px;height:34px;border-radius:11px}
+  .srow.compact h4{font-size:14px}
+  .srow.compact p{font-size:11.5px;margin-top:1px}
+
+  /* ── cards + feed ──────────────────────────────────────────────── */
+  .plan{background:#fff;border:1.5px solid var(--hair);border-radius:18px;padding:14px;margin-bottom:10px}
+  .plan .top{display:flex;gap:11px;align-items:flex-start}
+  .tile{flex:0 0 auto;width:46px;height:46px;border-radius:13px;background:var(--purple-100);display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--purple-700)}
+  .tile b{font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;line-height:1}
+  .tile span{font-size:8px;font-weight:700;letter-spacing:.04em;margin-top:2px;opacity:.8}
+  .plan h4{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:15.5px;letter-spacing:-.01em}
+  .plan .meta{font-size:12.5px;color:var(--ink-500);margin-top:3px}
+  .plan .roster{display:flex;align-items:center;gap:7px;margin-top:12px;padding-top:11px;border-top:1px solid var(--grey-100)}
+  .stack{display:flex}
+  .stack .av{width:24px;height:24px;font-size:10px;border:2px solid #fff;margin-left:-7px}
+  .stack .av:first-child{margin-left:0}
+  .plan .roster span{font-size:12px;color:var(--ink-500)}
+  .imin{margin-left:auto;border:1.5px solid var(--purple-500);color:var(--purple-700);background:#fff;border-radius:99px;
+        padding:6px 14px;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer}
+
+  /* welcome banner for the invited user */
+  .welcome{background:var(--green-100);border:1.5px solid rgba(46,204,113,.35);border-radius:16px;padding:13px 14px;margin-bottom:14px}
+  .welcome h4{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:14.5px;color:var(--green-700);letter-spacing:-.01em}
+  .welcome p{font-size:12.5px;color:var(--green-700);opacity:.85;margin-top:3px;line-height:1.4}
+
+  .hero{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 24px}
+  .pulse{position:relative;width:88px;height:88px;display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+  .pulse i{position:absolute;width:88px;height:88px;border-radius:99px;border:2px solid rgba(189,181,212,.6);animation:amb 2.6s ease-out infinite}
+  .pulse i:nth-child(2){animation-delay:1.3s}
+  @keyframes amb{0%{transform:scale(.42);opacity:.9}100%{transform:scale(1);opacity:0}}
+  .pulse .core{position:relative;width:38px;height:38px;border-radius:99px;background:rgba(189,181,212,.25);display:flex;align-items:center;justify-content:center}
+  .pulse .core i{position:static;width:14px;height:14px;border:0;background:var(--grey-300);animation:none}
+  .hero h3{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:19px;letter-spacing:-.02em;margin-bottom:7px}
+  .hero p{font-size:13.5px;color:var(--ink-500);line-height:1.5;max-width:250px}
+
+  /* ── sheets ────────────────────────────────────────────────────── */
+  .scrim{position:absolute;inset:0;background:rgba(28,23,48,.5);z-index:40}
+  .sheet{position:absolute;left:0;right:0;bottom:0;z-index:50;background:#fff;border-radius:26px 26px 0 0;display:flex;flex-direction:column;
+         box-shadow:0 -10px 40px rgba(28,23,48,.18);overflow:hidden}
+  .grab{flex:0 0 auto;height:38px;display:flex;align-items:center;justify-content:center}
+  .grab i{display:block;width:38px;height:5px;border-radius:99px;background:#DDD8EC}
+  .pane{flex:1;min-height:0;overflow-y:auto;padding:0 20px 22px}
+  .sheet h2{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:20px;letter-spacing:-.02em;line-height:1.2}
+  .sheet .lead{font-size:13.5px;color:var(--ink-500);margin-top:6px;line-height:1.45}
+  .lab{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-500);margin:20px 0 9px}
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{padding:9px 14px;border-radius:99px;font-family:inherit;font-size:12.5px;font-weight:600;
+        border:1.5px solid var(--hair);background:#fff;color:var(--ink-500);cursor:pointer}
+  .chip.on{background:var(--green-100);border-color:var(--green-500);color:var(--green-700);font-weight:700}
+  .chip.isnew{border-style:dashed;border-color:var(--purple-500);color:var(--purple-700)}
+
+  /* ── name-your-crew field ──────────────────────────────────────── */
+  .field{width:100%;height:52px;border-radius:15px;border:1.5px solid var(--purple-500);background:#fff;padding:0 15px;
+         font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:17px;color:var(--ink-900);outline:none;margin-top:24px}
+  .linkbox{display:flex;align-items:center;gap:9px;background:var(--purple-50);border:1.5px solid var(--hair);border-radius:14px;
+           padding:12px 14px;margin-top:12px}
+  .linkbox .u{flex:1;min-width:0;font-size:12.5px;color:var(--ink-500);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+  /* ── settings row (24.0 wall 4) ────────────────────────────────── */
+  .srowset{display:flex;align-items:flex-start;gap:12px;background:#fff;border:1.5px solid var(--hair);border-radius:16px;padding:15px}
+  .srowset .t{flex:1}
+  .srowset h4{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:14.5px;letter-spacing:-.01em}
+  .srowset p{font-size:12px;color:var(--ink-500);line-height:1.45;margin-top:4px}
+  .sw{flex:0 0 auto;width:46px;height:28px;border-radius:99px;background:var(--green-500);position:relative;cursor:pointer;border:0}
+  .sw i{position:absolute;top:3px;left:21px;width:22px;height:22px;border-radius:99px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:.18s}
+  .sw.off{background:var(--grey-300)}
+  .sw.off i{left:3px}
+
+  /* ── the landing page fix ──────────────────────────────────────── */
+  .web{flex:1;background:#fff;display:flex;flex-direction:column;justify-content:center;padding:22px}
+  .webtag{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--grey-300);margin-bottom:12px}
+  .webcard{background:#fff;border:1px solid var(--hair);border-radius:18px;padding:19px;box-shadow:0 1px 3px rgba(28,23,48,.06)}
+  .webcard h3{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:18px;letter-spacing:-.015em;margin-bottom:9px}
+  .webcard p{font-size:13.5px;line-height:1.55;color:var(--ink-500)}
+  .webcard.old{border-color:rgba(232,64,90,.35);background:rgba(232,64,90,.04);margin-bottom:14px}
+  .webcard.old p{text-decoration:line-through;opacity:.6}
+  .flag{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+        padding:3px 8px;border-radius:99px;margin-bottom:9px}
+  .flag.bad{background:rgba(232,64,90,.14);color:#C0304A}
+  .flag.good{background:var(--green-100);color:var(--green-700)}
+
+  /* ── nav ───────────────────────────────────────────────────────── */
+  .nav{flex:0 0 auto;position:relative;background:#fff;border-top:1px solid var(--hair);display:flex;z-index:30}
+  .nav a,.nav .plan-btn{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:calc(4px*var(--ns));
+       padding:calc(12px*var(--ns)) calc(2px*var(--ns));font-size:calc(9.5px*var(--ls));font-weight:600;color:var(--grey-300);
+       text-decoration:none;font-family:inherit;background:none;border:0;cursor:pointer}
+  .nav a span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .nav a.on{color:var(--purple-500)}
+  .nav a.wide{flex:2}
+  .nav svg.ic{flex:0 0 auto;width:calc(22px*var(--ns));height:calc(22px*var(--ns))}
+  .nav .plan-btn{position:relative;justify-content:flex-end;font-weight:700;color:var(--purple-500);flex:var(--planflex)}
+  .disc{position:absolute;top:calc(-19px*var(--ns));width:calc(52px*var(--ns));height:calc(52px*var(--ns));border-radius:99px;
+        background:var(--purple-500);border:calc(4px*var(--ns)) solid #fff;box-shadow:0 calc(6px*var(--ns)) calc(16px*var(--ns)) rgba(124,92,219,.42);
+        display:flex;align-items:center;justify-content:center}
+  .disc svg.cow{width:calc(34px*var(--ns));height:calc(34px*var(--ns))}
+  .badge{position:absolute;right:calc(-3px*var(--ns));bottom:calc(-3px*var(--ns));width:calc(21px*var(--ns));height:calc(21px*var(--ns));
+         border-radius:99px;background:#fff;border:calc(2.5px*var(--ns)) solid #fff;display:flex;align-items:center;justify-content:center}
+  .badge svg{width:calc(11px*var(--ns));height:calc(11px*var(--ns))}
+  .plan-btn .lbl{margin-top:calc(34px*var(--ns));white-space:nowrap}
+</style>
+</head>
+<body>
+
+<h1>Phase 24 — the parts without a mockup</h1>
+<p class="sub">
+  24.1 the situational invite hub &middot; 24.2 onboarding that rehearses the loop, and the invited user's different
+  path &middot; 24.3 the one recruit ask &middot; 24.5 the green chips &middot; plus the Settings opt-out and the
+  landing-page copy that Phase 24 makes untrue. <b style="color:#CFC6EC">24.9 has no mobile UI</b> — seeded moves land
+  in the existing desktop admin queue.
+</p>
+
+<p class="knoblbl">24.2 — onboarding, cold user</p>
+<div class="knobs" id="k1"></div>
+<p class="knoblbl">24.2 — onboarding, invited user</p>
+<div class="knobs" id="k2"></div>
+<p class="knoblbl">24.1 / 24.3 — invites and the ask</p>
+<div class="knobs" id="k3"></div>
+<p class="knoblbl">24.5 / 24.9 / 24.0 — chips, queue, opt-out, landing</p>
+<div class="knobs" id="k4"></div>
+
+<div class="rule"></div>
+
+<div class="stage">
+  <div class="col">
+    <div class="phone">
+      <div class="cal"></div>
+
+      <!-- ═══ 24.2a — THE REHEARSAL ══════════════════════════════════ -->
+      <section class="screen on" data-s="rehearse">
+        <div class="ob">
+          <div class="k">Step 2 of 3</div>
+          <h1>When are you free<br>this week?</h1>
+          <p>Pick one. You can change it any time, and it only lasts as long as you say.</p>
+          <div class="bigchips">
+            <button class="bigchip gone">Right now</button>
+            <button class="bigchip">Tonight</button>
+            <button class="bigchip on">Thursday</button>
+            <button class="bigchip">This week</button>
+            <button class="bigchip">This weekend</button>
+          </div>
+        </div>
+        <div class="obfoot">
+          <div class="dots"><i></i><i class="on"></i><i></i></div>
+          <button class="cta">That's when I'm free</button>
+        </div>
+      </section>
+
+      <!-- ═══ 24.2b — THE REVEAL ════════════════════════════════════ -->
+      <section class="screen" data-s="reveal">
+        <div class="ob">
+          <div class="k">Step 2 of 3</div>
+          <h1>You're free Thursday.<br>Nobody can see it yet.</h1>
+          <p>Mooves only does anything once your people are here. Right now it's just you.</p>
+          <div class="revealrail">
+            <div class="rp me on"><span class="ring"><span class="av" style="background:#5F3FC4">Y</span></span>
+              <span class="nm">You</span><span class="wh">Thu</span></div>
+            <span class="ghost-slot"></span><span class="ghost-slot"></span><span class="ghost-slot"></span>
+          </div>
+          <p class="revealcap">Four empty spots, and one of them is doing all the work.</p>
+        </div>
+        <div class="obfoot">
+          <div class="dots"><i></i><i class="on"></i><i></i></div>
+          <button class="cta">Create your Group</button>
+        </div>
+      </section>
+
+      <!-- ═══ 24.2c — NAME YOUR CREW ════════════════════════════════ -->
+      <section class="screen" data-s="crew">
+        <div class="ob">
+          <div class="k">Step 3 of 3</div>
+          <h1>Who would you<br>want to hang with?</h1>
+          <p>Name them, then drop the link in the group chat you already have.</p>
+          <input class="field" value="Wednesday Crew" />
+          <div class="linkbox">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B628A" stroke-width="2.2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+            <span class="u">makemooves.app/g/wq4k2p</span>
+          </div>
+          <p style="margin-top:13px">Everyone who taps it becomes friends with everyone else, not just with you.</p>
+        </div>
+        <div class="obfoot">
+          <div class="dots"><i></i><i></i><i class="on"></i></div>
+          <button class="cta">Copy invite link</button>
+          <button class="skip">I'll do this later</button>
+        </div>
+      </section>
+
+      <!-- ═══ 24.2d — INVITED VIA A PERSON ══════════════════════════ -->
+      <section class="screen" data-s="inv1">
+        <div class="body clearnav">
+          <div class="pad top">
+            <div class="rail">
+              <div class="rp me off"><span class="ring"><span class="av" style="background:#5F3FC4">Y</span>
+                <span class="plus"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></span>
+                <span class="nm">You</span><span class="wh"></span></div>
+              <div class="rp on"><span class="ring"><span class="av" style="background:#7C5CDB">M</span></span>
+                <span class="nm">Maya</span><span class="wh">Thu</span></div>
+            </div>
+            <div style="height:14px"></div>
+            <div class="welcome">
+              <h4>You and Maya are friends now.</h4>
+              <p>She's free Thursday. That's the whole app.</p>
+            </div>
+            <div class="eyebrow">Mooves</div>
+            <div class="plan"><div class="top">
+              <span class="tile"><b>THU</b><span>8 PM</span></span>
+              <div style="flex:1;min-width:0"><h4>Bouldering, then tacos</h4><div class="meta">Maya &middot; First Ascent</div></div>
+            </div><div class="roster">
+              <span class="stack"><span class="av" style="background:#7C5CDB">M</span></span>
+              <span>Maya's going</span><button class="imin">I'm in</button>
+            </div></div>
+          </div>
+        </div>
+        <nav class="nav" data-nav></nav>
+      </section>
+
+      <!-- ═══ 24.2e — INVITED VIA A GROUP ═══════════════════════════ -->
+      <section class="screen" data-s="invg">
+        <div class="body clearnav">
+          <div class="pad top">
+            <div class="rail" data-rail-group></div>
+            <div style="height:14px"></div>
+            <div class="welcome">
+              <h4>You're in Wednesday Crew, with 6 people.</h4>
+              <p>Two of them are free Thursday. Nothing else to set up.</p>
+            </div>
+            <div class="eyebrow">Mooves</div>
+            <div class="plan"><div class="top">
+              <span class="tile"><b>THU</b><span>8 PM</span></span>
+              <div style="flex:1;min-width:0"><h4>Bouldering, then tacos</h4><div class="meta">Maya &middot; First Ascent</div></div>
+            </div><div class="roster">
+              <span class="stack"><span class="av" style="background:#7C5CDB">M</span><span class="av" style="background:#4AA3DF">S</span></span>
+              <span>Maya and Sam are in</span><button class="imin">I'm in</button>
+            </div></div>
+          </div>
+        </div>
+        <nav class="nav" data-nav></nav>
+      </section>
+
+      <!-- ═══ 24.1 — THE SITUATIONAL HUB ════════════════════════════ -->
+      <section class="screen" data-s="hub">
+        <div class="hdr">
+          <button class="back"><svg width="10" height="17" viewBox="0 0 9 15" fill="none"><path d="M8 1L1.5 7.5L8 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <h2>Add friends</h2><span style="width:23px"></span>
+        </div>
+        <div class="body">
+          <div class="pad">
+            <div class="qhead">Where are your people<br>right now?</div>
+            <div class="qsub">All three work. This just picks the one that fits.</div>
+            <button class="srow">
+              <span class="sic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 17.5h7M17.5 14v7"/></svg></span>
+              <span style="flex:1"><h4>In this room</h4><p>Everyone scans one code and comes out friends with each other.</p></span>
+              <span class="chev"><svg width="8" height="13" viewBox="0 0 9 15" fill="none"><path d="M1 1l6.5 6.5L1 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </button>
+            <button class="srow">
+              <span class="sic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.9 8.9 0 0 1-4-.9L3 21l1.9-4.9A8.4 8.4 0 0 1 12 3.1a8.4 8.4 0 0 1 9 8.4Z"/></svg></span>
+              <span style="flex:1"><h4>In a group chat</h4><p>Name your crew, drop the link in. Everyone who taps it joins.</p></span>
+              <span class="chev"><svg width="8" height="13" viewBox="0 0 9 15" fill="none"><path d="M1 1l6.5 6.5L1 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </button>
+            <button class="srow">
+              <span class="sic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M5 20a7 7 0 0 1 14 0"/></svg></span>
+              <span style="flex:1"><h4>Just one person</h4><p>Your personal link. It never expires.</p></span>
+              <span class="chev"><svg width="8" height="13" viewBox="0 0 9 15" fill="none"><path d="M1 1l6.5 6.5L1 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </button>
+          </div>
+        </div>
+        <nav class="nav" data-nav data-active="people"></nav>
+      </section>
+
+      <!-- ═══ 24.3a — THE ONE RECRUIT ASK ═══════════════════════════ -->
+      <section class="screen" data-s="ask">
+        <div class="body clearnav">
+          <div class="pad top">
+            <div class="rail" data-rail-group></div>
+            <div class="eyebrow" style="padding-top:12px">Mooves</div>
+          </div>
+        </div>
+        <nav class="nav" data-nav></nav>
+        <div class="scrim"></div>
+        <div class="sheet" style="height:62%">
+          <div class="grab"><i></i></div>
+          <div class="pane">
+            <h2>You're free Thursday.<br>6 people can see that.</h2>
+            <p class="lead">Who else should?</p>
+            <div style="height:18px"></div>
+            <button class="srow compact">
+              <span class="sic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.9 8.9 0 0 1-4-.9L3 21l1.9-4.9A8.4 8.4 0 0 1 12 3.1a8.4 8.4 0 0 1 9 8.4Z"/></svg></span>
+              <span style="flex:1"><h4>Got another group chat?</h4><p>Name it, drop the link in that chat.</p></span>
+              <span class="chev"><svg width="7" height="12" viewBox="0 0 9 15" fill="none"><path d="M1 1l6.5 6.5L1 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </button>
+            <button class="srow compact">
+              <span class="sic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 17.5h7M17.5 14v7"/></svg></span>
+              <span style="flex:1"><h4>People in the room</h4><p>One code, everyone scans.</p></span>
+              <span class="chev"><svg width="7" height="12" viewBox="0 0 9 15" fill="none"><path d="M1 1l6.5 6.5L1 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </button>
+            <button class="srow compact">
+              <span class="sic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M5 20a7 7 0 0 1 14 0"/></svg></span>
+              <span style="flex:1"><h4>Just one person</h4><p>Your personal link.</p></span>
+              <span class="chev"><svg width="7" height="12" viewBox="0 0 9 15" fill="none"><path d="M1 1l6.5 6.5L1 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </button>
+            <button class="skip">Not now</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ 24.5 — GO GREEN, NORMAL ═══════════════════════════════ -->
+      <section class="screen" data-s="green">
+        <div class="body clearnav">
+          <div class="pad top"><div class="rail" data-rail-group></div></div>
+        </div>
+        <nav class="nav" data-nav></nav>
+        <div class="scrim"></div>
+        <div class="sheet" style="height:56%">
+          <div class="grab"><i></i></div>
+          <div class="pane">
+            <h2>When are you free?</h2>
+            <label class="lab">Pick one</label>
+            <div class="chips">
+              <button class="chip">Right now</button>
+              <button class="chip">Tonight</button>
+              <button class="chip isnew">Tomorrow</button>
+              <button class="chip on">This week</button>
+              <button class="chip">This weekend</button>
+            </div>
+            <label class="lab">Who can see this?</label>
+            <div class="chips">
+              <button class="chip on">Everyone</button>
+              <button class="chip">Wednesday Crew</button>
+            </div>
+            <div style="height:22px"></div>
+            <button class="cta" style="background:var(--green-700)">Go free</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ 24.0 — THE OPT-OUT ════════════════════════════════════ -->
+      <section class="screen" data-s="optout">
+        <div class="hdr">
+          <button class="back"><svg width="10" height="17" viewBox="0 0 9 15" fill="none"><path d="M8 1L1.5 7.5L8 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <h2>Settings</h2><span style="width:23px"></span>
+        </div>
+        <div class="body">
+          <div class="pad">
+            <div class="eyebrow" style="padding-top:18px">What friends see</div>
+            <div class="srowset">
+              <span class="t">
+                <h4>Suggest me for things</h4>
+                <p>When you're free and something nearby fits, your friends can see you'd probably go. They can't see it unless you're already free.</p>
+              </span>
+              <button class="sw"><i></i></button>
+            </div>
+            <div style="height:10px"></div>
+            <div class="srowset">
+              <span class="t">
+                <h4>Sponsors never see you</h4>
+                <p>They get counts, never names. That hasn't changed and it won't.</p>
+              </span>
+            </div>
+          </div>
+        </div>
+        <nav class="nav" data-nav data-active="settings"></nav>
+      </section>
+
+      <!-- ═══ 24.0 — THE LANDING COPY ═══════════════════════════════ -->
+      <section class="screen" data-s="landing">
+        <div class="web">
+          <div class="webtag">makemooves.app &middot; Discover section</div>
+          <div class="webcard old">
+            <span class="flag bad">Now untrue</span>
+            <p>Local spots pay to be listed, it says so on the card, they never appear in your friends' feed and they never see who you are.</p>
+          </div>
+          <div class="webcard">
+            <span class="flag good">Replacement</span>
+            <h3>Things worth leaving the house for</h3>
+            <p>Real events near you, mixed into your feed alongside your friends. Local spots pay to be listed and every one of those says so on the card. Sponsors only ever get counts, never names, and the only people who see what you're up for are the friends you already have.</p>
+          </div>
+        </div>
+      </section>
+
+    </div>
+    <p class="lbl-screen" id="slabel">24.2 — Onboarding, cold user</p>
+  </div>
+
+  <div style="width:392px;max-width:100%">
+    <p class="caption">What to look at</p>
+    <p class="note" id="notes"></p>
+  </div>
+</div>
+
+<script>
+const COW = `<svg class="cow" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+<ellipse cx="11" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(-28 11 33)"/><ellipse cx="109" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(28 109 33)"/>
+<ellipse cx="11" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(-28 11 34)"/><ellipse cx="109" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(28 109 34)"/>
+<ellipse cx="38" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(-14 38 19)"/><ellipse cx="82" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(14 82 19)"/>
+<rect x="15" y="20" width="90" height="92" rx="30" fill="#F5F0ED"/>
+<ellipse cx="41" cy="44" rx="19" ry="13" fill="#7A7282" transform="rotate(-10 41 44)"/><ellipse cx="79" cy="69" rx="14" ry="9" fill="#7A7282" transform="rotate(16 79 69)"/>
+<circle cx="44" cy="57" r="6" fill="#2A1E38"/><circle cx="76" cy="57" r="6" fill="#2A1E38"/>
+<circle cx="46.5" cy="54.5" r="2.2" fill="white"/><circle cx="78.5" cy="54.5" r="2.2" fill="white"/>
+<ellipse cx="60" cy="90" rx="27" ry="20" fill="#F0AABB"/><circle cx="50" cy="91" r="9" fill="#2ECC71"/><circle cx="70" cy="91" r="9" fill="#BDB5D4"/></svg>`;
+const ICONS = {
+  feed:'<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+  people:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>'
+};
+/* 24.6's three-tab bar: Feed takes the whole left side. */
+const tab=(k,l,a,w)=>`<a class="${k===a?'on':''}${w?' wide':''}"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[k]}</svg><span>${l}</span></a>`;
+document.querySelectorAll('[data-nav]').forEach(n=>{
+  const a=n.dataset.active||'feed';
+  n.innerHTML=tab('feed','Feed',a,true)
+    +`<button class="plan-btn"><span class="disc">${COW}<span class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="#7C5CDB" stroke-width="3.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></span><span class="lbl">Plan a Moove</span></button>`
+    +tab('people','People',a)+tab('settings','Settings',a);
+});
+
+const CREW=[{n:'Maya',c:'#7C5CDB',g:'Thu'},{n:'Sam',c:'#4AA3DF',g:'Thu'},{n:'Dev',c:'#E8845A'},{n:'Jo',c:'#D96BA0'},{n:'Ali',c:'#5EBB8A'},{n:'Ren',c:'#B07CC6'}];
+const PLUS=`<span class="plus"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>`;
+document.querySelectorAll('[data-rail-group]').forEach(r=>{
+  const grey=r.dataset.grey==='1';
+  let h=`<div class="rp me off"><span class="ring"><span class="av" style="background:#5F3FC4">Y</span>${PLUS}</span><span class="nm">You</span><span class="wh"></span></div>`;
+  CREW.forEach(p=>{
+    const on=!grey&&!!p.g;
+    h+=`<div class="rp ${on?'on':'off'}"><span class="ring"><span class="av" style="background:${p.c}">${p.n[0]}</span></span>
+        <span class="nm">${p.n}</span><span class="wh">${on?p.g:''}</span></div>`;
+  });
+  r.innerHTML=h;
+});
+
+const GROUPS={
+  k1:[['rehearse','Rehearse','the green, for real'],['reveal','The reveal','nobody can see it'],['crew','Name your crew','the motivated ask']],
+  k2:[['inv1','Invited by a person','1 friend, already'],['invg','Invited by a group','6 friends, already']],
+  k3:[['hub','The hub','one question, 3 answers'],['ask','The one ask','fires once, ever']],
+  k4:[['green','Go Green','5 chips'],['optout','The opt-out','24.0 wall 4'],['landing','Landing copy','now untrue']]
+};
+const LABEL={rehearse:'24.2 — Onboarding, cold user',reveal:'24.2 — Onboarding, cold user',crew:'24.2 — Onboarding, cold user',
+  inv1:'24.2 — Onboarding, invited user',invg:'24.2 — Onboarding, invited user',hub:'24.1 — Add friends',
+  ask:'24.3 — The recruit ask',green:'24.5 — Go Green sheet',
+  optout:'24.0 — Settings opt-out',landing:'24.0 — Landing page copy'};
+
+const NOTES={
+rehearse:`<b>The loop, run once, instead of explained.</b> This replaces <code>MoovesLoop</code> entirely. You cannot teach
+  the loop faster than by doing it, and a carousel about availability is weaker than one real green.
+  <br><br>The green is <b>real</b>, with real expiry. That matters for the next screen to land.
+  <br><br><b>"Right now" is struck through here to show what 24.5 suppresses</b> — in the real build it simply is not
+  rendered. It survives untouched on the normal Go Green sheet. A day-one "right now" green dies before anyone can
+  see it, which teaches exactly the wrong lesson.
+  <br><br>Three steps, not five. <b>Area and interests are gone from onboarding</b> — area is captured on first browse,
+  interests move to Settings and become ranking inputs.`,
+reveal:`<b>The whole design is on this screen.</b> They just made something, and it is inert. That is a felt problem,
+  not an asserted one, and it is what makes the next step convert.
+  <br><br>The rail carries <b>one green tile and three empty rings</b>. The emptiness is the argument. No cow here on
+  purpose, the character would soften a moment that should land flat.
+  <br><br>Copy is deliberately unhelpful about what to do, because the CTA answers it.`,
+crew:`<b>The existing group-create step, reached at the right moment.</b> Same screen the app already has, moved from
+  before the user understands the app to right after they feel the gap.
+  <br><br>Group name is prefilled and selected so the first keystroke overwrites it. The link is shown <b>before</b> the
+  copy, so it reads as a thing that exists rather than a thing that will be generated.
+  <br><br>The line that does the work: <b>everyone who taps it becomes friends with everyone else, not just with you.</b>
+  That is already true in <code>group-invite/[code]/join</code>, and it is the highest-yield mechanism in the app.
+  <br><br>Skip is a real option, and it says "later" rather than "no thanks".`,
+inv1:`<b>The invited user's feed is not empty, and that is the whole wedge.</b> They arrive with one friend and one
+  green already visible. No invite ask, no crew step, no explainer.
+  <br><br>The banner does the orientation in two lines, then gets out of the way. <b>"That's the whole app"</b>
+  is doing the teaching that the cold user's three steps do.
+  <br><br>One tap from responding: <b>I'm in</b> is on screen without scrolling. That tap is also the reciprocal event
+  that sets <code>activated_at</code> (24.4).`,
+invg:`<b>Six friends and a group, on arrival.</b> Today this user gets asked to create a group before they have joined
+  the one they were invited to, because <code>?invite=</code> just threads through the same five steps.
+  <br><br>The rail is populated, two people are green, and there is a Moove to join. Nothing to set up.
+  <br><br>This is the cohort most likely to convert and most likely to be wasted. The recruit ask for them comes later,
+  on their own terms, at 24.3.`,
+hub:`<b>One question the user can answer instantly.</b> Today the hub asks them to choose between a room code, a
+  personal QR and a link, which requires understanding the data model. This asks a fact about their life.
+  <br><br>Three answers, three <b>existing</b> artifacts. Nothing is built and nothing is removed. The group path stays
+  primary because it is the only bulk mechanism that works remotely.
+  <br><br>Ordered by yield, not alphabetically: in-person is highest when it applies and it is time-sensitive, the
+  group chat is the remote flywheel, one person is the long tail.
+  <br><br>The subtitle exists to stop the question reading as a test with a wrong answer.`,
+ask:`<b>Fires once, ever.</b> Trigger is the first time an invited user goes green themselves, which is the same
+  motivated moment as the cold user's reveal. One concept, two placements.
+  <br><br><b>"6 people can see that" is the mechanism.</b> It is a status about their own reach, and a number begs to be
+  bigger in a way "invite your friends" never will. No urgency, no manufactured scarcity, no exclamation point.
+  <br><br>The three rows are the 24.1 hub, compacted, with <b>"Got another group chat?" first</b> — they arrived
+  through a group link, so they have just experienced that flywheel from the receiving end.
+  <br><br>"Not now" rather than "No thanks", because it is accurate: it never asks again.
+  <br><br><b>Nothing persists after dismissal.</b> There is no demoted banner in the empty state — the ask fires once
+  and then the app stops asking, full stop. Add friends is still one tap away in People whenever they want it.`,
+green:`<b>24.5, and it is additive.</b> Five chips now. <b>Tomorrow</b> is new (shown dashed here to mark it).
+  <b>Right now</b> and <b>This week</b> both survive untouched, per your call.
+  <br><br>The only suppression is "Right now" during the onboarding rehearsal. Everywhere else this sheet is unchanged,
+  including Phase 18's "This week" and Phase 22's scheduled availability.
+  <br><br>Five chips wrap to two rows at 352px without crowding.`,
+optout:`<b>Wall 4 of the 24.0 amendment.</b> One switch, and it removes the user from every computed line everywhere,
+  immediately.
+  <br><br>The description names the constraint that makes the feature defensible: <b>friends cannot see it unless
+  you are already free</b>. Green overlap is the confidence floor, so this is never a guess about someone who has
+  declared nothing.
+  <br><br>The second row is not a control, it is a statement. Sponsors get counts, never names, and that did not
+  change in this phase. Saying so next to the thing that <i>did</i> change is what keeps the amendment honest.`,
+landing:`<b>The bill for "forget those guardrails".</b> The live page currently promises the opposite of what Phase 24
+  ships, in public.
+  <br><br><b>What was untrue:</b> sponsored moves now <i>do</i> appear in the feed, and friends <i>do</i> see who is up
+  for what. Both were load-bearing promises in R20's copy.
+  <br><br><b>What the replacement keeps:</b> the paid disclosure on every card, sponsors getting counts and never names,
+  and the visibility ceiling being friends you already have. The amendment is narrower than "forget the guardrails"
+  and the page should say the narrow version.
+  <br><br>R18–R20 set the precedent that landing copy is reviewed as the live page rather than mocked, so treat this
+  as the approved wording, not a layout.`
+};
+
+function go(s){
+  document.querySelectorAll('.screen').forEach(el=>el.classList.toggle('on', el.dataset.s===s));
+  document.querySelectorAll('.kbtn').forEach(b=>b.classList.toggle('on', b.dataset.go===s));
+  document.getElementById('notes').innerHTML=NOTES[s];
+  document.getElementById('slabel').textContent=LABEL[s];
+}
+Object.entries(GROUPS).forEach(([id,rows])=>{
+  document.getElementById(id).innerHTML=rows.map(([k,t,s])=>`<button class="kbtn" data-go="${k}">${t}<small>${s}</small></button>`).join('');
+});
+document.querySelectorAll('.kbtn').forEach(b=>b.onclick=()=>go(b.dataset.go));
+document.querySelectorAll('.bigchip:not(.gone)').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.bigchip').forEach(x=>x.classList.remove('on')); b.classList.add('on');
+});
+document.querySelectorAll('.sw').forEach(b=>b.onclick=()=>b.classList.toggle('off'));
+go('rehearse');
+</script>
+</body>
+</html>
