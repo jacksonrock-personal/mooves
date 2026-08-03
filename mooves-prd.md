@@ -46,6 +46,7 @@
 | — | **Refinements R18–R20** — **the WebKit pane-width bug (R18)** · the Mooves list has no empty state (R19) · **the landing page sells half the product (R20)** | ✅ Spec 2026-07-30 (see "Refinements R18–R20" at EOF) — **R18 is a real defect, root-caused and reproduced in WebKit, not a style tweak**: `PaneTrack`'s track was a flex item with a percentage flex-basis inside an indefinite main size, which WebKit sized to its content, so every pane in the Go Green sheet and the green modal rendered ~1.8× the screen width on iPhones. R19 fills the empty state §20.4 never defined. R20 rewrites the landing page around planned Mooves, joining and Discover · ⬜ no mockup — R18/R19 verified by measurement and screenshot in WebKit, R20 reviewed as the live page · ✅ Code 2026-07-30 (`tsc --noEmit` + `next build` clean; no migration; cut off `origin/main` @ `e5783b5`, after R14–R17 merged as PR #53) · ⬜ **device test pending on R18** |
 | — | **Refinements R21–R23** — **the rail holds everyone, permanently (R21)** · **going free is your own tile; the slide is deleted (R22)** · every artifact that still teaches the slide (R23) | ✅ Spec 2026-07-31 (see "Refinements R21–R23" at EOF) — **modelled on Instagram's story rail**: the rail is permanent and holds every friend, green is the ring, greens jump to the front by immediacy bucket and the grey tail is shuffled once per app open. Grey faces are deliberately **inert** — green is what makes someone contactable. **`SwipeToGoGreen` is deleted**; the `+` on your own tile is the only path to green, labelled "Go free" so the app's most important action stays discoverable. **No migration, no new endpoint** — `/api/friends` is already fetched on load · ✅ Mockup `mooves-r21-r23-stories-rail.html` (13 states, approved 2026-08-02 — **one amendment at mockup**: R23 gained `MoovesLoop` card 3, which taught what a Moove *is* and never said where one comes from; onboarding now teaches both creation gestures, tap your own face and tap the cow) · ✅ Code 2026-08-02 (`feat/r21-r23-stories-rail`, **stacked on `fix/webkit-panes-empty-state-landing`** — R18–R20 rewrote the same three files and is not yet merged; `tsc --noEmit` + `next build` clean; no migration; `GreenRail`→`Rail`, `SwipeToGoGreen` deleted, new `src/lib/rail.ts` with **17 tsx acceptance checks passing**; rail height measured stable at 91.5px across all four states after a 1.25px label-slot defect was found and fixed) · ⬜ **device test pending** |
 | — | Phase 23 — 30-day friend-availability calendar | 🔮 Gated on Phase 22 · pointless until future availability data exists |
+| — | **Phase 24 — Activation + the Mooves feed** — invite paths consolidate by *situation*, groups preserved (24.1) · onboarding rehearses the loop instead of explaining it, and invited users get a different flow (24.2) · second-session recruit ask (24.3) · activation redefined as a reciprocal event (24.4) · green options gain "Tomorrow"; "This week" and "Right now" both stay, "Right now" suppressed in onboarding only (24.5) · **Discover dies as a tab; Community + Sponsored Mooves fold into the feed (24.6)** · card redesign, declared vs computed social signals (24.7) · **"See all" browse screen owns search + filters (24.8)** · daily seeding job on Claude Code routines, per metro (24.9) | ✅ **Spec 2026-08-03** (see "Phase 24" at EOF) — **24.0 amends Phase 13 in daylight**: "sponsored moves never appear in your friends' feed" and "aggregate-only, no per-person exposure" are both repealed, four walls remain, and **R20's landing page must be rewritten** because it publicly promises the opposite · ✅ **Mockups, both locked 2026-08-03: `mooves-concept-mooves-in-feed.html` (5 states, 24.6–24.8) + `mooves-phase24-activation.html` (10 states, 24.0/24.1/24.2/24.3/24.5)**. **24.9 has no mobile UI by design** — seeded moves are `pending` `sponsored_moves` rows that land in the existing desktop `AdminConsole`, so the work is three additive fields (origin badge, source URL, last-pull line), not a screen. **Two amendments at the activation mockup**: 24.3's post-dismissal empty-state affordance was designed and **cut** (the ask now leaves no residue at all), and the mobile review queue was designed and **cut** as redundant. Locked at approval: prominence scales through **card count, not layout mode** (one card when friends are busy, more when quiet); **nothing horizontal below the rail** — no side-scroller, no carousel, both built and rejected; **nav drops to three tabs**, Feed takes the whole left side and nothing replaces Discover; section reads "Near you tonight" with the paid/community label **on each card, not on the section**; single CTA **"Make it a Moove"** which opens the composer with computed-match people pre-picked; declared vs computed must be **visually unmistakable** (solid+green ring vs dashed+greyscale+"probably"); browse **interleaves Community and Sponsored sorted purely by day, never segregated, never ranked by who paid** — ⚠ open: whether paid placement is ever sold here. Measured: 332px busy / 945px quiet / 584px cold, of a 722px screen · 🔄 **Code: pass 1 of 3 done 2026-08-03** (`feat/phase24-activation-mooves-feed`, clean off `origin/main` @ `bd537e1`) — **migration `20260803120000` applied by Jackson**, ledger verified in sync; `metros` + `metro_zips` + 3 `users` + 7 `sponsored_moves` columns, `origin` backfilled; `scripts/seed-metros.mjs` derives metros from real user zips; types regenerated from live schema, `tsc` clean; **no function redefined**. · 🔄 **Pass 2a done 2026-08-03** (24.6 + 24.7) — nav drops to three tabs, `DiscoverIcon` deleted, Feed `grow-[2]`; new `MooveCard` (one CTA, always) + `lib/nearMatch.ts`; `/api/discover` **rewritten**, setup gate and interest hard-filter both removed; **computed match in TypeScript not SQL** (no second migration, and it is testable — 20/20 logic checks incl. the timezone case where a London friend is not matched by a Chicago "Thursday evening" slot); "Make it a Moove" reuses 13.8's existing `plans.sponsored_move_id` anchor, which was already built. ⚠ **Known gap carried to 2b: "I'd go" has no home** — a second button was built, caught as a violation of "one CTA per card", and removed; it belongs in the detail sheet. Declared lines render from existing rows but nothing new can be declared. · ✅ **Pass 2b done 2026-08-03** (24.8) — `/discover` rewritten as a pushed browse screen (back arrow, no nav entry): search · All week/Tonight/Tomorrow/Weekend · Free · Friends-in · area chip, day-grouped via 13.2a, **Community and Sponsored interleaved and sorted purely by day**; client-side filtering (the week's list is small and a filter that costs a round-trip stops feeling like one). **The 2a gap is closed** — new `MooveDetailSheet` holds the full description, venue, provenance (sponsors → link out, seeded → "Where this came from"), and **"I'd go"**, opened by tapping the card BODY so the card still carries exactly one button. **`SponsoredCard.tsx` deleted** (dead, and a live path back to "I'm interested"). **Weekend math de-duplicated** into `weekendOffsets` — two copies would have drifted and made the Weekend filter disagree with the "This weekend" header on a Saturday; 22/22 checks incl. the Sat/Sun edge. ⚠ `LandingScreen` still shows a static replica captioned "before I'm interested" — folded into pass 3's landing rewrite. · ✅ **Pass 3a done 2026-08-03** (24.1 · 24.2 · 24.5) — **24.5** adds `Tomorrow`; **`Now` and `This week` both survive**, suppression is onboarding-only via `hideNow`; 17/17 expiry checks incl. the 1am boundary where a `next3am`-based impl lands a day early, plus month/year rollover and the 8-day server bound. **24.1** hub asks one situational question, three answers, nothing built or removed (19.2's QR expands under "Just one person"). **24.2** chain is now profile → rehearse → reveal → crew → feed; the rehearsal writes a REAL green with real expiry, which is what makes the reveal land; **invited users end at profile and go straight to the feed**. **Second duplicate-source-of-truth removed**: the chip list existed in both `TimeChips` and the status route, so adding a chip to one would have had the UI offer what the API silently discarded — now one exported `STATUS_TIMES` (same shape as 2b's weekend math). **`MoovesLoop` NOT deleted** — `SettingsScreen.tsx:290` replays it via `?replay=1`; retired from the chain, alive in Settings. `/onboarding/area` + `/onboarding/interests` left in place but unlinked (they terminate correctly if hit directly; the functionality lives in Settings). · ✅ **24.3 done 2026-08-03** — the one recruit ask fires on first self-green, for users who HAVE friends; "once ever" is enforced in three places (the crew step spends it, so a cold-start user is never asked twice and no extra column was needed; the API is write-once; local state is spent before the network call, so a failed write costs one missed record not a repeated nag). Nothing persists after dismissal. · ✅ **Pass 3b done 2026-08-03** — **24.4** `markActivated` on the plan-join path activates BOTH sides (joiner did something with a friend, author had something land), fire-and-forget so it can never fail a join; **migration `20260803180000` applied by Jackson**, backfill reads `move_joins` from both ends taking the earliest, idempotent via `activated_at IS NULL`. **24.0** Settings opt-out (optimistic + rollback: a switch that silently fails to save is worse than one that says so) with a non-control "Sponsors never see you" beside it, so what did NOT change is stated next to what did; **landing copy rewritten** — the old paragraph promised the opposite of what ships, the replacement is deliberately narrower than "forget the guardrails" (paid cards say so, sponsors get counts never names, ceiling is friends you already have), and the static card replica's "I'm interested" CTA fixed. **24.9** two bearer-authed ingest routes + `docs/seeding-routine.md`; metros route returns fingerprints + an incremental window (the ~6/7ths saving that makes 3×-daily affordable on the subscription); ingest holds the quality gate (no source URL / venue / future start → rejected before the queue) and is idempotent via `dedupe_key`. ⚠ `/api/ingest/` added to middleware PUBLIC_PREFIXES — a scheduled agent cannot carry a `mooves-token`; both routes self-gate on `INGEST_TOKEN` and 503 when unset. ⬜ **Jackson to set `INGEST_TOKEN`** in Vercel + the routine host before seeding can run. ⬜ device test pending across the phase |
 
 ---
 
@@ -5421,3 +5422,246 @@ Story *content* — a green is a state, not a post, and there is nothing to view
 - [ ] `AmbientTier` still shows only when there are no visible green friends and no Mooves.
 - [ ] All nine artifacts in R23 describe the tap, not the slide.
 - [ ] Onboarding teaches **both** creation gestures: card 1 points at your own face, card 3 points at the cow disc in the nav.
+
+---
+
+## Phase 24 — Activation + the Mooves feed (Spec) — *spec'd 2026-08-03* · SPEC ✅ · MOCKUP ✅ (`mooves-concept-mooves-in-feed.html`, 5 states, 24.6–24.8 + `mooves-phase24-activation.html`, 10 states, 24.0/24.1/24.2/24.3/24.5 — both approved 2026-08-03; **24.9 has no mobile UI by design**) · CODE 🔄 **pass 1 of 3 done 2026-08-03** (`feat/phase24-activation-mooves-feed`, branched clean off `origin/main` @ `bd537e1`) — **migration `20260803120000` applied by Jackson, ledger verified in sync**; `metros` + `metro_zips`, 3 `users` columns, 7 `sponsored_moves` columns, `origin` backfilled (`house` where `sponsor_id IS NULL`, else `sponsor`); paired `scripts/seed-metros.mjs` derives metros from distinct `users.area_zip` and collapses cities within 20mi; `src/types/database.ts` **regenerated from the live schema via CLI** — also picked up `rate_limits`, `availability_cron_tick`, `purge_old_availability_slots` and `graphql`, which existed in the DB but had drifted out of the hand-maintained file. **No function redefined** (get_feed/get_plans deliberately untouched; read paths land in pass 2). `tsc --noEmit` clean. ⬜ **Pass 2** = feed + browse + cards (24.6–24.8) · ⬜ **Pass 3** = activation (24.0–24.5) then seeding (24.9)
+
+**Purpose:** make the app's value legible before a user has friends, and make getting their friends in a single obvious path, while turning the sponsored feed from a tab nobody visits into the thing that fills an empty evening.
+
+**Scope:** nine parts, one phase, one branch. Product decisions settled in conversation 2026-08-03.
+
+### 24.0 — The amendment (stated in daylight)
+
+Phase 13 locked three rules that Phase 24 breaks. Amended explicitly, per the Phase 21 precedent (which amended "no in-app messaging, ever").
+
+**Repealed:**
+- *"Sponsored moves never appear in your friends' feed"* — they now appear in the home feed itself.
+- *"Aggregate-only counters, no per-person exposure"* — friends now see which friends signalled.
+- R20's landing-page copy asserting both. **Rewritten as part of this phase** — the public page currently promises the opposite of what the app does.
+
+**Walls that remain load-bearing:**
+1. **Sponsors never see identities.** Sponsor analytics stay aggregate with small-N suppression (0 / <5 / ≥5). Unchanged from 13.7.
+2. **"I'd go" is visible to confirmed friends only.** Never public, never to the sponsor, never to strangers in the same metro.
+3. **Computed matches require green overlap.** No availability overlap in the event's window, no "would probably go". Interest match alone is never sufficient.
+4. **One opt-out.** A Settings switch removes the user from all computed lines, everywhere, immediately.
+
+### 24.1 — Invite paths consolidate by situation
+
+**Purpose:** stop making the user resolve a taxonomy question at the moment they have least context and most urgency.
+
+**Behavior:** the Add friends hub asks one question — **"Where are your people right now?"** — with three answers mapping to the three existing artifacts. No new invite artifacts, none removed.
+
+| Answer | Artifact | Status |
+|---|---|---|
+| In this room | Roundup QR session | 19.1, unchanged |
+| In a group chat | Named group + invite link | Groups, unchanged |
+| Just one person | Personal referral link | 19.2, unchanged |
+
+The group path stays primary and untouched. `group-invite/[code]/join` already auto-friends the owner and all current members mutually, which makes it the highest-yield mechanism in the app: one action, N friendships, N² edges.
+
+**Acceptance criteria**
+- [ ] Hub presents one situational question with three answers; no path is removed.
+- [ ] Each answer routes to its existing artifact with no behavior change.
+- [ ] Group creation and group invite links are unchanged.
+
+### 24.2 — Onboarding rehearses the loop
+
+**Purpose:** teach the loop by running it once, and stop asking invited users to build a community they just joined.
+
+**Cold user:** Profile → **Go green (rehearsal)** → **the reveal** → **name your crew + link** → Feed.
+
+- The rehearsal creates a *real* green with real expiry. Chips: Tonight / Tomorrow / This week / This weekend. **"Right now" is suppressed here only** (see 24.5).
+- The reveal reads: *"You're free Thursday. Nobody can see it yet."* The felt uselessness of an invisible green is what motivates the next step.
+- The crew step is the existing `/onboarding/invite` group-create, now reached at the moment it makes sense rather than before.
+- **Area and interests steps are removed from onboarding.** Area is captured on first browse (24.8); interests move to Settings and become ranking inputs only.
+- `MoovesLoop` explainer is retired — the rehearsal replaces it. (Reverses the Screen 3 revision's card-based teach.)
+
+**Invited user:** Profile → Feed, showing the friend or group that invited them, one tap from responding. **No invite ask on session one.** They already have friends; asking them to recruit before they have experienced anything burns the best-converting cohort.
+
+**Acceptance criteria**
+- [ ] Cold flow is four steps; area and interests no longer appear in onboarding.
+- [ ] The onboarding green persists as a real green with real expiry.
+- [ ] A user arriving with `?invite=` skips the crew step entirely.
+- [ ] Group-link arrivals land on the group they joined, not a create-a-group prompt.
+- [ ] Interests captured by previous users are preserved; nothing is wiped.
+
+### 24.3 — Second-session recruit ask
+
+**Purpose:** ask invited users for their people once, at the moment it is motivated rather than on arrival.
+
+**Trigger, in order:** first time they go green themselves → else first reciprocal event → else once on open after ~7 days.
+
+**Content:** *"You're free Thursday. 6 people can see that."* / *Who else should?* → the 24.1 situational hub, pre-narrowed by arrival path (group arrivals get "got another crew?", which converts best because they have just experienced that flywheel from the receiving end).
+
+**Form:** dismissible sheet. **One modal ask, ever.** **Nothing persists after dismissal** — no demoted banner, no affordance in the empty state; the app simply stops asking. *(Amended at mockup 2026-08-03: the empty-state affordance was designed, reviewed and cut.)* Add friends remains one tap away in People whenever the user wants it, which is enough.
+
+**Acceptance criteria**
+- [ ] Fires at most once per user, tracked server-side via `users.recruit_ask_shown_at`.
+- [ ] Never fires for a user who completed the cold-start crew step.
+- [ ] Dismissal is permanent and leaves no residue in the feed.
+
+### 24.4 — Activation redefined
+
+**Purpose:** measure the thing that predicts retention instead of the thing that is easy to count.
+
+**Definition:** a user is activated on their **first reciprocal event** — someone joined their green or Moove, or they joined someone's. Invites sent is explicitly *not* the metric; it is a vanity number that can be large while activation is zero.
+
+**Data:** `users.activated_at TIMESTAMPTZ NULL`, set once, never cleared. PostHog `user_activated` with `hours_since_signup`. Time-to-activation is the number to compress.
+
+**Acceptance criteria**
+- [ ] `activated_at` set exactly once, on the first qualifying join in either direction.
+- [ ] Backfilled for existing users from join history.
+- [ ] Invite counts are not used as an activation signal anywhere.
+
+### 24.5 — Green options
+
+**Purpose:** add a missing option and keep the onboarding green useful.
+
+- **Add "Tomorrow"** to the Go Green chips.
+- **Keep "This week"** (Phase 18.1) and **"Right now"** — both survive on the normal Go Green sheet, unchanged. *(Jackson's call 2026-08-03, reversing an earlier agreement to cut "This week".)*
+- **"Right now" is suppressed in the onboarding rehearsal only**, so a day-one green does not expire before anyone can see it.
+
+**Acceptance criteria**
+- [ ] "Tomorrow" resolves to the correct day across timezones (Phase 22 already stores user tz).
+- [ ] "Right now" and "This week" behave exactly as today outside onboarding.
+- [ ] Onboarding shows four chips, excluding "Right now".
+
+### 24.6 — Discover dies as a tab
+
+**Purpose:** stop asking people to remember to visit the revenue surface. The empty feed is the moment of peak intent and the moment the app currently loses people.
+
+**Nav:** four tabs → **three**. `Feed` takes the whole left side (`flex:2`, the two slots it shared with Discover), then the disc, then `People`, `Settings`. **Nothing replaces Discover.** `/discover` retires as a tab; browse lives at 24.8.
+
+**Feed placement — prominence scales through card count, never through layout mode. Nothing horizontal exists below the rail** (a side-scroller and a carousel were both built and rejected at mockup: the rail is already this screen's horizontal gesture, and a second one beneath it teaches two meanings for the same swipe).
+
+| Feed state | Treatment | Measured (722px screen) |
+|---|---|---|
+| Friends green | 1 card, last position, under "Near you tonight" + See all | 332px |
+| Nobody free | 3 cards below the empty state | 945px |
+| No friends | 2 cards below the invite CTA, under a "Meanwhile, near you" divider | 584px |
+
+Section header is **"Near you tonight"**, never "Sponsored". The paid/community label lives **on each card**, so a shelf that is mostly community events is not branded as advertising wholesale.
+
+**Acceptance criteria**
+- [ ] Bottom nav renders three tabs; Feed occupies the left half.
+- [ ] No horizontal scroller exists below the rail in any feed state.
+- [ ] Card count varies by state as tabled; section header never reads "Sponsored".
+- [ ] Existing `?anchor=` deep links continue to resolve.
+
+### 24.7 — The card and its social signals
+
+**Card fields, in order:** image · label pill · title · day + time · neighbourhood · price · one-line blurb · social line (optional) · single CTA. Description moves to the detail sheet. **One CTA per card, always** — no secondary buttons in any variant.
+
+**Label:** `Community Moove` (grey dot) or `Sponsored · {brand}` (purple dot). Same pill shape, same position; the distinction is read, not felt as an interruption.
+
+**Social line — two kinds that must never look alike:**
+
+| | Declared | Computed |
+|---|---|---|
+| Source | User tapped **"I'd go"** | Green overlap + proximity + interest + friend signals |
+| Copy | "Maya and Dev are in" | "Sam would **probably** go" |
+| Treatment | Solid avatar, green ring, ink text | Dashed ring, greyscale, dimmed text |
+| Precedence | Always wins | Suppressed if declared exists, or if the user passed |
+
+If the two ever read as the same kind of statement, the design has failed and the declared signal loses its value.
+
+**Group fit** gets a band rather than a line — *"3 of Wednesday Crew are free Friday"* — as the only computed signal anchored entirely in greens people actually declared.
+
+**Ranking inputs, in weight order:** green overlap (highest, and the signal nobody else has) · proximity · friends who already declared · group fit · history · interest tags (last).
+
+**CTA: "Make it a Moove"** → opens the **Phase 20 planned-Moove composer**, pre-filled with title, date, time and place from the source move, with **computed-match people pre-picked**, and **carrying 13.8's anchor link** so `brought_over_count` still increments and the sponsor keeps attribution. Both halves of the old flywheel, one path. Replaces 13.8's pre-anchored *green* path.
+
+**"I'd go" replaces "I'm interested"** entirely, and applies to **both** Community and Sponsored moves. The old button gated the action that mattered behind a telemetry tap; the new one is a real user signal that produces the social proof.
+
+**Acceptance criteria**
+- [ ] "I'm interested" is gone; `move_interested` rows become the "I'd go" source of truth.
+- [ ] Declared and computed are distinguishable at a glance without reading the words.
+- [ ] No computed line renders without green overlap in the event's window.
+- [ ] Opt-out removes a user from all computed lines immediately.
+- [ ] Composer opens pre-filled with the anchor intact; `brought_over_count` increments.
+- [ ] Exactly one button per card in every variant.
+
+### 24.8 — "See all" browse
+
+**Purpose:** give search and filters a home so the feed does not have to carry them. Answers the original complaint that Discover was unsearchable and unfilterable.
+
+**Route:** a pushed screen off the feed with a back arrow. **Not a tab.**
+
+**Contents:** everything in the user's metro for the next 7 days, **grouped by day**, with a count at top. Community and Sponsored are **interleaved and sorted purely by day — never segregated, never ranked by who paid.**
+
+**Controls:** search (title, place, blurb, brand) · time segments (All week / Tonight / Tomorrow / Weekend) · chips (**Free**, **Friends in**) · area chip top-right for changing zip.
+
+**Interests are deliberately not a filter** — they shape what gets pulled and how it ranks, not what you sort by.
+
+**Empty:** reachable via search only (no filter combination empties the list, which is a small argument that the filter set is the right size). Offers Clear, which resets segments, chips and query.
+
+**Acceptance criteria**
+- [ ] Reachable only from the feed; no nav entry.
+- [ ] Day grouping matches 13.2a's existing logic.
+- [ ] Filters compose; Clear resets all four controls.
+- [ ] Paid and community interleave by day with no ranking advantage.
+
+### 24.9 — Seeding: Community Mooves
+
+**Purpose:** populate every metro where a user actually lives, daily, without metered API spend.
+
+**Runtime:** a **scheduled Claude Code cloud routine**, 3× daily, on the existing subscription. **No Anthropic API billing** — this is a hard constraint, not a preference. The routine **never writes to the database**; it searches, structures, and POSTs.
+
+**Split:**
+1. routine → `GET /api/ingest/metros` — which metros need a pull, plus any on-demand queue, plus **fingerprints of what is already known** per metro
+2. WebSearch per metro, constrained to the gap window
+3. strict JSON, no prose
+4. `POST /api/ingest/community-moves` with a bearer token
+
+The app owns dedupe, validation and persistence, so that logic stays versioned and testable and a half-finished run leaves nothing broken.
+
+**Efficiency levers, in order of payoff:**
+- **Incremental window** — daily pulls the newly-entered day plus a 48h re-scan for late announcements; **full 7-day re-scan weekly**. Steady-state cost drops roughly six-sevenths.
+- **Known-fingerprint skip list** (title + venue only, no descriptions) sent down with the request, so recurring events are not re-discovered and re-described daily.
+- **3–5 metros per subagent**, parallel subagents above ~15 metros.
+- **Metro list driven by actual user zips** — never pull a city with no users in it.
+- **Hard cap 5–10 per metro**, and **returning zero is explicitly valid**. Models pad to hit a number; the prompt must say fewer is correct if fewer are good.
+- Terse output schema — only fields the card actually renders.
+
+**Quality bar (all required to reach the queue):** fixed start time · physical venue with a neighbourhood · open to the public, no membership · **source URL that actually lists it** · **something you would plausibly bring three friends to**. The last is the Mooves-specific filter and it excludes solo, date-night and passive attendance — all fine events, all useless to this app and unmonetizable the way 24.7 monetizes.
+
+**Dedupe:** fuzzy key = normalized title + venue + start time.
+
+**Flow:** ingest → `pending_review` → admin queue → live. **On-demand:** first signup in an unseen metro enqueues immediately; same route, `metro` param. Running 3× daily collapses that wait from 24h to ~8h and costs almost nothing given the incremental design.
+
+**No new review UI.** Seeded moves are `sponsored_moves` rows with `status='pending'`, so they land in the **existing desktop admin console** (`AdminConsole.tsx`, already a 1040px-wide sidebar layout with a Moderation queue view and wired Approve/Reject). The work is three additive fields on that screen, not a new one: the `origin` badge, `source_url` as a visible link, and a metro + `last_successful_pull` line. **Desktop only — no mobile design.** *(Confirmed at mockup 2026-08-03; a mobile queue was designed and cut as redundant.)*
+
+**Reliability** (no Vercel Cron guarantees here): the ingest route is **idempotent**, so a double-run is a no-op; `last_successful_pull` per metro is visible in admin so staleness is visible without alerting infrastructure.
+
+**Acceptance criteria**
+- [ ] Ingest route is idempotent; a double-run is a no-op.
+- [ ] Rows without a source URL are rejected before the queue.
+- [ ] `last_successful_pull` per metro visible in admin.
+- [ ] New-metro signup enqueues without waiting for the next scheduled run.
+- [ ] Zero LLM spend on metered API.
+
+### Data model (Phase 24)
+
+**New tables**
+- `metros` — `id · name · state · centroid · created_at`
+- `metro_zips` — `zip → metro_id`. Zips are **assigned to a metro**, not clustered at read time. (Phase 12 stores `users.area_zip` only and matches by a 25-mile radius; there is no metro concept in the schema today.)
+
+**New columns — `users`**
+- `activated_at TIMESTAMPTZ NULL` (24.4)
+- `hide_from_matches BOOLEAN DEFAULT false` (24.0 wall 4)
+- `recruit_ask_shown_at TIMESTAMPTZ NULL` (24.3)
+
+**Altered — `sponsored_moves`**
+- `metro_id` (FK) · `origin` enum `sponsor | seeded | house` · `source_url TEXT` · `dedupe_key TEXT UNIQUE` · `price_text TEXT` · `is_free BOOLEAN` · `neighborhood TEXT`
+
+`origin` matters because `sponsor_id IS NULL` currently covers both Mooves-authored house moves and (now) seeded community ones, and they need different labels and different link-out behavior.
+
+**Read path change:** `move_interested` gains a **friend-scoped read** for the declared social line. Sponsor-facing analytics remain aggregate and small-N suppressed (13.7 unchanged).
+
+### Out of scope
+Paid placement or ranking advantage in browse. Sponsor-facing changes of any kind. Push notifications for computed matches. Interest-based personalization beyond ranking. The roster concept (withdrawn at design — groups do the same job better and already exist).
+
+### Open questions
+1. **Browse carries no paid placement — a current-state decision, not a permanent one** *(Jackson 2026-08-03)*. Interleaving strictly by day means a sponsor cannot buy position today. Revisitable once there is enough paid inventory for position to be worth selling; the schema does not foreclose it.
+2. **In-flight greens** — no migration needed now that "This week" survives; confirm at build.

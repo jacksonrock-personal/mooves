@@ -18,6 +18,12 @@ import WaveStrip from './WaveStrip'
 import TipJar from './TipJar'
 import AmbientTier from './AmbientTier'
 import MoovesEmpty from './MoovesEmpty'
+import MooveCard from './MooveCard'
+import MooveDetailSheet from '@/components/discover/MooveDetailSheet'
+import RecruitAskSheet from './RecruitAskSheet'
+import { statusTimeLabel } from '@/lib/greenExpiry'
+import { feedCardCount } from '@/lib/nearMatch'
+import type { NearMove } from '@/app/api/discover/route'
 import RoundupJoinedSheet from './RoundupJoinedSheet'
 import Rail from './Rail'
 import { railSeed, type RailPerson } from '@/lib/rail'
@@ -125,6 +131,15 @@ export default function FeedScreen() {
   // pane the tapped half of the card asked for.
   const [sheet, setSheet] = useState<{ plan: Plan; pane: MoovePane } | null>(null)
   const [planPrefill, setPlanPrefill] = useState<PlanPrefill | null>(null)
+  // 24.6 — Community and Sponsored Mooves, in the feed rather than in a tab
+  // nobody visited. Fetched once at the maximum any state needs (3) and sliced
+  // by feedCardCount, so going green does not trigger a refetch.
+  const [nearMoves, setNearMoves] = useState<NearMove[]>([])
+  const [nearDetail, setNearDetail] = useState<NearMove | null>(null)
+  // 24.3 — the one recruit ask. Null here means it has never been shown; the
+  // crew step spends it too, so a cold-start user is never asked twice.
+  const [recruitAskSpent, setRecruitAskSpent] = useState(true)
+  const [recruitAskOpen, setRecruitAskOpen] = useState(false)
   /**
    * ?plan=<id> — where the "tagged you in a Moove" push lands.
    *
@@ -340,8 +355,10 @@ export default function FeedScreen() {
         referralCode?: string
         timezone?: string | null
         weekRitualDay?: number
+        recruitAskShownAt?: string | null
       }
       if (!mountedRef.current) return
+      setRecruitAskSpent(!!meData.recruitAskShownAt)
       if (meData.onboardingComplete === false) {
         router.replace('/onboarding')
         return
@@ -414,6 +431,18 @@ export default function FeedScreen() {
           posthog.capture('returning_prompt_shown')
         }
       }
+
+      // 24.6 — the near-you shelf. Fire-and-forget: it is the last thing on the
+      // screen in every state, so a slow or failed fetch must never hold up the
+      // rail or the Mooves list.
+      void fetch('/api/discover?limit=3')
+        .then(r => (r.ok ? r.json() : null))
+        .then((d: { moves?: NearMove[] } | null) => {
+          if (d?.moves && mountedRef.current) setNearMoves(d.moves)
+        })
+        .catch(() => {
+          /* the shelf just does not render */
+        })
 
       // Arriving from Discover "Go with friends" (13.8).
       //
@@ -601,6 +630,21 @@ export default function FeedScreen() {
     setMyAnchoredMove(pendingAnchor) // null for a normal go-green
     setPendingAnchor(null)
     setMyJoiners([])
+
+    // 24.3 — the one recruit ask, at the moment it is motivated: they have just
+    // made something and its reach is bounded by the people they have. Fires for
+    // users who HAVE friends; a friendless user is already looking at the
+    // cold-start invite CTA and does not need a sheet on top of it.
+    if (!recruitAskSpent && (totalFriendCount ?? 0) > 0) {
+      setRecruitAskSpent(true) // spend it immediately — never twice, even if the write fails
+      setRecruitAskOpen(true)
+      posthog.capture('recruit_ask_shown', { reach: totalFriendCount })
+      void fetch('/api/users/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ recruitAskShown: true }),
+      })
+    }
     setSheetOpen(false)
     setToastMessage("You're free! 🎉")
     void refetchFeed()
@@ -803,6 +847,28 @@ export default function FeedScreen() {
     return `${names[0]}, ${names[1]} and ${names.length - 2} more are in${suffix}`
   }
 
+  // 24.7 — the card's single CTA. Opens the planned-Moove composer prefilled and
+  // carrying the anchor, so brought_over_count still increments and the sponsor
+  // keeps attribution (13.8's contract, unchanged).
+  //
+  // No round-trip through ?anchor=: that path exists for arrivals from OUTSIDE
+  // the feed, and here we already hold the whole move.
+  //
+  // locationText is the VENUE, not the neighbourhood. The card shows the
+  // neighbourhood; a Moove needs somewhere to actually meet.
+  function handleMakeMoove(move: NearMove) {
+    posthog.capture('near_make_moove', { move: move.id, origin: move.origin })
+    setEditingPlan(null)
+    setPlanPrefill({
+      sponsoredMoveId: move.id,
+      title: move.title,
+      startAt: move.startAt,
+      locationText: move.locationText,
+      note: move.description,
+    })
+    setComposerOpen(true)
+  }
+
   async function handleInviteTap() {
     posthog.capture('feed_invite_tapped')
     if (!referralCode) return
@@ -946,10 +1012,51 @@ export default function FeedScreen() {
                 >
                   Invite your friends
                 </button>
+
+                {/* 24.6, cold start. Inviting stays the one primary action and
+                    keeps its place above; these sit below a divider so they read
+                    as context, not as the ask. No social line can appear here —
+                    there is nobody to put on one — which is the honest version
+                    and also the argument for inviting. */}
+                {nearMoves.length > 0 && (
+                  <div className="w-full mt-6 text-left">
+                    <div className="flex items-center gap-[11px] px-0.5 pb-3">
+                      <span className="flex-1 h-px bg-[#E8E4F5]" />
+                      <span className="font-sans text-[10.5px] font-bold uppercase tracking-[0.1em] text-grey-300">
+                        Meanwhile, near you
+                      </span>
+                      <span className="flex-1 h-px bg-[#E8E4F5]" />
+                    </div>
+                    {nearMoves
+                      .slice(0, feedCardCount({ hasFriends: false, anyGreen: false, anyPlans: false }))
+                      .map(m => (
+                        <MooveCard key={m.id} move={m} onMakeMoove={handleMakeMoove} onOpenDetail={setNearDetail} />
+                      ))}
+                  </div>
+                )}
               </div>
             ) : friends.length === 0 && plans.length === 0 ? (
               // 20.4 — the ambient tier only when BOTH surfaces are empty.
-              <AmbientTier activeNow={ambient.activeNow} recentGreen={ambient.recentGreen} />
+              <>
+                <AmbientTier activeNow={ambient.activeNow} recentGreen={ambient.recentGreen} />
+
+                {/* 24.6, and this is the state the whole thing is for. Friends
+                    exist, none are free, nothing is planned — the moment people
+                    close the app. It gets the most room of any state because
+                    there is nothing here to compete with. */}
+                {nearMoves.length > 0 && (
+                  <div className="mt-1">
+                    <p className="font-sans text-[10.5px] font-bold text-ink-500 uppercase tracking-[0.1em] px-0.5 pt-1 pb-2.5">
+                      Near you tonight
+                    </p>
+                    {nearMoves
+                      .slice(0, feedCardCount({ hasFriends: true, anyGreen: false, anyPlans: false }))
+                      .map(m => (
+                        <MooveCard key={m.id} move={m} onMakeMoove={handleMakeMoove} onOpenDetail={setNearDetail} />
+                      ))}
+                  </div>
+                )}
+              </>
             ) : (
               <>
                 {/* Green cards for friends are gone: a friend's face in the rail
@@ -984,6 +1091,42 @@ export default function FeedScreen() {
                       setComposerOpen(true)
                     }}
                   />
+                )}
+
+                {/* 24.6, the busy case. Your people are using the screen, so
+                    this is ONE card in last position. Prominence scales through
+                    card count, never through a second layout mode — there is
+                    nothing horizontal below the rail, because the rail is
+                    already this screen's side-to-side gesture. */}
+                {nearMoves.length > 0 && (
+                  <div className="mt-3.5">
+                    <div className="flex items-baseline justify-between px-0.5 pb-2">
+                      <span className="font-sans text-[10.5px] font-bold text-ink-500 uppercase tracking-[0.1em]">
+                        Near you tonight
+                      </span>
+                      <button
+                        onClick={() => {
+                          posthog.capture('near_see_all_tapped')
+                          router.push('/discover')
+                        }}
+                        className="font-sans text-[10.5px] font-bold text-purple-500 tracking-[0.04em]"
+                      >
+                        See all
+                      </button>
+                    </div>
+                    {nearMoves
+                      .slice(
+                        0,
+                        feedCardCount({
+                          hasFriends: true,
+                          anyGreen: friends.length > 0,
+                          anyPlans: plans.length > 0,
+                        }),
+                      )
+                      .map(m => (
+                        <MooveCard key={m.id} move={m} onMakeMoove={handleMakeMoove} onOpenDetail={setNearDetail} />
+                      ))}
+                  </div>
                 )}
 
                 {/* Phase 14.1: tip jar at the very bottom, only when 3+ moves are
@@ -1223,6 +1366,33 @@ export default function FeedScreen() {
           }}
         />
       )}
+
+      {/* 24.7 — full description, provenance, and "I'd go". It lives in a sheet
+          because the card carries one CTA and one CTA only. */}
+      <MooveDetailSheet
+        move={nearDetail}
+        onClose={() => setNearDetail(null)}
+        onInterestedChange={(id, interested) => {
+          setNearMoves(prev => prev.map(m => (m.id === id ? { ...m, interestedByMe: interested } : m)))
+          setNearDetail(prev => (prev && prev.id === id ? { ...prev, interestedByMe: interested } : prev))
+        }}
+        onMakeMoove={move => {
+          setNearDetail(null)
+          handleMakeMoove(move)
+        }}
+      />
+
+      <RecruitAskSheet
+        open={recruitAskOpen}
+        reach={totalFriendCount ?? 0}
+        timeLabel={statusTimeLabel(myStatusTime)}
+        cameFromGroup={groups.length > 0}
+        onClose={() => setRecruitAskOpen(false)}
+        onPath={path => {
+          setRecruitAskOpen(false)
+          router.push(path === 'group' ? '/people/groups/new' : '/people/add')
+        }}
+      />
 
       {toastMessage && (
         <Toast message={toastMessage} onDismiss={() => setToastMessage(null)} />

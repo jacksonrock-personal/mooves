@@ -192,13 +192,24 @@ export default function LandingScreen() {
               </p>
               <p className="mb-4 text-[15.5px] leading-[1.55] text-ink-500">
                 Find one you want to do and tap{' '}
-                <b className="font-semibold text-ink-900">&ldquo;Go with friends&rdquo;</b>. It becomes your own Moove,
+                <b className="font-semibold text-ink-900">&ldquo;Make it a Moove&rdquo;</b>. It becomes your own Moove,
                 on your friends&apos; feed, ready for them to join — so discovering something and getting people to come
                 with you is the same two taps.
               </p>
+              {/* 24.0 — the previous version of this paragraph promised that
+                  sponsored moves never appear in your friends' feed and that
+                  nobody sees who you are. Phase 24 does both, so the page said
+                  the opposite of what the app does.
+
+                  The replacement is deliberately NARROWER than "forget the
+                  guardrails". Three things are still true and are the ones worth
+                  stating: every paid card says it is paid, sponsors get counts
+                  and never names, and the ceiling on who can see what you are up
+                  for is friends you already have. */}
               <p className="rounded-[14px] border border-purple-100 bg-white px-4 py-3 text-[13.5px] leading-[1.5] text-ink-500">
-                Local spots pay to be listed here, and it says so on the card. They never appear in your friends&apos;
-                feed, and they never see who you are.
+                Local spots pay to be listed, and every one of those says so on the card. Sponsors only ever get
+                counts, never names — and the only people who see what you&apos;re up for are the friends you already
+                have.
               </p>
             </div>
 
@@ -428,7 +439,7 @@ function JoinedMooveVisual() {
   )
 }
 
-/** SponsoredCard, before "I'm interested". */
+/** A static replica of the Mooves card (24.7), not the component. */
 function SponsoredCardVisual() {
   return (
     <div className="w-full overflow-hidden rounded-[20px] border border-[#E8E4F5] bg-white shadow-[0_8px_24px_rgba(28,23,48,0.10)]">
@@ -454,8 +465,8 @@ function SponsoredCardVisual() {
         <p className="mt-2.5 font-sans text-[13px] leading-relaxed text-ink-500">
           Sixty-odd stalls under the blue line, coffee carts at the north end.
         </p>
-        <div className="mt-3.5 flex h-[46px] w-full items-center justify-center rounded-full bg-purple-500 font-sans text-[15px] font-semibold text-white">
-          I&apos;m interested
+        <div className="mt-3.5 flex h-[46px] w-full items-center justify-center rounded-[14px] bg-purple-500 font-display text-[14.5px] font-extrabold tracking-[-0.01em] text-white">
+          Make it a Moove
         </div>
       </div>
     </div>

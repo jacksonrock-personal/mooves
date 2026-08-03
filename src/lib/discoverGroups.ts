@@ -8,11 +8,15 @@
 // Viewed on Mon/Tue, a Wed/Thu move lands in Later (tops it — Later is chronological).
 // ≤2 total moves → one label-less group (flat list, no headers).
 
-import type { SponsoredMove } from '@/components/discover/SponsoredCard'
+// 24.8 — generic over anything carrying a startAt, so browse can group the new
+// NearMove payload without this file knowing about either card component.
+export interface Datedish {
+  startAt: string | null
+}
 
-export interface MoveGroup {
+export interface MoveGroup<T extends Datedish = Datedish> {
   label: string | null
-  moves: SponsoredMove[]
+  moves: T[]
 }
 
 // Started already but still inside the 3h expiry grace (mirrors the server window).
@@ -32,16 +36,42 @@ function dayIndex(startAt: string, now: Date): number {
   return Math.round((startDay.getTime() - today.getTime()) / 86_400_000)
 }
 
-export function groupMoves(moves: SponsoredMove[], now: Date = new Date()): MoveGroup[] {
+/**
+ * Day offsets of the relevant weekend's Fri/Sat/Sun.
+ * Fri→{0,1,2} · Sat→{-1,0,1} · Sun→{-2,-1,0} · weekdays→upcoming Friday onward.
+ * Shared so browse's Weekend filter and the "This weekend" bucket can never
+ * disagree about which days a weekend is.
+ */
+export function weekendOffsets(now: Date): { first: number; last: number } {
+  const dow = now.getDay() // 0 = Sunday
+  const first = dow === 6 ? -1 : dow === 0 ? -2 : 5 - dow
+  return { first, last: first + 2 }
+}
+
+/** 24.8 — browse's time segment. Evergreen has no day, so every dated filter
+ *  excludes it; "All week" is where recurring things live. */
+export function matchesWhen(
+  startAt: string | null,
+  when: 'all' | 'tonight' | 'tomorrow' | 'weekend',
+  now: Date = new Date(),
+): boolean {
+  if (when === 'all') return true
+  if (!startAt) return false
+  const d = dayIndex(startAt, now)
+  if (when === 'tonight') return d <= 0
+  if (when === 'tomorrow') return d === 1
+  const { first, last } = weekendOffsets(now)
+  return d >= first && d <= last
+}
+
+export function groupMoves<T extends Datedish>(moves: T[], now: Date = new Date()): MoveGroup<T>[] {
   if (moves.length <= 2) return moves.length > 0 ? [{ label: null, moves }] : []
 
-  // Day indexes of the relevant weekend's Fri/Sat/Sun. Fri→{0,1,2}, Sat→{-1,0,1},
-  // Sun→{-2,-1,0}, weekdays→upcoming Friday onward. Today/Tomorrow always win below.
-  const dow = now.getDay() // 0 = Sunday
-  const fridayOffset = dow === 6 ? -1 : dow === 0 ? -2 : 5 - dow
-  const weekendDays = new Set([fridayOffset, fridayOffset + 1, fridayOffset + 2])
+  // Today/Tomorrow always win over the weekend bucket below.
+  const { first } = weekendOffsets(now)
+  const weekendDays = new Set([first, first + 1, first + 2])
 
-  const buckets: Record<string, SponsoredMove[]> = {
+  const buckets: Record<string, T[]> = {
     Today: [], Tomorrow: [], 'This weekend': [], Later: [], 'Weekly & recurring': [],
   }
   for (const m of moves) {

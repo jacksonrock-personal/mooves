@@ -41,8 +41,20 @@ function InviteContent() {
     }
   }, [])
 
-  function goToLoop() {
-    router.replace(inviteCode ? `/onboarding/loop?invite=${inviteCode}` : '/onboarding/loop')
+  // 24.2 — this is the terminal step now. MoovesLoop used to mark onboarding
+  // complete on its way past; it is retired from the chain (Settings still
+  // replays it), so completion is marked here.
+  function finish() {
+    void fetch('/api/users/me', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      // 24.3 — completing (or skipping) the crew step spends the one recruit
+      // ask. A cold-start user has just been asked for their people; asking
+      // again the first time they go green would be the same request twice.
+      body: JSON.stringify({ onboardingComplete: true, recruitAskShown: true }),
+    })
+    posthog.capture('onboarding_completed', { path: 'cold' })
+    router.replace(inviteCode ? `/feed?invite=${inviteCode}` : '/feed')
   }
 
   function onNameChange(value: string) {
@@ -80,7 +92,7 @@ function InviteContent() {
       await navigator.clipboard.writeText(url)
       setCopied(true)
       posthog.capture('onboarding_group_link_copied')
-      setTimeout(goToLoop, 1200)
+      setTimeout(finish, 1200)
     } catch {
       // clipboard blocked or create failed — stay on screen
     } finally {
@@ -97,12 +109,12 @@ function InviteContent() {
       if (canShare) {
         await navigator.share({ title: 'Join my group on Mooves', url })
         posthog.capture('onboarding_group_link_shared')
-        goToLoop()
+        finish()
       } else {
         await navigator.clipboard.writeText(url)
         setCopied(true)
         posthog.capture('onboarding_group_link_copied')
-        setTimeout(goToLoop, 1200)
+        setTimeout(finish, 1200)
       }
     } catch {
       // user dismissed the share sheet — stay on screen
@@ -113,14 +125,13 @@ function InviteContent() {
 
   function handleSkip() {
     posthog.capture('onboarding_group_invite_skipped')
-    goToLoop()
+    finish()
   }
 
   return (
     <main className="min-h-screen bg-surface-bg flex flex-col">
-      {/* Step dots — step 4 of 4 */}
+      {/* 24.2 — three steps now, not four. Area and interests left the chain. */}
       <div className="flex gap-1.5 justify-center pt-12">
-        <div className="w-2 h-2 rounded-full bg-mooves-purple" />
         <div className="w-2 h-2 rounded-full bg-mooves-purple" />
         <div className="w-2 h-2 rounded-full bg-mooves-purple" />
         <div className="w-2 h-2 rounded-full bg-mooves-purple" />
@@ -137,11 +148,13 @@ function InviteContent() {
           </svg>
         </div>
 
+        {/* 24.2 — reached right after the reveal, so it answers a problem the
+            user just felt rather than opening with a request. */}
         <h1 className="font-display font-extrabold text-[26px] text-text-primary tracking-tight text-center leading-[1.15] mb-2">
-          Get your friends<br />on Mooves.
+          Who would you<br />want to hang with?
         </h1>
         <p className="font-sans text-[15px] text-text-secondary text-center leading-relaxed mb-6">
-          Name your group chat, then drop the link in it.
+          Name them, then drop the link in the group chat you already have.
         </p>
 
         <div className="w-full">
@@ -174,7 +187,7 @@ function InviteContent() {
         )}
 
         <p className="font-display font-extrabold text-[16px] text-text-primary tracking-tight text-center leading-snug mt-6 px-1">
-          Drop this in the group chat and<br />get your friends on.
+          Everyone who taps it becomes friends<br />with everyone else, not just with you.
         </p>
       </div>
 
@@ -209,7 +222,7 @@ function InviteContent() {
           disabled={busy}
           className="block w-full text-center mt-4 font-sans text-sm font-semibold text-text-secondary disabled:opacity-50"
         >
-          Skip for now
+          I'll do this later
         </button>
         <p className="text-center font-sans text-[12px] text-status-grey mt-1.5">
           Mooves is quiet without your people.

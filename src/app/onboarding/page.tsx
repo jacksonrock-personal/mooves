@@ -33,8 +33,8 @@ function OnboardingContent() {
         if (data.displayName) {
           router.replace(
             inviteCode
-              ? `/onboarding/area?invite=${inviteCode}`
-              : '/onboarding/area',
+              ? `/feed?invite=${inviteCode}`
+              : '/onboarding/free',
           )
         }
       })
@@ -107,9 +107,26 @@ function OnboardingContent() {
       return
     }
 
-    router.push(
-      inviteCode ? `/onboarding/area?invite=${inviteCode}` : '/onboarding/area',
-    )
+    // 24.2 — the invited user's path ends here.
+    //
+    // They arrived through a friend or a group link, so they ALREADY have
+    // friends and their feed is not empty. Asking them to rehearse a green
+    // nobody can see, and then to build a community they have just joined, is
+    // the wasteful version of the best-converting cohort there is. Onboarding
+    // is finished; the feed does the rest.
+    //
+    // The recruit ask reaches them later, on their own terms (24.3).
+    if (inviteCode) {
+      void fetch('/api/users/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ onboardingComplete: true }),
+      })
+      posthog.capture('onboarding_completed', { path: 'invited' })
+      router.push(`/feed?invite=${inviteCode}`)
+      return
+    }
+    router.push('/onboarding/free')
   }
 
   const initials = name.trim() ? name.trim()[0].toUpperCase() : ''

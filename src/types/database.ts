@@ -12,8 +12,65 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
+      availability_slots: {
+        Row: {
+          created_at: string
+          id: string
+          part: string
+          slot_date: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          part: string
+          slot_date: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          part?: string
+          slot_date?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "availability_slots_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       friendships: {
         Row: {
           created_at: string
@@ -77,6 +134,39 @@ export type Database = {
           },
         ]
       }
+      group_notification_mutes: {
+        Row: {
+          created_at: string
+          group_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_notification_mutes_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_notification_mutes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       groups: {
         Row: {
           created_at: string
@@ -115,277 +205,66 @@ export type Database = {
           },
         ]
       }
-      plan_comment_likes: {
+      metro_zips: {
         Row: {
-          comment_id: string
-          user_id: string
-          created_at: string
+          metro_id: string
+          zip: string
         }
         Insert: {
-          comment_id: string
-          user_id: string
-          created_at?: string
+          metro_id: string
+          zip: string
         }
         Update: {
-          comment_id?: string
-          user_id?: string
-          created_at?: string
+          metro_id?: string
+          zip?: string
         }
         Relationships: [
           {
-            foreignKeyName: "plan_comment_likes_comment_id_fkey"
-            columns: ["comment_id"]
+            foreignKeyName: "metro_zips_metro_id_fkey"
+            columns: ["metro_id"]
             isOneToOne: false
-            referencedRelation: "plan_comments"
+            referencedRelation: "metros"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "plan_comment_likes_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
+            foreignKeyName: "metro_zips_zip_fkey"
+            columns: ["zip"]
+            isOneToOne: true
+            referencedRelation: "zip_codes"
+            referencedColumns: ["zip"]
           },
         ]
       }
-      availability_slots: {
+      metros: {
         Row: {
-          id: string
-          user_id: string
-          slot_date: string
-          part: string
           created_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          slot_date: string
-          part: string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          slot_date?: string
-          part?: string
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "availability_slots_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      users: {
-        Row: {
-          area_zip: string | null
-          avatar_url: string | null
-          created_at: string
-          display_name: string | null
           id: string
-          interests: string[] | null
-          is_admin: boolean
-          is_available: boolean
-          last_active_at: string | null
-          last_green_at: string | null
-          last_wave_at: string | null
-          onboarding_complete: boolean
-          phone: string
-          referral_code: string
-          status_move_id: string | null
-          status_note: string | null
-          status_set_at: string | null
-          status_expires_at: string | null
-          status_show_groups: boolean
-          status_time: string | null
-          visible_to: string[] | null
-          visible_user_ids: string[] | null
-          wave_push_enabled: boolean
-          timezone: string | null
-          week_ritual_day: number
-          week_push_enabled: boolean
-          last_week_push_on: string | null
-          last_confirm_push_on: string | null
-        }
-        Insert: {
-          area_zip?: string | null
-          avatar_url?: string | null
-          created_at?: string
-          display_name?: string | null
-          id: string
-          interests?: string[] | null
-          is_admin?: boolean
-          is_available?: boolean
-          last_active_at?: string | null
-          last_green_at?: string | null
-          last_wave_at?: string | null
-          onboarding_complete?: boolean
-          phone: string
-          referral_code?: string
-          status_move_id?: string | null
-          status_note?: string | null
-          status_set_at?: string | null
-          status_expires_at?: string | null
-          status_show_groups?: boolean
-          status_time?: string | null
-          visible_to?: string[] | null
-          visible_user_ids?: string[] | null
-          wave_push_enabled?: boolean
-          timezone?: string | null
-          week_ritual_day?: number
-          week_push_enabled?: boolean
-          last_week_push_on?: string | null
-          last_confirm_push_on?: string | null
-        }
-        Update: {
-          area_zip?: string | null
-          avatar_url?: string | null
-          created_at?: string
-          display_name?: string | null
-          id?: string
-          interests?: string[] | null
-          is_admin?: boolean
-          is_available?: boolean
-          last_active_at?: string | null
-          last_green_at?: string | null
-          last_wave_at?: string | null
-          onboarding_complete?: boolean
-          phone?: string
-          referral_code?: string
-          status_move_id?: string | null
-          status_note?: string | null
-          status_set_at?: string | null
-          status_expires_at?: string | null
-          status_show_groups?: boolean
-          status_time?: string | null
-          visible_to?: string[] | null
-          visible_user_ids?: string[] | null
-          wave_push_enabled?: boolean
-          timezone?: string | null
-          week_ritual_day?: number
-          week_push_enabled?: boolean
-          last_week_push_on?: string | null
-          last_confirm_push_on?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "users_status_move_id_fkey"
-            columns: ["status_move_id"]
-            isOneToOne: false
-            referencedRelation: "sponsored_moves"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      sponsors: {
-        Row: {
-          business_name: string | null
-          created_at: string
-          default_payment_method_id: string | null
-          email: string | null
-          id: string
-          phone: string
-          stripe_customer_id: string | null
-        }
-        Insert: {
-          business_name?: string | null
-          created_at?: string
-          default_payment_method_id?: string | null
-          email?: string | null
-          id?: string
-          phone: string
-          stripe_customer_id?: string | null
-        }
-        Update: {
-          business_name?: string | null
-          created_at?: string
-          default_payment_method_id?: string | null
-          email?: string | null
-          id?: string
-          phone?: string
-          stripe_customer_id?: string | null
-        }
-        Relationships: []
-      }
-      sponsored_moves: {
-        Row: {
-          area_zip: string
-          brand: string | null
-          brought_over_count: number
-          category: string
-          clicks: number
-          created_at: string
-          description: string
-          id: string
-          image_url: string | null
-          impressions: number
-          interested_count: number
-          link_url: string | null
-          location_text: string | null
-          paid_at: string | null
-          price_cents: number | null
+          last_successful_pull: string | null
+          lat: number
+          lng: number
+          name: string
           radius_miles: number
-          reject_reason: string | null
-          sponsor_id: string | null
-          start_at: string | null
-          status: string
-          stripe_payment_intent_id: string | null
-          time_text: string | null
-          title: string
+          state: string
         }
         Insert: {
-          area_zip: string
-          brand?: string | null
-          brought_over_count?: number
-          category: string
-          clicks?: number
           created_at?: string
-          description: string
           id?: string
-          image_url?: string | null
-          impressions?: number
-          interested_count?: number
-          link_url?: string | null
-          location_text?: string | null
-          paid_at?: string | null
-          price_cents?: number | null
+          last_successful_pull?: string | null
+          lat: number
+          lng: number
+          name: string
           radius_miles?: number
-          reject_reason?: string | null
-          sponsor_id?: string | null
-          start_at?: string | null
-          status?: string
-          stripe_payment_intent_id?: string | null
-          time_text?: string | null
-          title: string
+          state: string
         }
         Update: {
-          area_zip?: string
-          brand?: string | null
-          brought_over_count?: number
-          category?: string
-          clicks?: number
           created_at?: string
-          description?: string
           id?: string
-          image_url?: string | null
-          impressions?: number
-          interested_count?: number
-          link_url?: string | null
-          location_text?: string | null
-          paid_at?: string | null
-          price_cents?: number | null
+          last_successful_pull?: string | null
+          lat?: number
+          lng?: number
+          name?: string
           radius_miles?: number
-          reject_reason?: string | null
-          sponsor_id?: string | null
-          start_at?: string | null
-          status?: string
-          stripe_payment_intent_id?: string | null
-          time_text?: string | null
-          title?: string
+          state?: string
         }
         Relationships: []
       }
@@ -422,127 +301,24 @@ export type Database = {
           },
         ]
       }
-      push_subscriptions: {
-        Row: {
-          id: string
-          user_id: string
-          fcm_token: string
-          platform: string | null
-          created_at: string
-          last_seen_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          fcm_token: string
-          platform?: string | null
-          created_at?: string
-          last_seen_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          fcm_token?: string
-          platform?: string | null
-          created_at?: string
-          last_seen_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "push_subscriptions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      group_notification_mutes: {
-        Row: {
-          user_id: string
-          group_id: string
-          created_at: string
-        }
-        Insert: {
-          user_id: string
-          group_id: string
-          created_at?: string
-        }
-        Update: {
-          user_id?: string
-          group_id?: string
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "group_notification_mutes_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "group_notification_mutes_group_id_fkey"
-            columns: ["group_id"]
-            isOneToOne: false
-            referencedRelation: "groups"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      tips: {
-        Row: {
-          id: string
-          user_id: string | null
-          amount_cents: number
-          stripe_payment_intent_id: string
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          user_id?: string | null
-          amount_cents: number
-          stripe_payment_intent_id: string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string | null
-          amount_cents?: number
-          stripe_payment_intent_id?: string
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "tips_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       move_joins: {
-        // Phase 20: `id` is the surrogate PK (the old composite key could not
-        // survive plan joins, and dropping it outright would have broken
-        // realtime, which keys off the PK). `plan_id` NULL = a green join.
         Row: {
-          id: string
           created_at: string
+          id: string
           joiner_id: string
           mover_id: string
           plan_id: string | null
         }
         Insert: {
-          id?: string
           created_at?: string
+          id?: string
           joiner_id: string
           mover_id: string
           plan_id?: string | null
         }
         Update: {
-          id?: string
           created_at?: string
+          id?: string
           joiner_id?: string
           mover_id?: string
           plan_id?: string | null
@@ -562,62 +338,147 @@ export type Database = {
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "move_joins_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plan_comment_likes: {
+        Row: {
+          comment_id: string
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          comment_id: string
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          comment_id?: string
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_comment_likes_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "plan_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_comment_likes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plan_comments: {
+        Row: {
+          author_id: string
+          body: string
+          created_at: string
+          edited_at: string | null
+          id: string
+          mentions: string[]
+          plan_id: string
+        }
+        Insert: {
+          author_id: string
+          body: string
+          created_at?: string
+          edited_at?: string | null
+          id?: string
+          mentions?: string[]
+          plan_id: string
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          created_at?: string
+          edited_at?: string | null
+          id?: string
+          mentions?: string[]
+          plan_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_comments_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_comments_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
         ]
       }
       plans: {
         Row: {
-          id: string
           author_id: string
-          title: string
-          start_at: string
-          has_time: boolean
+          cancelled_at: string | null
+          created_at: string
           expires_at: string
+          has_time: boolean
+          id: string
           location_text: string | null
           note: string | null
+          show_groups: boolean
+          sponsored_move_id: string | null
+          start_at: string
+          time_mode: string
+          title: string
+          updated_at: string
           visible_to: string[] | null
           visible_user_ids: string[] | null
-          sponsored_move_id: string | null
-          time_mode: string
-          show_groups: boolean
-          created_at: string
-          updated_at: string
-          cancelled_at: string | null
         }
         Insert: {
-          id?: string
-          sponsored_move_id?: string | null
-          time_mode?: string
-          show_groups?: boolean
           author_id: string
-          title: string
-          start_at: string
-          has_time?: boolean
+          cancelled_at?: string | null
+          created_at?: string
           expires_at: string
+          has_time?: boolean
+          id?: string
           location_text?: string | null
           note?: string | null
+          show_groups?: boolean
+          sponsored_move_id?: string | null
+          start_at: string
+          time_mode?: string
+          title: string
+          updated_at?: string
           visible_to?: string[] | null
           visible_user_ids?: string[] | null
-          created_at?: string
-          updated_at?: string
-          cancelled_at?: string | null
         }
         Update: {
-          id?: string
-          sponsored_move_id?: string | null
-          time_mode?: string
-          show_groups?: boolean
           author_id?: string
-          title?: string
-          start_at?: string
-          has_time?: boolean
+          cancelled_at?: string | null
+          created_at?: string
           expires_at?: string
+          has_time?: boolean
+          id?: string
           location_text?: string | null
           note?: string | null
+          show_groups?: boolean
+          sponsored_move_id?: string | null
+          start_at?: string
+          time_mode?: string
+          title?: string
+          updated_at?: string
           visible_to?: string[] | null
           visible_user_ids?: string[] | null
-          created_at?: string
-          updated_at?: string
-          cancelled_at?: string | null
         }
         Relationships: [
           {
@@ -627,106 +488,89 @@ export type Database = {
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "plans_sponsored_move_id_fkey"
+            columns: ["sponsored_move_id"]
+            isOneToOne: false
+            referencedRelation: "sponsored_moves"
+            referencedColumns: ["id"]
+          },
         ]
       }
-      plan_comments: {
+      push_subscriptions: {
         Row: {
-          id: string
-          plan_id: string
-          author_id: string
-          body: string
           created_at: string
-          edited_at: string | null
-          mentions: string[]
+          fcm_token: string
+          id: string
+          last_seen_at: string
+          platform: string | null
+          user_id: string
         }
         Insert: {
-          id?: string
-          plan_id: string
-          author_id: string
-          body: string
           created_at?: string
-          edited_at?: string | null
-          mentions?: string[]
+          fcm_token: string
+          id?: string
+          last_seen_at?: string
+          platform?: string | null
+          user_id: string
         }
         Update: {
-          id?: string
-          plan_id?: string
-          author_id?: string
-          body?: string
           created_at?: string
-          edited_at?: string | null
-          mentions?: string[]
+          fcm_token?: string
+          id?: string
+          last_seen_at?: string
+          platform?: string | null
+          user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "plan_comments_plan_id_fkey"
-            columns: ["plan_id"]
-            isOneToOne: false
-            referencedRelation: "plans"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "plan_comments_author_id_fkey"
-            columns: ["author_id"]
+            foreignKeyName: "push_subscriptions_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
       }
-      roundups: {
+      rate_limits: {
         Row: {
-          id: string
-          code: string
-          host_id: string
-          created_at: string
+          bucket: number
+          count: number
           expires_at: string
-          closed_at: string | null
+          key: string
         }
         Insert: {
-          id?: string
-          code: string
-          host_id: string
-          created_at?: string
-          expires_at?: string
-          closed_at?: string | null
+          bucket: number
+          count?: number
+          expires_at: string
+          key: string
         }
         Update: {
-          id?: string
-          code?: string
-          host_id?: string
-          created_at?: string
+          bucket?: number
+          count?: number
           expires_at?: string
-          closed_at?: string | null
+          key?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "roundups_host_id_fkey"
-            columns: ["host_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       roundup_members: {
         Row: {
-          roundup_id: string
-          user_id: string
           joined_at: string
           new_friend_ids: string[]
-        }
-        Insert: {
           roundup_id: string
           user_id: string
+        }
+        Insert: {
           joined_at?: string
           new_friend_ids?: string[]
+          roundup_id: string
+          user_id: string
         }
         Update: {
-          roundup_id?: string
-          user_id?: string
           joined_at?: string
           new_friend_ids?: string[]
+          roundup_id?: string
+          user_id?: string
         }
         Relationships: [
           {
@@ -745,27 +589,348 @@ export type Database = {
           },
         ]
       }
-      zip_codes: {
+      roundups: {
         Row: {
-          zip: string
-          city: string | null
-          state: string | null
-          lat: number
-          lng: number
+          closed_at: string | null
+          code: string
+          created_at: string
+          expires_at: string
+          host_id: string
+          id: string
         }
         Insert: {
-          zip: string
-          city?: string | null
-          state?: string | null
-          lat: number
-          lng: number
+          closed_at?: string | null
+          code: string
+          created_at?: string
+          expires_at?: string
+          host_id: string
+          id?: string
         }
         Update: {
-          zip?: string
+          closed_at?: string | null
+          code?: string
+          created_at?: string
+          expires_at?: string
+          host_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roundups_host_id_fkey"
+            columns: ["host_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sponsored_moves: {
+        Row: {
+          area_zip: string
+          brand: string | null
+          brought_over_count: number
+          category: string
+          clicks: number
+          created_at: string
+          dedupe_key: string | null
+          description: string
+          id: string
+          image_url: string | null
+          impressions: number
+          interested_count: number
+          is_free: boolean | null
+          link_url: string | null
+          location_text: string | null
+          metro_id: string | null
+          neighborhood: string | null
+          origin: string
+          paid_at: string | null
+          price_cents: number | null
+          price_text: string | null
+          radius_miles: number
+          reject_reason: string | null
+          source_url: string | null
+          sponsor_id: string | null
+          start_at: string | null
+          status: string
+          stripe_payment_intent_id: string | null
+          time_text: string | null
+          title: string
+        }
+        Insert: {
+          area_zip: string
+          brand?: string | null
+          brought_over_count?: number
+          category: string
+          clicks?: number
+          created_at?: string
+          dedupe_key?: string | null
+          description: string
+          id?: string
+          image_url?: string | null
+          impressions?: number
+          interested_count?: number
+          is_free?: boolean | null
+          link_url?: string | null
+          location_text?: string | null
+          metro_id?: string | null
+          neighborhood?: string | null
+          origin?: string
+          paid_at?: string | null
+          price_cents?: number | null
+          price_text?: string | null
+          radius_miles?: number
+          reject_reason?: string | null
+          source_url?: string | null
+          sponsor_id?: string | null
+          start_at?: string | null
+          status?: string
+          stripe_payment_intent_id?: string | null
+          time_text?: string | null
+          title: string
+        }
+        Update: {
+          area_zip?: string
+          brand?: string | null
+          brought_over_count?: number
+          category?: string
+          clicks?: number
+          created_at?: string
+          dedupe_key?: string | null
+          description?: string
+          id?: string
+          image_url?: string | null
+          impressions?: number
+          interested_count?: number
+          is_free?: boolean | null
+          link_url?: string | null
+          location_text?: string | null
+          metro_id?: string | null
+          neighborhood?: string | null
+          origin?: string
+          paid_at?: string | null
+          price_cents?: number | null
+          price_text?: string | null
+          radius_miles?: number
+          reject_reason?: string | null
+          source_url?: string | null
+          sponsor_id?: string | null
+          start_at?: string | null
+          status?: string
+          stripe_payment_intent_id?: string | null
+          time_text?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sponsored_moves_metro_id_fkey"
+            columns: ["metro_id"]
+            isOneToOne: false
+            referencedRelation: "metros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sponsored_moves_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sponsors: {
+        Row: {
+          business_name: string | null
+          created_at: string
+          default_payment_method_id: string | null
+          email: string | null
+          id: string
+          phone: string
+          stripe_customer_id: string | null
+        }
+        Insert: {
+          business_name?: string | null
+          created_at?: string
+          default_payment_method_id?: string | null
+          email?: string | null
+          id?: string
+          phone: string
+          stripe_customer_id?: string | null
+        }
+        Update: {
+          business_name?: string | null
+          created_at?: string
+          default_payment_method_id?: string | null
+          email?: string | null
+          id?: string
+          phone?: string
+          stripe_customer_id?: string | null
+        }
+        Relationships: []
+      }
+      tips: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          id: string
+          stripe_payment_intent_id: string
+          user_id: string | null
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          id?: string
+          stripe_payment_intent_id: string
+          user_id?: string | null
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          id?: string
+          stripe_payment_intent_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tips_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      users: {
+        Row: {
+          activated_at: string | null
+          area_zip: string | null
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          hide_from_matches: boolean
+          id: string
+          interests: string[] | null
+          is_admin: boolean
+          is_available: boolean
+          last_active_at: string | null
+          last_confirm_push_on: string | null
+          last_green_at: string | null
+          last_wave_at: string | null
+          last_week_push_on: string | null
+          onboarding_complete: boolean
+          phone: string
+          recruit_ask_shown_at: string | null
+          referral_code: string
+          status_expires_at: string | null
+          status_move_id: string | null
+          status_note: string | null
+          status_set_at: string | null
+          status_show_groups: boolean
+          status_time: string | null
+          timezone: string | null
+          visible_to: string[] | null
+          visible_user_ids: string[] | null
+          wave_push_enabled: boolean
+          week_push_enabled: boolean
+          week_ritual_day: number
+        }
+        Insert: {
+          activated_at?: string | null
+          area_zip?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          hide_from_matches?: boolean
+          id?: string
+          interests?: string[] | null
+          is_admin?: boolean
+          is_available?: boolean
+          last_active_at?: string | null
+          last_confirm_push_on?: string | null
+          last_green_at?: string | null
+          last_wave_at?: string | null
+          last_week_push_on?: string | null
+          onboarding_complete?: boolean
+          phone: string
+          recruit_ask_shown_at?: string | null
+          referral_code?: string
+          status_expires_at?: string | null
+          status_move_id?: string | null
+          status_note?: string | null
+          status_set_at?: string | null
+          status_show_groups?: boolean
+          status_time?: string | null
+          timezone?: string | null
+          visible_to?: string[] | null
+          visible_user_ids?: string[] | null
+          wave_push_enabled?: boolean
+          week_push_enabled?: boolean
+          week_ritual_day?: number
+        }
+        Update: {
+          activated_at?: string | null
+          area_zip?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          hide_from_matches?: boolean
+          id?: string
+          interests?: string[] | null
+          is_admin?: boolean
+          is_available?: boolean
+          last_active_at?: string | null
+          last_confirm_push_on?: string | null
+          last_green_at?: string | null
+          last_wave_at?: string | null
+          last_week_push_on?: string | null
+          onboarding_complete?: boolean
+          phone?: string
+          recruit_ask_shown_at?: string | null
+          referral_code?: string
+          status_expires_at?: string | null
+          status_move_id?: string | null
+          status_note?: string | null
+          status_set_at?: string | null
+          status_show_groups?: boolean
+          status_time?: string | null
+          timezone?: string | null
+          visible_to?: string[] | null
+          visible_user_ids?: string[] | null
+          wave_push_enabled?: boolean
+          week_push_enabled?: boolean
+          week_ritual_day?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "users_status_move_id_fkey"
+            columns: ["status_move_id"]
+            isOneToOne: false
+            referencedRelation: "sponsored_moves"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      zip_codes: {
+        Row: {
+          city: string | null
+          lat: number
+          lng: number
+          state: string | null
+          zip: string
+        }
+        Insert: {
           city?: string | null
+          lat: number
+          lng: number
           state?: string | null
+          zip: string
+        }
+        Update: {
+          city?: string | null
           lat?: number
           lng?: number
+          state?: string | null
+          zip?: string
         }
         Relationships: []
       }
@@ -774,48 +939,87 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      availability_cron_tick: { Args: never; Returns: undefined }
       generate_referral_code: { Args: never; Returns: string }
-      increment_move_impressions: { Args: { move_ids: string[] }; Returns: undefined }
-      record_move_click: { Args: { p_move_id: string }; Returns: { link_url: string | null }[] }
-      increment_brought_over: { Args: { p_move_id: string }; Returns: undefined }
+      get_feed: { Args: { viewer: string }; Returns: Json }
+      get_plans: { Args: { viewer: string }; Returns: Json }
       green_wave_candidates: {
         Args: { mover: string }
-        Returns: { viewer: string; green_names: string[]; green_count: number; time_bucket: string }[]
+        Returns: {
+          green_count: number
+          green_names: string[]
+          time_bucket: string
+          viewer: string
+        }[]
       }
-      wave_group_for_viewer: {
-        Args: { p_viewer: string }
-        Returns: { time_bucket: string; member_ids: string[]; member_names: string[]; member_count: number }[]
+      increment_brought_over: {
+        Args: { p_move_id: string }
+        Returns: undefined
       }
-      nearby_zips: { Args: { p_zip: string; p_radius_miles?: number }; Returns: { zip: string }[] }
+      increment_move_impressions: {
+        Args: { move_ids: string[] }
+        Returns: undefined
+      }
+      nearby_zips: {
+        Args: { p_radius_miles?: number; p_zip: string }
+        Returns: {
+          zip: string
+        }[]
+      }
       nearest_zip: {
         Args: { p_lat: number; p_lng: number }
-        Returns: { zip: string; city: string | null; state: string | null }[]
+        Returns: {
+          city: string
+          state: string
+          zip: string
+        }[]
       }
+      plan_taggable_friends: {
+        Args: { p_plan: string; p_viewer: string }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          id: string
+        }[]
+      }
+      purge_old_availability_slots: { Args: never; Returns: undefined }
       rate_limit_hit: {
         Args: { p_key: string; p_limit: number; p_window_seconds: number }
         Returns: boolean
       }
-      get_feed: { Args: { viewer: string }; Returns: Json }
-      // Phase 19.1 — join is atomic (cap check + membership + mutual friend
-      // fan-out under one row lock), and records which friendships it created
-      // so undo can remove exactly those.
+      record_move_click: {
+        Args: { p_move_id: string }
+        Returns: {
+          link_url: string
+        }[]
+      }
       roundup_join: {
         Args: { p_code: string; p_user: string }
-        Returns: { status: string; member_count: number; connected_count: number }[]
+        Returns: {
+          connected_count: number
+          member_count: number
+          status: string
+        }[]
       }
-      roundup_undo: { Args: { p_code: string; p_user: string }; Returns: number }
-      // Phase 20 — deliberately separate from get_feed, which has been broken
-      // twice by redefinition. Same visibility rules; joiner phones go only to
-      // the author.
-      get_plans: { Args: { viewer: string }; Returns: Json }
-      // Who may be tagged in a comment without already being in the Moove: the
-      // tagger's own friends who already have this Moove in their feed.
-      plan_taggable_friends: {
-        Args: { p_plan: string; p_viewer: string }
-        Returns: { id: string; display_name: string | null; avatar_url: string | null }[]
+      roundup_undo: {
+        Args: { p_code: string; p_user: string }
+        Returns: number
       }
-      // Owner-implicit group membership: group_members never holds the owner.
-      viewer_group_ids: { Args: { p_user: string }; Returns: { group_id: string }[] }
+      viewer_group_ids: {
+        Args: { p_user: string }
+        Returns: {
+          group_id: string
+        }[]
+      }
+      wave_group_for_viewer: {
+        Args: { p_viewer: string }
+        Returns: {
+          member_count: number
+          member_ids: string[]
+          member_names: string[]
+          time_bucket: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
@@ -944,6 +1148,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },

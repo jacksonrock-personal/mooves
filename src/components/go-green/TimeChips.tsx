@@ -2,37 +2,39 @@
 
 // Phase 9.1 — coarse time chip on go-green. Single-select, skippable, no picker.
 // Phase 18.1 — adds 'week' ("This week"), offered Mon–Thu only.
+// Phase 24.5 — adds 'tomorrow'. "This week" and "Now" both SURVIVE; the only
+// suppression is "Now" during the onboarding rehearsal (hideNow), where a green
+// that dies in four hours teaches the wrong lesson on day one.
 
-import { isWeekChipAvailable } from '@/lib/greenExpiry'
+import {
+  isWeekChipAvailable,
+  STATUS_TIMES,
+  STATUS_TIME_LABEL,
+  statusTimeLabel,
+  type StatusTime,
+} from '@/lib/greenExpiry'
 
-export type StatusTime = 'now' | 'tonight' | 'week' | 'weekend'
+export type { StatusTime }
+/** @deprecated import statusTimeLabel from '@/lib/greenExpiry' instead. */
+export const timeLabel = statusTimeLabel
 
-const CHIPS: { value: StatusTime; label: string }[] = [
-  { value: 'now', label: 'Now' },
-  { value: 'tonight', label: 'Tonight' },
-  { value: 'week', label: 'This week' },
-  { value: 'weekend', label: 'This weekend' },
-]
-
-export function timeLabel(value: string | null | undefined): string | null {
-  switch (value) {
-    case 'now': return 'Now'
-    case 'tonight': return 'Tonight'
-    case 'week': return 'This week'
-    case 'weekend': return 'This weekend'
-    default: return null
-  }
-}
+const CHIPS: { value: StatusTime; label: string }[] = STATUS_TIMES.map(value => ({
+  value,
+  label: STATUS_TIME_LABEL[value],
+}))
 
 interface TimeChipsProps {
   selected: StatusTime | null
   onChange: (value: StatusTime | null) => void
+  /** 24.5 — onboarding only. Everywhere else "Now" is offered as it always was. */
+  hideNow?: boolean
 }
 
-export default function TimeChips({ selected, onChange }: TimeChipsProps) {
+export default function TimeChips({ selected, onChange, hideNow = false }: TimeChipsProps) {
   // 18.1 — Fri–Sun drops "This week" and falls back to the original three.
   // Evaluated at render on the viewer's local clock, same basis as the expiry.
-  const chips = isWeekChipAvailable() ? CHIPS : CHIPS.filter(c => c.value !== 'week')
+  let chips = isWeekChipAvailable() ? CHIPS : CHIPS.filter(c => c.value !== 'week')
+  if (hideNow) chips = chips.filter(c => c.value !== 'now')
 
   return (
     // Four chips do not fit on one row at 320px, so the row wraps and each chip

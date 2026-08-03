@@ -5,6 +5,8 @@
 //   now          → 4 hours after going green
 //   tonight      → 3:00 AM that night (going green between midnight and 3am
 //                  expires 3am the same night — the night is nearly over)
+//   tomorrow     → 3:00 AM the day AFTER tomorrow (24.5), so tomorrow night is
+//                  covered in full rather than ending at its own midnight
 //   this week    → 3:00 AM Friday (18.1)
 //   this weekend → 3:00 AM Monday
 //   no chip      → 24 hours after going green
@@ -14,6 +16,29 @@
 // Mon–Thu (see isWeekChipAvailable), so a week green lives at most ~4.2 days.
 
 const HOUR = 60 * 60 * 1000
+
+// 24.5 — the canonical chip list, and the ONLY copy. It lived here and again in
+// the status route, which is exactly the shape of drift that lets the UI offer a
+// chip the API then silently discards. Kept in this module because this is where
+// each value's meaning (its expiry) is defined.
+export const STATUS_TIMES = ['now', 'tonight', 'tomorrow', 'week', 'weekend'] as const
+export type StatusTime = (typeof STATUS_TIMES)[number]
+
+export const STATUS_TIME_LABEL: Record<StatusTime, string> = {
+  now: 'Now',
+  tonight: 'Tonight',
+  tomorrow: 'Tomorrow',
+  week: 'This week',
+  weekend: 'This weekend',
+}
+
+export function isStatusTime(v: unknown): v is StatusTime {
+  return typeof v === 'string' && (STATUS_TIMES as readonly string[]).includes(v)
+}
+
+export function statusTimeLabel(v: string | null | undefined): string | null {
+  return isStatusTime(v) ? STATUS_TIME_LABEL[v] : null
+}
 
 const MONDAY = 1
 const FRIDAY = 5
@@ -43,6 +68,13 @@ export function isWeekChipAvailable(now: Date = new Date()): boolean {
 export function computeExpiresAt(statusTime: string | null, now: Date = new Date()): Date {
   if (statusTime === 'now') return new Date(now.getTime() + 4 * HOUR)
   if (statusTime === 'tonight') return next3am(now)
+  // 24.5 — 3:00 AM on the day after tomorrow, so tomorrow NIGHT is covered.
+  // Anchored to the calendar date rather than to next3am, which already means
+  // "tonight" and would land a day early whenever you set it after midnight.
+  if (statusTime === 'tomorrow') {
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2, 3, 0, 0)
+    return d
+  }
   // 3:00 AM Friday — the weekend belongs to the 'weekend' chip.
   if (statusTime === 'week') return next3amOnDay(now, FRIDAY)
   // 3:00 AM on the Monday after the upcoming (or current) weekend.

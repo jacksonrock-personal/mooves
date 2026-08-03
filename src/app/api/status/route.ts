@@ -5,13 +5,12 @@ import { createServiceClient } from '@/lib/supabase/server'
 import { sendGroupGreenPush, sendGreenWave } from '@/lib/push'
 import { sanitizeVisibleUserIds } from '@/lib/visibility'
 
-const TIME_VALUES = ['now', 'tonight', 'week', 'weekend'] as const
-type StatusTime = (typeof TIME_VALUES)[number]
+// 24.5 — one list, imported. This used to be a second copy that quietly fell
+// out of step the moment a chip was added.
+import { isStatusTime, type StatusTime } from '@/lib/greenExpiry'
 
 function normalizeTime(value: unknown): StatusTime | null {
-  return typeof value === 'string' && (TIME_VALUES as readonly string[]).includes(value)
-    ? (value as StatusTime)
-    : null
+  return isStatusTime(value) ? value : null
 }
 
 // 9.5 Part A — the client computes the expiry on its local clock (the server
