@@ -68,7 +68,14 @@ async function rest(path, init = {}) {
   if (!res.ok) {
     throw new Error(`${init.method ?? 'GET'} ${path} → ${res.status} ${await res.text()}`)
   }
-  return res.status === 204 ? null : res.json()
+  // PostgREST returns an EMPTY body for 204 and for any request sent with
+  // `Prefer: return=minimal` (which answers 201 Created with no content).
+  // Calling res.json() on that throws, and the throw killed this script after
+  // the very first metro claimed its zips — leaving Brooklyn with all 809 rows
+  // and Chicago, San Francisco and Centreville with none. Parse the text and
+  // only decode when there is something to decode.
+  const text = await res.text()
+  return text.length > 0 ? JSON.parse(text) : null
 }
 
 // Great-circle miles between two centroids.
