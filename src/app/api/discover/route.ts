@@ -22,11 +22,26 @@ import { createServiceClient } from '@/lib/supabase/server'
 import { resolveArea } from '@/lib/geo'
 import { buildSocialLine, type FriendSignal, type SocialLine } from '@/lib/nearMatch'
 import { isSlotPart, type SlotPart } from '@/lib/availability'
+import { seededShuffle } from '@/lib/seededShuffle'
 
 /** Dated moves die 3h after they start; evergreen (start_at null) never does. */
 const EXPIRY_GRACE_MS = 3 * 60 * 60 * 1000
 const DEFAULT_LIMIT = 3
 const MAX_LIMIT = 50
+
+/**
+ * With `?seed=`, how deep to read before picking.
+ *
+ * The feed embeds one to three cards, and without this it embedded the same one
+ * to three every single time — always the soonest — so a shelf whose whole job
+ * is "here is something to do" showed one thing forever and stopped being worth
+ * a glance. The seed reshuffles it per app open (see lib/seededShuffle).
+ *
+ * The pool is still ordered soonest-first, so this trades "always the very next
+ * thing" for "something from the next couple of dozen", not for anything stale:
+ * the expiry floor above has already dropped everything that has been and gone.
+ */
+const SHUFFLE_POOL = 24
 
 export interface NearMove {
   id: string
@@ -58,6 +73,14 @@ export async function GET(req: Request) {
     Math.max(Number(url.searchParams.get('limit')) || DEFAULT_LIMIT, 1),
     MAX_LIMIT,
   )
+
+  // Absent (Browse, which wants the real soonest-first list) or a uint32 from
+  // the caller. A malformed seed is treated as absent rather than as 0, so a
+  // broken client gets the old deterministic order instead of one fixed shuffle
+  // that every broken client shares.
+  const rawSeed = url.searchParams.get('seed')
+  const parsedSeed = rawSeed === null ? NaN : Number(rawSeed)
+  const seed = Number.isFinite(parsedSeed) ? Math.abs(Math.trunc(parsedSeed)) >>> 0 : null
 
   const supabase = createServiceClient()
 
@@ -97,10 +120,13 @@ export async function GET(req: Request) {
 
   if (zips) query = query.in('area_zip', zips)
 
-  const { data: rows, error } = await query.limit(limit)
+  const { data: rows, error } = await query.limit(seed === null ? limit : Math.max(limit, SHUFFLE_POOL))
   if (error) return NextResponse.json({ error: 'Query failed' }, { status: 500 })
 
-  const moves = rows ?? []
+  // Narrowed to what we will actually return BEFORE anything downstream runs:
+  // the social lines and the impression counter both key off this list, and an
+  // impression for a card nobody was shown is a billing bug, not a rounding one.
+  const moves = seed === null ? (rows ?? []) : seededShuffle(rows ?? [], seed, m => m.id).slice(0, limit)
   if (moves.length === 0) {
     return NextResponse.json({ area, hasArea: !!areaZip, moves: [] })
   }

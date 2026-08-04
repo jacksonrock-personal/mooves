@@ -21,6 +21,8 @@ export interface RailPerson {
   isMe?: boolean
 }
 
+import { hashSeeded, newSeed } from './seededShuffle'
+
 const ORDER: Record<string, number> = { now: 0, tonight: 1, week: 2, weekend: 3 }
 
 export const LABEL: Record<string, string> = {
@@ -39,28 +41,11 @@ export function bucketOf(statusTime: string | null): string {
  * A new seed per app open. The grey tail is shuffled, but it must not reshuffle
  * underneath the user's thumb every time a green lands over Realtime, so the
  * seed is generated once and held for the life of the screen.
- */
-export function railSeed(): number {
-  return Math.floor(Math.random() * 0xffffffff) >>> 0
-}
-
-/**
- * Seeded, stable per (id, seed).
  *
- * The obvious `h = h * 31 + c` is MONOTONIC in the first character when every
- * id starts from the same seed, which in the mockup produced a "shuffle" that
- * came out alphabetical and did not move when reseeded. This one avalanches.
+ * The SAME seed also picks which near-you Mooves the feed shows (24.6), so both
+ * shelves turn over together on an app open and neither moves during a session.
  */
-function shuffleKey(id: string, seed: number): number {
-  let h = (seed ^ 0x9e3779b9) >>> 0
-  for (let i = 0; i < id.length; i++) {
-    h = Math.imul(h ^ id.charCodeAt(i), 0x01000193) >>> 0
-  }
-  h ^= h >>> 15
-  h = Math.imul(h, 0x2545f491) >>> 0
-  h ^= h >>> 13
-  return h >>> 0
-}
+export const railSeed = newSeed
 
 /**
  * You → greens (bucket, then most recently gone green) → greys (seeded shuffle).
@@ -85,8 +70,8 @@ export function sortRail(people: RailPerson[], seed: number): RailPerson[] {
   const greys = people
     .filter(p => !p.isMe && !p.isGreen)
     .sort((a, b) => {
-      const ka = shuffleKey(a.id, seed)
-      const kb = shuffleKey(b.id, seed)
+      const ka = hashSeeded(a.id, seed)
+      const kb = hashSeeded(b.id, seed)
       if (ka !== kb) return ka - kb
       return a.id < b.id ? -1 : a.id > b.id ? 1 : 0
     })
