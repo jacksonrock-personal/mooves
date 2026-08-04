@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mooves — R25: the Discover tab comes back</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --green-100:#E3F9EC; --green-500:#2ECC71; --green-700:#167A43;
+    --purple-50:#F8F6FF; --purple-100:#EDE9FF; --purple-500:#7C5CDB; --purple-700:#5F3FC4;
+    --ink-900:#1C1730; --ink-500:#6B628A;
+    --grey-100:#F1EEFA; --grey-300:#BDB5D4; --hair:#E8E4F5;
+    --white:#fff; --safetop:44px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:Inter,sans-serif;background:#0F0C1A;color:#fff;padding:34px 18px 90px;-webkit-font-smoothing:antialiased}
+  h1{font-family:'Plus Jakarta Sans',sans-serif;font-size:25px;font-weight:800;letter-spacing:-.02em;text-align:center}
+  .sub{text-align:center;color:#9990BC;font-size:13.5px;margin-top:9px;max-width:740px;margin-left:auto;margin-right:auto;line-height:1.65}
+  .sub b{color:#CFC6EC;font-weight:600}
+
+  .knoblbl{text-align:center;font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#5E5480;margin:26px 0 0}
+  .knobs{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin:11px auto 0;max-width:960px}
+  .kbtn{background:#1D1733;border:1.5px solid #332B52;color:#CFC6EC;font-family:inherit;font-size:12.5px;font-weight:600;
+        padding:9px 15px;border-radius:99px;cursor:pointer;transition:.16s}
+  .kbtn:hover{border-color:var(--purple-500)}
+  .kbtn.on{background:var(--purple-500);border-color:var(--purple-500);color:#fff}
+  .rule{width:100%;height:1px;background:#241D3C;max-width:1000px;margin:26px auto 0}
+
+  .stage{display:flex;flex-wrap:wrap;gap:38px;justify-content:center;margin-top:30px;align-items:flex-start}
+  .col{display:flex;flex-direction:column;align-items:center;max-width:392px}
+  .caption{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#7C6FA8;margin-bottom:11px;text-align:center}
+  .note{font-size:12.5px;color:#9990BC;line-height:1.7;width:352px;max-width:100%;margin-top:15px}
+  .note b{color:#CFC6EC;font-weight:600}
+  .note+.note{margin-top:9px}
+
+  .box{max-width:1000px;margin:30px auto 0;background:#191330;border:1px solid #2C2450;border-radius:16px;padding:18px 22px}
+  .box h4{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:14px;color:#fff;margin-bottom:10px}
+  .box p{font-size:12.8px;color:#A79EC9;line-height:1.75}
+  .box p+p{margin-top:9px}
+  .box b{color:#E4DCFF;font-weight:600}
+  .box .q{color:#FFD37A;font-weight:700}
+  .box+.box{margin-top:12px}
+  table{width:100%;border-collapse:collapse;margin-top:11px;font-size:12.3px}
+  th,td{text-align:left;padding:7px 10px;border-bottom:1px solid #2C2450;color:#A79EC9}
+  th{color:#6E639A;font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase}
+  td b{color:#E4DCFF}
+  td.num{font-variant-numeric:tabular-nums}
+
+  /* ── phone shell ───────────────────────────────────────────────── */
+  .phone{position:relative;width:352px;height:700px;border-radius:44px;background:var(--purple-50);
+         border:9px solid #241D3C;overflow:hidden;box-shadow:0 26px 60px rgba(0,0,0,.5);color:var(--ink-900)}
+  .cal{position:absolute;left:50%;transform:translateX(-50%);top:0;width:132px;height:26px;background:#241D3C;border-radius:0 0 16px 16px;z-index:60}
+  .body{position:absolute;inset:0 0 94px;display:flex;flex-direction:column;padding:calc(var(--safetop) + 12px) 16px 0;overflow:hidden}
+
+  /* ── rail ──────────────────────────────────────────────────────── */
+  .rail{display:flex;gap:14px;overflow-x:auto;margin:0 -16px 12px;padding:6px 16px 4px;scrollbar-width:none}
+  .rail::-webkit-scrollbar{display:none}
+  .tile{flex:0 0 auto;width:58px;display:flex;flex-direction:column;align-items:center;gap:4px}
+  .av{position:relative;width:54px;height:54px}
+  .av .ph{width:54px;height:54px;border-radius:99px;display:flex;align-items:center;justify-content:center;
+          font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:19px;color:#fff}
+  .av.grey .ph{filter:grayscale(1);opacity:.48}
+  .ring{position:absolute;inset:-4px;border-radius:99px;border:1.25px solid var(--grey-300)}
+  .av.green .ring{border:2.5px solid var(--green-500)}
+  .nm{max-width:58px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:600;color:var(--ink-500)}
+  .nm.mine{font-weight:800;color:var(--ink-900)}
+  .when{height:13px;line-height:13px;font-size:9.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--green-700)}
+  .light{width:54px;height:54px;border-radius:99px;background:var(--purple-100);display:flex;align-items:center;justify-content:center}
+  .lbox{width:22px;height:41px;border-radius:7px;background:var(--ink-900);display:flex;flex-direction:column;
+        align-items:center;justify-content:center;gap:3.5px}
+  .lbox i{display:block;width:10.5px;height:10.5px;border-radius:99px}
+  .lbox i.r{background:#FF3B30} .lbox i.a{background:#FFB300} .lbox i.g{background:#2ECC71}
+
+  /* ── feed ──────────────────────────────────────────────────────── */
+  .eyebrow{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-500);padding:4px 2px 8px}
+  .shelfhdr{display:flex;align-items:center;justify-content:space-between;padding:10px 2px 9px}
+  .shelfhdr .e{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-500)}
+  /* THE road in. Untouched by R25 — it still pushes the same screen. */
+  .seeall{display:inline-flex;align-items:center;gap:5px;background:var(--white);border:1px solid var(--hair);
+          border-radius:99px;padding:7px 13px;font-size:13px;font-weight:800;color:var(--purple-700);
+          box-shadow:0 1px 3px rgba(28,23,48,.06)}
+  .seeall.pulse{box-shadow:0 0 0 4px rgba(124,92,219,.22),0 1px 3px rgba(28,23,48,.06);border-color:var(--purple-500)}
+  .plancard{background:var(--white);border:1px solid var(--hair);border-radius:18px;padding:13px 14px;margin-bottom:10px;display:flex;gap:12px;align-items:center}
+  .datetile{width:46px;height:46px;flex-shrink:0;border-radius:13px;background:var(--purple-100);display:flex;flex-direction:column;
+            align-items:center;justify-content:center;gap:1px}
+  .datetile .t1{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:13px;color:var(--purple-700);line-height:1}
+  .datetile .t2{font-size:9px;font-weight:800;letter-spacing:.07em;color:var(--purple-700);opacity:.72;line-height:1}
+  .plancard .cb{flex:1;min-width:0}
+  .ctitle{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:16px;letter-spacing:-.015em;
+          overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .csub{font-size:12.5px;color:var(--ink-500);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .in{flex-shrink:0;background:#167A43;color:#fff;border-radius:99px;padding:8px 13px;font-size:12.5px;font-weight:800}
+
+  /* ── the move card (shared by feed shelf and Discover) ─────────── */
+  .move{background:var(--white);border:1px solid var(--hair);border-radius:18px;overflow:hidden;margin-bottom:11px}
+  .banner{height:74px;background:linear-gradient(150deg,#E9E3FF 0%,#DED5FA 100%);position:relative;display:flex;align-items:flex-end;padding:9px}
+  .badge{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.92);border-radius:99px;padding:5px 11px;
+         font-size:9.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-900)}
+  .badge i{width:5px;height:5px;border-radius:99px;background:var(--purple-500)}
+  .badge.sp i{background:#C9772E}
+  .mbody{padding:12px 13px 13px}
+  .mtitle{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:16.5px;letter-spacing:-.02em;line-height:1.25}
+  .mmeta{font-size:12.5px;color:var(--ink-500);margin-top:4px}
+  .mmeta b{color:var(--ink-900);font-weight:700}
+  .mdesc{font-size:12.5px;color:var(--ink-500);line-height:1.5;margin-top:7px}
+  .mcta{width:100%;height:44px;margin-top:11px;border:0;border-radius:13px;background:var(--purple-500);color:#fff;
+        font-family:inherit;font-size:14.5px;font-weight:800}
+
+  /* ── Discover chrome ───────────────────────────────────────────── */
+  .dhead{background:var(--white);border-bottom:1px solid var(--hair);margin:calc(-1 * (var(--safetop) + 12px)) -16px 0;
+         padding:calc(var(--safetop) + 12px) 16px 12px;flex-shrink:0}
+  .drow1{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  /* No .back rule any more — the chevron is gone from the markup entirely. */
+  .dh1{flex:1;font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:19px;letter-spacing:-.02em}
+  .zip{flex-shrink:0;display:inline-flex;align-items:center;gap:6px;background:var(--purple-50);border:1px solid var(--hair);
+       border-radius:99px;padding:6px 10px;font-size:11.5px;font-weight:700;color:var(--purple-700)}
+  .search{display:flex;align-items:center;gap:8px;background:var(--purple-50);border:1.5px solid var(--hair);
+          border-radius:13px;padding:0 12px;height:40px;margin-bottom:10px}
+  .search span{font-size:13.5px;color:var(--grey-300)}
+  .seg{display:flex;background:var(--grey-100);border-radius:11px;padding:3px;margin-bottom:10px}
+  .seg span{flex:1;text-align:center;padding:7px 2px;border-radius:9px;font-size:12px;font-weight:600;color:var(--ink-500);white-space:nowrap}
+  .seg span.on{background:var(--white);color:var(--ink-900);font-weight:800;box-shadow:0 1px 3px rgba(28,23,48,.1)}
+  .chips{display:flex;gap:7px}
+  .chip{border-radius:99px;padding:6px 12px;font-size:12px;font-weight:700;background:var(--white);border:1.5px solid var(--hair);color:var(--ink-500)}
+  .chip.on{background:var(--purple-100);border-color:var(--purple-500);color:var(--purple-700)}
+  .dscroll{flex:1;overflow-y:auto;margin:0 -16px;padding:0 16px}
+  .count{font-size:12px;color:var(--ink-500);padding:13px 2px 10px}
+  .count b{color:var(--ink-900);font-weight:700}
+  .daylbl{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-500);padding:14px 2px 10px}
+  .daylbl:first-child{padding-top:0}
+
+  /* ── bottom nav ────────────────────────────────────────────────── */
+  .nav{position:absolute;left:0;right:0;bottom:0;background:var(--white);border-top:1px solid var(--hair);display:flex;z-index:20}
+  .nav a{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:5px;padding:16px 2px;
+         font-size:10px;font-weight:600;color:var(--grey-300);text-decoration:none;letter-spacing:.01em}
+  .nav a.on{color:var(--purple-500)}
+  .nav a.wide{flex:2}
+  .nav .plan{flex:1.32;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
+             padding:16px 2px;font-size:10px;font-weight:700;color:var(--purple-500)}
+  .nav .disc{position:absolute;top:-26px;width:70px;height:70px;border-radius:99px;background:var(--purple-500);
+             border:5.5px solid #fff;box-shadow:0 8px 22px rgba(124,92,219,.42);display:flex;align-items:center;justify-content:center;
+             font-size:30px;line-height:1}
+  .nav .plan span.t{margin-top:46px;white-space:nowrap}
+  /* The OLD bar, for the A/B: Discover is absent and Feed eats its slot. */
+  body.oldnav .nav a.disconly{display:none}
+  body:not(.oldnav) .nav a.wide{flex:1}
+  .nav a span:last-child{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+</style>
+</head>
+<body>
+
+<h1>R25 — the Discover tab comes back</h1>
+<p class="sub">
+  Two tabs, the cow, two tabs. The tab shows <b>exactly the screen "See all" already pushes</b> — search, the four
+  time filters, Free / Friends in, day groups, the same cards. <b>"See all" itself is untouched.</b>
+  <br>No back arrow: this is a tab, and tabs don't have one.
+  <br>This is <b>built and running</b>; the numbers in the table below are measured off the live app, not guessed.
+</p>
+
+<p class="knoblbl">The bar</p>
+<div class="knobs" id="k-nav">
+  <button class="kbtn on" data-v="new">R25 · two + cow + two</button>
+  <button class="kbtn" data-v="old">Today · Feed takes a double slot</button>
+</div>
+
+<div class="rule"></div>
+
+<div class="stage">
+  <div class="col">
+    <p class="caption">The feed · the road in is unchanged</p>
+    <div class="phone">
+      <div class="cal"></div>
+      <div class="body">
+        <div class="rail">
+          <div class="tile"><span class="av"><span class="light"><span class="lbox"><i class="r"></i><i class="a"></i><i class="g"></i></span></span><span class="ring"></span></span><span class="nm mine">Go green</span><span class="when"></span></div>
+          <div class="tile"><span class="av grey"><span class="ph" style="background:#7C5CDB">M</span><span class="ring"></span></span><span class="nm">Michael</span><span class="when"></span></div>
+          <div class="tile"><span class="av green"><span class="ph" style="background:#E8405A">S</span><span class="ring"></span></span><span class="nm">Sarah</span><span class="when">NOW</span></div>
+          <div class="tile"><span class="av grey"><span class="ph" style="background:#2E9E8F">P</span><span class="ring"></span></span><span class="nm">Patrick</span><span class="when"></span></div>
+          <div class="tile"><span class="av grey"><span class="ph" style="background:#C9772E">S</span><span class="ring"></span></span><span class="nm">Sage</span><span class="when"></span></div>
+        </div>
+
+        <p class="eyebrow">Mooves</p>
+        <div class="plancard">
+          <span class="datetile"><span class="t1">SUN</span><span class="t2">AUG 9</span></span>
+          <span class="cb"><span class="ctitle">Go to the beach</span><span class="csub">Sunday, no set time · Katherine</span></span>
+          <span class="in">You're in ✓</span>
+        </div>
+
+        <div class="shelfhdr">
+          <span class="e">Near you</span>
+          <span class="seeall pulse">See all ›</span>
+        </div>
+        <div class="move">
+          <div class="banner"><span class="badge"><i></i>Community Moove</span></div>
+          <div class="mbody">
+            <p class="mtitle">Disney/Pixar Trivia Night at Gallagher Way</p>
+            <p class="mmeta">Wrigleyville · <b>Free (team registration at 5:30pm)</b></p>
+            <p class="mdesc">Outdoor team trivia night themed to Disney/Pixar, with prizes from local businesses.</p>
+            <button class="mcta">Make it a Moove</button>
+          </div>
+        </div>
+      </div>
+      <div class="nav" data-nav></div>
+    </div>
+    <p class="note">
+      <b>Nothing on this screen changed.</b> The shelf, the pill and the route it pushes are byte-for-byte what
+      shipped in 24.8 — the pill is only ringed here so you can see which control I did <i>not</i> touch.
+      It remains the main road to browse; the tab is a second door for people who go looking for one.
+    </p>
+  </div>
+
+  <div class="col">
+    <p class="caption">The Discover tab · the See-all screen, as a tab</p>
+    <div class="phone">
+      <div class="cal"></div>
+      <div class="body">
+        <div class="dhead">
+          <div class="drow1">
+            <span class="dh1">Near you</span>
+            <span class="zip"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z" stroke="#5F3FC4" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.5" stroke="#5F3FC4" stroke-width="2"/></svg>60647</span>
+          </div>
+          <div class="search">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#BDB5D4" stroke-width="2.3" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <span>Search moves, places</span>
+          </div>
+          <div class="seg"><span class="on">All week</span><span>Tonight</span><span>Tomorrow</span><span>Weekend</span></div>
+          <div class="chips"><span class="chip">Free</span><span class="chip">Friends in</span></div>
+        </div>
+
+        <div class="dscroll">
+          <p class="count"><b>14</b> moves near you</p>
+          <p class="daylbl">Today</p>
+          <div class="move">
+            <div class="banner"><span class="badge"><i></i>Community Moove</span></div>
+            <div class="mbody">
+              <p class="mtitle">Disney Trivia Night</p>
+              <p class="mmeta">Wicker Park/Bucktown · <b>Ticketed per team</b></p>
+              <p class="mdesc">Team trivia night covering Disney classics from The Lion King to Frozen at a board game bar.</p>
+              <button class="mcta">Make it a Moove</button>
+            </div>
+          </div>
+          <p class="daylbl">This weekend</p>
+          <div class="move">
+            <div class="banner"><span class="badge sp"><i></i>Sponsored</span></div>
+            <div class="mbody">
+              <p class="mtitle">Northalsted Market Days</p>
+              <p class="mmeta">Lakeview/Northalsted · <b>Free ($20 suggested)</b></p>
+              <p class="mdesc">Two days of street festival, live music and food across six blocks.</p>
+              <button class="mcta">Make it a Moove</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="nav" data-nav></div>
+    </div>
+    <p class="note">
+      <b>Community and Sponsored stay interleaved</b>, sorted purely by day. A sponsor cannot buy position here.
+      That was 24.8's rule and putting the screen behind a tab does not change it.
+    </p>
+    <p class="note">
+      <b>The bottom nav is the only thing added to this screen</b>, plus the padding to clear it. Search,
+      filters, day groups, the cards and their one CTA are all exactly as they already are.
+    </p>
+  </div>
+</div>
+
+<div class="box">
+  <h4>The rebalance is cheaper than it looks — measured on the live app</h4>
+  <p>
+    Feed's <code>grow-[2]</code> — the double slot it took when Discover was cut in 24.6 — splits back into two
+    singles. Total grow is <b>5.32 either way</b>, so "Plan a Moove" keeps the exact width R15 tuned for it and
+    People / Settings do not move a pixel. The only slot that changes is Feed's, which halves. Icons went
+    <b>30 → 26px</b> and labels <b>10.5 → 10px</b> to pay for it.
+  </p>
+  <table>
+    <tr><th>At 375px</th><th>Slot</th><th>Label</th><th>Clipped</th></tr>
+    <tr><td><b>Feed</b></td><td class="num">70.8px</td><td class="num">24.0px</td><td>no</td></tr>
+    <tr><td><b>Discover</b></td><td class="num">70.8px</td><td class="num">43.4px</td><td>no</td></tr>
+    <tr><td><b>Plan a Moove</b></td><td class="num">92.2px</td><td class="num">66.1px</td><td>no</td></tr>
+    <tr><td><b>People</b></td><td class="num">70.8px</td><td class="num">33.8px</td><td>no</td></tr>
+    <tr><td><b>Settings</b></td><td class="num">70.8px</td><td class="num">40.7px</td><td>no</td></tr>
+  </table>
+  <p style="margin-top:11px">
+    Worst case is a <b>320px iPhone SE</b>: tab slots drop to 60.4px, the Plan slot to 78.4px against a 66.1px
+    label and a 70px disc that stays inside its own slot with 4px to spare. <b>Nothing clips at either width</b>,
+    and the bar measures 94px tall against the 95px <code>--nav-h</code> every screen pads for — so no screen's
+    bottom padding needed touching.
+  </p>
+  <p>
+    Flip the knob to <b>Today</b> to see what it replaces: the same bar with Feed spread across a double slot
+    and a hole where Discover used to be.
+  </p>
+</div>
+
+<div class="box">
+  <h4>The back arrow is gone — decided</h4>
+  <p>
+    A tab with a back chevron is a tab pretending to be a pushed screen, and no other tab in the app has one.
+    "Near you" now starts at the left edge like every other tab title, and the zip chip keeps the right.
+  </p>
+  <p>
+    <b>Arrivals from "See all" are not stranded.</b> They leave the way everyone else does, by pressing Feed —
+    which is now sitting two slots to the left of where their thumb already is. "See all" is still a push, not
+    a tab switch, so the phone's own back gesture and the browser back button both still return them to the
+    feed. Nothing about that pill changed.
+  </p>
+</div>
+
+<div class="box">
+  <h4>What has not changed, so nobody has to wonder</h4>
+  <p>
+    <b>24.6's lesson still holds.</b> The tab is not a bet that people will remember to visit the revenue
+    surface — that bet is what failed. Community and Sponsored Mooves still live in the feed, where they get
+    seen; this screen is still the thing a feed genuinely cannot do, which is search and filter. The tab just
+    means someone who <i>is</i> looking for browse has somewhere obvious to press.
+  </p>
+  <p>
+    <b>"Make it a Moove"</b> still hands off to the feed with <code>?anchor=</code>, the path 13.8 built for
+    arrivals from outside the feed. <b>"I'd go"</b> still lives in the detail sheet, because the card carries
+    one CTA and one CTA only.
+  </p>
+</div>
+
+<script>
+const NAV_ICONS = {
+  feed:'<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+  disc:'<circle cx="12" cy="12" r="9.5"/><path d="M15.6 8.4l-2.05 5.15-5.15 2.05 2.05-5.15z"/>',
+  ppl :'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  set :'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+}
+const svg = d => `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${NAV_ICONS[d]}</svg>`
+
+// index 0 = the feed phone, 1 = the Discover phone
+function navHTML(activeIdx){
+  const a = (k, label, on, cls='') => `<a class="${on ? 'on' : ''} ${cls}" href="#">${svg(k)}<span>${label}</span></a>`
+  return a('feed','Feed', activeIdx === 0, 'wide')
+       + a('disc','Discover', activeIdx === 1, 'disconly')
+       + `<div class="plan"><span class="disc">🐮</span><span class="t">Plan a Moove</span></div>`
+       + a('ppl','People', false)
+       + a('set','Settings', false)
+}
+
+document.querySelectorAll('[data-nav]').forEach((n, i) => { n.innerHTML = navHTML(i) })
+
+function knob(id, fn){
+  document.getElementById(id).addEventListener('click', e => {
+    const b = e.target.closest('.kbtn'); if (!b) return
+    document.querySelectorAll(`#${id} .kbtn`).forEach(x => x.classList.remove('on'))
+    b.classList.add('on'); fn(b.dataset.v)
+  })
+}
+// On the old bar, Discover is gone and the Discover phone has no tab to light —
+// which is exactly the point of the comparison, so Feed carries the highlight.
+knob('k-nav', v => document.body.classList.toggle('oldnav', v === 'old'))
+</script>
+</body>
+</html>

@@ -12,11 +12,14 @@ import SheetGrabber from '@/components/ui/SheetGrabber'
 import CowIllustration from '@/components/ui/CowIllustration'
 import Toast from '@/components/ui/Toast'
 import FriendsList from './FriendsList'
+import FriendWeekSheet from './FriendWeekSheet'
 
 interface Friend {
   id: string
   displayName: string | null
   avatarUrl: string | null
+  /** R25 — scoped count of slots set this week, or null if there is none to show. */
+  weekCount?: number | null
 }
 
 export default function FriendsPanel() {
@@ -24,6 +27,8 @@ export default function FriendsPanel() {
   const [friends, setFriends] = useState<Friend[] | null>(null)
   const [query, setQuery] = useState('')
   const [removeTarget, setRemoveTarget] = useState<Friend | null>(null)
+  // R25 — whose week is open. Same sheet the rail uses, second door.
+  const [weekFriendId, setWeekFriendId] = useState<string | null>(null)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
 
   const searchFired = useRef(false)
@@ -146,9 +151,25 @@ export default function FriendsPanel() {
               </p>
             </div>
           ) : (
-            <FriendsList friends={filtered} query={query} onRemove={handleRemoveInitiated} />
+            <FriendsList
+              friends={filtered}
+              query={query}
+              onRemove={handleRemoveInitiated}
+              onOpenWeek={id => {
+                posthog.capture('friends_row_week_opened')
+                setWeekFriendId(id)
+              }}
+            />
           ))}
       </div>
+
+      {/* R25 — the second door onto the same sheet the rail opens. */}
+      <FriendWeekSheet
+        friendId={weekFriendId}
+        fallbackName={(friends ?? []).find(f => f.id === weekFriendId)?.displayName ?? null}
+        fallbackAvatar={(friends ?? []).find(f => f.id === weekFriendId)?.avatarUrl ?? null}
+        onClose={() => setWeekFriendId(null)}
+      />
 
       {/* Sticky add button (above bottom nav).
           Phase 19: this was "Invite friends", which fired the share sheet

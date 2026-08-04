@@ -9,15 +9,18 @@ interface Friend {
   id: string
   displayName: string | null
   avatarUrl: string | null
+  /** R25 — scoped count of slots set this week. null = nothing to show. */
+  weekCount?: number | null
 }
 
 interface FriendsListProps {
   friends: Friend[]
   query: string
   onRemove: (id: string, displayName: string | null) => void
+  onOpenWeek: (id: string) => void
 }
 
-export default function FriendsList({ friends, query, onRemove }: FriendsListProps) {
+export default function FriendsList({ friends, query, onRemove, onOpenWeek }: FriendsListProps) {
   if (friends.length === 0 && query.trim()) {
     return (
       <div className="flex-1 bg-surface-bg">
@@ -39,11 +42,13 @@ export default function FriendsList({ friends, query, onRemove }: FriendsListPro
           id={f.id}
           displayName={f.displayName}
           avatarUrl={f.avatarUrl}
+          weekCount={f.weekCount ?? null}
           onRemove={onRemove}
+          onOpenWeek={onOpenWeek}
         />
       ))}
       <p className="font-sans text-[11px] text-text-secondary/70 text-center px-5 pt-2 pb-1 bg-white">
-        Swipe left on any friend to remove them
+        Tap a friend to see their week · swipe left to remove
       </p>
     </div>
   )
