@@ -200,9 +200,10 @@ export default function WeekRitualSheet({
                       </span>
                     </span>
 
-                    {/* Always three columns, so Evening lines up on every row and a
-                        weekday morning reads as nothing there rather than as a
-                        control you are not allowed to touch. */}
+                    {/* Always three columns. R26 — all three are now real controls
+                        on every row; the null branch below is kept because
+                        slotColumns still types a hole, and a grid that cannot
+                        render one is a grid that breaks the day a rule comes back. */}
                     {slotColumns(weekday).map((part, i) => {
                       if (!part) return <span key={i} className="h-[38px] flex-1" aria-hidden="true" />
                       const key = `${dateStr}:${part}`

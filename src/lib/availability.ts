@@ -10,14 +10,43 @@
 // Nothing else on the server reads a timezone. Storing one did not move any
 // existing computation off the client, and this file is not an invitation to.
 
-/** The four coarse parts. Weekday mornings are not offered, see partsForWeekday. */
+// R26 — EVERY day offers a morning. Phase 22 withheld weekday mornings on the
+// theory that "a weekday morning is not a slot this app's model has anything to
+// do with"; people with shifted schedules, days off and freelance weeks say
+// otherwise, and the asymmetry was also the one place the grid had to explain
+// itself.
+//
+// That forced a second decision, because morning (08–12) and the old day
+// (09–17) OVERLAP by three hours and a grid where two cells claim the same
+// hours is a grid that cannot be read. So the parts are now three, uniform,
+// and non-overlapping on all seven days:
+//
+//   morning 08–12 · day 12–17 · evening 17–23
+//
+// `day` NARROWS from 09–17 to 12–17 and `afternoon` RETIRES into it. That way
+// round rather than the other, because "Morning / Day / Evening" is the
+// vocabulary already on screen (R25's strip), and it now means the same window
+// on every day of the week — which retires the one caveat R25 shipped with.
+//
+// Retiring `afternoon` cost 8 rows across 4 beta users, migrated in place.
+// Retiring `day` would have cost none — there were zero `day` rows, ever, which
+// is its own quiet verdict on a 09–17 weekday slot.
+
+/**
+ * `afternoon` is LEGACY and is never offered. It stays in the union, the
+ * window map and the DB CHECK so a row written before the migration still
+ * renders instead of crashing a grid; its window is identical to `day`'s.
+ */
 export const SLOT_PARTS = ['morning', 'day', 'afternoon', 'evening'] as const
 export type SlotPart = (typeof SLOT_PARTS)[number]
+
+/** The three parts actually offered, in the order they are drawn. */
+export const OFFERED_PARTS = ['morning', 'day', 'evening'] as const
 
 /** Local hour windows, half-open [start, end). */
 export const SLOT_WINDOW: Record<SlotPart, { start: number; end: number }> = {
   morning: { start: 8, end: 12 },
-  day: { start: 9, end: 17 },
+  day: { start: 12, end: 17 },
   afternoon: { start: 12, end: 17 },
   evening: { start: 17, end: 23 },
 }
@@ -38,23 +67,30 @@ export function isSlotPart(value: unknown): value is SlotPart {
 }
 
 /**
- * Which parts a weekday offers. 0 = Sunday … 6 = Saturday.
+ * Which parts a day offers. 0 = Sunday … 6 = Saturday.
  *
- * Weekends get a morning, weekdays do not. Not an oversight: a weekday morning
- * is not a slot this app's model has anything to do with, and 16 cells is
- * already the ceiling for something that has to stay a few taps.
+ * R26 — the same three, every day. The weekday/weekend split is gone, and with
+ * it the `weekday` argument's only job; it is kept so every call site does not
+ * have to change and so a future rule (holidays, per-user schedules) has
+ * somewhere to live.
+ *
+ * The grid goes from 16 cells to 21. Phase 22 called 16 "the ceiling for
+ * something that has to stay a few taps" — that ceiling was about the WEEKDAY
+ * MORNING being absent, and a uniform 7×3 is quicker to scan than a ragged
+ * 5×2 + 2×3 even though it holds five more cells.
  */
-export function partsForWeekday(weekday: number): SlotPart[] {
-  return weekday === 0 || weekday === 6
-    ? ['morning', 'afternoon', 'evening']
-    : ['day', 'evening']
+export function partsForWeekday(_weekday: number): SlotPart[] {
+  return [...OFFERED_PARTS]
 }
 
-/** Renders the grid column a part sits in, so Evening always lines up last. */
-export function slotColumns(weekday: number): (SlotPart | null)[] {
-  return weekday === 0 || weekday === 6
-    ? ['morning', 'afternoon', 'evening']
-    : [null, 'day', 'evening']
+/**
+ * Renders the grid column a part sits in, so Evening always lines up last.
+ * No nulls any more — every column is a real control on every row — but the
+ * signature keeps them so callers can go on rendering a spacer for a hole that
+ * no longer occurs.
+ */
+export function slotColumns(_weekday: number): (SlotPart | null)[] {
+  return [...OFFERED_PARTS]
 }
 
 // ── Local dates, client side ────────────────────────────────────────────────
