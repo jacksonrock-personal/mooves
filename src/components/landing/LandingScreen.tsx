@@ -1,16 +1,30 @@
-// Phase 14.2 — Landing page (makemooves.app).
-// A responsive marketing page for logged-out visitors, driving into the app (/auth).
-// Deliberately NOT the 320px phone-frame — mobile-first, widens on desktop.
-// Rendered by src/app/page.tsx only when there's no valid session.
+// Phase 25 — Landing page (makemooves.app), rebuilt.
 //
-// REVISED 2026-07-30 — the page still sold the Phase 9 product: go green, friends
-// see it, text them. Since then the app grew a second object (planned Mooves,
-// Phase 20), the join flow that hangs off it, and Discover (Phase 13). A visitor
-// was being sold roughly half of what they'd find after signing up.
+// The page it replaces sold correctly and read like software. Five sections, a
+// dark "why we're different" slab, and forty-odd sentences of benefit copy, all
+// of it claiming a relaxed product in a tense layout. This one performs the
+// promise instead of asserting it: ONE flat colour field with no section break,
+// three beats of one sentence each, and the UI held inside handmade artifacts
+// rather than floating in feature cards.
 //
-// The card visuals below are STATIC REPLICAS of PlanCard/SponsoredCard, not the
-// components themselves — those need a live plan, handlers and a session. When
-// either card's design changes, these need the same edit; that's the deliberate
+// Reference and mockup: mooves-phase25-landing.html (modelled on the structure
+// of outernetexplorer.com — thesis gag, three beats, manifesto, quiet footer).
+//
+// FOUR RULES THIS FILE IS UNDER, all of them from review and all of them easy to
+// undo by accident:
+//
+//   1. NO DARK BAND. The one flat field is the whole visual argument. A section
+//      with its own background is the thing that made the old page feel tense.
+//   2. NO EM DASHES, anywhere in visitor-facing copy. Commas, colons, or a new
+//      sentence.
+//   3. SENTENCE CASE. The lowercase register belongs to the page we modelled
+//      this on, not to us.
+//   4. THREE BEATS. Every future addition wants to be a fourth. The brevity is
+//      load-bearing; a fourth beat is a rewrite decision, not an edit.
+//
+// The card visuals below are STATIC REPLICAS of the real in-app surfaces, not
+// the components themselves — those need a live plan, handlers and a session.
+// When a card's design changes, these need the same edit; that's the deliberate
 // cost of not booting the feed on a marketing page.
 'use client'
 
@@ -29,276 +43,300 @@ export default function LandingScreen() {
 
   return (
     <div className="min-h-screen bg-purple-50 text-ink-900">
-      <div className="mx-auto max-w-[1120px]">
+      {/* px-5 on phones, not px-7: the nav carries two pills and a wordmark on
+          one row, and at 375px the 28px gutters pushed the Sponsor Portal pill
+          off the right edge. Measured, not guessed. */}
+      <div className="mx-auto max-w-[1000px] px-5 sm:px-7">
         {/* NAV */}
-        <nav className="flex items-center justify-between px-6 py-[18px]">
-          <div className="flex items-center gap-[10px]">
+        <nav className="flex items-center justify-between gap-3 py-5">
+          <div className="flex items-center gap-[9px]">
             <div className="flex h-[38px] w-[38px] items-center justify-center overflow-hidden rounded-[11px] bg-white shadow-[0_1px_2px_rgba(28,23,48,0.06)]">
               <CowMark size={30} />
             </div>
-            <span className="font-display text-[20px] font-extrabold tracking-[-0.02em] text-ink-900">Mooves</span>
+            {/* Below 385px the wordmark is dropped and the cow carries the
+                brand alone. Measured: at 320 the row overflowed by 47px and
+                scrolled the whole page sideways, and at 375 it fit with exactly
+                zero slack, which is not a fit so much as a fit until a font
+                loads differently. 385 is the first width with real slack, and
+                it keeps the wordmark on a 393pt iPhone. Nothing is hidden here
+                except the word itself. */}
+            <span className="font-display text-[17px] font-extrabold tracking-[-0.02em] text-ink-900 max-[384px]:hidden sm:text-[20px]">
+              Mooves
+            </span>
           </div>
-          <Link
-            href="/auth"
-            onClick={() => onCta('nav')}
-            className="inline-flex min-h-[44px] items-center rounded-full border-[1.5px] border-purple-100 bg-white px-4 text-[14px] font-semibold text-purple-500"
-          >
-            Open app
-          </Link>
+          {/* flex-nowrap on purpose: with two buttons up here, wrapping drops
+              Sponsor Portal onto its own line under Open app and the two stop
+              reading as a pair. The paddings shrink instead. */}
+          {/* The two traded both slot and fill. Open app is the page's job, so
+              it is the filled one; Sponsor Portal is a real door but a B2B one,
+              and a solid purple pill for it out-shouted the consumer CTA it
+              sits beside. */}
+          <div className="flex flex-nowrap items-center gap-[7px] sm:gap-[9px]">
+            <Link
+              href="/auth"
+              onClick={() => onCta('nav')}
+              className="whitespace-nowrap rounded-full border-[1.5px] border-purple-500 bg-purple-500 px-[11px] py-[9px] text-[12.5px] font-semibold text-white sm:px-[17px] sm:py-[11px] sm:text-[14px]"
+            >
+              Open app
+            </Link>
+            <a
+              href="https://makemooves.app/sponsor"
+              onClick={() => onCta('nav_sponsor')}
+              className="whitespace-nowrap rounded-full border-[1.5px] border-purple-100 bg-white px-[11px] py-[9px] text-[12.5px] font-semibold text-purple-500 sm:px-[17px] sm:py-[11px] sm:text-[14px]"
+            >
+              Sponsor Portal
+            </a>
+          </div>
         </nav>
 
-        {/* HERO */}
-        <header className="relative overflow-hidden px-6 pb-12 pt-7 text-center md:pb-16 md:pt-11">
-          <div className="pointer-events-none absolute left-1/2 top-[-40px] h-[420px] w-[420px] -translate-x-1/2 bg-[radial-gradient(circle,rgba(46,204,113,0.18),transparent_62%)]" />
-          <div className="relative mx-auto mb-6 flex h-24 w-24 items-center justify-center overflow-hidden rounded-[26px] bg-white shadow-[0_8px_24px_rgba(28,23,48,0.14)]">
-            <CowMark size={72} />
-          </div>
-          <div className="relative mb-[18px] inline-flex items-center gap-[7px] rounded-full bg-green-100 px-[14px] py-[7px] text-[12.5px] font-semibold text-green-700">
-            <span className="h-2 w-2 rounded-full bg-green-500 shadow-[0_0_0_3px_rgba(46,204,113,0.25)]" />
-            Green means you&apos;re free
-          </div>
-          <h1 className="relative mx-auto mb-[18px] max-w-[560px] font-display text-[38px] font-extrabold leading-[1.08] tracking-[-0.025em] text-ink-900 md:text-[52px]">
-            The easiest way to actually hang out.
+        {/* HERO
+            The thesis is a gag, not a claim: the sentence the visitor already
+            sends their friends, struck through, with the app underneath. The
+            old hero opened with "The easiest way to actually hang out", which
+            is a sentence every app in this category can write. */}
+        <header className="relative px-0 pb-16 pt-6 text-center">
+          <Stamp className="left-[2%] top-5 -rotate-[13deg] border-green-700 text-green-700">Logan Square</Stamp>
+          <Stamp className="right-[1%] top-[74px] rotate-[9deg] border-green-700 text-green-700">Bushwick</Stamp>
+          <Stamp className="bottom-[34px] left-[6%] rotate-[6deg] border-purple-700 text-purple-700">Thursday, 7pm</Stamp>
+          <Stamp className="bottom-3 right-[5%] -rotate-[7deg] border-purple-700 text-purple-700">Nobody rsvp&apos;d</Stamp>
+
+          <span className="relative inline-block font-display text-[19px] font-bold tracking-[-0.02em] text-grey-300 sm:text-[23px] md:text-[27px]">
+            We should hang out sometime
+            {/* The strike is an element, not a text-decoration: it has to be
+                purple, 3px and slightly off-horizontal to read as drawn on. */}
+            <span className="pointer-events-none absolute -left-1.5 -right-1.5 top-[56%] h-[3px] -rotate-[1.4deg] rounded-full bg-purple-500" />
+          </span>
+
+          {/* Four steps rather than two, tracking the mockup's
+              clamp(44px, 7.8vw, 86px). Two steps put 86px on a 768px screen,
+              which is the size the mockup only reaches past 1100px. */}
+          <h1 className="mt-3 font-display text-[44px] font-extrabold leading-[1.04] tracking-[-0.03em] text-ink-900 sm:text-[52px] md:text-[62px] lg:text-[80px] xl:text-[86px]">
+            Make it easier to hang out.
           </h1>
-          <p className="relative mx-auto mb-[30px] max-w-[500px] text-[17.5px] font-medium leading-[1.55] text-ink-500 md:text-[19px]">
-            Go green when you&apos;re free. Or create a last-minute plan and let your friends join up.{' '}
-            <b className="font-semibold text-ink-900">No big invites, just simple hangs.</b>
+          <p className="mx-auto mt-[22px] max-w-[460px] text-[17.5px] font-medium leading-[1.5] text-ink-500">
+            Go green when you&apos;re free. Your friends see it, and now they know they can just ask you.
           </p>
-          <Link
-            href="/auth"
-            onClick={() => onCta('hero')}
-            className="inline-flex min-h-[52px] items-center justify-center gap-2 rounded-full bg-purple-500 px-[30px] text-[16px] font-semibold text-white shadow-[0_8px_24px_rgba(124,92,219,0.32)] transition-colors hover:bg-purple-700"
-          >
-            Make Mooves
-          </Link>
-          <p className="relative mt-4 text-[13.5px] text-ink-500">Free, and takes a minute to set up.</p>
-          <a
-            href="#loop"
-            aria-label="See how it works"
-            className="relative mt-5 inline-flex h-11 w-11 items-center justify-center rounded-full border-[1.5px] border-purple-100 bg-white text-[20px] font-bold text-purple-500 shadow-[0_1px_2px_rgba(28,23,48,0.06)] transition-transform hover:translate-y-[2px]"
-          >
-            ↓
-          </a>
+
+          <div className="mt-[30px] flex flex-wrap justify-center gap-3">
+            <GreenPill href="/auth" onClick={() => onCta('hero')} />
+            <a
+              href="#beats"
+              className="inline-flex items-center rounded-full bg-purple-100 px-8 py-[17px] font-display text-[17px] font-extrabold tracking-[-0.01em] text-purple-700"
+            >
+              See how it works
+            </a>
+          </div>
+          <p className="mt-3.5 text-[13.5px] text-ink-500">Free. Works in your browser. About a minute to set up.</p>
         </header>
 
-        {/* TWO WAYS — the product has two objects now, and the page has to say so
-            before it explains joining, because "I'm in" only makes sense once
-            there is a thing to be in. */}
-        <section id="loop" className="px-6 py-13 md:py-14">
-          <div className="mx-auto mb-[34px] max-w-[600px] text-center">
-            <h2 className="font-display text-[27px] font-extrabold leading-[1.18] tracking-[-0.02em] text-ink-900 md:text-[32px]">
-              Two ways to get something going.
+        {/* BEAT 1 */}
+        <section id="beats" className="flex flex-col items-center gap-8 py-10 text-center md:flex-row md:gap-14 md:py-[52px] md:text-left">
+          <div className="flex-1">
+            <h2 className="font-display text-[27px] font-extrabold leading-[1.04] tracking-[-0.03em] text-ink-900 md:text-[37px]">
+              Casually go green when you&apos;re around and want to hang
             </h2>
-            <p className="mx-auto mt-3 max-w-[440px] text-[15.5px] leading-[1.5] text-ink-500">
-              One for when you&apos;re just around. One for when you&apos;ve actually got an idea.
+            <p className="mx-auto mt-3.5 max-w-[410px] text-[16.5px] leading-[1.55] text-ink-500 md:mx-0">
+              Your friends see a green ring. That&apos;s the whole feature. No status, no essay, no plan, and it
+              expires on its own.
             </p>
           </div>
-
-          <div className="mx-auto flex max-w-[520px] flex-col gap-[18px] md:max-w-[1000px] md:flex-row md:items-stretch">
-            {/* Go green */}
-            <div className="flex flex-1 flex-col rounded-[20px] bg-white p-6 shadow-[0_1px_2px_rgba(28,23,48,0.06)]">
-              <div className="mb-5 flex min-h-[76px] items-center">
-                <RailVisual />
-              </div>
-              <h3 className="mb-2 font-display text-[19px] font-extrabold tracking-[-0.01em] text-ink-900">Go green</h3>
-              <p className="text-[14.5px] leading-[1.5] text-ink-500">
-                One tap on your own face when you&apos;re around. The friends you picked see you&apos;re free — now,
-                tonight, or all weekend — and they can just text you. No status update, no essay, no plan required.
-              </p>
-            </div>
-
-            {/* Plan a Moove */}
-            <div className="flex flex-1 flex-col rounded-[20px] bg-white p-6 shadow-[0_1px_2px_rgba(28,23,48,0.06)]">
-              <div className="mb-5 flex min-h-[76px] items-center">
-                <MooveCardVisual />
-              </div>
-              <h3 className="mb-2 font-display text-[19px] font-extrabold tracking-[-0.01em] text-ink-900">
-                Plan a Moove
-              </h3>
-              <p className="text-[14.5px] leading-[1.5] text-ink-500">
-                Got an idea? Name it and pick a day. Time, place and a note are all optional — &ldquo;tacos, Sunday&rdquo;
-                is a complete Moove. Pick who sees it: everyone, a group, or a couple of specific friends.
-              </p>
-            </div>
+          <div className="flex w-full shrink-0 justify-center md:w-[366px]">
+            <Polaroid caption="Green means I’m around">
+              <RailVisual />
+            </Polaroid>
           </div>
         </section>
 
-        {/* JOINING */}
-        <section className="px-6 py-13 md:py-14">
-          <div className="mx-auto mb-[34px] max-w-[600px] text-center">
-            <h2 className="font-display text-[27px] font-extrabold leading-[1.18] tracking-[-0.02em] text-ink-900 md:text-[32px]">
-              Your friends just tap &ldquo;I&apos;m in&rdquo;.
+        <Doodle direction="right" />
+
+        {/* BEAT 2 */}
+        <section className="flex flex-col items-center gap-8 py-10 text-center md:flex-row-reverse md:gap-14 md:py-[52px] md:text-left">
+          <div className="flex-1">
+            <h2 className="font-display text-[27px] font-extrabold leading-[1.04] tracking-[-0.03em] text-ink-900 md:text-[37px]">
+              Or just say the thing you want to do
             </h2>
-            <p className="mx-auto mt-3 max-w-[440px] text-[15.5px] leading-[1.5] text-ink-500">
-              No RSVPs, no maybes, no thread to keep up with.
+            <p className="mx-auto mt-3.5 max-w-[410px] text-[16.5px] leading-[1.55] text-ink-500 md:mx-0">
+              &ldquo;Tacos, Sunday&rdquo; is a complete Moove. Time and place are optional. You pick who sees it:
+              everyone, one group, or two specific people.
             </p>
           </div>
+          <div className="flex w-full shrink-0 justify-center md:w-[366px]">
+            <Polaroid tilt="right" caption="Nine words, one tap">
+              <MooveCardVisual />
+            </Polaroid>
+          </div>
+        </section>
 
-          <div className="mx-auto flex max-w-[520px] flex-col items-center gap-8 md:max-w-[1000px] md:flex-row md:items-center md:gap-12">
-            <div className="w-full max-w-[360px] shrink-0">
+        <Doodle direction="left" />
+
+        {/* BEAT 3 */}
+        <section className="flex flex-col items-center gap-8 py-10 text-center md:flex-row md:gap-14 md:py-[52px] md:text-left">
+          <div className="flex-1">
+            <h2 className="font-display text-[27px] font-extrabold leading-[1.04] tracking-[-0.03em] text-ink-900 md:text-[37px]">
+              See who&apos;s interested and then get back in the group chat
+            </h2>
+            <p className="mx-auto mt-3.5 max-w-[410px] text-[16.5px] leading-[1.55] text-ink-500 md:mx-0">
+              Once two people are in, one tap opens a text with exactly them. The plan happens where it always
+              happened.
+            </p>
+          </div>
+          <div className="flex w-full shrink-0 justify-center md:w-[366px]">
+            <Polaroid caption="And then we close the app">
               <JoinedMooveVisual />
-            </div>
-
-            <ol className="flex flex-1 flex-col gap-[18px]">
-              {[
-                {
-                  n: '1',
-                  h: 'It shows up',
-                  p: 'Your Moove lands in the feed of exactly the people you picked. Nothing public, nobody else.',
-                },
-                {
-                  n: '2',
-                  h: 'One tap to join',
-                  p: 'They tap “I’m in” and they’re on the list. Everyone can see who else is coming before they commit.',
-                },
-                {
-                  n: '3',
-                  h: 'It moves to text',
-                  p: 'Once two people are in, one tap opens a group text with exactly them. The plan happens in Messages, like it always has.',
-                },
-              ].map(s => (
-                <li key={s.n} className="flex items-start gap-[18px] rounded-[20px] bg-white p-5 shadow-[0_1px_2px_rgba(28,23,48,0.06)]">
-                  <span className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-purple-100 font-display text-[15px] font-extrabold text-purple-700">
-                    {s.n}
-                  </span>
-                  <span className="flex-1">
-                    <h3 className="mb-[6px] font-display text-[17px] font-extrabold tracking-[-0.01em] text-ink-900">
-                      {s.h}
-                    </h3>
-                    <p className="text-[14.5px] leading-[1.5] text-ink-500">{s.p}</p>
-                  </span>
-                </li>
-              ))}
-            </ol>
+            </Polaroid>
           </div>
         </section>
 
-        {/* DISCOVER / SPONSORED */}
-        <section className="px-6 py-13 md:py-14">
-          {/* Not flex-col-reverse: on mobile that floated the sponsored card in
-              above its own heading, so the first thing a visitor met in this
-              section was an ad with no context for why it was there. */}
-          <div className="mx-auto flex max-w-[520px] flex-col items-center gap-9 md:max-w-[1000px] md:flex-row md:items-center md:gap-12">
-            <div className="flex-1">
-              <span className="mb-[14px] inline-flex items-center gap-[7px] rounded-full bg-purple-100 px-[13px] py-[6px] text-[12px] font-bold uppercase tracking-[0.06em] text-purple-700">
-                Discover
-              </span>
-              <h2 className="mb-3 font-display text-[27px] font-extrabold leading-[1.18] tracking-[-0.02em] text-ink-900 md:text-[32px]">
-                When nobody has an idea.
-              </h2>
-              <p className="mb-4 text-[15.5px] leading-[1.55] text-ink-500">
-                Discover is a short list of things actually happening near you — the run club, the trivia night, the
-                Saturday market. Pick the kinds of things you like and it stays to those.
-              </p>
-              <p className="mb-4 text-[15.5px] leading-[1.55] text-ink-500">
-                Find one you want to do and tap{' '}
-                <b className="font-semibold text-ink-900">&ldquo;Make it a Moove&rdquo;</b>. It becomes your own Moove,
-                on your friends&apos; feed, ready for them to join — so discovering something and getting people to come
-                with you is the same two taps.
-              </p>
-              {/* 24.0 — the previous version of this paragraph promised that
-                  sponsored moves never appear in your friends' feed and that
-                  nobody sees who you are. Phase 24 does both, so the page said
-                  the opposite of what the app does.
-
-                  The replacement is deliberately NARROWER than "forget the
-                  guardrails". Three things are still true and are the ones worth
-                  stating: every paid card says it is paid, sponsors get counts
-                  and never names, and the ceiling on who can see what you are up
-                  for is friends you already have. */}
-              <p className="rounded-[14px] border border-purple-100 bg-white px-4 py-3 text-[13.5px] leading-[1.5] text-ink-500">
-                Local spots pay to be listed, and every one of those says so on the card. Sponsors only ever get
-                counts, never names — and the only people who see what you&apos;re up for are the friends you already
-                have.
-              </p>
-            </div>
-
-            <div className="w-full max-w-[340px] shrink-0">
-              <SponsoredCardVisual />
-            </div>
-          </div>
-        </section>
-
-        {/* WHY DIFFERENT */}
-        <section className="bg-ink-900 px-6 py-13 md:py-14">
-          <div className="mx-auto mb-[34px] max-w-[560px] text-center">
-            <h2 className="font-display text-[27px] font-extrabold leading-[1.18] tracking-[-0.02em] text-white md:text-[32px]">
-              A little app that gets out of your way.
-            </h2>
-          </div>
-          <div className="mx-auto flex max-w-[520px] flex-col gap-[14px] md:max-w-[1000px] md:flex-row">
-            <div className="flex-1 rounded-[20px] border border-white/10 bg-white/[0.05] px-6 py-[22px]">
-              <h3 className="mb-[6px] flex items-center gap-[10px] font-display text-[17px] font-extrabold text-white">
-                <svg className="h-[22px] w-[22px] shrink-0" viewBox="0 0 24 24" fill="none">
-                  <path d="M4 6h16M4 12h16M4 18h10" stroke="#A98FF0" strokeWidth="2.2" strokeLinecap="round" />
-                  <line x1="3" y1="21" x2="21" y2="3" stroke="#2ECC71" strokeWidth="2.2" strokeLinecap="round" />
-                </svg>
-                No feed to scroll
-              </h3>
-              <p className="text-[14.5px] leading-[1.5] text-white/[0.62]">
-                Mooves shows who&apos;s free and what&apos;s planned, and then it stops. There&apos;s nothing to keep
-                scrolling and nothing to catch up on.
-              </p>
-            </div>
-            <div className="flex-1 rounded-[20px] border border-white/10 bg-white/[0.05] px-6 py-[22px]">
-              <h3 className="mb-[6px] flex items-center gap-[10px] font-display text-[17px] font-extrabold text-white">
-                <svg className="h-[22px] w-[22px] shrink-0" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 21s-7-4.4-7-9.5A4.5 4.5 0 0 1 12 8a4.5 4.5 0 0 1 7 3.5C19 16.6 12 21 12 21z" stroke="#2ECC71" strokeWidth="2.2" strokeLinejoin="round" />
-                </svg>
-                No pressure
-              </h3>
-              <p className="text-[14.5px] leading-[1.5] text-white/[0.62]">
-                A green just means you&apos;re around, and it expires on its own. No read receipts, no streaks, no
-                seen-at, no reason to feel behind.
-              </p>
-            </div>
-            <div className="flex-1 rounded-[20px] border border-white/10 bg-white/[0.05] px-6 py-[22px]">
-              <h3 className="mb-[6px] flex items-center gap-[10px] font-display text-[17px] font-extrabold text-white">
-                <svg className="h-[22px] w-[22px] shrink-0" viewBox="0 0 24 24" fill="none">
-                  <circle cx="9" cy="8" r="3.2" stroke="#A98FF0" strokeWidth="2.2" />
-                  <path d="M3.5 19a5.5 5.5 0 0 1 11 0" stroke="#A98FF0" strokeWidth="2.2" strokeLinecap="round" />
-                  <circle cx="17.5" cy="9" r="2.4" stroke="#2ECC71" strokeWidth="2.2" />
-                </svg>
-                Just your people
-              </h3>
-              <p className="text-[14.5px] leading-[1.5] text-white/[0.62]">
-                You choose who&apos;s on your list, and you choose again every time you go green or plan a Moove. Never
-                the public, never strangers.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* CLOSING CTA */}
-        <section className="relative px-6 py-[60px] text-center">
-          <div className="pointer-events-none absolute left-1/2 top-[30px] h-[200px] w-[360px] -translate-x-1/2 bg-[radial-gradient(circle,rgba(124,92,219,0.16),transparent_66%)]" />
-          <h2 className="relative mb-[14px] font-display text-[30px] font-extrabold tracking-[-0.02em] text-ink-900">Ready when you are.</h2>
-          <p className="relative mb-7 text-[16px] font-medium text-ink-500">
-            Add a couple friends, go green or plan something, see who turns up.
+        {/* MANIFESTO — this is where the old page put a third feature card.
+            The page has to say why it exists somewhere, and a feature grid is
+            not that. */}
+        <section className="mx-auto max-w-[700px] px-0 pb-2 pt-[60px] text-center">
+          <p className="font-display text-[21px] font-bold leading-[1.32] tracking-[-0.02em] text-ink-900 md:text-[27px]">
+            We are all just one text message away from a great night. Mooves exists to make sure you send it.{' '}
+            <b className="font-extrabold text-purple-700">Open the app for nine seconds and make the plan.</b>
           </p>
-          <Link
-            href="/auth"
-            onClick={() => onCta('closing')}
-            className="relative inline-flex min-h-[52px] items-center justify-center gap-2 rounded-full bg-purple-500 px-[30px] text-[16px] font-semibold text-white shadow-[0_8px_24px_rgba(124,92,219,0.32)] transition-colors hover:bg-purple-700"
-          >
-            Make Mooves
-          </Link>
+          <div className="mt-[30px] flex justify-center">
+            <GreenPill href="/auth" onClick={() => onCta('closing')} />
+          </div>
+          {/* The line outernetexplorer.com never has to write. Their product is
+              useful alone; ours is worth nothing until two friends are on it.
+              Saying so costs a few signups and keeps the ones who stay. */}
+          <p className="mt-3.5 text-[13.5px] text-ink-500">
+            Bring two friends and it works. Bring none and it can&apos;t, so get your friends in the app asap.
+          </p>
         </section>
 
-        {/* FOOTER */}
-        <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-purple-100 px-6 py-[26px]">
-          <div className="flex items-center gap-2">
-            <CowMark size={24} />
-            <span className="font-display text-[15px] font-extrabold text-ink-900">Mooves</span>
-          </div>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[12.5px] text-ink-500">
+        {/* SPONSOR INVITE — deliberately quiet and near the bottom. A paid
+            listing is a real part of the product, but it is not what a visitor
+            came here to read. */}
+        <div className="mt-14 max-w-[520px] border-t border-[#E8E4F5] pb-2.5 pt-14">
+          <h3 className="font-display text-[16px] font-extrabold tracking-[-0.01em] text-ink-900">
+            Run a bar, a studio, a run club?
+          </h3>
+          <p className="mt-[7px] text-[14px] leading-[1.6] text-ink-500">
+            Local spots and events can get listed on Mooves so people can turn your thing into a plan with their
+            friends.{' '}
+            <a
+              href="mailto:business@makemooves.app"
+              onClick={() => onCta('sponsor_mailto')}
+              className="font-semibold text-purple-700"
+            >
+              Talk to us
+            </a>
+            .
+          </p>
+        </div>
+
+        <div className="max-w-[640px] pb-1.5 pt-8">
+          <p className="text-[15px] leading-[1.65] text-ink-500">
+            Made by <b className="font-bold text-ink-900">friends in Chicago</b> who wanted an app where they could
+            broadcast to the world that they wanted to be invited to a house party on weekends they were free.
+          </p>
+        </div>
+
+        <footer className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-[#E8E4F5] pb-8 pt-[22px] text-[12.5px] text-ink-500">
+          <span>© 2026 Mooves · makemooves.app</span>
+          <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
             <Link href="/privacy" className="hover:text-ink-900">Privacy</Link>
             <Link href="/terms" className="hover:text-ink-900">Terms</Link>
-            <span>© 2026 Mooves · makemooves.app</span>
-          </div>
+            <a href="mailto:support@makemooves.app" className="hover:text-ink-900">Support</a>
+          </span>
         </footer>
       </div>
     </div>
+  )
+}
+
+/* ── page furniture ───────────────────────────────────────────────────────── */
+
+/**
+ * The one CTA, in both places it appears. Green-500 is DECORATIVE ONLY in the
+ * design system — white on it is 2.1:1 — so the label is ink-900, which is also
+ * why the pill reads as a green sticker rather than as a button that happens to
+ * be green. Making the label white would mean dropping to green-700, and a dark
+ * forest pill no longer says "this is the green".
+ */
+function GreenPill({ href, onClick }: { href: string; onClick: () => void }) {
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      className="inline-flex items-center gap-2.5 rounded-full bg-green-500 px-8 py-[17px] font-display text-[17px] font-extrabold tracking-[-0.01em] text-ink-900"
+    >
+      <span className="h-[11px] w-[11px] rounded-full bg-white shadow-[0_0_0_3px_rgba(255,255,255,0.45)]" />
+      Go green
+    </Link>
+  )
+}
+
+/** Rubber stamps in the hero: neighbourhoods and times, not passport cities. */
+function Stamp({ children, className }: { children: React.ReactNode; className: string }) {
+  return (
+    <span
+      className={`pointer-events-none absolute hidden whitespace-nowrap rounded-[10px] border-[2.5px] px-[11px] py-[7px] font-display text-[11px] font-extrabold uppercase leading-none tracking-[0.14em] opacity-[0.34] lg:inline-block ${className}`}
+    >
+      {children}
+    </span>
+  )
+}
+
+/**
+ * The artifact that holds every UI replica. Without it the screenshots float in
+ * white space and the page is a feature grid again; inside it, the same pixels
+ * read as something a person put on a fridge.
+ */
+function Polaroid({
+  children,
+  caption,
+  tilt = 'left',
+}: {
+  children: React.ReactNode
+  caption: string
+  tilt?: 'left' | 'right'
+}) {
+  return (
+    <div
+      // max-w-full is load-bearing, not defensive. The replicas inside are a
+      // fixed 326px so the in-app proportions survive, which at 320px made the
+      // frame 354px wide and scrolled the whole page sideways. Capped, the
+      // frame shrinks and the rail replica clips its last tile against its own
+      // overflow-hidden, which is what the real rail does anyway.
+      className={`relative max-w-full rounded-[4px] bg-white p-[11px] pb-10 shadow-[0_12px_34px_rgba(28,23,48,0.16)] ${
+        tilt === 'right' ? 'rotate-[1.8deg]' : '-rotate-[2.2deg]'
+      }`}
+    >
+      <span className="absolute -top-[11px] left-1/2 h-[22px] w-[74px] -translate-x-1/2 -rotate-[2deg] rounded-sm bg-purple-500/20" />
+      {children}
+      <span className="absolute inset-x-0 bottom-3 text-center font-display text-[13px] font-bold tracking-[-0.01em] text-ink-500">
+        {caption}
+      </span>
+    </div>
+  )
+}
+
+/** A dotted hand-drawn arrow between beats. Hidden on mobile, where the beats stack. */
+function Doodle({ direction }: { direction: 'left' | 'right' }) {
+  return (
+    <svg
+      width="80"
+      height="42"
+      viewBox="0 0 80 42"
+      fill="none"
+      aria-hidden
+      className="mx-auto hidden opacity-50 md:block"
+    >
+      {direction === 'right' ? (
+        <>
+          <path d="M6 5c14 26 44 32 66 12" stroke="#BDB5D4" strokeWidth="2.4" strokeLinecap="round" strokeDasharray="1 7" />
+          <path d="M64 10l9 8-11 4" stroke="#BDB5D4" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+        </>
+      ) : (
+        <>
+          <path d="M74 5C60 31 30 37 8 17" stroke="#BDB5D4" strokeWidth="2.4" strokeLinecap="round" strokeDasharray="1 7" />
+          <path d="M16 9L7 17l11 4" stroke="#BDB5D4" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+        </>
+      )}
+    </svg>
   )
 }
 
@@ -306,40 +344,22 @@ export default function LandingScreen() {
    Marketing screenshots that can't go stale silently — they're built from the
    same tokens as the components they mirror, so a token change moves both. */
 
-/**
- * The rail, at rest (R21/R22). Replaces the slide control, which no longer
- * exists in the product: your own tile with the "+" leads, whoever is free
- * follows with a green ring, and everybody else sits behind them in grey.
- */
+/** The rail at rest (R21/R22): you and whoever is free, then everybody else. */
 function RailVisual() {
-  const people: { initial: string; name: string; tone: string; when: string | null; later?: boolean }[] = [
+  const people: { initial: string; name: string; tone: string; when: string | null }[] = [
+    { initial: 'Y', name: 'You', tone: 'bg-purple-500', when: 'Now' },
     { initial: 'D', name: 'Dana', tone: 'bg-[#E8A0B4]', when: 'Now' },
-    { initial: 'S', name: 'Sam', tone: 'bg-[#CEAD6A]', when: 'Wknd', later: true },
     { initial: 'J', name: 'Jonah', tone: 'bg-[#5FB0E8]', when: null },
-    { initial: 'A', name: 'Ana', tone: 'bg-purple-700', when: null },
+    { initial: 'S', name: 'Sam', tone: 'bg-[#CEAD6A]', when: null },
+    { initial: 'A', name: 'Ana', tone: 'bg-[#63C6A8]', when: null },
   ]
   return (
-    <div className="flex w-full gap-[12px] overflow-hidden">
-      <div className="flex w-[46px] shrink-0 flex-col items-center gap-1">
-        <span className="relative">
-          <span className="flex h-[44px] w-[44px] items-center justify-center rounded-full bg-purple-500 font-display text-[16px] font-extrabold text-white grayscale opacity-[0.48]">
-            Y
-          </span>
-          <span className="absolute -inset-1 rounded-full border-[1px] border-grey-300" />
-          <span className="absolute -bottom-0.5 -right-0.5 z-[1] flex h-[18px] w-[18px] items-center justify-center rounded-full border-2 border-white bg-purple-500">
-            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.6" strokeLinecap="round">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-          </span>
-        </span>
-        <span className="text-[9.5px] font-bold text-ink-900">Go free</span>
-        <span className="h-[10px] leading-[10px] text-[8px] font-bold uppercase tracking-[0.04em]" />
-      </div>
+    <div className="flex w-[326px] max-w-full gap-3 overflow-hidden rounded-[3px] bg-purple-50 px-3 py-4">
       {people.map(p => (
-        <div key={p.initial} className="flex w-[46px] shrink-0 flex-col items-center gap-1">
+        <div key={p.initial} className="flex w-[56px] shrink-0 flex-col items-center gap-[5px]">
           <span className="relative">
             <span
-              className={`flex h-[44px] w-[44px] items-center justify-center rounded-full ${p.tone} font-display text-[16px] font-extrabold text-white ${
+              className={`flex h-[50px] w-[50px] items-center justify-center rounded-full ${p.tone} font-display text-[17px] font-extrabold text-white ${
                 p.when ? '' : 'grayscale opacity-[0.48]'
               }`}
             >
@@ -347,18 +367,12 @@ function RailVisual() {
             </span>
             <span
               className={`absolute -inset-1 rounded-full ${
-                p.when
-                  ? `border-2 ${p.later ? 'border-green-500/40' : 'border-green-500'}`
-                  : 'border-[1px] border-grey-300'
+                p.when ? 'border-[2.5px] border-green-500' : 'border-[1.25px] border-grey-300'
               }`}
             />
           </span>
-          <span className="text-[9.5px] font-semibold text-ink-500">{p.name}</span>
-          <span
-            className={`h-[10px] leading-[10px] text-[8px] font-bold uppercase tracking-[0.04em] ${
-              p.later ? 'text-ink-500' : 'text-green-700'
-            }`}
-          >
+          <span className="text-[11px] font-semibold text-ink-500">{p.name}</span>
+          <span className="h-3 text-[9px] font-extrabold uppercase leading-3 tracking-[0.05em] text-green-700">
             {p.when ?? ''}
           </span>
         </div>
@@ -370,30 +384,25 @@ function RailVisual() {
 /** PlanCard, as a friend sees it before joining. */
 function MooveCardVisual() {
   return (
-    <div className="w-full rounded-2xl border-[1.5px] border-[#E8E4F5] bg-white px-3 py-3">
+    <div className="w-[326px] max-w-full rounded-2xl border-[1.5px] border-[#E8E4F5] bg-white p-3">
       <div className="flex items-center gap-3">
         <div className="flex h-[46px] w-[46px] shrink-0 flex-col items-center justify-center gap-px rounded-[13px] bg-purple-100 px-0.5">
-          <span className="font-display text-[13px] font-extrabold leading-none tracking-tight text-purple-700">SUN</span>
-          <span className="font-sans text-[8.5px] font-bold leading-none tracking-[0.04em] text-purple-700/75">AUG 3</span>
+          <span className="font-display text-[13px] font-extrabold leading-none tracking-[-0.02em] text-purple-700">SUN</span>
+          <span className="text-[8.5px] font-extrabold leading-none tracking-[0.04em] text-purple-700/75">AUG 3</span>
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate font-display text-[15px] font-bold leading-tight tracking-tight text-ink-900">
+          <p className="truncate font-display text-[15px] font-extrabold tracking-[-0.02em] text-ink-900">
             Tacos at Big Star
           </p>
-          <p className="mt-0.5 truncate font-sans text-[12.5px] leading-snug text-ink-500">Sunday, no set time</p>
-          <div className="mt-1 flex items-center gap-1.5">
-            <span className="rounded-full bg-purple-100 px-1.5 py-0.5 font-sans text-[10.5px] font-bold text-purple-700">
-              Maya
-            </span>
-          </div>
+          <p className="mt-0.5 truncate text-[12.5px] text-ink-500">Sunday, no set time</p>
         </div>
-        <span className="shrink-0 rounded-full bg-purple-500 px-3.5 py-2 font-sans text-[12.5px] font-bold text-white">
+        <span className="shrink-0 rounded-full bg-purple-500 px-3.5 py-2 text-[12.5px] font-bold text-white">
           I&apos;m in
         </span>
       </div>
-      <div className="mt-2.5 flex items-center border-t border-grey-100 pt-2.5">
+      <div className="mt-2.5 flex items-center gap-2 border-t border-grey-100 pt-2.5">
         <FaceStack names={['M', 'J']} />
-        <span className="ml-2 font-sans text-[11.5px] font-semibold text-ink-500">2 in</span>
+        <span className="text-[11.5px] font-semibold text-ink-500">2 in</span>
       </div>
     </div>
   )
@@ -402,72 +411,29 @@ function MooveCardVisual() {
 /** PlanCard once you're in and the group text has unlocked. */
 function JoinedMooveVisual() {
   return (
-    <div className="w-full rounded-2xl border-[1.5px] border-[#E8E4F5] bg-white px-3 py-3 shadow-[0_8px_24px_rgba(28,23,48,0.10)]">
+    <div className="w-[326px] max-w-full rounded-2xl border-[1.5px] border-[#E8E4F5] bg-white p-3">
       <div className="flex items-center gap-3">
         <div className="flex h-[46px] w-[46px] shrink-0 flex-col items-center justify-center gap-px rounded-[13px] bg-purple-100 px-0.5">
-          <span className="font-display text-[13px] font-extrabold leading-none tracking-tight text-purple-700">7:30</span>
-          <span className="font-sans text-[8.5px] font-bold leading-none tracking-[0.04em] text-purple-700/75">PM</span>
+          <span className="font-display text-[13px] font-extrabold leading-none tracking-[-0.02em] text-purple-700">7:30</span>
+          <span className="text-[8.5px] font-extrabold leading-none tracking-[0.04em] text-purple-700/75">PM</span>
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate font-display text-[15px] font-bold leading-tight tracking-tight text-ink-900">
+          <p className="truncate font-display text-[15px] font-extrabold tracking-[-0.02em] text-ink-900">
             Pickup at the courts
           </p>
-          <p className="mt-0.5 truncate font-sans text-[12.5px] leading-snug text-ink-500">Tonight 7:30 PM · Wicker Park</p>
-          <div className="mt-1 flex items-center gap-1.5">
-            <span className="rounded-full bg-purple-100 px-1.5 py-0.5 font-sans text-[10.5px] font-bold text-purple-700">
-              Your Moove
-            </span>
-          </div>
+          <p className="mt-0.5 truncate text-[12.5px] text-ink-500">Tonight, Wicker Park</p>
         </div>
-        <span className="shrink-0 rounded-full bg-green-700 px-3.5 py-2 font-sans text-[12.5px] font-bold text-white">
+        <span className="shrink-0 rounded-full bg-green-700 px-3.5 py-2 text-[12.5px] font-bold text-white">
           You&apos;re in ✓
         </span>
       </div>
-      <div className="mt-2.5 flex items-center border-t border-grey-100 pt-2.5">
+      <div className="mt-2.5 flex items-center gap-2 border-t border-grey-100 pt-2.5">
         <FaceStack names={['A', 'J', 'R']} />
-        <span className="ml-2 flex-1 font-sans text-[11.5px] font-semibold text-ink-500">4 in</span>
-        <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-grey-100 px-2.5 py-1.5">
-          <BubbleIcon className="text-ink-500" />
-          <span className="font-sans text-[12px] font-bold text-ink-500">3</span>
-        </span>
+        <span className="text-[11.5px] font-semibold text-ink-500">4 in</span>
       </div>
-      <div className="mt-2.5 flex w-full items-center justify-center gap-2 rounded-[13px] bg-purple-500 py-2.5 font-display text-[14px] font-extrabold tracking-tight text-white">
+      <div className="mt-2.5 flex w-full items-center justify-center gap-2 rounded-[13px] bg-purple-500 py-[11px] font-display text-[14px] font-extrabold tracking-[-0.01em] text-white">
         <BubbleIcon className="text-white" />
         Start a group text
-      </div>
-    </div>
-  )
-}
-
-/** A static replica of the Mooves card (24.7), not the component. */
-function SponsoredCardVisual() {
-  return (
-    <div className="w-full overflow-hidden rounded-[20px] border border-[#E8E4F5] bg-white shadow-[0_8px_24px_rgba(28,23,48,0.10)]">
-      <div className="p-4">
-        <div className="mb-2 text-[10px] font-bold uppercase tracking-[0.08em] text-grey-300">
-          Sponsored · Logan Square Market
-        </div>
-        <div className="mb-2.5">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-100 px-2.5 py-1 text-[11px] font-bold text-purple-700">
-            Markets &amp; pop-ups
-          </span>
-        </div>
-        <div className="font-display text-[17px] font-extrabold leading-[1.2] tracking-[-0.01em] text-ink-900">
-          Sunday Farmers Market
-        </div>
-        <div className="mt-1.5 flex items-center gap-1.5 text-[13px] text-ink-500">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="9" stroke="#6B628A" strokeWidth="2" />
-            <path d="M12 7v5l3 2" stroke="#6B628A" strokeWidth="2" strokeLinecap="round" />
-          </svg>
-          Sunday 9:00 AM · Logan Square
-        </div>
-        <p className="mt-2.5 font-sans text-[13px] leading-relaxed text-ink-500">
-          Sixty-odd stalls under the blue line, coffee carts at the north end.
-        </p>
-        <div className="mt-3.5 flex h-[46px] w-full items-center justify-center rounded-[14px] bg-purple-500 font-display text-[14.5px] font-extrabold tracking-[-0.01em] text-white">
-          Make it a Moove
-        </div>
       </div>
     </div>
   )
@@ -480,7 +446,9 @@ function FaceStack({ names }: { names: string[] }) {
       {names.map((n, i) => (
         <span
           key={n}
-          className={`flex h-[23px] w-[23px] items-center justify-center rounded-full font-display text-[10px] font-bold text-white ring-2 ring-white ${bg[i % bg.length]} ${i > 0 ? '-ml-2' : ''}`}
+          className={`flex h-[22px] w-[22px] items-center justify-center rounded-full font-display text-[10px] font-extrabold text-white ring-2 ring-white ${bg[i % bg.length]} ${
+            i > 0 ? '-ml-[7px]' : ''
+          }`}
         >
           {n}
         </span>
