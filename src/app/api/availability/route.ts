@@ -104,17 +104,26 @@ export async function PUT(req: Request) {
   }
 
   const incoming = Array.isArray(body.slots) ? body.slots : []
-  // 16 cells is the whole grid; nothing legitimate exceeds it.
-  if (incoming.length > 16) {
+  // R26 — 21 cells, up from 16: three parts on all seven days. Nothing
+  // legitimate exceeds it.
+  if (incoming.length > 21) {
     return NextResponse.json({ error: 'too many slots' }, { status: 400 })
   }
 
   // Keep only well-formed slots that are inside the stated range AND are
-  // actually offered on that weekday — a weekday morning is not a slot this app
-  // has, so it cannot be smuggled in by a hand-built request.
+  // actually offered on that weekday, so nothing can be smuggled in by a
+  // hand-built request.
+  //
+  // R26 — a client that has not reloaded still sends 'afternoon'. It is folded
+  // to 'day' rather than dropped: the two windows are identical, so honouring
+  // it changes nobody's stated availability, and silently discarding a slot
+  // somebody ticked is the worse failure. Dedupe runs AFTER the fold, so a
+  // stale client sending both lands one row rather than colliding on the
+  // unique index.
   const seen = new Set<string>()
   const rows: { user_id: string; slot_date: string; part: string }[] = []
-  for (const s of incoming) {
+  for (const raw of incoming) {
+    const s = { ...raw, part: raw.part === 'afternoon' ? 'day' : raw.part }
     if (!isValidDateStr(s.date) || !isSlotPart(s.part)) continue
     if (daysBetween(from, s.date) < 0 || daysBetween(s.date, to) < 0) continue
     if (!partsForWeekday(weekdayOf(s.date)).includes(s.part)) continue

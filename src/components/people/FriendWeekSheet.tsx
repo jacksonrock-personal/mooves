@@ -16,10 +16,12 @@
 // too, so the difference is weight, not hue. Exactly one bar in a week can be
 // solid.
 //
-// A part that does not exist on a weekday (there is no weekday morning, see
-// partsForWeekday) is ABSENT, not empty: nothing is drawn at all. "He has no
-// Monday morning" and "there is no such thing as a Monday morning" are
-// different statements and the grid has to say which one it means.
+// A part that does not exist on a day is ABSENT, not empty: nothing is drawn at
+// all. "He has no Monday morning" and "there is no such thing as a Monday
+// morning" are different statements and the grid has to say which it means.
+// R26 makes the second statement false — every day offers all three parts now —
+// so no cell is absent today. The branch stays because the distinction is the
+// grid's job to keep, not a special case for one rule that happened to change.
 
 import { useEffect, useMemo, useState } from 'react'
 import { posthog } from '@/lib/posthog'
@@ -37,10 +39,18 @@ import {
 import type { FriendWeek } from '@/app/api/friends/[friendId]/week/route'
 
 /**
- * The three ROWS, top to bottom. The middle row holds `day` on a weekday and
- * `afternoon` at the weekend — one row, two parts, because a fourth row would
- * be blank five days out of seven. Jackson's call, and it is why the row label
- * is spelled out in full: "Day" is the only thing naming that part.
+ * The three ROWS, top to bottom.
+ *
+ * R26 retires the caveat this shipped with. The middle row used to hold `day`
+ * on a weekday and `afternoon` at the weekend — one row meaning two windows,
+ * which made the spelled-out label "Day" slightly generous on a Saturday. Both
+ * are 12–17 now and `afternoon` is legacy, so the label is exactly true on all
+ * seven days. It stays in the tuple so a row written before the migration still
+ * lands in the right place.
+ *
+ * The top row is no longer blank Monday to Friday either — mornings are
+ * offered every day, so a weekday morning is now a real empty cell rather than
+ * an absent one.
  */
 const ROWS: readonly (readonly SlotPart[])[] = [
   ['morning'],
