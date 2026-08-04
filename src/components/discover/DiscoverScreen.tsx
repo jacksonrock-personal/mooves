@@ -2,11 +2,18 @@
 
 // Phase 24.8 — browse. Everything near you, all seven days, grouped by day.
 //
-// This was a TAB. It is now a pushed screen off the feed, reached from "See all",
-// with a back arrow. The tab was the problem: asking someone to remember to visit
-// the revenue surface is a losing bet, so the moves moved into the feed (24.6)
-// and what is left here is the thing a feed genuinely cannot do — search and
-// filter.
+// Reached two ways, and R25 is the second one coming back. "See all" on the
+// feed's near-you shelf still pushes this screen and is still the main road to
+// it — 24.6's lesson holds, that a tab nobody remembers to visit is not a
+// distribution strategy, so the moves themselves stay in the feed and this is
+// the thing a feed genuinely cannot do: search and filter. The Discover tab is
+// now a second door onto the same screen for people who go looking for one.
+//
+// NO BACK ARROW. This screen carries a bottom nav now, and a tab with a back
+// chevron is a tab pretending to be a pushed screen — no other tab in the app
+// has one. Arrivals from "See all" leave the same way everyone else does, by
+// pressing Feed. "See all" itself is untouched: it still pushes this route, so
+// the system back gesture still works for the people who came that way.
 //
 // THREE THINGS THAT USED TO BE HERE AND ARE NOT:
 //
@@ -30,6 +37,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { initPostHog, posthog } from '@/lib/posthog'
+import BottomNav from '@/components/ui/BottomNav'
 import CowIllustration from '@/components/ui/CowIllustration'
 import Toast from '@/components/ui/Toast'
 import MooveCard from '@/components/feed/MooveCard'
@@ -188,15 +196,6 @@ export default function DiscoverScreen() {
     <div className="min-h-screen flex flex-col bg-purple-50">
       <header className="bg-white [--safe-pt-base:0.875rem] safe-area-pt px-4 pb-3 border-b border-[#E8E4F5] shrink-0">
         <div className="flex items-center gap-2.5 mb-3">
-          <button
-            onClick={() => router.push('/feed')}
-            aria-label="Back"
-            className="w-[30px] h-[30px] -ml-[7px] flex items-center justify-center text-purple-700"
-          >
-            <svg width="10" height="17" viewBox="0 0 9 15" fill="none">
-              <path d="M8 1L1.5 7.5L8 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
           <h1 className="flex-1 font-display font-extrabold text-[19px] text-ink-900 tracking-tight">
             Near you
           </h1>
@@ -316,7 +315,7 @@ export default function DiscoverScreen() {
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto px-4 pb-8">
+      <div className="flex-1 overflow-y-auto px-4 pb-[calc(var(--nav-h)+22px+env(safe-area-inset-bottom))]">
         {loading ? (
           <div className="flex justify-center pt-16">
             <div className="w-8 h-8 rounded-full border-[3px] border-purple-100 border-t-purple-500 animate-spin" />
@@ -371,6 +370,8 @@ export default function DiscoverScreen() {
           </>
         )}
       </div>
+
+      <BottomNav />
 
       <MooveDetailSheet
         move={detail}
