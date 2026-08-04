@@ -88,17 +88,40 @@ export async function POST(req: Request) {
   // The metro has to exist, and its zip set is what area-matching needs. A move
   // with no area_zip would never surface, so an unmapped metro is an error
   // rather than a silent write.
-  const { data: metro } = await supabase.from('metros').select('id').eq('id', metroId).maybeSingle()
+  const { data: metro } = await supabase
+    .from('metros')
+    .select('id, lat, lng')
+    .eq('id', metroId)
+    .maybeSingle()
   if (!metro) return NextResponse.json({ error: 'Unknown metro' }, { status: 404 })
 
-  const { data: zipRow } = await supabase
+  const { count: zipCount } = await supabase
     .from('metro_zips')
-    .select('zip')
+    .select('zip', { count: 'exact', head: true })
     .eq('metro_id', metroId)
-    .limit(1)
-    .maybeSingle()
-  if (!zipRow) {
+  if (!zipCount) {
     return NextResponse.json({ error: 'Metro has no zips; run seed-metros' }, { status: 409 })
+  }
+
+  // Stamp every move with the zip nearest the metro CENTROID.
+  //
+  // This used to be `metro_zips ... limit(1)`, i.e. an arbitrary row with no
+  // ORDER BY — for Chicago that returned 60015 (Deerfield, a far north suburb)
+  // rather than anything central. It happened to fall just inside a Logan Square
+  // user's 25-mile radius, so it worked by luck, and Postgres is free to return
+  // a different row after any change to the table. In a metro any wider than
+  // Chicago the arbitrary pick lands outside the radius and the move is
+  // ingested, approved, and then visible to nobody — the worst failure shape
+  // there is, because nothing errors.
+  //
+  // The centroid is deterministic and maximally central, so it is inside the
+  // radius of the most users the metro can reach.
+  const { data: centroid } = await supabase
+    .rpc('nearest_zip', { p_lat: metro.lat, p_lng: metro.lng })
+    .maybeSingle<{ zip: string }>()
+  const areaZip = centroid?.zip
+  if (!areaZip) {
+    return NextResponse.json({ error: 'Could not resolve metro centroid zip' }, { status: 409 })
   }
 
   const now = Date.now()
@@ -153,7 +176,7 @@ export async function POST(req: Request) {
       status: 'pending',
       sponsor_id: null,
       metro_id: metroId,
-      area_zip: zipRow.zip,
+      area_zip: areaZip,
       start_at: start.toISOString(),
       location_text: venue,
       neighborhood: str(raw.neighborhood),
