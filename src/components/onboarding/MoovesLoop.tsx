@@ -9,6 +9,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import CowMark from '@/components/ui/CowMark'
+import GoGreenLight from '@/components/ui/GoGreenLight'
 import { posthog } from '@/lib/posthog'
 
 const CARD_COUNT = 5
@@ -108,25 +109,24 @@ export default function MoovesLoop() {
       <div className="flex-1 overflow-hidden" onPointerDown={onPointerDown} onPointerUp={onPointerUp}>
         <div className={`flex w-[500%] h-full transition-transform duration-[420ms] ease-out ${TRACK_TX[idx]}`}>
 
-          {/* Card 1 — Go free (R22: the slide is gone, your own tile is the way).
-              Your face is greyscale here on purpose: the card teaches the tap
-              that turns it green, so it has to show the before. */}
+          {/* Card 1 — Go green (R22: the slide is gone, your own tile is the
+              way. R24: that tile is a traffic light, so this replica is one
+              too). What you learn here has to be what you see, and the rail's
+              resting state no longer contains your face at all.
+
+              R23 made cards 1 and 3 teach the two creation gestures
+              symmetrically. That symmetry survives, restated: tap the light,
+              tap the cow. Both are now objects rather than one object and one
+              person, which is the clearer pair. */}
           <div className="w-1/5 h-full flex flex-col items-center justify-center px-8 text-center">
             <div className="w-[200px] h-[168px] rounded-[28px] bg-green-100 flex items-center justify-center mb-8">
               <div className="flex gap-[11px]">
                 <div className="w-11 flex flex-col items-center gap-1">
                   <span className="relative">
-                    <span className="w-[42px] h-[42px] rounded-full bg-purple-500 flex items-center justify-center font-display font-extrabold text-[15px] text-white grayscale opacity-[0.48]">
-                      Y
-                    </span>
+                    <GoGreenLight size={42} />
                     <span className="absolute -inset-1 rounded-full border-[1px] border-grey-300" />
-                    <span className="absolute -right-0.5 -bottom-0.5 z-[1] w-[17px] h-[17px] rounded-full bg-purple-500 border-2 border-green-100 flex items-center justify-center">
-                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.6" strokeLinecap="round">
-                        <path d="M12 5v14M5 12h14" />
-                      </svg>
-                    </span>
                   </span>
-                  <span className="font-sans text-[9.5px] font-bold text-ink-900">Go free</span>
+                  <span className="font-sans text-[9.5px] font-bold text-ink-900">Go green</span>
                 </div>
                 {[
                   { i: 'D', c: 'bg-[#E8A0B4]' },
@@ -149,9 +149,9 @@ export default function MoovesLoop() {
               </div>
             </div>
             <div className="font-sans text-[12px] font-bold tracking-[0.12em] uppercase text-mooves-purple mb-2.5">The Mooves Loop · 1</div>
-            <h1 className="font-display font-extrabold text-[27px] text-text-primary tracking-tight mb-3 leading-[1.1]">Go free</h1>
+            <h1 className="font-display font-extrabold text-[27px] text-text-primary tracking-tight mb-3 leading-[1.1]">Go green</h1>
             <p className="font-sans text-[15px] leading-relaxed text-text-secondary max-w-[250px]">
-              Tap your own face when you&apos;re around. No status updates, no essays, just green.
+              Tap the light when you&apos;re around. No status updates, no essays, just green.
             </p>
           </div>
 

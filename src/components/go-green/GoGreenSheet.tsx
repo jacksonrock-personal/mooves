@@ -2,10 +2,13 @@
 
 // Screen 5: Go Green Sheet — when, free-until, and who can see it.
 // R22 — opened by tapping your OWN tile in the rail, which is now the only way
-// to go free (the swipe of amendment A1 is deleted). The "I'm free" button here
-// is still the commit, and always was: the slide only ever opened this sheet,
-// which is why replacing a drag with a tap costs no protection against an
-// accidental green.
+// to go green (the swipe of amendment A1 is deleted). The "I'm free" button
+// here is still the commit, and always was: the slide only ever opened this
+// sheet, which is why replacing a drag with a tap costs no protection against
+// an accidental green.
+// R24 — that tile is a traffic light labelled "Go green" while you are grey,
+// and your own face once you are. Nothing about this sheet changes; it is named
+// here only so the entry point in this comment stays true.
 //
 // R16 — visibility can now name a PERSON, via a pane rather than a second sheet.
 // R17 — the deadline is visible BEFORE you commit, and adjustable, instead of
