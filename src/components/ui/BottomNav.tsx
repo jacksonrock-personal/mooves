@@ -5,11 +5,17 @@ import { usePathname, useRouter } from 'next/navigation'
 import CowMark from './CowMark'
 import { posthog } from '@/lib/posthog'
 
+// R25 — five slots again, so every glyph and label comes down a step. 30px
+// icons and 10.5px labels were drawn for a row that held three tabs; at four
+// they sit shoulder to shoulder in a ~73px slot and read as crowded even
+// though they technically fit. 26/10 is the size where the row breathes again.
+const ICON = 26
+
 function HomeIcon() {
   return (
     <svg
-      width="30"
-      height="30"
+      width={ICON}
+      height={ICON}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -23,11 +29,29 @@ function HomeIcon() {
   )
 }
 
+function DiscoverIcon() {
+  return (
+    <svg
+      width={ICON}
+      height={ICON}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="9.5" />
+      <path d="M15.6 8.4l-2.05 5.15-5.15 2.05 2.05-5.15z" />
+    </svg>
+  )
+}
+
 function PeopleIcon() {
   return (
     <svg
-      width="30"
-      height="30"
+      width={ICON}
+      height={ICON}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -46,8 +70,8 @@ function PeopleIcon() {
 function SettingsIcon() {
   return (
     <svg
-      width="30"
-      height="30"
+      width={ICON}
+      height={ICON}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -65,16 +89,25 @@ function SettingsIcon() {
 // covered feed content (it sat on top of the roster row and the comment control
 // of the card beneath it) and never said what it did.
 //
-// 24.6 — four slots, not five. Discover is GONE and nothing replaces it: asking
-// people to remember to visit the revenue surface was the thing that failed, so
-// Community and Sponsored Mooves moved into the feed itself and browse became a
-// pushed screen off it. Feed takes the whole left side (`grow-[2]`, the two
-// slots it used to share), which also retires R15's crowding problem — the
-// 1.5×-scale collision was "Discover" needing 62px of a 61px slot.
-const LEFT_TABS = [{ href: '/feed', label: 'Feed', Icon: HomeIcon, wide: true }]
+// 24.6 removed Discover and gave Feed the whole left side (`grow-[2]`, the two
+// slots it used to share). R25 puts Discover back as a tab and splits that
+// double slot in two, so the row is symmetrical: two tabs, the cow, two tabs.
+//
+// The total grow is UNCHANGED — 2 + 1.32 + 1 + 1 became 1 + 1 + 1.32 + 1 + 1,
+// both 5.32 — so "Plan a Moove" keeps the exact width R15 tuned for it and
+// People/Settings do not move a pixel. The only slot that changes is Feed's,
+// which halves, and that is what the smaller ICON/label step is paying for.
+//
+// The tab does not replace "See all". That pill is still the main road from
+// the feed to browse, and it still pushes /discover — the tab is a second door
+// onto the same screen for people who go looking for one.
+const LEFT_TABS = [
+  { href: '/feed', label: 'Feed', Icon: HomeIcon },
+  { href: '/discover', label: 'Discover', Icon: DiscoverIcon },
+]
 const RIGHT_TABS = [
-  { href: '/people', label: 'People', Icon: PeopleIcon, wide: false },
-  { href: '/settings', label: 'Settings', Icon: SettingsIcon, wide: false },
+  { href: '/people', label: 'People', Icon: PeopleIcon },
+  { href: '/settings', label: 'Settings', Icon: SettingsIcon },
 ]
 
 interface BottomNavProps {
@@ -90,15 +123,15 @@ export default function BottomNav({ onPlanTap }: BottomNavProps = {}) {
   const pathname = usePathname()
   const router = useRouter()
 
-  function tab({ href, label, Icon, wide }: (typeof LEFT_TABS)[number]) {
+  function tab({ href, label, Icon }: (typeof LEFT_TABS)[number]) {
     const active = pathname.startsWith(href)
     return (
       <Link
         key={href}
         href={href}
-        className={`flex-1 min-w-0 flex flex-col items-center py-[16px] px-[3px] gap-[5.5px] text-[10.5px] font-sans font-semibold tracking-[0.01em] ${
-          wide ? 'grow-[2]' : ''
-        } ${active ? 'text-mooves-purple' : 'text-status-grey'}`}
+        className={`flex-1 min-w-0 flex flex-col items-center py-[16px] px-[2px] gap-[5px] text-[10px] font-sans font-semibold tracking-[0.01em] ${
+          active ? 'text-mooves-purple' : 'text-status-grey'
+        }`}
       >
         <Icon />
         <span className="max-w-full truncate">{label}</span>
@@ -128,7 +161,7 @@ export default function BottomNav({ onPlanTap }: BottomNavProps = {}) {
         type="button"
         onClick={handlePlan}
         aria-label="Plan a Moove"
-        className="flex-1 grow-[1.32] min-w-0 relative flex flex-col items-center justify-end py-[16px] px-[3px] gap-[5.5px] text-[10.5px] font-sans font-bold tracking-[0.01em] text-mooves-purple"
+        className="flex-1 grow-[1.32] min-w-0 relative flex flex-col items-center justify-end py-[16px] px-[2px] gap-[5px] text-[10px] font-sans font-bold tracking-[0.01em] text-mooves-purple"
       >
         <span className="absolute -top-[26px] w-[70px] h-[70px] rounded-full bg-mooves-purple border-[5.5px] border-white shadow-[0_8px_22px_rgba(124,92,219,0.42)] flex items-center justify-center">
           <CowMark size={46} />

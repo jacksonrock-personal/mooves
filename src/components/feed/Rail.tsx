@@ -13,16 +13,23 @@
 // across the whole app now — "Go free" named the same action a second way, and
 // two names for one action is what made the old tile ambiguous.
 //
-// Green is THE RING and nothing else. Everyone not free is greyscale, ringless,
-// unlabelled, and — deliberately — not a button:
+// Green is THE RING and nothing else. Everyone not free is greyscale, ringless
+// and unlabelled.
 //
-//   Green is what makes someone contactable. A rail where every face opened
-//   Messages would make going green decorative.
+// R25 — EVERY tile is a button now, including the grey ones. The old rule was
+// that a grey tile is deliberately not a button, because "green is what makes
+// someone contactable and a rail where every face opened Messages would make
+// going green decorative". That rule survives intact — it is about MESSAGING,
+// and messaging is still gated on green. What a tile opens now is a WEEK, which
+// is a thing a grey face genuinely has to say. Texting lives one level in, as
+// the sheet's only CTA, so a green friend costs one extra tap and nothing else
+// changed hands.
 //
 // A friend who is green but scoped away from you arrives here as an ordinary
 // grey, because get_feed never returned them. The rule that the rail cannot
 // leak a green you were not included in is therefore structural, not a filter
-// somebody has to remember to apply.
+// somebody has to remember to apply — and get_friend_week carries the same
+// rule for the week behind the tile, for the same reason.
 
 import Avatar from '@/components/ui/Avatar'
 import GoGreenLight from '@/components/ui/GoGreenLight'
@@ -38,11 +45,14 @@ interface RailProps {
    * produced the tile.
    */
   onOpenMine: () => void
-  /** ONE tap on a free friend opens Messages. Greens carry nothing left to read. */
-  onText: (id: string) => void
+  /**
+   * R25 — one tap on ANY friend, green or grey, opens their week. Messages
+   * moved inside that sheet. Replaces onText, which only ever fired on greens.
+   */
+  onOpenFriend: (id: string) => void
 }
 
-export default function Rail({ people, seed, onOpenMine, onText }: RailProps) {
+export default function Rail({ people, seed, onOpenMine, onOpenFriend }: RailProps) {
   return (
     // The "FREE" eyebrow that used to sit above this is gone: the rail holds
     // everyone now, so the label described a row that is mostly not free.
@@ -135,22 +145,22 @@ export default function Rail({ people, seed, onOpenMine, onText }: RailProps) {
 
         const tileClass = 'shrink-0 w-[58px] flex flex-col items-center gap-1'
 
-        // Not a disabled button — not a button at all. A disabled button is
-        // still an element carrying a pressed-looking affordance and a story
-        // about why it will not work; a friend who is not free has no story.
-        if (!p.isMe && !p.isGreen) {
-          return (
-            <span key={p.id} className={tileClass}>
-              {inner}
-            </span>
-          )
-        }
-
+        // R25 — the grey-tile-is-not-a-button branch is gone. Nothing about
+        // the tile's APPEARANCE changed with it: no badge, no affordance, no
+        // hint. A grey face looks exactly as it did, and the week behind it is
+        // found by tapping or not at all. That was Jackson's call at mockup —
+        // the discovery job belongs to the Friends row's count chip.
         return (
           <button
             key={p.id}
-            onClick={() => (p.isMe ? onOpenMine() : onText(p.id))}
-            aria-label={p.isMe ? (p.isGreen ? 'Your green' : 'Go green') : `Text ${p.displayName ?? 'friend'}`}
+            onClick={() => (p.isMe ? onOpenMine() : onOpenFriend(p.id))}
+            aria-label={
+              p.isMe
+                ? p.isGreen
+                  ? 'Your green'
+                  : 'Go green'
+                : `${p.displayName ?? 'Friend'}'s week`
+            }
             className={tileClass}
           >
             {inner}

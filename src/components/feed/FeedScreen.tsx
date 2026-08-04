@@ -43,6 +43,7 @@ import { syncTimezone } from '@/lib/timezone'
 import { isSlotPart, toLocalDateStr, weekDates, type SlotPart } from '@/lib/availability'
 import Sheet from '@/components/ui/Sheet'
 import BottomNav from '@/components/ui/BottomNav'
+import FriendWeekSheet from '@/components/people/FriendWeekSheet'
 import CowIllustration from '@/components/ui/CowIllustration'
 import Toast from '@/components/ui/Toast'
 
@@ -153,6 +154,8 @@ export default function FeedScreen() {
   // R17 — "Your green", opened by tapping your own face in the rail. Replaces
   // both MyMoveCard and the standalone Free-until sheet, which is now a pane.
   const [greenSheetOpen, setGreenSheetOpen] = useState(false)
+  // R25 — whose week the rail is showing. null = closed.
+  const [weekFriendId, setWeekFriendId] = useState<string | null>(null)
   const [myStatusExpiresAt, setMyStatusExpiresAt] = useState<string | null>(null)
   // 17.1 in-app wave strip. `wave` is the resolved group from the feed; dismissal
   // persists across app opens keyed by the wave's signature (its members + time), so
@@ -995,11 +998,9 @@ export default function FeedScreen() {
               people={railPeople}
               seed={seed}
               onOpenMine={() => (isAvailable ? setGreenSheetOpen(true) : handleGoFreeTap())}
-              onText={id => {
-                const f = (friends ?? []).find(x => x.id === id)
-                if (!f?.phone) return
-                posthog.capture('rail_tap_sms_opened')
-                window.location.href = `sms:${f.phone}`
+              onOpenFriend={id => {
+                posthog.capture('rail_tap_week_opened')
+                setWeekFriendId(id)
               }}
             />
 
@@ -1162,6 +1163,15 @@ export default function FeedScreen() {
           setPlanPrefill(null)
           setComposerOpen(true)
         }}
+      />
+
+      {/* R25 — the rail's second door. Rendered here rather than inside Rail so
+          the rail stays a pure presentational strip. */}
+      <FriendWeekSheet
+        friendId={weekFriendId}
+        fallbackName={railPeople.find(p => p.id === weekFriendId)?.displayName ?? null}
+        fallbackAvatar={railPeople.find(p => p.id === weekFriendId)?.avatarUrl ?? null}
+        onClose={() => setWeekFriendId(null)}
       />
 
       <GoGreenSheet

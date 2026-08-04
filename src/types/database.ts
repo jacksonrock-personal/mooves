@@ -833,6 +833,8 @@ export type Database = {
           wave_push_enabled: boolean
           week_push_enabled: boolean
           week_ritual_day: number
+          week_visible_to: string[] | null
+          week_visible_user_ids: string[] | null
         }
         Insert: {
           activated_at?: string | null
@@ -866,6 +868,8 @@ export type Database = {
           wave_push_enabled?: boolean
           week_push_enabled?: boolean
           week_ritual_day?: number
+          week_visible_to?: string[] | null
+          week_visible_user_ids?: string[] | null
         }
         Update: {
           activated_at?: string | null
@@ -899,6 +903,8 @@ export type Database = {
           wave_push_enabled?: boolean
           week_push_enabled?: boolean
           week_ritual_day?: number
+          week_visible_to?: string[] | null
+          week_visible_user_ids?: string[] | null
         }
         Relationships: [
           {
@@ -940,8 +946,17 @@ export type Database = {
     }
     Functions: {
       availability_cron_tick: { Args: never; Returns: undefined }
+      can_see_week: { Args: { viewer: string; target: string }; Returns: boolean }
+      friend_week_counts: {
+        Args: { viewer: string }
+        Returns: {
+          friend_id: string
+          slot_count: number
+        }[]
+      }
       generate_referral_code: { Args: never; Returns: string }
       get_feed: { Args: { viewer: string }; Returns: Json }
+      get_friend_week: { Args: { viewer: string; target: string }; Returns: Json }
       get_plans: { Args: { viewer: string }; Returns: Json }
       green_wave_candidates: {
         Args: { mover: string }
@@ -1011,6 +1026,7 @@ export type Database = {
           group_id: string
         }[]
       }
+      week_start_for: { Args: { target: string }; Returns: string }
       wave_group_for_viewer: {
         Args: { p_viewer: string }
         Returns: {
