@@ -12,8 +12,8 @@
 //
 // THE RULE THAT MATTERS MOST HERE — declared and computed must never look alike:
 //
-//   declared  solid avatars, green ring, ink text     "Maya and Dev are in"
-//   computed  dashed ring, greyscale, dimmed text     "Sam would probably go"
+//   declared  solid avatars, green ring, ink text     "Maya and Dev would go"
+//   computed  dashed ring, greyscale, dimmed text     "Sam is free and might be interested"
 //
 // If a reader cannot tell at a glance which is a promise and which is a guess,
 // the guess has borrowed the credibility of the promise and the declared signal
@@ -96,15 +96,25 @@ function Social({ social }: { social: SocialLine }) {
   return (
     <div className="flex items-center gap-2 mt-[11px] pt-[11px] border-t border-grey-100">
       <Stack people={social.friends} guess={guess} />
+      {/* NOBODY IS "IN" ON THIS CARD. There is nothing here to be in yet — the
+          Moove does not exist until somebody taps Make it a Moove. Declared is
+          a tap on "I'd go" on a listing, so it says "would go"; the roster
+          language ("is in", "2 in") belongs to PlanCard, where joining is a
+          real commitment to a real plan with a real host.
+
+          The gap between the two lines has to stay wide enough to read at a
+          glance, and after this it can no longer lean on "probably" as the
+          only tell — so the computed line drops the verb entirely and talks
+          about availability, which is the only thing it actually knows. */}
       <span className={`font-sans text-[12px] leading-tight ${guess ? 'text-grey-300' : 'text-ink-500'}`}>
         {guess ? (
           <>
-            <b className="font-semibold text-ink-500">{names(social.friends)}</b> would probably go
+            <b className="font-semibold text-ink-500">{names(social.friends)}</b>{' '}
+            {social.friends.length === 1 ? 'is' : 'are'} free and might be interested
           </>
         ) : (
           <>
-            <b className="font-bold text-ink-900">{names(social.friends)}</b>{' '}
-            {social.friends.length === 1 ? 'is' : 'are'} in
+            <b className="font-bold text-ink-900">{names(social.friends)}</b> would go
           </>
         )}
       </span>

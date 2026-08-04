@@ -42,9 +42,11 @@ export default function AmbientTier({ activeNow, recentGreen }: AmbientTierProps
           </p>
           {/* §20.4 asked this copy to name BOTH available actions once Mooves
               existed; it only named the one. R23 checked it again after the
-              swipe was deleted: "Go free" names the action, not the gesture, so
-              it survived R22 unchanged. */}
-          <p className="font-sans text-[14px] text-ink-500">Go free, or plan something for later.</p>
+              swipe was deleted and left "Go free" standing, on the grounds that
+              it named the action rather than the gesture. R24 retires it
+              anyway: the tile beside this copy now says "Go green", and one
+              action with two names is what made that tile ambiguous. */}
+          <p className="font-sans text-[14px] text-ink-500">Go green, or plan something for later.</p>
         </>
       ) : (
         <>
@@ -52,7 +54,7 @@ export default function AmbientTier({ activeNow, recentGreen }: AmbientTierProps
             People want to hang out.
           </p>
           <p className="font-sans text-[14px] text-ink-500 leading-relaxed">
-            Be the first to go free, or plan something for later.
+            Be the first to go green, or plan something for later.
           </p>
         </>
       )}

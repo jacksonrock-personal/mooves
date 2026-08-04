@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mooves — Phase 25: landing page refresh (v2)</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --green-100:#E3F9EC; --green-500:#2ECC71; --green-700:#167A43;
+    --purple-50:#F8F6FF; --purple-100:#EDE9FF; --purple-500:#7C5CDB; --purple-700:#5F3FC4;
+    --ink-900:#1C1730; --ink-500:#6B628A;
+    --grey-100:#F1EEFA; --grey-300:#BDB5D4; --hair:#E8E4F5;
+    --disp:'Plus Jakarta Sans', sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:Inter,sans-serif;background:#0F0C1A;color:#fff;padding:34px 18px 90px;-webkit-font-smoothing:antialiased}
+  .studio h1{font-family:'Plus Jakarta Sans',sans-serif;font-size:25px;font-weight:800;letter-spacing:-.02em;text-align:center}
+  .sub{text-align:center;color:#9990BC;font-size:13.5px;margin-top:8px;max-width:720px;margin-left:auto;margin-right:auto;line-height:1.6}
+  .sub b{color:#CFC6EC;font-weight:600}
+  .knobs{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin:12px auto 0;max-width:980px}
+  .kbtn{background:#1D1733;border:1.5px solid #332B52;color:#CFC6EC;font-family:inherit;font-size:12.5px;font-weight:600;
+        padding:9px 15px;border-radius:99px;cursor:pointer;transition:.16s;text-align:left}
+  .kbtn:hover{border-color:var(--purple-500)}
+  .kbtn.on{background:var(--purple-500);border-color:var(--purple-500);color:#fff}
+  .kbtn small{display:block;font-size:10px;font-weight:500;opacity:.72;letter-spacing:.03em}
+  .knoblbl{text-align:center;font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#5E5480;margin:24px 0 0}
+  .rule{width:100%;height:1px;background:#241D3C;max-width:980px;margin:22px auto 0}
+  .locked{max-width:720px;margin:14px auto 0;text-align:center;font-size:12px;color:#6E639A;line-height:1.7}
+  .locked b{color:#9990BC;font-weight:600}
+
+  /* ── the page under test ─────────────────────────────────────────── */
+  .frame{max-width:1120px;margin:30px auto 0;border-radius:26px;overflow:hidden;
+         box-shadow:0 30px 80px rgba(0,0,0,.55);border:9px solid #241D3C}
+  .pg{background:var(--purple-50);color:var(--ink-900);font-family:Inter,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:0 28px}
+  .pg h1,.pg h2,.pg h3{font-family:var(--disp);letter-spacing:-.03em;line-height:1.04}
+
+  .nav{display:flex;align-items:center;justify-content:space-between;padding:20px 0;gap:12px}
+  .mark{display:flex;align-items:center;gap:9px}
+  .mark .box{width:38px;height:38px;border-radius:11px;background:#fff;display:flex;align-items:center;justify-content:center;
+             box-shadow:0 1px 2px rgba(28,23,48,.06);overflow:hidden}
+  .mark span{font-family:var(--disp);font-weight:800;font-size:20px;letter-spacing:-.02em}
+  /* nowrap, not wrap: with two buttons up here, wrapping dropped Sponsor Portal
+     onto its own line under Open app and it stopped reading as a pair. */
+  .navr{display:flex;align-items:center;gap:9px;flex-wrap:nowrap;justify-content:flex-end}
+  .ghost{border:1.5px solid var(--purple-100);background:#fff;border-radius:99px;padding:11px 17px;
+         font-family:inherit;font-size:14px;font-weight:600;color:var(--purple-500);text-decoration:none;white-space:nowrap}
+  .ghost.solid{background:var(--purple-500);border-color:var(--purple-500);color:#fff}
+  @media(max-width:560px){.ghost{padding:10px 13px;font-size:13px}.mark span{font-size:18px}}
+
+  /* HERO */
+  .hero{text-align:center;padding:26px 0 64px;position:relative}
+  /* The thesis gag: the thing you already say, crossed out, then the app. */
+  .strike{display:inline-block;position:relative;font-family:var(--disp);font-weight:700;font-size:clamp(19px,3.2vw,27px);
+          color:var(--grey-300);letter-spacing:-.02em}
+  .strike:after{content:'';position:absolute;left:-6px;right:-6px;top:56%;height:3px;background:var(--purple-500);
+                border-radius:9px;transform:rotate(-1.4deg)}
+  .hero h1{font-size:clamp(44px,7.8vw,86px);font-weight:800;margin:12px 0 0}
+  .hero .lede{max-width:460px;margin:22px auto 0;font-size:17.5px;line-height:1.5;color:var(--ink-500);font-weight:500}
+  .ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:30px}
+  .pill{background:var(--green-500);color:var(--ink-900);border:0;border-radius:99px;padding:17px 32px;
+        font-family:var(--disp);font-weight:800;font-size:17px;letter-spacing:-.01em;text-decoration:none;
+        display:inline-flex;align-items:center;gap:10px;cursor:pointer}
+  .pill.alt{background:var(--purple-100);color:var(--purple-700)}
+  .pill i{width:11px;height:11px;border-radius:99px;background:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.45);display:block}
+  .fine{margin-top:14px;font-size:13.5px;color:var(--ink-500)}
+
+  /* rubber stamps: outernet's passport stamps, in our idiom */
+  .stamp{position:absolute;font-family:var(--disp);font-weight:800;font-size:11px;letter-spacing:.14em;
+         text-transform:uppercase;color:var(--green-700);border:2.5px solid var(--green-700);border-radius:10px;
+         padding:7px 11px;opacity:.34;line-height:1;white-space:nowrap}
+  .stamp.s1{left:2%;top:20px;transform:rotate(-13deg)}
+  .stamp.s2{right:1%;top:74px;transform:rotate(9deg)}
+  .stamp.s3{left:6%;bottom:34px;transform:rotate(6deg);color:var(--purple-700);border-color:var(--purple-700)}
+  .stamp.s4{right:5%;bottom:12px;transform:rotate(-7deg);color:var(--purple-700);border-color:var(--purple-700)}
+  @media(max-width:820px){.stamp{display:none}}
+
+  /* THREE BEATS */
+  .beat{display:flex;align-items:center;gap:56px;padding:52px 0}
+  .beat.flip{flex-direction:row-reverse}
+  .beat .txt{flex:1}
+  .beat h2{font-size:clamp(27px,4vw,37px);font-weight:800}
+  .beat p{margin-top:14px;font-size:16.5px;line-height:1.55;color:var(--ink-500);max-width:410px}
+  .beat .art{flex:0 0 366px;display:flex;justify-content:center}
+  @media(max-width:860px){.beat,.beat.flip{flex-direction:column;gap:30px;padding:38px 0;text-align:center}
+    .beat p{margin-left:auto;margin-right:auto}.beat .art{flex:none;width:100%}}
+
+  /* polaroid: the analog artifact that says humans made this */
+  .polaroid{background:#fff;padding:11px 11px 40px;border-radius:4px;box-shadow:0 12px 34px rgba(28,23,48,.16);
+            position:relative;transform:rotate(-2.2deg)}
+  .polaroid.r{transform:rotate(1.8deg)}
+  .polaroid .cap{position:absolute;left:0;right:0;bottom:12px;text-align:center;font-family:var(--disp);
+                 font-weight:700;font-size:13px;color:var(--ink-500);letter-spacing:-.01em}
+  .tape{position:absolute;top:-11px;left:50%;transform:translateX(-50%) rotate(-2deg);width:74px;height:22px;
+        background:rgba(124,92,219,.20);border-radius:2px}
+
+  /* in-app replicas, sized for marketing */
+  .railart{background:var(--purple-50);border-radius:3px;padding:16px 12px;display:flex;gap:12px;width:326px;overflow:hidden}
+  .rt{width:56px;flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:5px}
+  .rt .av{position:relative;width:50px;height:50px}
+  .rt .ph{width:50px;height:50px;border-radius:99px;display:flex;align-items:center;justify-content:center;
+          font-family:var(--disp);font-weight:800;font-size:17px;color:#fff}
+  .rt.g .ph{filter:grayscale(1);opacity:.48}
+  .rt .ring{position:absolute;inset:-4px;border-radius:99px;border:1.25px solid var(--grey-300)}
+  .rt:not(.g) .ring{border:2.5px solid var(--green-500)}
+  .rt .n{font-size:11px;font-weight:600;color:var(--ink-500)}
+  .rt .w{height:12px;font-size:9px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--green-700)}
+
+  .cardart{background:#fff;border:1.5px solid var(--hair);border-radius:16px;padding:12px;width:326px}
+  .cardart .row{display:flex;align-items:center;gap:12px}
+  .cardart .date{width:46px;height:46px;flex:0 0 auto;border-radius:13px;background:var(--purple-100);display:flex;
+                 flex-direction:column;align-items:center;justify-content:center;gap:1px}
+  .cardart .date b{font-family:var(--disp);font-size:13px;font-weight:800;color:var(--purple-700);letter-spacing:-.02em}
+  .cardart .date s{font-size:8.5px;font-weight:800;color:rgba(95,63,196,.75);text-decoration:none;letter-spacing:.04em}
+  .cardart .ttl{font-family:var(--disp);font-size:15px;font-weight:800;letter-spacing:-.02em}
+  .cardart .meta{font-size:12.5px;color:var(--ink-500);margin-top:2px}
+  .cardart .cta{flex:0 0 auto;background:var(--purple-500);color:#fff;border-radius:99px;padding:8px 14px;
+                font-size:12.5px;font-weight:700}
+  .cardart .cta.done{background:var(--green-700)}
+  .cardart .foot{display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--grey-100);
+                 font-size:11.5px;font-weight:600;color:var(--ink-500)}
+  .fs{display:flex}
+  .fs span{width:22px;height:22px;border-radius:99px;display:flex;align-items:center;justify-content:center;
+           font-family:var(--disp);font-size:10px;font-weight:800;color:#fff;box-shadow:0 0 0 2px #fff}
+  .fs span+span{margin-left:-7px}
+  .cardart .txtbtn{margin-top:10px;background:var(--purple-500);color:#fff;border-radius:13px;padding:11px;text-align:center;
+                   font-family:var(--disp);font-weight:800;font-size:14px;letter-spacing:-.01em}
+
+  .doodle{display:block;margin:0 auto;opacity:.5}
+
+  /* MANIFESTO */
+  .manifesto{text-align:center;padding:60px 0 8px;max-width:700px;margin:0 auto}
+  .manifesto p{font-family:var(--disp);font-weight:700;font-size:clamp(21px,3.1vw,27px);line-height:1.32;letter-spacing:-.02em}
+  .manifesto p b{color:var(--purple-700);font-weight:800}
+  .manifesto .join{margin-top:30px}
+
+  /* SPONSOR INVITE, deliberately quiet */
+  .quiet{padding:56px 0 10px;border-top:1px solid var(--hair);margin-top:56px;max-width:520px}
+  .quiet h4{font-family:var(--disp);font-weight:800;font-size:16px;letter-spacing:-.01em}
+  .quiet p{margin-top:7px;font-size:14px;line-height:1.6;color:var(--ink-500)}
+  .quiet a{color:var(--purple-700);font-weight:600}
+
+  .maker{padding:34px 0 6px;max-width:640px}
+  .maker p{font-size:15px;line-height:1.65;color:var(--ink-500)}
+  .maker p b{color:var(--ink-900);font-weight:700}
+  .foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;border-top:1px solid var(--hair);
+        padding:22px 0 34px;font-size:12.5px;color:var(--ink-500);margin-top:34px}
+  .foot a{color:var(--ink-500);text-decoration:none}
+
+  /* ── rationale ───────────────────────────────────────────────────── */
+  .verdict{max-width:1000px;margin:36px auto 0;background:#171227;border:1px solid #2A2247;border-radius:18px;padding:24px 26px}
+  .verdict h3{font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;font-weight:800;color:#EDE9FF;margin-bottom:12px}
+  .verdict p{font-size:13px;color:#9990BC;line-height:1.75;margin-bottom:10px}
+  .verdict p:last-child{margin-bottom:0}
+  .verdict b{color:#CFC6EC;font-weight:600}
+  .tag{display:inline-block;background:var(--purple-500);color:#fff;font-size:10px;font-weight:800;
+       letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:99px;margin-right:8px}
+  .tag.warn{background:#E8405A}
+</style>
+</head>
+<body>
+
+<div class="studio">
+<h1>Landing page refresh, v2</h1>
+<p class="sub">
+  Sentence case, Plus Jakarta Sans, the real cow mark, a Sponsor Portal button, your copy throughout,
+  and no em dashes anywhere on the page.
+</p>
+<p class="locked">
+  Locked from round 1: <b>sentence case</b> · <b>Plus Jakarta Sans</b> · <b>one flat colour field, no dark band</b> ·
+  <b>three beats</b> · <b>green CTA</b>
+</p>
+
+<p class="knoblbl">Headline: three that come from our POV, not theirs</p>
+<div class="knobs" id="k-head">
+  <button class="kbtn on" data-v="0">"Make it easier to hang out."<small>strike: We should hang out sometime</small></button>
+  <button class="kbtn" data-v="1">"Free tonight? Say it out loud."<small>strike: You up for anything?</small></button>
+  <button class="kbtn" data-v="2">"Get invited to more things."<small>strike: Nobody told me you were free</small></button>
+</div>
+<div class="rule"></div>
+</div>
+
+<div class="frame"><div class="pg">
+  <div class="wrap">
+
+    <nav class="nav">
+      <div class="mark">
+        <div class="box">
+          <!-- The real CowMark, verbatim from src/components/ui/CowMark.tsx -->
+          <svg width="30" height="30" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Mooves">
+            <ellipse cx="11" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(-28 11 33)"/>
+            <ellipse cx="109" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(28 109 33)"/>
+            <ellipse cx="11" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(-28 11 34)"/>
+            <ellipse cx="109" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(28 109 34)"/>
+            <ellipse cx="38" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(-14 38 19)"/>
+            <ellipse cx="82" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(14 82 19)"/>
+            <rect x="15" y="20" width="90" height="92" rx="30" fill="#F5F0ED"/>
+            <ellipse cx="41" cy="44" rx="19" ry="13" fill="#7A7282" transform="rotate(-10 41 44)"/>
+            <ellipse cx="79" cy="69" rx="14" ry="9" fill="#7A7282" transform="rotate(16 79 69)"/>
+            <circle cx="44" cy="57" r="6" fill="#2A1E38"/><circle cx="76" cy="57" r="6" fill="#2A1E38"/>
+            <circle cx="46.5" cy="54.5" r="2.2" fill="white"/><circle cx="78.5" cy="54.5" r="2.2" fill="white"/>
+            <ellipse cx="60" cy="90" rx="27" ry="20" fill="#F0AABB"/>
+            <circle cx="50" cy="91" r="9" fill="#2ECC71"/><circle cx="70" cy="91" r="9" fill="#BDB5D4"/>
+          </svg>
+        </div>
+        <span>Mooves</span>
+      </div>
+      <div class="navr">
+        <a class="ghost solid" href="/auth">Open app</a>
+        <a class="ghost" href="https://makemooves.app/sponsor">Sponsor Portal</a>
+      </div>
+    </nav>
+
+    <!-- HERO -->
+    <header class="hero">
+      <span class="stamp s1">Logan Square</span>
+      <span class="stamp s2">Bushwick</span>
+      <span class="stamp s3">Thursday, 7pm</span>
+      <span class="stamp s4">Nobody rsvp'd</span>
+
+      <span class="strike" id="strikeTxt">We should hang out sometime</span>
+      <h1 id="headTxt">Make it easier to hang out.</h1>
+      <p class="lede" id="ledeTxt">
+        Go green when you're free. Your friends see it, and now they know they can just ask you.
+      </p>
+      <div class="ctas">
+        <a class="pill" href="/auth"><i></i>Go green</a>
+        <a class="pill alt" href="#beats">See how it works</a>
+      </div>
+      <p class="fine">Free. Works in your browser. About a minute to set up.</p>
+    </header>
+
+    <!-- BEAT 1 -->
+    <section class="beat" id="beats">
+      <div class="txt">
+        <h2>Casually go green when you're around and want to hang</h2>
+        <p>Your friends see a green ring. That's the whole feature. No status, no essay, no plan, and it expires
+          on its own.</p>
+      </div>
+      <div class="art">
+        <div class="polaroid"><span class="tape"></span>
+          <div class="railart">
+            <div class="rt"><span class="av"><span class="ph" style="background:#7C5CDB">Y</span><span class="ring"></span></span><span class="n">You</span><span class="w">Now</span></div>
+            <div class="rt"><span class="av"><span class="ph" style="background:#E8A0B4">D</span><span class="ring"></span></span><span class="n">Dana</span><span class="w">Now</span></div>
+            <div class="rt g"><span class="av"><span class="ph" style="background:#5FB0E8">J</span><span class="ring"></span></span><span class="n">Jonah</span><span class="w"></span></div>
+            <div class="rt g"><span class="av"><span class="ph" style="background:#CEAD6A">S</span><span class="ring"></span></span><span class="n">Sam</span><span class="w"></span></div>
+            <div class="rt g"><span class="av"><span class="ph" style="background:#63C6A8">A</span><span class="ring"></span></span><span class="n">Ana</span><span class="w"></span></div>
+          </div>
+          <span class="cap">Green means I'm around</span>
+        </div>
+      </div>
+    </section>
+
+    <svg class="doodle" width="80" height="42" viewBox="0 0 80 42" fill="none">
+      <path d="M6 5c14 26 44 32 66 12" stroke="#BDB5D4" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="1 7"/>
+      <path d="M64 10l9 8-11 4" stroke="#BDB5D4" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+
+    <!-- BEAT 2 -->
+    <section class="beat flip">
+      <div class="txt">
+        <h2>Or just say the thing you want to do</h2>
+        <p>"Tacos, Sunday" is a complete Moove. Time and place are optional. You pick who sees it: everyone, one
+          group, or two specific people.</p>
+      </div>
+      <div class="art">
+        <div class="polaroid r"><span class="tape"></span>
+          <div class="cardart">
+            <div class="row">
+              <div class="date"><b>SUN</b><s>AUG 3</s></div>
+              <div style="flex:1;min-width:0">
+                <div class="ttl">Tacos at Big Star</div>
+                <div class="meta">Sunday, no set time</div>
+              </div>
+              <div class="cta">I'm in</div>
+            </div>
+            <div class="foot"><span class="fs"><span style="background:#7C5CDB">M</span><span style="background:#E8A0B4">J</span></span>2 in</div>
+          </div>
+          <span class="cap">Nine words, one tap</span>
+        </div>
+      </div>
+    </section>
+
+    <svg class="doodle" width="80" height="42" viewBox="0 0 80 42" fill="none">
+      <path d="M74 5C60 31 30 37 8 17" stroke="#BDB5D4" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="1 7"/>
+      <path d="M16 9L7 17l11 4" stroke="#BDB5D4" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+
+    <!-- BEAT 3 -->
+    <section class="beat">
+      <div class="txt">
+        <h2>See who's interested and then get back in the group chat</h2>
+        <p>Once two people are in, one tap opens a text with exactly them. The plan happens where it always
+          happened.</p>
+      </div>
+      <div class="art">
+        <div class="polaroid"><span class="tape"></span>
+          <div class="cardart">
+            <div class="row">
+              <div class="date"><b>7:30</b><s>PM</s></div>
+              <div style="flex:1;min-width:0">
+                <div class="ttl">Pickup at the courts</div>
+                <div class="meta">Tonight, Wicker Park</div>
+              </div>
+              <div class="cta done">You're in ✓</div>
+            </div>
+            <div class="foot"><span class="fs"><span style="background:#7C5CDB">A</span><span style="background:#5FB0E8">J</span><span style="background:#E8A0B4">R</span></span>4 in</div>
+            <div class="txtbtn">Start a group text</div>
+          </div>
+          <span class="cap">And then we close the app</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- MANIFESTO -->
+    <section class="manifesto">
+      <p>We are all just one text message away from a great night. Mooves exists to make sure you send it.
+        <b>Open the app for nine seconds and make the plan.</b></p>
+      <div class="join ctas">
+        <a class="pill" href="/auth"><i></i>Go green</a>
+      </div>
+      <p class="fine" style="margin-top:14px">Bring two friends and it works. Bring none and it can't, so get your
+        friends in the app asap.</p>
+    </section>
+
+    <!-- SPONSOR INVITE -->
+    <div class="quiet">
+      <h4>Run a bar, a studio, a run club?</h4>
+      <p>Local spots and events can get listed on Mooves so people can turn your thing into a plan with their
+        friends. <a href="mailto:business@makemooves.app">Talk to us</a>.</p>
+    </div>
+
+    <div class="maker">
+      <p>Made by <b>friends in Chicago</b> who wanted an app where they could broadcast to the world that they
+        wanted to be invited to a house party on weekends they were free.</p>
+    </div>
+
+    <div class="foot">
+      <span>© 2026 Mooves · makemooves.app</span>
+      <span><a href="/privacy">Privacy</a> &nbsp;·&nbsp; <a href="/terms">Terms</a> &nbsp;·&nbsp; <a href="mailto:support@makemooves.app">Support</a></span>
+    </div>
+
+  </div>
+</div></div>
+
+<div class="verdict">
+  <h3>What changed in v2, and the two things still open</h3>
+  <p><span class="tag">Applied</span>Real CowMark (copied verbatim from the component, so it cannot drift from the
+    app). Sentence case throughout. Plus Jakarta Sans everywhere. Sponsor Portal in the top right, quieter than
+    Open app so the visitor-facing CTA still wins. "Talk to us" is now a mailto to
+    <b>business@makemooves.app</b>. Small print section, sign-off line and founder photo all removed. Every em
+    dash on the page is gone, replaced with commas, colons or a new sentence.</p>
+
+  <p><span class="tag">Headline</span>The first one was Outernet's move, not ours. All three options now come from
+    the same place your maker line does: <b>the problem is not that there is nothing to do, it is that nobody knows
+    you are free.</b> "Be easy to invite" is the default because it names a thing you can be rather than a thing you
+    should do, and because it is the only one of the three that still makes sense to somebody with zero friends on
+    the app yet.</p>
+
+  <p><span class="tag warn">Open 1: the sponsor claim</span>Removing the small print took out the line that said
+    paid listings are labelled, sponsors get counts and never names, and only your own friends see what you are up
+    for. That is fine as long as we do not claim the opposite anywhere, which we now do not. Worth knowing why it
+    was there: an earlier version of this page promised sponsored moves never appear in a friend's feed, which
+    Phase 24 made untrue, and that paragraph was the fix. The claims themselves are still honoured in the product
+    and in the Privacy page. If a sponsor or an app store review ever asks where the disclosure lives, the answer
+    is Privacy, not the landing page.</p>
+
+  <p><span class="tag warn">Open 2: "get your friends in the app asap"</span>It is the right sentiment and it reads
+    as us talking, which is the tone we want. It is also the only imperative on the page aimed at somebody who has
+    not signed up yet, so it asks for work before they have anything. Worth a look in context to decide whether it
+    lands as honest or as pushy. It is one line to soften if you want it.</p>
+
+  <p><span class="tag">Next</span>Say the word and this becomes a rewrite of
+    <b>src/components/landing/LandingScreen.tsx</b>. One file, no routes, no data, and the static in-app replicas
+    at the bottom of that file mostly survive.</p>
+</div>
+
+<script>
+const HEADS = [
+  { strike:"We should hang out sometime", head:"Make it easier to hang out.",
+    lede:"Go green when you're free. Your friends see it, and now they know they can just ask you." },
+  { strike:"You up for anything?", head:"Free tonight? Say it out loud.",
+    lede:"One tap says you're around. Your friends see it and they can text you. That's the app." },
+  { strike:"Nobody told me you were free", head:"Get invited to more things.",
+    lede:"Most nights nothing happens because nobody knew who was free. Mooves is just that, made visible." },
+]
+
+const S = { head:0 }
+
+function render(){
+  const h = HEADS[S.head]
+  strikeTxt.textContent = h.strike
+  headTxt.textContent   = h.head
+  ledeTxt.textContent   = h.lede
+}
+
+document.getElementById('k-head').addEventListener('click', e => {
+  const b = e.target.closest('.kbtn'); if (!b) return
+  S.head = Number(b.dataset.v)
+  ;[...b.parentElement.children].forEach(c => c.classList.toggle('on', c === b))
+  render()
+})
+render()
+</script>
+</body>
+</html>

@@ -8,9 +8,12 @@ import { redirect } from 'next/navigation'
 import { verifySessionToken } from '@/lib/auth/session'
 import LandingScreen from '@/components/landing/LandingScreen'
 
+// Kept in step with the Phase 25 hero. The title is what a shared link renders
+// as, so it has to be the headline, not the old one.
 export const metadata: Metadata = {
-  title: 'Mooves — the easiest way to actually hang out',
-  description: 'Go green when you’re free. The friends you picked see it. You make the plan over text.',
+  title: 'Mooves · Make it easier to hang out',
+  description:
+    'Go green when you’re free. Your friends see it, and now they know they can just ask you. Then make the plan over text.',
 }
 
 export default async function RootPage() {

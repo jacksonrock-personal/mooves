@@ -4,22 +4,27 @@ All values reference `tokens/tokens.css` / `tailwind.theme.js`. Colors given as 
 
 ## Status toggle (primary interaction — your own tile in the rail)
 
-> **Superseded 2026-08-02 (R22).** This section described a full-width swipe track. That control is **deleted**; going free is a tap on your own avatar at the head of the rail. The old anatomy is kept nowhere — read the rail below.
+> **Superseded 2026-08-02 (R22).** This section described a full-width swipe track. That control is **deleted**; going green is a tap on your own tile at the head of the rail.
+>
+> **Amended 2026-08-04 (R24).** The off state is no longer your greyscale avatar with a `+`. It is a **traffic light** (`GoGreenLight`), and the label is **"Go green"** everywhere — "Go free" is retired app-wide.
 
-**Shape**: a 58px-wide tile at the head of the rail, first and never sorted. Avatar 54px, name beneath, a time-label slot beneath that which always holds its height (so the rail does not change height as people go green and grey).
+**Shape**: a 58px-wide tile at the head of the rail, first and never sorted. 54px disc, name beneath, a time-label slot beneath that which always holds its height (so the rail does not change height as people go green and grey).
 
 **Off / default (you are not free)**
-- Avatar rendered greyscale at 48% opacity, **no ring**
-- `+` badge bottom-right: 22px circle, `background: purple-500`, `2.5px` border in `purple-50` (the page background, punching it out of the rail)
-- Label: **"Go free"**, `body-sm` weight 700, `ink-900` — the word, not your name, because a bare `+` is too quiet to carry the app's most important action
+- A `purple-100` disc, 54px, holding a 22×41 `ink-900` signal box (7px radius) with three 10.5px lamps: `#FF3B30`, `#FFB300`, `green-500`, each with a soft glow
+- **Nothing is dimmed.** Going green *swaps* this tile for your face, so the light only ever depicts one state and never has to also mean "off" — which is what keeps it legible at 54px. A signal box with two dark lamps reads as a dark blob at this size
+- Ring `1.25px grey-300` at the same 4px inset every other tile uses, so the tile still sits in the rail's rhythm
+- Label: **"Go green"**, `body-sm` weight 700, `ink-900` — the word, not your name
 - Tap opens the Go Green sheet. **The sheet's "I'm free" button is the commit** — the tile only opens it
 
 **On (free)**
-- Avatar full colour, ring `2.5px solid green-500`, **dashed** (yours alone; friends' rings are solid)
+- The light is **gone**, replaced by your own avatar at full colour, exactly like everyone else's tile
+- Ring `2.5px solid green-500`, **dashed** (yours alone; friends' rings are solid)
 - Ring drops to `green-500/40` when the green is not `now`
-- `+` badge is **gone** — purple on a green ring would put an action colour where availability lives
 - Label: "You", with the time label (*Now · Tonight · This wk · Wknd*) beneath in `green-700`, or `ink-500` when later
 - Tap opens "Your green" (R17): free-until, visibility, go grey
+
+Red and amber are **icon** colours, not status tokens, and deliberately have no design-system entry. The green is `green-500` on purpose: it is the same green as the rings two tiles away, and a louder one would read as a different kind of green.
 
 **Friends' tiles**
 - Green: solid ring, name in `ink-500`, time label. One tap opens Messages
@@ -59,7 +64,7 @@ All values reference `tokens/tokens.css` / `tailwind.theme.js`. Colors given as 
 | Secondary | white, `2px solid purple-500` | `purple-500`, `display` 800 15px | 16px | `12px 24px` | |
 | Destructive | `red-tint` | `red-500`, `sans` 700 14px | 16px | `14px 24px` | |
 | Icon button | `purple-500` circle | white icon | 50% (circle) | — | **min 44×44px** — fixes the People "+" bug (was 34×34) |
-| Green CTA (e.g. empty-state "go free") | `green-700` (never `green-500`) | white, `display` 700 | 14–16px | `12–14px` | white-on-green-500 is only 2.1:1 — always use 700 |
+| Green CTA (e.g. empty-state "go green") | `green-700` (never `green-500`) | white, `display` 700 | 14–16px | `12–14px` | white-on-green-500 is only 2.1:1 — always use 700 |
 
 ---
 
@@ -84,7 +89,7 @@ All values reference `tokens/tokens.css` / `tailwind.theme.js`. Colors given as 
 - Centered pulsing ring + dot: `grey-300` 2px ring animating `scale(0.9→1.6)` + fading opacity, 2.4s ease-out loop, `2px` solid dot at center
 - Headline `display` 800 16–19px ("Quiet right now.")
 - Aggregate copy line, `body-sm`/`body-md` `ink-500`: a count + a rough daypart pattern only — never a specific scheduled time
-- CTA: `green-700` fill, white label ("Be the first — go free")
+- CTA: `green-700` fill, white label ("Be the first to go green")
 
 **Loading skeleton**
 - Avatar circle + two text bars per row, all `background: grey-100`, no shimmer required at spec level (implementation detail)

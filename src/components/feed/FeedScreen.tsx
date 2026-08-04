@@ -435,7 +435,11 @@ export default function FeedScreen() {
       // 24.6 — the near-you shelf. Fire-and-forget: it is the last thing on the
       // screen in every state, so a slow or failed fetch must never hold up the
       // rail or the Mooves list.
-      void fetch('/api/discover?limit=3')
+      //
+      // The rail's seed rides along, so the shelf shows a different Moove from
+      // the pool each time the app is opened and the same one for the rest of
+      // the session. Same seed, same reason: nothing may reorder mid-session.
+      void fetch(`/api/discover?limit=3&seed=${seed}`)
         .then(r => (r.ok ? r.json() : null))
         .then((d: { moves?: NearMove[] } | null) => {
           if (d?.moves && mountedRef.current) setNearMoves(d.moves)
@@ -1046,8 +1050,12 @@ export default function FeedScreen() {
                     there is nothing here to compete with. */}
                 {nearMoves.length > 0 && (
                   <div className="mt-1">
+                    {/* "Near you", not "Near you tonight". The shelf is drawn
+                        from everything live in the area, which is mostly NOT
+                        today — a Saturday market on a Wednesday sat under a
+                        label that said it was happening in a few hours. */}
                     <p className="font-sans text-[10.5px] font-bold text-ink-500 uppercase tracking-[0.1em] px-0.5 pt-1 pb-2.5">
-                      Near you tonight
+                      Near you
                     </p>
                     {nearMoves
                       .slice(0, feedCardCount({ hasFriends: true, anyGreen: false, anyPlans: false }))
@@ -1100,18 +1108,28 @@ export default function FeedScreen() {
                     already this screen's side-to-side gesture. */}
                 {nearMoves.length > 0 && (
                   <div className="mt-3.5">
-                    <div className="flex items-baseline justify-between px-0.5 pb-2">
+                    {/* items-center, not items-baseline: "See all" is a pill
+                        now, and a baseline sits its TEXT on the eyebrow's,
+                        which pushes the pill's box low and out of the row. */}
+                    <div className="flex items-center justify-between px-0.5 pb-2">
                       <span className="font-sans text-[10.5px] font-bold text-ink-500 uppercase tracking-[0.1em]">
-                        Near you tonight
+                        Near you
                       </span>
+                      {/* This was 10.5px purple text with no box — the same
+                          size and weight as the eyebrow beside it, so it read
+                          as the other half of a label rather than as the way
+                          into Browse. A real pill, at a real tap size. */}
                       <button
                         onClick={() => {
                           posthog.capture('near_see_all_tapped')
                           router.push('/discover')
                         }}
-                        className="font-sans text-[10.5px] font-bold text-purple-500 tracking-[0.04em]"
+                        className="-my-1 flex items-center gap-1 rounded-full border-[1.5px] border-purple-100 bg-white pl-3.5 pr-2.5 py-2 font-sans text-[13px] font-bold text-purple-500 active:bg-purple-100"
                       >
                         See all
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M9 18l6-6-6-6" />
+                        </svg>
                       </button>
                     </div>
                     {nearMoves

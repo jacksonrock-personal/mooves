@@ -11,7 +11,8 @@
 // Discover: it gated the action that actually mattered behind a tap that did
 // nothing for the user. Here it gates nothing. The card's CTA is live whether or
 // not anyone has ever tapped this, and what this produces is the social proof
-// other people see ("Maya and Dev are in").
+// other people see ("Maya and Dev would go" — the card echoes the verb from the
+// button, because that tap is all anyone actually did).
 //
 // Wall 2 (24.0) holds here: tapping it is visible to CONFIRMED FRIENDS only.
 // Never public, never the sponsor, never a stranger in the same metro.
