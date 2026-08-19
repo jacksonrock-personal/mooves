@@ -240,6 +240,7 @@ export type Database = {
           created_at: string
           id: string
           last_successful_pull: string | null
+          thin_alerted_at: string | null
           lat: number
           lng: number
           name: string
@@ -250,6 +251,7 @@ export type Database = {
           created_at?: string
           id?: string
           last_successful_pull?: string | null
+          thin_alerted_at?: string | null
           lat: number
           lng: number
           name: string
@@ -260,6 +262,7 @@ export type Database = {
           created_at?: string
           id?: string
           last_successful_pull?: string | null
+          thin_alerted_at?: string | null
           lat?: number
           lng?: number
           name?: string
@@ -649,6 +652,7 @@ export type Database = {
           price_text: string | null
           radius_miles: number
           reject_reason: string | null
+          reviewed_at: string | null
           source_url: string | null
           sponsor_id: string | null
           start_at: string | null
@@ -681,6 +685,7 @@ export type Database = {
           price_text?: string | null
           radius_miles?: number
           reject_reason?: string | null
+          reviewed_at?: string | null
           source_url?: string | null
           sponsor_id?: string | null
           start_at?: string | null
@@ -713,6 +718,7 @@ export type Database = {
           price_text?: string | null
           radius_miles?: number
           reject_reason?: string | null
+          reviewed_at?: string | null
           source_url?: string | null
           sponsor_id?: string | null
           start_at?: string | null

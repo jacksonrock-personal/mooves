@@ -18,7 +18,7 @@ async function loadJoinablePlan(
 ) {
   const { data: plan } = await supabase
     .from('plans')
-    .select('id, author_id, cancelled_at, expires_at, visible_to')
+    .select('id, author_id, cancelled_at, expires_at, visible_to, visible_user_ids')
     .eq('id', planId)
     .maybeSingle()
 
@@ -42,9 +42,22 @@ async function loadJoinablePlan(
 
   if (!friendship) return { error: 'forbidden' as const }
 
-  if (plan.visible_to && plan.visible_to.length > 0) {
+  // R27 fix: this used to check visible_to ALONE, which left a hole exactly the
+  // size of R16's feature. A Moove scoped only to named individuals has
+  // visible_to = NULL, so the group branch was skipped and the whole audience
+  // check fell through — any friend of the author could join a Moove they were
+  // never shown, by calling this route directly.
+  //
+  // The predicate now mirrors get_plans: unscoped means NEITHER array was set,
+  // and a scoped Moove admits you via a shared group OR by name.
+  const groupScoped = (plan.visible_to?.length ?? 0) > 0
+  const userScoped = (plan.visible_user_ids?.length ?? 0) > 0
+
+  if (groupScoped || userScoped) {
     const mine = new Set(((myGroups as { group_id: string }[]) ?? []).map(g => g.group_id))
-    if (!plan.visible_to.some(g => mine.has(g))) return { error: 'forbidden' as const }
+    const viaGroup = plan.visible_to?.some(g => mine.has(g)) ?? false
+    const viaName = plan.visible_user_ids?.includes(userId) ?? false
+    if (!viaGroup && !viaName) return { error: 'forbidden' as const }
   }
 
   return { plan }
