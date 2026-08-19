@@ -10,6 +10,7 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { markActivated } from '@/lib/activation'
+import { canSeePlan } from '@/lib/visibility'
 
 async function loadJoinablePlan(
   supabase: ReturnType<typeof createServiceClient>,
@@ -27,38 +28,10 @@ async function loadJoinablePlan(
   if (new Date(plan.expires_at) <= new Date()) return { error: 'gone' as const }
   if (plan.author_id === userId) return { error: 'own' as const }
 
-  // Same gate as the feed: you must be friends with the author, and a
-  // group-scoped Moove needs a shared group. viewer_group_ids is used so an
-  // owner counts as a member of their own group.
-  const [{ data: friendship }, { data: myGroups }] = await Promise.all([
-    supabase
-      .from('friendships')
-      .select('friend_id')
-      .eq('user_id', userId)
-      .eq('friend_id', plan.author_id)
-      .maybeSingle(),
-    supabase.rpc('viewer_group_ids', { p_user: userId }),
-  ])
-
-  if (!friendship) return { error: 'forbidden' as const }
-
-  // R27 fix: this used to check visible_to ALONE, which left a hole exactly the
-  // size of R16's feature. A Moove scoped only to named individuals has
-  // visible_to = NULL, so the group branch was skipped and the whole audience
-  // check fell through — any friend of the author could join a Moove they were
-  // never shown, by calling this route directly.
-  //
-  // The predicate now mirrors get_plans: unscoped means NEITHER array was set,
-  // and a scoped Moove admits you via a shared group OR by name.
-  const groupScoped = (plan.visible_to?.length ?? 0) > 0
-  const userScoped = (plan.visible_user_ids?.length ?? 0) > 0
-
-  if (groupScoped || userScoped) {
-    const mine = new Set(((myGroups as { group_id: string }[]) ?? []).map(g => g.group_id))
-    const viaGroup = plan.visible_to?.some(g => mine.has(g)) ?? false
-    const viaName = plan.visible_user_ids?.includes(userId) ?? false
-    if (!viaGroup && !viaName) return { error: 'forbidden' as const }
-  }
+  // Same gate as the feed, and now literally the same code — R27 fixed this
+  // route's hand-written copy for missing visible_user_ids, and R28 moved the
+  // rule into lib/visibility so a fourth copy cannot drift again.
+  if (!(await canSeePlan(supabase, plan, userId))) return { error: 'forbidden' as const }
 
   return { plan }
 }

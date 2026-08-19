@@ -11,9 +11,15 @@
 // pinned to the bottom. Only the Comments pane has the pill, so the two panes
 // never read as one screen with its contents swapped.
 //
-// WALL 3 — a viewer who has not joined never gets here with `canComment`, so
-// the segmented control is not rendered at all. Not disabled, not hidden:
-// absent. A greyed-out "Comments" tab would be the loudest hint in the app.
+// WALL 3 is unchanged, but it is enforced somewhere else now. It used to mean
+// "a non-joiner never gets the Comments tab", which is why the segmented control
+// was conditional — a greyed-out tab would have been the loudest hint in the app.
+//
+// R28 opened the thread to everyone the Moove is already shared with, so within
+// this sheet there is nobody left to hide it from: if you can open the sheet at
+// all, you are in the audience, and the audience is the gate. The tabs are
+// unconditional. What still holds the wall up is one level higher — whether the
+// card, and therefore this sheet, is reachable by you in the first place.
 //
 // Still NOT realtime. Loads when the sheet opens and on focus.
 
@@ -59,10 +65,16 @@ export default function MooveSheet({
   onJoin,
   onCountChange,
 }: MooveSheetProps) {
-  // The author always has access, whether or not they are "in" their own Moove.
-  const canComment = plan.isMine || plan.joinedByMe
+  // R28 — one flag became two, because they were never the same question.
+  //
+  // `isIn` is commitment: it decides whether you are offered the way in.
+  // Commenting no longer depends on it. Anyone who can open this sheet is in
+  // the Moove's audience, and the audience is now the comment gate — the server
+  // enforces the identical rule via canSeePlan, so there is no state where the
+  // compose pill posts and the API refuses.
+  const isIn = plan.isMine || plan.joinedByMe
 
-  const [pane, setPane] = useState<MoovePane>(canComment ? initialPane : 'who')
+  const [pane, setPane] = useState<MoovePane>(initialPane)
   const [comments, setComments] = useState<PlanComment[]>([])
   const [pending, setPending] = useState<Pending[]>([])
   const [draft, setDraft] = useState('')
@@ -82,10 +94,6 @@ export default function MooveSheet({
   const drag = useSheetDrag(onClose)
 
   const load = useCallback(async () => {
-    if (!canComment) {
-      setLoading(false)
-      return
-    }
     try {
       const res = await fetch(`/api/plans/${plan.id}/comments`)
       if (!res.ok) {
@@ -101,7 +109,7 @@ export default function MooveSheet({
     } finally {
       setLoading(false)
     }
-  }, [plan.id, canComment, onCountChange])
+  }, [plan.id, onCountChange])
 
   useEffect(() => {
     void load()
@@ -118,7 +126,6 @@ export default function MooveSheet({
   // rule, neither of which changes while a sheet is open, and a picker that
   // silently regrows mid-sentence would be worse than a slightly stale one.
   useEffect(() => {
-    if (!canComment) return
     let live = true
     void (async () => {
       try {
@@ -134,7 +141,7 @@ export default function MooveSheet({
     return () => {
       live = false
     }
-  }, [plan.id, canComment])
+  }, [plan.id])
 
   /**
    * R8 — a like, applied optimistically and reconciled from the response.
@@ -314,9 +321,9 @@ export default function MooveSheet({
             something you already knew, because you tapped that card to get here.
             The sheet now opens straight onto the two things it is for. */}
 
-        {/* Wall 3: no tabs at all for someone who has not joined. */}
-        {canComment && (
-          <div className="mx-[18px] mt-3.5 flex gap-1 bg-grey-100 rounded-full p-[3px] shrink-0">
+        {/* R28: the tabs are unconditional now. Wall 3 has not moved — it is
+            enforced one level up, by whether this sheet can be opened at all. */}
+        <div className="mx-[18px] mt-3.5 flex gap-1 bg-grey-100 rounded-full p-[3px] shrink-0">
             {(['who', 'comments'] as MoovePane[]).map(p => (
               <button
                 key={p}
@@ -333,8 +340,7 @@ export default function MooveSheet({
                 )}
               </button>
             ))}
-          </div>
-        )}
+        </div>
 
         <div className="h-px bg-[#E8E4F5] mx-[18px] mt-3.5 shrink-0" />
 
@@ -498,7 +504,7 @@ export default function MooveSheet({
         </div>
 
         {/* Compose lives ONLY on the comments pane. */}
-        {pane === 'comments' && canComment && (
+        {pane === 'comments' && (
           <>
             {/* The mention picker. Two sections, and the split is the point:
                 the second one names people who are NOT here yet, so it says so
@@ -609,8 +615,14 @@ export default function MooveSheet({
           </>
         )}
 
-        {/* A non-joiner gets the way in, not a locked door. */}
-        {!canComment && (
+        {/* A non-joiner gets the way in, not a locked door.
+            R28 scopes this to the roster pane. It used to be the only thing a
+            non-joiner could do here, so it sat outside both panes; now they have
+            a compose pill on the other one, and stacking a second full-width
+            primary button under it would put two different commitments in the
+            same thumb's reach. On "Who's in", where the question actually is
+            whether to join, it is still the right and only CTA. */}
+        {!isIn && pane === 'who' && (
           <div className="shrink-0 px-4 pt-2 pb-5">
             <button
               onClick={onJoin}
