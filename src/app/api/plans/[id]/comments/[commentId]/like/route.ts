@@ -8,7 +8,10 @@
 // What still holds:
 //
 //   • the access gate is the SAME one comments use, so a like is only ever
-//     visible to, or castable by, someone who joined the Moove (wall 3);
+//     visible to, or castable by, someone the Moove was shared with (wall 3);
+//     R28 widened that from "joined" to "can see it" on both sides at once —
+//     had only the comment route moved, everyone newly able to comment would
+//     have found a heart that silently 403s;
 //   • the count is returned here and rendered beside its heart, and nowhere
 //     else — not on the card, not on the tab;
 //   • no push, ever. Nobody is told they were liked.
@@ -18,6 +21,7 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { checkRateLimit, tooManyRequests } from '@/lib/ratelimit'
+import { canSeePlan } from '@/lib/visibility'
 
 type Supabase = ReturnType<typeof createServiceClient>
 
@@ -34,7 +38,7 @@ async function gate(
 ): Promise<boolean> {
   const { data: plan } = await supabase
     .from('plans')
-    .select('author_id, cancelled_at, expires_at')
+    .select('author_id, cancelled_at, expires_at, visible_to, visible_user_ids')
     .eq('id', planId)
     .maybeSingle()
 
@@ -50,16 +54,7 @@ async function gate(
     .maybeSingle()
   if (!comment) return false
 
-  if (plan.author_id === userId) return true
-
-  const { data: join } = await supabase
-    .from('move_joins')
-    .select('id')
-    .eq('plan_id', planId)
-    .eq('joiner_id', userId)
-    .maybeSingle()
-
-  return !!join
+  return canSeePlan(supabase, plan, userId)
 }
 
 async function countFor(supabase: Supabase, commentId: string): Promise<number> {

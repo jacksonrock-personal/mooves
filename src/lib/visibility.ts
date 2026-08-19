@@ -55,3 +55,61 @@ export async function sanitizeVisibleUserIds(
   const allowed = (data ?? []).map(f => f.friend_id)
   return allowed.length > 0 ? allowed : null
 }
+
+/** The audience fields every caller of `canSeePlan` has to select. */
+export interface PlanAudience {
+  author_id: string
+  visible_to: string[] | null
+  visible_user_ids: string[] | null
+}
+
+/**
+ * Can this user see this Moove at all?
+ *
+ * THE SAME PREDICATE AS `get_plans`, AND THAT IS THE ENTIRE POINT. R16 added
+ * individual scoping to the SQL and to the composer, and the join route kept a
+ * hand-written copy that only knew about `visible_to`. Because a Moove scoped
+ * to named individuals leaves `visible_to` NULL, that copy skipped its audience
+ * check entirely and let any friend of the author join something they were
+ * never shown. The feed and the join gate disagreed for three weeks.
+ *
+ * R28 needed the same rule a third time, for comments. Three hand-written
+ * copies of a security predicate is not a risk, it is a scheduled outage, so
+ * the rule lives here now and the routes call it.
+ *
+ * It deliberately does NOT check cancelled_at or expires_at. Those are about
+ * whether a Moove is still alive, which every caller words differently in its
+ * own response; this answers only "is this person in the audience".
+ */
+export async function canSeePlan(
+  supabase: ReturnType<typeof createServiceClient>,
+  plan: PlanAudience,
+  userId: string,
+): Promise<boolean> {
+  if (plan.author_id === userId) return true
+
+  const [{ data: friendship }, { data: myGroups }] = await Promise.all([
+    supabase
+      .from('friendships')
+      .select('friend_id')
+      .eq('user_id', userId)
+      .eq('friend_id', plan.author_id)
+      .maybeSingle(),
+    // viewer_group_ids, not group_members: a group's OWNER has no membership
+    // row, and reading the table directly is how get_feed lost sight of owners.
+    supabase.rpc('viewer_group_ids', { p_user: userId }),
+  ])
+
+  if (!friendship) return false
+
+  const groupScoped = (plan.visible_to?.length ?? 0) > 0
+  const userScoped = (plan.visible_user_ids?.length ?? 0) > 0
+  // Unscoped means NEITHER array was set — visible to all of the author's
+  // friends. An empty array is treated as unset, matching the SQL.
+  if (!groupScoped && !userScoped) return true
+
+  const mine = new Set(((myGroups as { group_id: string }[]) ?? []).map(g => g.group_id))
+  const viaGroup = plan.visible_to?.some(g => mine.has(g)) ?? false
+  const viaName = plan.visible_user_ids?.includes(userId) ?? false
+  return viaGroup || viaName
+}

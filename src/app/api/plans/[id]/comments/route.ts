@@ -2,14 +2,25 @@
 // GET  /api/plans/[id]/comments — every comment on a Moove you are in
 // POST /api/plans/[id]/comments — say something to the people going
 //
-// This route is where two of the four walls are actually enforced:
+// This route is where two of the four walls are actually enforced.
 //
-//   2. ONLY FOR PEOPLE WHO JOINED. You need a move_joins row for THIS plan, or
-//      you need to be the author. Commenting is coordination among people who
-//      are going, not an audience talking at a plan.
-//   3. INVISIBLE TO EVERYONE ELSE. A viewer who has not joined gets 403 from
-//      GET, not an empty list — because an empty list is still an admission
-//      that comments exist here, and the card must give away nothing.
+// R28 MOVED WALL 2. It used to read "only for people who joined" — you needed a
+// move_joins row for this plan, on the reasoning that commenting is
+// coordination among people who are going rather than an audience talking at a
+// plan. That was right about what comments are FOR and wrong about who needs
+// them, because the single most useful thing anyone says on a Moove is said by
+// somebody who is not in it: "can't make Saturday, but I could do Sunday."
+// Under the old wall the only way to say that was to join a thing you had just
+// said you could not attend, so it was said nowhere and the host never heard it.
+//
+// Wall 2 is now: ANYONE WHO CAN SEE THE MOOVE CAN COMMENT ON IT. That is a real
+// widening and it is bounded by exactly one thing — `canSeePlan` is the same
+// predicate `get_plans` uses, so the set of people who can comment is precisely
+// the set the Moove was already shared with. Nobody new learns it exists.
+//
+// Wall 3 is UNCHANGED and still matters: someone outside the audience gets 403
+// from GET, not an empty list, because an empty list is still an admission that
+// comments exist here.
 //
 // Wall 4 (dies with the Moove) is the expires_at / cancelled_at gate below.
 // Wall 1 (only on a Moove) is structural: there is no green path to this table.
@@ -18,6 +29,7 @@ import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { checkRateLimit, tooManyRequests } from '@/lib/ratelimit'
 import { COMMENT_MAX, type PlanComment } from '@/lib/comments'
+import { canSeePlan } from '@/lib/visibility'
 import { sendCommentPush, sendTagPush } from '@/lib/push'
 
 type Supabase = ReturnType<typeof createServiceClient>
@@ -32,8 +44,10 @@ interface Access {
 /**
  * Can this user read and write comments on this Moove right now?
  *
- * Deliberately NOT the same gate as joining. Being able to SEE a Moove earns you
- * nothing here — you have to have committed to it.
+ * R28: the same gate as SEEING the Moove, which is now also the same gate as
+ * joining it. Being in the audience is what earns you the comment thread; being
+ * committed is no longer required, because the people who most need to say
+ * something are the ones who have not committed yet.
  */
 async function access(
   supabase: Supabase,
@@ -42,7 +56,7 @@ async function access(
 ): Promise<Access | null> {
   const { data: plan } = await supabase
     .from('plans')
-    .select('id, author_id, title, cancelled_at, expires_at')
+    .select('id, author_id, title, cancelled_at, expires_at, visible_to, visible_user_ids')
     .eq('id', planId)
     .maybeSingle()
 
@@ -56,16 +70,9 @@ async function access(
     return { authorId: plan.author_id, title: plan.title, isHost: true }
   }
 
-  // Wall 2. `plan_id` is matched explicitly so a green join (plan_id IS NULL)
-  // can never be mistaken for membership of a Moove.
-  const { data: join } = await supabase
-    .from('move_joins')
-    .select('id')
-    .eq('plan_id', planId)
-    .eq('joiner_id', userId)
-    .maybeSingle()
-
-  if (!join) return null
+  // Wall 2, R28 edition. One shared predicate, so this can never again mean
+  // something subtly different from what the feed showed.
+  if (!(await canSeePlan(supabase, plan, userId))) return null
   return { authorId: plan.author_id, title: plan.title, isHost: false }
 }
 
