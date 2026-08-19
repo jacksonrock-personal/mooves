@@ -1,6 +1,31 @@
-// GET  /api/admin/moves?status=pending|approved|rejected|all — list moves (admin)
+// GET  /api/admin/moves?view=review|gate|all — list moves (admin)
 // POST /api/admin/moves — author a move (concierge). publish:true → approved.
 // Admin-gated via requireAdmin; never trust a client admin claim.
+//
+// R27 — THE QUEUE STOPPED BEING A GATE.
+//
+// Seeded moves now publish on arrival, so the old single "everything pending"
+// list no longer describes anything real. It also actively caused harm: it
+// returned every pending row ever created, newest-first, with no filter on
+// whether the event had already happened. By 2026-08-19 that was 386 cards of
+// which 289 were for events in the past — opening it cost more than ignoring
+// it, so it got ignored, and the feed went dark for fifteen days.
+//
+// Three views now, and the split is the point:
+//
+//   gate   — status='pending', still upcoming. The REAL gate, and after R27 it
+//            holds only sponsor-authored moves: paid third-party placements
+//            that must not publish without a human. Normally empty.
+//   review — live, upcoming, reviewed_at IS NULL. The audit list: seeded moves
+//            already visible to users that nobody has looked at yet. Clearing
+//            it is optional and never blocks anything, which is exactly why it
+//            is safe to leave for a week.
+//   all    — everything, newest first. Unfiltered, for looking things up.
+//
+// Both actionable views sort by start_at ASCENDING and exclude anything already
+// past. Soonest-first is the only order that matches what the work actually is:
+// the move happening tonight is the one worth a glance, not the one ingested
+// most recently.
 
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
@@ -27,6 +52,12 @@ function mapMove(m: MoveRow) {
     status: m.status,
     rejectReason: m.reject_reason,
     sponsorId: m.sponsor_id,
+    // R27: the review list is a glance, and a glance needs the source link to
+    // click through to and the neighbourhood to sanity-check the venue against.
+    reviewedAt: m.reviewed_at,
+    origin: m.origin,
+    sourceUrl: m.source_url,
+    neighborhood: m.neighborhood,
     impressions: m.impressions,
     clicks: m.clicks,
     interestedCount: m.interested_count,
@@ -39,24 +70,50 @@ export async function GET(req: Request) {
   const userId = req.headers.get('x-user-id')
   if (!(await requireAdmin(userId))) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const status = new URL(req.url).searchParams.get('status') ?? 'all'
+  const view = new URL(req.url).searchParams.get('view') ?? 'review'
   const supabase = createServiceClient()
+  const nowIso = new Date().toISOString()
 
-  let query = supabase.from('sponsored_moves').select('*').order('created_at', { ascending: false })
-  if (['pending', 'approved', 'rejected'].includes(status)) {
-    query = query.eq('status', status)
+  let query = supabase.from('sponsored_moves').select('*')
+
+  if (view === 'gate') {
+    query = query
+      .eq('status', 'pending')
+      .gt('start_at', nowIso)
+      .order('start_at', { ascending: true })
+  } else if (view === 'review') {
+    query = query
+      .eq('status', 'approved')
+      .is('reviewed_at', null)
+      .gt('start_at', nowIso)
+      .order('start_at', { ascending: true })
+  } else {
+    query = query.order('created_at', { ascending: false }).limit(500)
   }
+
   const { data, error } = await query
   if (error) return NextResponse.json({ error: 'Query failed' }, { status: 500 })
 
-  const { count: pendingCount } = await supabase
-    .from('sponsored_moves')
-    .select('id', { count: 'exact', head: true })
-    .eq('status', 'pending')
+  // Both badge counts on every response. The console shows them side by side so
+  // an empty gate reads as "nothing is blocked" rather than as a broken screen.
+  const [{ count: gateCount }, { count: reviewCount }] = await Promise.all([
+    supabase
+      .from('sponsored_moves')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'pending')
+      .gt('start_at', nowIso),
+    supabase
+      .from('sponsored_moves')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'approved')
+      .is('reviewed_at', null)
+      .gt('start_at', nowIso),
+  ])
 
   return NextResponse.json({
     moves: (data ?? []).map(mapMove),
-    pendingCount: pendingCount ?? 0,
+    gateCount: gateCount ?? 0,
+    reviewCount: reviewCount ?? 0,
   })
 }
 
@@ -111,4 +168,59 @@ export async function POST(req: Request) {
 
   if (error || !data) return NextResponse.json({ error: 'Create failed' }, { status: 500 })
   return NextResponse.json(mapMove(data), { status: 201 })
+}
+
+/**
+ * PATCH /api/admin/moves — bulk mark-reviewed / bulk pull.
+ *
+ * On the collection rather than a /bulk child so it cannot be confused with
+ * /api/admin/moves/[id], where a move whose id happened to be "bulk" would be
+ * the kind of ambiguity nobody finds until it bites.
+ *
+ * Bulk exists because the review list is a GLANCE, not an investigation. The
+ * old console approved one row at a time, which is defensible when every
+ * approval is a publish decision — and untenable now that the list is 97 rows
+ * of already-live content whose expected outcome is "all fine". A pass that
+ * takes twenty minutes is a pass that does not happen, and a pass that does not
+ * happen is what put the feed dark for a fortnight.
+ *
+ * Pull is bulk too, deliberately: the failure mode auto-publish introduces is a
+ * bad SOURCE producing a run of bad rows, and that wants one action, not forty.
+ */
+export async function PATCH(req: Request) {
+  const userId = req.headers.get('x-user-id')
+  if (!(await requireAdmin(userId))) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  const body = (await req.json()) as {
+    ids?: unknown
+    action?: 'reviewed' | 'pull'
+    rejectReason?: string
+  }
+
+  const ids = Array.isArray(body.ids) ? body.ids.filter((i): i is string => typeof i === 'string') : []
+  if (ids.length === 0) return NextResponse.json({ error: 'ids required' }, { status: 400 })
+  if (ids.length > 500) return NextResponse.json({ error: 'Too many ids' }, { status: 400 })
+
+  const reviewedAt = new Date().toISOString()
+  let updates: { reviewed_at: string; status?: string; reject_reason?: string }
+
+  if (body.action === 'reviewed') {
+    updates = { reviewed_at: reviewedAt }
+  } else if (body.action === 'pull') {
+    const reason = body.rejectReason?.trim()
+    if (!reason) return NextResponse.json({ error: 'Reject reason required' }, { status: 400 })
+    updates = { reviewed_at: reviewedAt, status: 'rejected', reject_reason: reason }
+  } else {
+    return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
+  }
+
+  const supabase = createServiceClient()
+  const { data, error } = await supabase
+    .from('sponsored_moves')
+    .update(updates)
+    .in('id', ids)
+    .select('id')
+
+  if (error) return NextResponse.json({ error: 'Update failed' }, { status: 500 })
+  return NextResponse.json({ updated: data?.length ?? 0 })
 }

@@ -1,5 +1,18 @@
-// PATCH /api/admin/moves/[id] — approve / reject-with-reason / edit fields.
+// PATCH /api/admin/moves/[id] — approve / reject / mark-reviewed / pull / edit.
 // Admin-gated.
+//
+// R27 added two actions, and they are not synonyms for the two that existed:
+//
+//   reviewed — "I looked at this and it is fine." Stamps reviewed_at. Changes
+//              NOTHING a user can see; the move was already live. This is the
+//              whole of the post-hoc review pass.
+//   pull     — "This is live and should not be." Rejects it with a reason, so
+//              it disappears from the feed. The undo for auto-publish.
+//
+// approve still means "make this visible", which after R27 only sponsor moves
+// need. Keeping them distinct matters: collapsing `reviewed` into `approve`
+// would make clearing the audit list indistinguishable from publishing, and
+// then the console could no longer tell you what has actually been checked.
 
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
@@ -23,6 +36,7 @@ type MoveUpdate = {
   location_text?: string | null
   status?: string
   reject_reason?: string | null
+  reviewed_at?: string | null
 }
 
 export async function PATCH(req: Request, { params }: Params) {
@@ -31,7 +45,7 @@ export async function PATCH(req: Request, { params }: Params) {
   const { id } = await params
 
   const body = (await req.json()) as {
-    action?: 'approve' | 'reject'
+    action?: 'approve' | 'reject' | 'reviewed' | 'pull'
     rejectReason?: string
     title?: string
     description?: string
@@ -51,11 +65,17 @@ export async function PATCH(req: Request, { params }: Params) {
   if (body.action === 'approve') {
     updates.status = 'approved'
     updates.reject_reason = null
-  } else if (body.action === 'reject') {
+    // A human deciding to publish has by definition reviewed it.
+    updates.reviewed_at = new Date().toISOString()
+  } else if (body.action === 'reject' || body.action === 'pull') {
     const reason = body.rejectReason?.trim()
     if (!reason) return NextResponse.json({ error: 'Reject reason required' }, { status: 400 })
     updates.status = 'rejected'
     updates.reject_reason = reason
+    updates.reviewed_at = new Date().toISOString()
+  } else if (body.action === 'reviewed') {
+    // Visibility untouched on purpose — see the header.
+    updates.reviewed_at = new Date().toISOString()
   }
 
   // Optional field edits.

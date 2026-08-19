@@ -12,12 +12,25 @@
 //
 // THE QUALITY GATE IS HERE, NOT IN THE PROMPT. A model asked nicely for a source
 // URL will usually provide one; asked to invent an event it will do that too.
-// Rows without a source URL, a venue, or a future start time are rejected before
-// they reach the review queue, so the human pass is a glance rather than an
-// investigation.
+// Rows without a source URL, a venue, or a future start time are rejected here,
+// which is what makes the gate below safe to invert.
 //
-// Nothing here goes live. Everything lands as `pending`, exactly like a
-// sponsor-authored move, and shows up in the existing admin queue.
+// R27 — THESE GO LIVE ON ARRIVAL. They used to land as `pending` and wait for a
+// human. That gate went unstaffed from 2026-08-04, and because an empty queue
+// and an ignored queue look identical from the outside, nobody noticed for
+// fifteen days: 386 rows piled up, every metro ran dark from 08-11, and nothing
+// anywhere errored. An unstaffed gate does not filter bad content, it filters
+// all content.
+//
+// So a seeded row that clears all of the checks below now publishes immediately
+// and carries `reviewed_at = NULL`, which lands it in the admin console's audit
+// list — live, but flagged as never looked at. The human pass still happens; it
+// just stopped being the thing standing between a real event and the feed.
+//
+// This applies to SEEDED rows only. Sponsor-authored moves keep the real gate:
+// they are paid third-party placements, none of the checks below speak to their
+// legitimacy, and money is involved. `origin` is the boundary, and this route is
+// the only writer that sets 'seeded'.
 
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
@@ -173,7 +186,9 @@ export async function POST(req: Request) {
       description: str(raw.description) ?? '',
       category: str(raw.category) ?? 'community',
       origin: 'seeded',
-      status: 'pending',
+      // R27: live on arrival. reviewed_at stays NULL (the column default) so the
+      // admin console can tell "published" from "actually looked at".
+      status: 'approved',
       sponsor_id: null,
       metro_id: metroId,
       area_zip: areaZip,

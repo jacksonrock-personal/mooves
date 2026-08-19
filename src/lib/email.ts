@@ -10,6 +10,7 @@ import { Resend } from 'resend'
 
 const FROM = 'Mooves <moves@makemooves.app>'
 const DASHBOARD_URL = 'https://makemooves.app/sponsor'
+const ADMIN_URL = 'https://makemooves.app/admin'
 
 function client(): Resend | null {
   const key = process.env.RESEND_API_KEY
@@ -88,6 +89,58 @@ export async function sendMoveLiveEmail(input: MoveLiveEmail): Promise<boolean> 
       html,
       text,
     })
+    return !error
+  } catch {
+    return false
+  }
+}
+
+// ── Ops alerts ───────────────────────────────────────────────────────────────
+
+interface MetroThinEmail {
+  metroName: string
+  state: string | null
+  upcoming: number
+  threshold: number
+}
+
+/**
+ * R27 — the freshness alarm's outbound half. Sent when a metro drops below the
+ * threshold of upcoming live community moves.
+ *
+ * Goes to OPS_ALERT_EMAIL, which is deliberately its own variable rather than a
+ * hardcoded address: the one thing this mail must not do is land somewhere
+ * nobody reads, which is the exact failure it exists to report on.
+ *
+ * Plain text, no template. An alert is read on a phone in a hurry and its whole
+ * job is to say which city, how many, and what to do.
+ */
+export async function sendMetroThinEmail(input: MetroThinEmail): Promise<boolean> {
+  const resend = client()
+  const to = process.env.OPS_ALERT_EMAIL
+  if (!resend || !to) return false
+
+  const where = input.state ? `${input.metroName}, ${input.state}` : input.metroName
+  const subject =
+    input.upcoming === 0
+      ? `Mooves: ${where} has NO upcoming community mooves`
+      : `Mooves: ${where} is down to ${input.upcoming} upcoming community mooves`
+
+  const text = [
+    `${where} has ${input.upcoming} approved community moove${input.upcoming === 1 ? '' : 's'} still in the future (threshold ${input.threshold}).`,
+    ``,
+    `Seeded moves publish automatically, so this usually means the routine is`,
+    `finding little rather than that anything is waiting on you. Worth checking:`,
+    ``,
+    `  1. Did the seeding routine run? claude.ai → routines → "Mooves — Community Mooves seeding"`,
+    `  2. Is it finding events but failing validation? The run log lists every rejection with a reason.`,
+    `  3. Admin console: ${ADMIN_URL}`,
+    ``,
+    `You are getting this at most once a day per metro, and only while it stays thin.`,
+  ].join('\n')
+
+  try {
+    const { error } = await resend.emails.send({ from: FROM, to, subject, text })
     return !error
   } catch {
     return false
