@@ -5854,3 +5854,120 @@ The old parts were `morning` 08–12 and `day` 09–17. **They overlap by three 
 ### Out of scope
 
 Per-user or per-day windows. A fourth part. Changing what `morning`, `day` or `evening` are *called*.
+
+---
+
+## R27 — Community mooves publish themselves (Fix + amendment) — *2026-08-19* · SPEC ✅ · MOCKUP — *(none: admin console + a cron route)* · CODE ✅ 2026-08-19 (PR #64)
+
+*Amends 24.9's review gate. Recorded here because the failure is worth keeping, not because the change is large.*
+
+The seeding routine ran every day for fifteen days without a miss. What stopped on 2026-08-04 was a human approving the rows, and **nothing measured that**. On 08-19: 386 pending, 97 still in the future, and **zero approved moves with a future start time in any of the four metros** — dark since 08-11 while `last_successful_pull` read green every single day, because ingesting was never the point.
+
+**An unstaffed gate does not filter bad content. It filters all content.** 24.9's instinct — a model asked to invent an event will do it — was right; the mistake was making the remedy blocking and then not staffing it. Seeded rows that clear the five validation bars now publish on arrival. **Sponsor-authored moves keep the real gate**: paid third-party placements, about which the five bars say nothing, and money is involved. `origin` is the boundary and the ingest route is the only writer that sets `seeded`.
+
+`sponsored_moves.reviewed_at` splits *live* from *actually looked at*, backfilled to `created_at` for everything approved under the old gate. The console became two lists — **Needs approval** (blocking, normally empty) and **Spot check** (never blocking) — both excluding expired rows, sorted soonest-first, with bulk. The old queue's real sin was not that it was slow: the *expected* outcome of a review pass is "these are all fine", and it made the expected outcome the expensive one.
+
+An hourly janitor (`/api/cron/community-moves`, Phase 22's secret and shape) sweeps pending rows whose event has passed and alarms when a metro drops below **three** upcoming live moves — not zero, because by zero it has been degrading for days. At most one mail per metro per day, and the stamp **clears on recovery** so the next dip alerts again.
+
+**The lesson is not "approve faster."** A pipeline with a manual step has to measure its *output*, not its throughput.
+
+### Out of scope
+
+Auto-publishing sponsor moves. Any change to the five validation bars or the routine's prompt.
+
+---
+
+## R28 — Comment on a Moove you have not joined (Spec, amendment) — *2026-08-19* · SPEC ✅ · MOCKUP — *(none: an existing sheet loses a conditional)* · CODE ✅ 2026-08-19
+
+*Amends wall 2 of Phase 21.*
+
+Phase 21 said commenting was for people who had committed — you needed a `move_joins` row. That was right about what comments are **for** and wrong about **who needs them**, because the most useful thing anyone says on a Moove is said by someone who is not in it: *"can't make Saturday, but I could do Sunday."* Under the old wall the only way to say it was to join the thing you had just said you could not attend, so it was said nowhere and the host never heard it.
+
+**Wall 2 is now: anyone who can SEE the Moove can comment on it.** A real widening, bounded by exactly one thing — the set of people who can comment is precisely the set the Moove was already shared with, so **nobody new learns it exists**. **Wall 3 is untouched**: someone outside the audience still gets 403 from GET, not an empty list. Walls 1 and 4 are structural and unchanged.
+
+**The audience predicate now lives in `lib/visibility.canSeePlan`** and is called by the join route, the comment route and the like route. It existed as two hand-written copies and they had already drifted — R27 fixed the join route for exactly this, having missed `visible_user_ids` for three weeks. A third copy was not a risk, it was a scheduled outage.
+
+`get_plans` stops hardcoding `commentCount` to 0 for non-joiners. Every row reaching that expression has already passed the `visible` CTE, so the CASE was redundant rather than protective — and was about to under-report to precisely the people this round is for. **Likes widened in the same commit**: had only comments moved, everyone newly able to comment would have found a heart that silently 403s.
+
+The sheet splits `canComment` from `isIn`. **"I'm in" is still offered, now on the roster pane only** — a non-joiner has a compose pill on the other pane, and two full-width primary buttons a thumb apart is two different commitments competing. Comment pushes already reached the host and every joiner, so the "can't make Saturday" lands with no change.
+
+### Out of scope
+
+A structured "can't make it / could do another day" tap (deferred: see R29's note). Comments on greens — wall 1 stands. Realtime.
+
+---
+
+## R29 — Mooves that open one hop out (Spec) — *2026-08-19* · SPEC 🔄 *awaiting approval* · MOCKUP ⬜ · CODE ⬜
+
+*The growth round. The complaint it answers: **"it's always the usual suspects from the same friend group."** Note that the feature built to widen the feed with non-friend content is Community Mooves, which R27 had to resurrect — some of this complaint was that outage, and R29 should be judged on what is left after the feed has been full for a week.*
+
+### The load-bearing constraint
+
+**Mooves can open one hop out. Greens never can.**
+
+A green is *"when I am free and roughly where I am"* — continuous, passive, personal, and attached to a person rather than an occasion. A Moove is a thing at a time and a place. Only the second is safe to widen, and keeping that line bright is what makes the rest of this round safe at all. **Nothing in R29 touches `get_feed`.**
+
+The rejected alternative was transitive auto-friending (*"you auto-friend friends of your friends, and their friends"*), which collapses: second degree is ~d², third ~d³, so at an average of 15 friends you are at whole-app scale by hop three. The fatal part is not the size but what it does to the signal — the green ring means something *because* it is someone you would actually text.
+
+### R29.1 — The toggle
+
+**`plans.open_to_fof BOOLEAN NOT NULL DEFAULT false`.** Per-Moove, set in the composer. Default off, so the first FoF Moove is a deliberate act and no existing Moove changes audience when this ships.
+
+**Opening to friends of friends requires an UNSCOPED Moove.** `open_to_fof` and `visible_to` / `visible_user_ids` are contradictory: a Moove narrowed to a group cannot simultaneously be widened past the friend graph. The composer disables each control while the other is set, and **the server rejects the combination rather than resolving it** — a silent precedence rule here is a Moove reaching people the author thought they had excluded, which is the one bug this feature must not have.
+
+### R29.2 — Who sees it
+
+Viewer **V** sees author **A**'s Moove one hop out when *all* hold:
+
+- V and A are **not** already friends (otherwise it is an ordinary first-degree Moove and this branch is irrelevant)
+- there is an **M** with `friendship(V, M)` **and** `friendship(M, A)` — friendships are symmetric two-row, so either direction reads the same
+- `A.open_to_fof = true`
+- `V.fof_mooves_enabled = true`
+- A is not on V's `fof_hidden` list
+
+**`users.fof_mooves_enabled BOOLEAN NOT NULL DEFAULT true`** — "Show me Mooves from friends of friends" in Settings. On by default: off-by-default would make adoption near zero and leave the feed exactly as it is, which is the problem.
+
+**No global "never open my Mooves" switch.** The per-Moove toggle already defaults off, so that setting would mean "keep the default I already have". Less surface.
+
+### R29.3 — Attribution
+
+**The mutual friend is named: "through Marcus."** This is the entire trust mechanism — without it the card is from a stranger, and a Moove from an unexplained stranger is one people ignore or find creepy. It does disclose to V that Marcus knows A; that is the same class of disclosure as any mutual-friends UI and is accepted deliberately.
+
+**Which mutual friend, when there are several: the one V has been friends with LONGEST** (`friendships.created_at` ascending, V's own row). Deterministic, stable across renders, and meaningful — the person you know best is the most useful vouch. More than one renders as *"through Marcus and 2 others."*
+
+### R29.4 — Joining, and the phone number
+
+**Joining a FoF Moove creates no friendship.** You went to a thing; you did not add anyone. The friending that follows happens in person, through the round-up QR that already exists — which is how friendships actually form.
+
+**A FoF joiner is treated exactly like any other joiner, phone included** *(Jackson's call, against the recommendation)*. This needs no code: `get_plans` already returns a joiner's phone only when `v.author_id = viewer`, so the host gets it and other joiners never do. The host needs a way to say "we're outside at 7."
+
+**⚠ The joiner must be TOLD, at the moment of joining, that the host will get their number.** A one-line disclosure on the "I'm in" confirmation, for a FoF Moove only. This is the difference between consent and surprise, and it is the whole mitigation for the decision above — **it is not optional and not a polish item.**
+
+### R29.5 — The pressure valve
+
+**`fof_hidden (user_id, hidden_user_id)`, PK both columns.** "Hide Mooves from this person", from the card.
+
+This is load-bearing because **Mooves has no blocking** — `DELETE /api/friendships/[friendId]` exists and works (swipe-left on a friend row, both rows deleted), but nothing prevents a re-add and there is no report path. R29 is the first time a **non-friend's** content reaches your feed, so the existing remedy is unavailable by definition: you cannot unfriend someone you were never friends with. Without `fof_hidden` the only escape is the global switch, which kills the feature for that person entirely, or unfriending the bridge, which punishes Marcus for something Marcus did not do.
+
+### R29.6 — Volume
+
+**FoF Mooves are capped and ranked, not merged wholesale.** Second degree at 15 friends is ~225 people; if the feature lands well, an uncapped branch turns the feed into a listings site and buries the friend Mooves that are the point.
+
+**At most 5 FoF Mooves in the feed at once, ranked by mutual-friend count descending, then `sort_at`.** Mutual count is the right ranker because it is the same quantity as "how likely is this to be my scene". They interleave inline by `sort_at` rather than sitting in their own section — a separate section is a ghetto nobody scrolls, and the "through Marcus" line already makes them distinguishable.
+
+### Data model (R29)
+
+| Change | Why |
+|---|---|
+| `plans.open_to_fof` | R29.1. Default false. |
+| `users.fof_mooves_enabled` | R29.2. Default true. |
+| `fof_hidden (user_id, hidden_user_id)` | R29.5. |
+| `get_plans` — second-degree branch | The `visible` CTE gains a UNION arm. Re-emitted **from the live definition**, per the lesson in `20260819150000`. |
+| `canSeePlan` — learns the FoF rule | **One function, not three.** R28 centralised the predicate, so joining and commenting on a FoF Moove work by extending a single place. Had R28 not landed first, this would have been three edits and two of them would have been forgotten. |
+| Index on `friendships (friend_id, user_id)` | The second-degree join reads the graph in both directions. |
+
+**R28 interacts deliberately: a FoF viewer can comment.** They can see the Moove, and R28 made the audience the comment gate. This is the desired behaviour — *"can't make Saturday"* from someone one hop out is exactly the signal that turns a FoF Moove into a real invitation — but it means R29 widens who can write into a thread, and that should be watched rather than assumed fine.
+
+### Out of scope
+
+Greens one hop out — the constraint, not an omission. Third degree. Friend suggestions on the People screen (*"you and Marcus both know Ana"*) — needs a request/accept flow and an undiscoverable flag; it is the option deferred, not rejected. Plus-ones / bringing a non-friend to a Moove. Blocking as a general feature. The structured "can't make it / could do Sunday" tap deferred from R28 — it wants R29's traffic first, so the shape is drawn from real comments rather than guessed.
