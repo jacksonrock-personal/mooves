@@ -82,11 +82,22 @@ export interface Plan {
   /**
    * Phase 21, second revision — a TOTAL, never an unread count.
    *
-   * `get_plans` returns 0 unless the viewer is the author or has joined, so a
-   * non-joiner is never handed a number they then have to be trusted not to
-   * render. Wall 3 is enforced in the database, not here.
+   * R28: this is now the real count for anyone in the Moove's audience, which
+   * after R28 is exactly the set who can open the thread. It used to be 0 for
+   * non-joiners, back when they could not read it.
    */
   commentCount: number
+  /**
+   * R29 — the mutual friend who connects the viewer to the author, or null.
+   *
+   * NULL IS THE BRANCH. It is null on every first-degree Moove and non-null on
+   * every one-hop-out Moove, so the card draws the vouch chip if and only if
+   * there is a name to put in it, and no separate "is this a FoF Moove" flag can
+   * fall out of step with the name it is supposed to accompany.
+   */
+  viaName: string | null
+  /** Author only, like `visibleTo`, so an edit round-trips the toggle. */
+  openToFof: boolean
 }
 
 export const PLAN_TITLE_MAX = 80

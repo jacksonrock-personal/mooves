@@ -24,6 +24,8 @@ interface PlanCardProps {
   onActions: (plan: Plan) => void
   /** Opens the Moove sheet on a specific pane — the row has a target for each. */
   onOpenSheet: (plan: Plan, pane: MoovePane) => void
+  /** R29 — the vouch chip was tapped on a one-hop-out Moove. */
+  onVia: (plan: Plan) => void
 }
 
 export default function PlanCard({
@@ -33,6 +35,7 @@ export default function PlanCard({
   onBlast,
   onActions,
   onOpenSheet,
+  onVia,
 }: PlanCardProps) {
   const start = new Date(plan.startAt)
   const tile = planTile(start, plan.hasTime, plan.timeMode)
@@ -73,6 +76,42 @@ export default function PlanCard({
             <span className="font-sans text-[10.5px] font-bold text-purple-700 bg-purple-100 px-1.5 py-0.5 rounded-full">
               {plan.isMine ? 'Your Moove' : (plan.authorName ?? 'A friend')}
             </span>
+            {/* R29 — the vouch, and also the only way to reach Hide.
+                Drawn in GroupLabel's shape on purpose: it sits in the same row
+                as that label and the author pill, and a third visual language
+                here would make the row read as three unrelated things.
+                It is a BUTTON because the mockup found there is nowhere else for
+                Hide to live — on someone else's card the right-hand slot holds
+                "I'm in", and Hide must not displace the primary action. The chip
+                renders only on one-hop-out Mooves, so the affordance exists
+                exactly where the thing it manages does. */}
+            {plan.viaName && (
+              <button
+                onClick={() => onVia(plan)}
+                aria-label={`${plan.authorName ?? 'They'} are connected to you through ${plan.viaName}. Options.`}
+                className="inline-flex items-start gap-1.5 max-w-full min-w-0 rounded-[13px] border border-[#E8E4F5] bg-white pl-[7px] pr-2.5 py-[3px]"
+              >
+                <svg
+                  width="11"
+                  height="11"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="shrink-0 mt-[3px] text-grey-300"
+                  aria-hidden="true"
+                >
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                </svg>
+                <span className="font-sans text-[11px] font-semibold text-ink-500 leading-[1.4] break-words min-w-0">
+                  through {plan.viaName}
+                </span>
+              </button>
+            )}
             <GroupLabel groups={plan.visibleGroups} />
           </div>
         </div>

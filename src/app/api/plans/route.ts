@@ -79,6 +79,8 @@ export async function POST(req: Request) {
     visibleTo?: string[] | null
     /** R16 — individual friends, unioned with the groups above. */
     visibleUserIds?: string[] | null
+    /** R29 — open this one Moove a single hop out. */
+    openToFof?: boolean
     sponsoredMoveId?: string | null
   }
 
@@ -97,6 +99,19 @@ export async function POST(req: Request) {
 
   // R16 — only people the author is actually friends with, checked server-side.
   const visibleUserIds = await sanitizeVisibleUserIds(supabase, userId, body.visibleUserIds)
+
+  // R29 — REJECTED, not resolved. Narrowing to a group and widening past the
+  // friend graph are contradictory, and any precedence rule we picked would be
+  // a silent one: whichever way it fell, somebody's Moove would reach an
+  // audience they thought they had chosen against. That is the single bug this
+  // feature cannot have, so the request fails and the composer never sends it.
+  const openToFof = body.openToFof === true
+  if (openToFof && (visibleTo || visibleUserIds)) {
+    return NextResponse.json(
+      { error: 'A Moove shared with a group or specific friends cannot also open to friends of friends' },
+      { status: 400 },
+    )
+  }
 
   // 13.8 — only attach an origin we can actually verify, so the "Sponsored"
   // disclosure on the friend feed can never be forged by a hand-built request.
@@ -127,6 +142,7 @@ export async function POST(req: Request) {
       note: trimmed(body.note, PLAN_NOTE_MAX),
       visible_to: visibleTo,
       visible_user_ids: visibleUserIds,
+      open_to_fof: openToFof,
       sponsored_move_id: sponsoredMoveId,
     })
     .select('id')
