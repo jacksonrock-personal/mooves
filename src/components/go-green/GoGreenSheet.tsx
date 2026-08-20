@@ -182,7 +182,18 @@ export default function GoGreenSheet({
         {...drag.sheetProps}
         // Merged, not replaced: sheetProps.style carries the drag transform, and
         // clobbering it would leave the sheet unable to follow a thumb.
-        style={{ ...drag.sheetProps.style, bottom: keyboardInset }}
+        //
+        // R32 adds the maxHeight. `bottom` alone lifts the sheet clear of the
+        // keyboard but does not shrink it, so a fixed-height sheet pushed up by
+        // ~290px loses that much off the TOP — here that is the grabber and the
+        // heading. It went unnoticed because 72% is short enough to mostly get
+        // away with it; MooveSheet at 76% did not, which is how it surfaced.
+        // Inert when the keyboard is closed: maxHeight goes undefined.
+        style={{
+          ...drag.sheetProps.style,
+          bottom: keyboardInset,
+          maxHeight: keyboardInset > 0 ? `calc(100% - ${keyboardInset}px)` : undefined,
+        }}
       >
         <SheetGrabber drag={drag} className="mt-[18px]" />
 

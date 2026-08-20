@@ -7,6 +7,7 @@
 import { useState } from 'react'
 import { posthog } from '@/lib/posthog'
 import { useSheetDrag } from '@/lib/useSheetDrag'
+import { useKeyboardInset } from '@/lib/useKeyboardInset'
 import SheetGrabber from '@/components/ui/SheetGrabber'
 import {
   captureDeviceArea,
@@ -39,6 +40,7 @@ export default function AreaControl({
   // R6 — both variants below draw a grabber, and only one is ever mounted at a
   // time, so they share a single hook.
   const areaDrag = useSheetDrag(() => setSheet('none'))
+  const keyboardInset = useKeyboardInset(true)
   const [busy, setBusy] = useState(false)
   const [zip, setZip] = useState('')
   const [zipError, setZipError] = useState<string | null>(null)
@@ -270,7 +272,15 @@ export default function AreaControl({
             onClick={() => setSheet('none')}
             aria-hidden="true"
           />
-          <div className="fixed bottom-0 left-0 right-0 z-50 px-3 [--safe-pb-base:2rem] safe-area-pb" {...areaDrag.sheetProps}>
+          <div
+            className="fixed bottom-0 left-0 right-0 z-50 px-3 [--safe-pb-base:2rem] safe-area-pb"
+            {...areaDrag.sheetProps}
+            // R32 - lifted clear of the keyboard, same as the other sheets. This
+            // one holds the manual ZIP entry, so the keyboard is up exactly when
+            // the card matters. Content-sized rather than a fixed percentage, so
+            // it only needs the lift and has no height to cap.
+            style={{ ...areaDrag.sheetProps.style, bottom: keyboardInset }}
+          >
             <div className="bg-white rounded-[28px] p-5 pb-6">
               <SheetGrabber drag={areaDrag} className="mb-[22px]" pillClassName="w-[38px] h-1 rounded-full bg-[#DED8F0]" />
               <div className="font-display font-extrabold text-[19px] text-ink-900 text-center">Set your area</div>
@@ -326,7 +336,15 @@ export default function AreaControl({
             onClick={() => setSheet('none')}
             aria-hidden="true"
           />
-          <div className="fixed bottom-0 left-0 right-0 z-50 px-3 [--safe-pb-base:2rem] safe-area-pb" {...areaDrag.sheetProps}>
+          <div
+            className="fixed bottom-0 left-0 right-0 z-50 px-3 [--safe-pb-base:2rem] safe-area-pb"
+            {...areaDrag.sheetProps}
+            // R32 - lifted clear of the keyboard, same as the other sheets. This
+            // one holds the manual ZIP entry, so the keyboard is up exactly when
+            // the card matters. Content-sized rather than a fixed percentage, so
+            // it only needs the lift and has no height to cap.
+            style={{ ...areaDrag.sheetProps.style, bottom: keyboardInset }}
+          >
             <div className="bg-white rounded-[28px] p-5 pb-6">
               <SheetGrabber drag={areaDrag} className="mb-[22px]" pillClassName="w-[38px] h-1 rounded-full bg-[#DED8F0]" />
               <div className="font-display font-extrabold text-[19px] text-ink-900 text-center">Your area</div>

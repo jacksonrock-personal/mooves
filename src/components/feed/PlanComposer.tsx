@@ -13,6 +13,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { posthog } from '@/lib/posthog'
 import { useSheetDrag } from '@/lib/useSheetDrag'
+import { useKeyboardInset } from '@/lib/useKeyboardInset'
 import SheetGrabber from '@/components/ui/SheetGrabber'
 import PaneTrack from '@/components/ui/PaneTrack'
 import VisibilityRow from '@/components/visibility/VisibilityRow'
@@ -113,6 +114,7 @@ export default function PlanComposer({
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const drag = useSheetDrag(onClose)
+  const keyboardInset = useKeyboardInset(open)
 
   // Reset (or prefill) every time the sheet opens.
   useEffect(() => {
@@ -292,6 +294,21 @@ export default function PlanComposer({
         role="dialog"
         aria-modal="true"
         {...drag.sheetProps}
+        // R32 — the same keyboard fix as MooveSheet, and this sheet needed it
+        // most: it is 86% tall, it is nothing BUT text inputs, and its commit
+        // button is pinned to the bottom. On iOS the layout viewport does not
+        // shrink for the keyboard, so typing a title put "Post this Moove"
+        // behind it — you had to dismiss the keyboard to find the button that
+        // finishes the thing you were typing.
+        //
+        // After the spread and merged, so the drag transform survives. maxHeight
+        // shrinks the sheet into what is left rather than shoving its top off
+        // screen; the form is already its own scroller, so it absorbs it.
+        style={{
+          ...drag.sheetProps.style,
+          bottom: keyboardInset,
+          maxHeight: keyboardInset > 0 ? `calc(100% - ${keyboardInset}px)` : undefined,
+        }}
       >
         {/* Escaping this sheet was impossible on device: it fills ~86% of the
             screen, so there is almost no scrim left to tap. Three ways out —

@@ -27,6 +27,7 @@ import { useCallback, useEffect, useState } from 'react'
 import Avatar from '@/components/ui/Avatar'
 import { posthog } from '@/lib/posthog'
 import { useSheetDrag } from '@/lib/useSheetDrag'
+import { useKeyboardInset } from '@/lib/useKeyboardInset'
 import SheetGrabber from '@/components/ui/SheetGrabber'
 import { planWhenLine, type Plan } from '@/lib/plans'
 import {
@@ -101,6 +102,8 @@ export default function MooveSheet({
    */
   const [taggable, setTaggable] = useState<TaggableFriend[]>([])
   const drag = useSheetDrag(onClose)
+  // The sheet is mounted only while open, so it is always active here.
+  const keyboardInset = useKeyboardInset(true)
 
   const load = useCallback(async () => {
     try {
@@ -314,9 +317,37 @@ export default function MooveSheet({
 
       <div
         className="fixed bottom-0 left-0 right-0 z-50 bg-card-white rounded-t-[22px] flex flex-col max-h-[86%] h-[76%]"
+        // R32 — LIFT ABOVE THE KEYBOARD, AND SHRINK TO FIT ABOVE IT.
+        //
+        // This sheet never got Phase 16 #9's keyboard handling; only GoGreenSheet
+        // did. On iOS the LAYOUT viewport does not shrink when the keyboard
+        // opens, so a `fixed; bottom: 0` sheet stays anchored to a bottom edge
+        // that is now behind the keyboard: the compose pill disappears under it,
+        // iOS scrolls the page to chase the caret, and the result is a blank gap
+        // where the sheet's lower half should be with the feed showing through.
+        //
+        // `bottom` alone is not enough here, which is the bit GoGreenSheet gets
+        // away with by being shorter. Lifting a fixed-height sheet by ~290px of
+        // keyboard pushes its TOP off the screen — on this sheet that clips the
+        // grabber and R30's title. Capping the height to the space that is
+        // actually left makes it fill exactly the visible area instead, and the
+        // comment list (flex-1, its own scroller) absorbs the difference.
+        //
+        // Both are inline so they beat the utility classes, and both are inert
+        // when the keyboard is closed: maxHeight goes undefined and max-h-[86%]
+        // takes back over.
         role="dialog"
         aria-modal="true"
         {...drag.sheetProps}
+        // AFTER the spread, and merged rather than replacing. sheetProps carries
+        // the drag transform in its own `style`; putting this before the spread
+        // would have it silently overwritten, and putting it after without the
+        // merge would leave the sheet unable to follow a thumb.
+        style={{
+          ...drag.sheetProps.style,
+          bottom: keyboardInset,
+          maxHeight: keyboardInset > 0 ? `calc(100% - ${keyboardInset}px)` : undefined,
+        }}
       >
         {/* R5 removed the restated Moove from the top of this sheet, which also
             removed the only thing above the tabs that was safe to drag. The
