@@ -4,12 +4,13 @@
 // Search + friend list + swipe-to-remove + sticky invite button.
 // The People header, sub-tabs, and bottom nav live in PeopleScreen.
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { initPostHog, posthog } from '@/lib/posthog'
 import { useSheetDrag } from '@/lib/useSheetDrag'
 import SheetGrabber from '@/components/ui/SheetGrabber'
 import CowIllustration from '@/components/ui/CowIllustration'
+import PeopleDiscovery from './PeopleDiscovery'
 import Toast from '@/components/ui/Toast'
 import FriendsList from './FriendsList'
 import FriendWeekSheet from './FriendWeekSheet'
@@ -32,6 +33,20 @@ export default function FriendsPanel() {
   const [toastMessage, setToastMessage] = useState<string | null>(null)
 
   const searchFired = useRef(false)
+
+  // R31 — lifted out of the effect below so accepting a friend request can
+  // reuse it. A new friendship has to land in this list immediately; refetching
+  // is simpler and more honest than splicing a row in from the accept response,
+  // which would have to invent the week count.
+  const reloadFriends = useCallback(async () => {
+    try {
+      const res = (await fetch('/api/friends').then(r => r.json())) as { friends: Friend[] }
+      setFriends(sortFriends(res.friends ?? []))
+    } catch {
+      // Leave the list as it was. A failed refresh after an accept means one
+      // stale list, not a broken screen.
+    }
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -139,6 +154,17 @@ export default function FriendsPanel() {
 
       {/* Body */}
       <div className="flex-1 flex flex-col pb-[calc(var(--nav-h)+95px+22px+env(safe-area-inset-bottom))]">
+        {/* R31 — requests and suggestions, ABOVE the friend list. Both sections
+            render nothing at all when empty, so a user with neither sees the
+            panel exactly as it was before this release. It sits outside the
+            count===0 branch below on purpose: an incoming request is worth
+            showing even to somebody whose own list is empty. */}
+        {loaded && (
+          <PeopleDiscovery
+            onFriendAdded={() => void reloadFriends()}
+            onToast={setToastMessage}
+          />
+        )}
         {loaded &&
           (count === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center text-center px-8">

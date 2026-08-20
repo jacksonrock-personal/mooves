@@ -490,3 +490,64 @@ export async function sendConfirmPush(
     })
   }
 }
+
+
+// ── R31: friend requests ─────────────────────────────────────────────────────
+//
+// TWO pushes, and no third. A request arriving and a request being accepted are
+// both things the other person cannot discover any other way — there is no
+// badge, no count and no dot anywhere in this release, deliberately, so the push
+// IS the notification. A decline sends nothing, ever: silence is what makes
+// declining feel free, and the moment it carries a social cost people stop
+// declining and start ignoring.
+//
+// Neither is rate-limited beyond the route's own throttle. Unlike comment
+// pushes, these cannot repeat — a pair of people can produce at most one of
+// each, forever, because the request row is unique and its status only moves
+// one way.
+
+async function displayNameOf(
+  supabase: ReturnType<typeof createServiceClient>,
+  userId: string,
+): Promise<string> {
+  const { data } = await supabase
+    .from('users')
+    .select('display_name')
+    .eq('id', userId)
+    .maybeSingle()
+  return data?.display_name?.trim() || 'Someone'
+}
+
+/** "Ana Ruiz wants to be friends" — lands on the People tab, where the answer is. */
+export async function sendFriendRequestPush(
+  recipientId: string,
+  requesterId: string,
+): Promise<void> {
+  const supabase = createServiceClient()
+  const name = await displayNameOf(supabase, requesterId)
+  await pushToUsers(supabase, [recipientId], {
+    title: 'Mooves',
+    body: `${name} wants to be friends`,
+    url: '/people',
+  })
+}
+
+/**
+ * "Ana Ruiz is now your friend."
+ *
+ * Without this the person who ASKED never learns the answer: their request just
+ * quietly becomes a friendship they are left to notice on their own, and the
+ * one thing a request must never be is ambiguous.
+ */
+export async function sendFriendAcceptedPush(
+  requesterId: string,
+  accepterId: string,
+): Promise<void> {
+  const supabase = createServiceClient()
+  const name = await displayNameOf(supabase, accepterId)
+  await pushToUsers(supabase, [requesterId], {
+    title: 'Mooves',
+    body: `${name} is now your friend`,
+    url: '/people',
+  })
+}

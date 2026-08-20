@@ -5994,7 +5994,7 @@ Collecting images in the seeding routine. A real image for community moves.
 
 ---
 
-## R31 — Suggested friends, and asking properly (Spec) — *2026-08-20* · SPEC 🔄 *awaiting approval* · MOCKUP ⬜ · CODE ⬜
+## R31 — Suggested friends, and asking properly (Spec) — *2026-08-20* · SPEC ✅ · MOCKUP ✅ (`mooves-r31-friend-requests.html`, 6 states, approved 2026-08-20) · CODE 🔄
 
 *The consent round. It delivers the People-screen suggestions deferred from R29's "out of scope" AND the shared-Moove path approved as "Option B" — together, because they are the same machinery and shipping them apart would leave the app with two different answers to "how does a person get into my graph".*
 
@@ -6050,8 +6050,13 @@ Three routes, and the guard on the first is the important one.
 
 **Inside the Friends panel, not a third sub-tab.** People is already Friends / Groups; a third would crowd a two-tab control to make room for a section that is empty most of the time.
 
-- **Incoming requests** pin to the top of the Friends panel when any exist, and vanish entirely when none do.
-- **"People you might know"** sits below the friend list, under a divider.
+**Both new sections sit ABOVE the friend list** (Jackson, at mockup). The draft had suggestions below it, which was wrong for the reason the drawing made obvious: somebody with sixty friends never scrolls that far, so the feature would ship and never be seen. The order is:
+
+1. **Wants to be friends** — incoming requests
+2. **People you might know** — suggestions
+3. **Your friends** — the existing list, unchanged
+
+**Each new section is ABSENT when empty, never an empty state.** A "nobody to suggest yet" block sitting above your actual friends is worse than nothing: it is permanent furniture explaining a feature that is not doing anything. Requests already worked this way and suggestions now match — so a user with neither sees exactly the screen they see today.
 
 **NO BADGE, NO COUNT, NO DOT.** The house rule against unread counts holds here and this is the release most tempted to break it. The signal that a request is waiting is **one push**, and after that the section is either there or it is not. A number on the People tab would be the first unread count in the app.
 

@@ -14,7 +14,7 @@ export async function GET(req: Request) {
   const supabase = createServiceClient()
   const { data, error } = await supabase
     .from('users')
-    .select('id, phone, display_name, avatar_url, referral_code, is_available, is_admin, status_note, status_time, status_move_id, status_set_at, status_expires_at, status_show_groups, visible_to, visible_user_ids, onboarding_complete, area_zip, interests, wave_push_enabled, timezone, week_ritual_day, week_push_enabled, recruit_ask_shown_at, hide_from_matches, fof_mooves_enabled')
+    .select('id, phone, display_name, avatar_url, referral_code, is_available, is_admin, status_note, status_time, status_move_id, status_set_at, status_expires_at, status_show_groups, visible_to, visible_user_ids, onboarding_complete, area_zip, interests, wave_push_enabled, timezone, week_ritual_day, week_push_enabled, recruit_ask_shown_at, hide_from_matches, fof_mooves_enabled, friend_suggestable')
     .eq('id', userId)
     .single()
 
@@ -70,6 +70,7 @@ export async function GET(req: Request) {
     // 24.0 wall 4 — false means they appear in computed lines, the default.
     hideFromMatches: data.hide_from_matches,
     fofMoovesEnabled: data.fof_mooves_enabled,
+    friendSuggestable: data.friend_suggestable,
     areaZip: data.area_zip,
     areaCity: area?.city ?? null,
     areaState: area?.state ?? null,
@@ -95,6 +96,7 @@ export async function PATCH(req: Request) {
     recruitAskShown?: boolean
     hideFromMatches?: boolean
     fofMoovesEnabled?: boolean
+    friendSuggestable?: boolean
     interests?: string[]
     wavePushEnabled?: boolean
     timezone?: string
@@ -109,6 +111,7 @@ export async function PATCH(req: Request) {
     recruit_ask_shown_at?: string
     hide_from_matches?: boolean
     fof_mooves_enabled?: boolean
+    friend_suggestable?: boolean
     interests?: string[]
     wave_push_enabled?: boolean
     timezone?: string
@@ -129,6 +132,7 @@ export async function PATCH(req: Request) {
   if (body.recruitAskShown === true) updates.recruit_ask_shown_at = new Date().toISOString()
   if (body.hideFromMatches !== undefined) updates.hide_from_matches = body.hideFromMatches
   if (body.fofMoovesEnabled !== undefined) updates.fof_mooves_enabled = body.fofMoovesEnabled
+  if (body.friendSuggestable !== undefined) updates.friend_suggestable = body.friendSuggestable
   if (body.interests !== undefined) {
     // Keep only known curated slugs; de-dupe.
     updates.interests = [...new Set(body.interests.filter(s => INTEREST_SLUGS.includes(s)))]
