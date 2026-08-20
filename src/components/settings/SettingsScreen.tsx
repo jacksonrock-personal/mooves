@@ -28,6 +28,7 @@ interface Me {
   areaZip: string | null
   hideFromMatches: boolean
   fofMoovesEnabled: boolean
+  friendSuggestable: boolean
   areaCity: string | null
   areaState: string | null
   interests: string[]
@@ -68,6 +69,7 @@ export default function SettingsScreen() {
           areaZip: string | null
           hideFromMatches?: boolean
           fofMoovesEnabled?: boolean
+          friendSuggestable?: boolean
           areaCity: string | null
           areaState: string | null
           interests: string[]
@@ -89,6 +91,7 @@ export default function SettingsScreen() {
         areaZip: profile.areaZip,
         hideFromMatches: profile.hideFromMatches ?? false,
         fofMoovesEnabled: profile.fofMoovesEnabled ?? true,
+        friendSuggestable: profile.friendSuggestable ?? true,
         areaCity: profile.areaCity,
         areaState: profile.areaState,
         interests: profile.interests ?? [],
@@ -130,6 +133,23 @@ export default function SettingsScreen() {
   // 24.0 wall 4. Optimistic, rolled back on failure — a switch that silently
   // fails to save is worse than one that says so, because the user believes
   // they are hidden when they are not.
+  async function handleSuggestableChange(next: boolean) {
+    const previous = me
+    setMe(prev => (prev ? { ...prev, friendSuggestable: next } : prev))
+    try {
+      const res = await fetch('/api/users/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ friendSuggestable: next }),
+      })
+      if (!res.ok) throw new Error('save failed')
+      posthog.capture('settings_friend_suggestable', { enabled: next })
+    } catch {
+      setMe(previous)
+      setToastMessage("Couldn't save that, try again.")
+    }
+  }
+
   async function handleFofChange(next: boolean) {
     const previous = me
     setMe(prev => (prev ? { ...prev, fofMoovesEnabled: next } : prev))
@@ -358,6 +378,45 @@ export default function SettingsScreen() {
                 <span
                   className={`absolute top-[3px] w-[22px] h-[22px] rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.2)] transition-all ${
                     me.fofMoovesEnabled ? 'left-[21px]' : 'left-[3px]'
+                  }`}
+                />
+              </button>
+            </div>
+
+            <div className="h-3.5" />
+
+            {/* R31 - the opt-out, and the WORDING is the design.
+                Settings already has "Suggest me for things" (24.0), which
+                governs the "would probably go" lines on Discover cards. These
+                are different promises about different objects sitting in one
+                list, so one is about THINGS and one is about being a FRIEND.
+                Anything shorter collapses them.
+
+                It governs both paths including co-attendance: a flag that
+                quietly stops protecting you the moment you attend something is
+                a trap, not a setting. */}
+            <div className="bg-white border border-[#E8E4F5] rounded-[20px] p-4 mx-4 flex items-start gap-3">
+              <span className="flex-1">
+                <span className="block font-sans font-bold text-[15px] text-ink-900">
+                  Suggest me as a friend
+                </span>
+                <span className="block font-sans text-[13px] text-ink-500 mt-1 leading-[1.45]">
+                  Friends of your friends can see you as someone they might know, with the friends
+                  you have in common. They still have to ask, and you decide.
+                </span>
+              </span>
+              <button
+                onClick={() => void handleSuggestableChange(!me.friendSuggestable)}
+                role="switch"
+                aria-checked={me.friendSuggestable}
+                aria-label="Suggest me as a friend"
+                className={`shrink-0 w-[46px] h-[28px] rounded-full relative transition-colors ${
+                  me.friendSuggestable ? 'bg-green-500' : 'bg-grey-300'
+                }`}
+              >
+                <span
+                  className={`absolute top-[3px] w-[22px] h-[22px] rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.2)] transition-all ${
+                    me.friendSuggestable ? 'left-[21px]' : 'left-[3px]'
                   }`}
                 />
               </button>

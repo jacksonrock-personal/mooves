@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mooves — R31: suggested friends, and asking properly</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  /* Values lifted from the shipped components: PeopleScreen.tsx, FriendsPanel.tsx,
+     FriendsList.tsx, FriendRow.tsx, SettingsScreen.tsx, BottomNav.tsx. */
+  :root{
+    --green-100:#E3F9EC; --green-500:#2ECC71; --green-700:#167A43;
+    --purple-50:#F8F6FF; --purple-100:#EDE9FF; --purple-500:#7C5CDB; --purple-700:#5F3FC4;
+    --ink-900:#1C1730; --ink-500:#6B628A;
+    --grey-100:#F1EEFA; --grey-300:#BDB5D4; --hair:#E8E4F5;
+    --red:#E8405A; --white:#fff; --safetop:44px; --nav-h:95px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:Inter,sans-serif;background:#0F0C1A;color:#fff;padding:34px 18px 90px;-webkit-font-smoothing:antialiased}
+  h1{font-family:'Plus Jakarta Sans',sans-serif;font-size:25px;font-weight:800;letter-spacing:-.02em;text-align:center}
+  .sub{text-align:center;color:#9990BC;font-size:13.5px;margin-top:9px;max-width:790px;margin-left:auto;margin-right:auto;line-height:1.65}
+  .sub b{color:#CFC6EC;font-weight:600}
+  .knoblbl{text-align:center;font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#5E5480;margin:26px 0 0}
+  .knobs{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin:11px auto 0;max-width:980px}
+  .kbtn{background:#1D1733;border:1.5px solid #332B52;color:#CFC6EC;font-family:inherit;font-size:12.5px;font-weight:600;
+        padding:9px 15px;border-radius:99px;cursor:pointer;transition:.16s}
+  .kbtn:hover{border-color:var(--purple-500)}
+  .kbtn.on{background:var(--purple-500);border-color:var(--purple-500);color:#fff}
+  .rule{width:100%;height:1px;background:#241D3C;max-width:1000px;margin:26px auto 0}
+  .stage{display:flex;flex-wrap:wrap;gap:38px;justify-content:center;margin-top:30px;align-items:flex-start}
+  .col{display:flex;flex-direction:column;align-items:center;max-width:392px}
+  .caption{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#7C6FA8;margin-bottom:11px;text-align:center}
+  .note{font-size:12.5px;color:#9990BC;line-height:1.7;width:352px;max-width:100%;margin-top:15px}
+  .note b{color:#CFC6EC;font-weight:600}
+  .box{max-width:1000px;margin:30px auto 0;background:#191330;border:1px solid #2C2450;border-radius:16px;padding:18px 22px}
+  .box h4{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:14px;color:#fff;margin-bottom:10px}
+  .box p{font-size:12.8px;color:#A79EC9;line-height:1.75}
+  .box p+p{margin-top:9px}
+  .box b{color:#E4DCFF;font-weight:600}
+  .box .q{color:#FFD37A;font-weight:700}
+  .new{color:#7CE8A8;font-weight:700}
+
+  .phone{position:relative;width:352px;height:660px;border-radius:44px;background:var(--purple-50);
+         border:9px solid #241D3C;overflow:hidden;box-shadow:0 26px 60px rgba(0,0,0,.5);color:var(--ink-900)}
+  .cal{position:absolute;left:50%;transform:translateX(-50%);top:0;width:132px;height:26px;background:#241D3C;border-radius:0 0 16px 16px;z-index:60}
+  .screen{position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden;background:var(--purple-50)}
+
+  /* PeopleScreen header */
+  .phead{background:#fff;padding:calc(var(--safetop) + 14px) 20px 0;border-bottom:1px solid var(--hair);flex:0 0 auto}
+  .ph1{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:24px;letter-spacing:-.02em;min-height:44px;display:flex;align-items:center;margin-bottom:6px}
+  .ptabs{display:flex}
+  .ptabs span{flex:1;text-align:center;font-size:14px;font-weight:600;color:var(--ink-500);padding-bottom:10px;border-bottom:2px solid transparent}
+  .ptabs span.on{color:var(--purple-500);border-color:var(--purple-500)}
+
+  /* search */
+  .srch{background:#fff;padding:10px 16px 12px;border-bottom:1px solid var(--hair);flex:0 0 auto}
+  .sbox{position:relative;display:flex;align-items:center}
+  .sbox svg{position:absolute;left:11px;color:var(--ink-500)}
+  .sbox i{display:block;width:100%;background:var(--purple-50);border:1.5px solid var(--hair);border-radius:12px;
+          padding:10px 14px 10px 36px;font-size:14px;color:var(--grey-300);font-style:normal}
+
+  .body{flex:1;overflow-y:auto;background:#fff;scrollbar-width:none}
+  .body::-webkit-scrollbar{display:none}
+
+  /* section label */
+  .seclbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-500);
+          padding:14px 20px 8px;background:var(--purple-50)}
+  .seclbl.first{padding-top:12px}
+
+  /* FriendRow, and the request/suggestion rows built on its geometry */
+  .row{display:flex;align-items:center;gap:13px;padding:12px 20px;background:#fff;border-bottom:1px solid var(--hair)}
+  .av{width:40px;height:40px;border-radius:99px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+      font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:15px;color:#fff}
+  .who{flex:1;min-width:0}
+  .nm{font-size:15px;font-weight:500;color:var(--ink-900);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .why{font-size:12px;color:var(--ink-500);line-height:1.4;margin-top:2px}
+  .why b{font-weight:600;color:var(--ink-900)}
+  .wk{flex:0 0 auto;font-size:11.5px;font-weight:700;color:var(--purple-700);background:var(--purple-100);border-radius:99px;padding:4px 10px}
+  .acts{flex:0 0 auto;display:flex;align-items:center;gap:8px}
+  .pill{border:0;font-family:inherit;font-size:13px;font-weight:700;padding:8px 14px;border-radius:99px;cursor:pointer;
+        background:var(--purple-500);color:#fff}
+  .pill.done{background:var(--grey-100);color:var(--ink-500);font-weight:600}
+  .txt{border:0;background:none;font-family:inherit;font-size:13px;font-weight:600;color:var(--ink-500);cursor:pointer;padding:8px 2px}
+
+  .hint{font-size:11px;color:rgba(107,98,138,.7);text-align:center;padding:8px 20px 4px;background:#fff}
+
+  /* sticky add bar + nav */
+  .addbar{position:absolute;left:0;right:0;bottom:var(--nav-h);background:#fff;border-top:1px solid var(--hair);padding:10px 16px 34px;z-index:30}
+  .addbtn{width:100%;padding:14px;border-radius:16px;background:var(--purple-500);color:#fff;border:0;
+          font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:15px;letter-spacing:-.02em;
+          display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
+  .nav{position:absolute;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--hair);display:flex;z-index:31;height:var(--nav-h)}
+  .ntab{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:5px;padding:16px 2px;font-size:10px;font-weight:600;color:var(--grey-300)}
+  .ntab.on{color:var(--purple-500)}
+  .nplan{flex:1;flex-grow:1.32;min-width:0;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
+         gap:5px;padding:16px 2px;font-size:10px;font-weight:700;color:var(--purple-500)}
+  .ndisc{position:absolute;top:-26px;width:70px;height:70px;border-radius:99px;background:var(--purple-500);border:5.5px solid #fff;
+         box-shadow:0 8px 22px rgba(124,92,219,.42);display:flex;align-items:center;justify-content:center}
+  .nbadge{position:absolute;right:-4px;bottom:-4px;width:28px;height:28px;border-radius:99px;background:#fff;border:3.5px solid #fff;
+          display:flex;align-items:center;justify-content:center}
+  .nplan .lbl{margin-top:46px;white-space:nowrap}
+
+  /* toast */
+  .toast{position:absolute;left:16px;right:16px;bottom:calc(var(--nav-h) + 80px);background:var(--ink-900);color:#fff;
+         border-radius:14px;padding:12px 15px;font-size:13.5px;font-weight:500;z-index:40;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+
+  /* empty */
+  .empty{padding:44px 30px;text-align:center;background:#fff}
+  .empty h3{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:17px;letter-spacing:-.02em;margin-bottom:7px}
+  .empty p{font-size:13.5px;color:var(--ink-500);line-height:1.6}
+
+  /* settings */
+  .setbody{flex:1;overflow-y:auto;background:var(--purple-50);padding:calc(var(--safetop) + 12px) 0 calc(var(--nav-h) + 22px);scrollbar-width:none}
+  .setbody::-webkit-scrollbar{display:none}
+  .seth{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:24px;letter-spacing:-.02em;padding:0 16px 4px}
+  .setgrp{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-500);padding:18px 20px 8px}
+  .setcard{background:#fff;border:1px solid var(--hair);border-radius:20px;padding:16px;margin:0 16px;display:flex;align-items:flex-start;gap:12px}
+  .setcard+.setcard{margin-top:14px}
+  .setcard .st{flex:1}
+  .setcard .st b{display:block;font-size:15px;font-weight:700;color:var(--ink-900)}
+  .setcard .st span{display:block;font-size:13px;color:var(--ink-500);margin-top:4px;line-height:1.45}
+  .sw2{flex:0 0 auto;width:46px;height:28px;border-radius:99px;background:var(--grey-300);position:relative;border:0;cursor:pointer;padding:0}
+  .sw2 i{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:99px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);display:block}
+  .sw2.on{background:var(--green-500)}
+  .sw2.on i{left:21px}
+
+  .state{display:none}
+  .state.on{display:flex}
+</style>
+</head>
+<body>
+
+<h1>R31 — Suggested friends, and asking properly</h1>
+<p class="sub">The first path in Mooves to somebody who handed you nothing, so it brings the accept step the app has never had. <b>The three existing paths do not change</b> — invite link, round-up QR and group link stay instant, because in all three the other person gave you the thing. Built on the shipped People screen: <b>PeopleScreen</b>, <b>FriendsPanel</b>, <b>FriendRow</b>, <b>SettingsScreen</b>.</p>
+
+<p class="knoblbl">State</p>
+<div class="knobs">
+  <button class="kbtn on" data-v="incoming">Someone asked</button>
+  <button class="kbtn" data-v="suggest">People you might know</button>
+  <button class="kbtn" data-v="asked">After you ask</button>
+  <button class="kbtn" data-v="accepted">After you accept</button>
+  <button class="kbtn" data-v="quiet">Nothing waiting</button>
+  <button class="kbtn" data-v="settings">Settings</button>
+</div>
+<div class="rule"></div>
+
+<div class="stage">
+  <div class="col">
+    <div class="caption" id="cap">Someone asked</div>
+    <div class="phone">
+      <div class="cal"></div>
+
+      <!-- ══ 1. INCOMING ══════════════════════════════════════════ -->
+      <div class="screen state on" data-s="incoming">
+        <div class="phead">
+          <div class="ph1">People</div>
+          <div class="ptabs"><span class="on">Friends</span><span>Groups</span></div>
+        </div>
+        <div class="srch"><div class="sbox">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <i>Search friends</i>
+        </div></div>
+        <div class="body">
+          <div class="seclbl first">Wants to be friends</div>
+          <div class="row">
+            <div class="av" style="background:#A98FF0">AR</div>
+            <div class="who">
+              <div class="nm">Ana Ruiz</div>
+              <div class="why">You were both at <b>Trivia at Emporium</b></div>
+            </div>
+            <div class="acts"><button class="txt">Decline</button><button class="pill">Accept</button></div>
+          </div>
+          <div class="row">
+            <div class="av" style="background:#5F3FC4">PT</div>
+            <div class="who">
+              <div class="nm">Priya Tan</div>
+              <div class="why">You both know <b>Marcus, Dev</b> and 2 others</div>
+            </div>
+            <div class="acts"><button class="txt">Decline</button><button class="pill">Accept</button></div>
+          </div>
+
+          <div class="seclbl">People you might know</div>
+          <div class="row">
+            <div class="av" style="background:#9B7FE8">JL</div>
+            <div class="who">
+              <div class="nm">Jo Lindqvist</div>
+              <div class="why">You both know <b>Tasha</b></div>
+            </div>
+            <div class="acts"><button class="pill">Add</button></div>
+          </div>
+
+          <div class="seclbl">Your friends</div>
+          <div class="row">
+            <div class="av" style="background:#7C5CDB">MK</div>
+            <div class="who"><div class="nm">Marcus Kade</div></div>
+            <span class="wk">4 this week</span>
+          </div>
+          <div class="row">
+            <div class="av" style="background:#9B7FE8">DP</div>
+            <div class="who"><div class="nm">Dev Patel</div></div>
+            <span class="wk">2 this week</span>
+          </div>
+          <div class="row">
+            <div class="av" style="background:#5F3FC4">TS</div>
+            <div class="who"><div class="nm">Tasha Snow</div></div>
+          </div>
+        </div>
+        <div class="addbar"><button class="addbtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+          Add friends</button></div>
+        <div class="nav" id="nav1"></div>
+      </div>
+
+      <!-- ══ 2. SUGGESTIONS ═══════════════════════════════════════ -->
+      <div class="screen state" data-s="suggest">
+        <div class="phead">
+          <div class="ph1">People</div>
+          <div class="ptabs"><span class="on">Friends</span><span>Groups</span></div>
+        </div>
+        <div class="body">
+          <div class="seclbl first">People you might know</div>
+          <div class="row">
+            <div class="av" style="background:#A98FF0">AR</div>
+            <div class="who">
+              <div class="nm">Ana Ruiz</div>
+              <div class="why">You were both at <b>Trivia at Emporium</b></div>
+            </div>
+            <div class="acts"><button class="pill">Add</button></div>
+          </div>
+          <div class="row">
+            <div class="av" style="background:#5F3FC4">PT</div>
+            <div class="who">
+              <div class="nm">Priya Tan</div>
+              <div class="why">You both know <b>Marcus, Dev</b> and 2 others</div>
+            </div>
+            <div class="acts"><button class="pill">Add</button></div>
+          </div>
+          <div class="row">
+            <div class="av" style="background:#9B7FE8">JL</div>
+            <div class="who">
+              <div class="nm">Jo Lindqvist</div>
+              <div class="why">You both know <b>Tasha</b></div>
+            </div>
+            <div class="acts"><button class="pill">Add</button></div>
+          </div>
+
+          <div class="seclbl">Your friends</div>
+          <div class="row">
+            <div class="av" style="background:#7C5CDB">MK</div>
+            <div class="who"><div class="nm">Marcus Kade</div></div>
+            <span class="wk">4 this week</span>
+          </div>
+          <div class="row">
+            <div class="av" style="background:#9B7FE8">DP</div>
+            <div class="who"><div class="nm">Dev Patel</div></div>
+            <span class="wk">2 this week</span>
+          </div>
+          <div class="hint">Tap a friend to see their week · swipe left to remove</div>
+        </div>
+        <div class="addbar"><button class="addbtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+          Add friends</button></div>
+        <div class="nav" id="nav2"></div>
+      </div>
+
+      <!-- ══ 3. AFTER YOU ASK ═════════════════════════════════════ -->
+      <div class="screen state" data-s="asked">
+        <div class="phead">
+          <div class="ph1">People</div>
+          <div class="ptabs"><span class="on">Friends</span><span>Groups</span></div>
+        </div>
+        <div class="body">
+          <div class="seclbl first">People you might know</div>
+          <div class="row">
+            <div class="av" style="background:#A98FF0">AR</div>
+            <div class="who">
+              <div class="nm">Ana Ruiz</div>
+              <div class="why">Asked · she&rsquo;ll see it next time she opens Mooves</div>
+            </div>
+            <div class="acts"><button class="pill done">Asked</button></div>
+          </div>
+          <div class="row">
+            <div class="av" style="background:#5F3FC4">PT</div>
+            <div class="who">
+              <div class="nm">Priya Tan</div>
+              <div class="why">You both know <b>Marcus, Dev</b> and 2 others</div>
+            </div>
+            <div class="acts"><button class="pill">Add</button></div>
+          </div>
+          <div class="row">
+            <div class="av" style="background:#9B7FE8">JL</div>
+            <div class="who">
+              <div class="nm">Jo Lindqvist</div>
+              <div class="why">You both know <b>Tasha</b></div>
+            </div>
+            <div class="acts"><button class="pill">Add</button></div>
+          </div>
+
+          <div class="seclbl">Your friends</div>
+          <div class="row">
+            <div class="av" style="background:#7C5CDB">MK</div>
+            <div class="who"><div class="nm">Marcus Kade</div></div>
+            <span class="wk">4 this week</span>
+          </div>
+          <div class="row">
+            <div class="av" style="background:#9B7FE8">DP</div>
+            <div class="who"><div class="nm">Dev Patel</div></div>
+            <span class="wk">2 this week</span>
+          </div>
+          <div class="hint">Tap a friend to see their week · swipe left to remove</div>
+        </div>
+        <div class="addbar"><button class="addbtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+          Add friends</button></div>
+        <div class="nav" id="nav3"></div>
+      </div>
+
+      <!-- ══ 4. AFTER YOU ACCEPT ══════════════════════════════════ -->
+      <div class="screen state" data-s="accepted">
+        <div class="phead">
+          <div class="ph1">People</div>
+          <div class="ptabs"><span class="on">Friends</span><span>Groups</span></div>
+        </div>
+        <div class="srch"><div class="sbox">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <i>Search friends</i>
+        </div></div>
+        <div class="body">
+          <div class="seclbl first">Wants to be friends</div>
+          <div class="row">
+            <div class="av" style="background:#5F3FC4">PT</div>
+            <div class="who">
+              <div class="nm">Priya Tan</div>
+              <div class="why">You both know <b>Marcus, Dev</b> and 2 others</div>
+            </div>
+            <div class="acts"><button class="txt">Decline</button><button class="pill">Accept</button></div>
+          </div>
+
+          <div class="seclbl">Your friends</div>
+          <div class="row">
+            <div class="av" style="background:#A98FF0">AR</div>
+            <div class="who"><div class="nm">Ana Ruiz</div></div>
+          </div>
+          <div class="row">
+            <div class="av" style="background:#7C5CDB">MK</div>
+            <div class="who"><div class="nm">Marcus Kade</div></div>
+            <span class="wk">4 this week</span>
+          </div>
+          <div class="row">
+            <div class="av" style="background:#9B7FE8">DP</div>
+            <div class="who"><div class="nm">Dev Patel</div></div>
+            <span class="wk">2 this week</span>
+          </div>
+        </div>
+        <div class="toast">Ana Ruiz is now your friend.</div>
+        <div class="addbar"><button class="addbtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+          Add friends</button></div>
+        <div class="nav" id="nav4"></div>
+      </div>
+
+      <!-- ══ 5. QUIET ═════════════════════════════════════════════ -->
+      <div class="screen state" data-s="quiet">
+        <div class="phead">
+          <div class="ph1">People</div>
+          <div class="ptabs"><span class="on">Friends</span><span>Groups</span></div>
+        </div>
+        <div class="srch"><div class="sbox">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <i>Search friends</i>
+        </div></div>
+        <div class="body">
+          <div class="row">
+            <div class="av" style="background:#7C5CDB">MK</div>
+            <div class="who"><div class="nm">Marcus Kade</div></div>
+            <span class="wk">4 this week</span>
+          </div>
+          <div class="row">
+            <div class="av" style="background:#9B7FE8">DP</div>
+            <div class="who"><div class="nm">Dev Patel</div></div>
+            <span class="wk">2 this week</span>
+          </div>
+          <div class="row">
+            <div class="av" style="background:#5F3FC4">TS</div>
+            <div class="who"><div class="nm">Tasha Snow</div></div>
+          </div>
+          <div class="hint">Tap a friend to see their week · swipe left to remove</div>
+        </div>
+        <div class="addbar"><button class="addbtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+          Add friends</button></div>
+        <div class="nav" id="nav5"></div>
+      </div>
+
+      <!-- ══ 6. SETTINGS ══════════════════════════════════════════ -->
+      <div class="screen state" data-s="settings">
+        <div class="setbody">
+          <div class="seth">Settings</div>
+          <div class="setgrp">Discovery</div>
+          <div class="setcard">
+            <span class="st"><b>Mooves from friends of friends</b>
+              <span>Mooves your friends&rsquo; friends chose to open up. You always see which friend connects you.</span></span>
+            <button class="sw2 on"><i></i></button>
+          </div>
+          <div class="setcard">
+            <span class="st"><b>Suggest me as a friend</b>
+              <span>Friends of your friends can see you as someone they might know, with the friends you have in common. They still have to ask, and you decide.</span></span>
+            <button class="sw2 on"><i></i></button>
+          </div>
+          <div class="setcard">
+            <span class="st"><b>Suggest me for things</b>
+              <span>When you&rsquo;re free and something nearby fits, your friends can see you&rsquo;d probably go. They can&rsquo;t see it unless you&rsquo;re already free.</span></span>
+            <button class="sw2 on"><i></i></button>
+          </div>
+        </div>
+        <div class="nav" id="nav6"></div>
+      </div>
+
+    </div>
+    <div class="note" id="note"></div>
+  </div>
+</div>
+
+<div class="box">
+  <h4>What is new, and what deliberately is not</h4>
+  <p><b>No badge, no count, no dot &mdash; and this is the release most tempted to break that.</b> A waiting request is announced by <span class="new">one push</span> and then by the section simply being there. A number on the People tab would be the first unread count in the app, and the rule against them is not decoration: it is why opening Mooves does not feel like a job.</p>
+  <p><b>The rows are FriendRow&rsquo;s geometry</b> &mdash; 40px avatar, 13px gap, 20px gutter, 15px medium name, hairline underneath &mdash; with a reason line added and the week chip swapped for the action. A request and a friend are the same kind of object in the same list, so they should not look like two different apps.</p>
+  <p><b>Co-attendance outranks mutual friends</b>, always, however many mutuals the other person has. It is the only signal that is evidence rather than inference: you were in a room together. It is also the revision to &ldquo;Option B&rdquo; &mdash; that was approved as an instant one-tap add on the reasoning that showing up together is consent, and it is not being built. <span class="q">Ana consented to attending a Moove, not to sharing when she is free.</span> Co-attendance now changes the ORDER of the list, not the consent.</p>
+  <p><b>Declines are silent and final.</b> The sender is never told and cannot ask again. A &ldquo;no&rdquo; that can be re-sent is not a no &mdash; and the absence of any signal back is exactly what makes declining feel free. The moment declining carries a social cost, people stop declining and start ignoring, and then the list is full of things nobody will ever resolve.</p>
+</div>
+
+<div class="box">
+  <h4>Open questions</h4>
+  <p><span class="q">1.</span> <b>&ldquo;Asked&rdquo; vs &ldquo;Requested&rdquo; vs &ldquo;Pending&rdquo;</b> on the sent state. Drawn with <b>Asked</b> &mdash; it is what you did, in the app&rsquo;s own plain voice, where the other two are statuses.</p>
+  <p><span class="q">2.</span> <b>Does a sent request stay in the list at all?</b> Drawn as staying, greyed, with a line saying she will see it. The alternative is it disappearing on tap, which is tidier but leaves you unsure whether it sent.</p>
+  <p><span class="q">3.</span> <b>Decline placement.</b> Drawn as a quiet text button LEFT of Accept, so the destructive one is not the one your thumb lands on. Worth checking on a real device.</p>
+  <p><span class="new">4. RESOLVED at review.</span> <b>Both new sections go ABOVE the friend list</b> (Jackson). The draft put suggestions below it, which was wrong for the reason the drawing made obvious: someone with sixty friends never scrolls that far, so the feature would ship and never be seen. Order is requests &rarr; suggestions &rarr; your friends. Each section is <b>absent when empty</b> rather than showing an empty state, so a user with neither sees exactly the screen they see today.</p>
+</div>
+
+<script>
+const NAV = `
+  <div class="ntab"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Feed</span></div>
+  <div class="ntab"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M15.6 8.4l-2.05 5.15-5.15 2.05 2.05-5.15z"/></svg><span>Discover</span></div>
+  <div class="nplan"><span class="ndisc">
+    <svg width="46" height="46" viewBox="0 0 48 48" fill="none"><ellipse cx="24" cy="27" rx="15" ry="12.5" fill="#fff"/><ellipse cx="18.5" cy="25" rx="2.2" ry="2.8" fill="#1C1730"/><ellipse cx="29.5" cy="25" rx="2.2" ry="2.8" fill="#1C1730"/><ellipse cx="24" cy="33" rx="7" ry="5" fill="#EDE9FF"/><ellipse cx="21.4" cy="32.6" rx="1.15" ry="1.5" fill="#1C1730"/><ellipse cx="26.6" cy="32.6" rx="1.15" ry="1.5" fill="#1C1730"/><path d="M9.5 19.5c-1.6-3 .4-6 3.4-5.4 2.2.45 3.6 2.6 3.9 4.7" fill="#fff"/><path d="M38.5 19.5c1.6-3-.4-6-3.4-5.4-2.2.45-3.6 2.6-3.9 4.7" fill="#fff"/></svg>
+    <span class="nbadge"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7C5CDB" stroke-width="3.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
+  </span><span class="lbl">Plan a Moove</span></div>
+  <div class="ntab PEOPLE"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg><span>People</span></div>
+  <div class="ntab SET"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6h.09A1.65 1.65 0 0 0 10 3.09V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></div>`
+for (const id of ['nav1','nav2','nav3','nav4','nav5','nav6']) {
+  const el = document.getElementById(id)
+  el.innerHTML = NAV
+  el.querySelector(id === 'nav6' ? '.SET' : '.PEOPLE').classList.add('on')
+}
+
+const CAPS = {
+  incoming:'Someone asked to be your friend',
+  suggest:'People you might know',
+  asked:'After you ask',
+  accepted:'After you accept',
+  quiet:'Nothing waiting',
+  settings:'Settings — three promises, kept apart',
+}
+const NOTES = {
+  incoming:'Requests pin to the TOP of the Friends panel and vanish completely when there are none. <b>No badge on the People tab</b> — one push brought you here, and after that the section is either present or it is not. Note the two reason lines: one is evidence, one is inference, and they are worded so you can tell which.',
+  suggest:'<b>Above the friend list, under its own label.</b> Co-attendance ranks first however many mutuals the alternative has — you were in a room with Ana, which is the only thing here that is not a guess. Capped at ten and not refreshed on every visit: a list that regrows each time you look is a slot machine.',
+  asked:'<b>The row stays, greyed.</b> Removing it on tap is tidier but leaves you unsure it sent, and the one thing a request must never be is ambiguous. The line says when she will see it, because the honest answer is "whenever she next opens the app" and pretending otherwise invites a second tap.',
+  accepted:'A friendship, immediately, in the list where friendships live. <b>The requester gets a push too</b> — without it the person who asked never learns, and their request just quietly becomes a friendship they have to notice on their own.',
+  quiet:'<b>The state most people are in most of the time</b>, and the one a suggestions feature usually forgets. Neither new section renders at all — not as an empty state, not as a placeholder. Sitting a &lsquo;nobody to suggest yet&rsquo; block above somebody&rsquo;s actual friends is permanent furniture explaining a feature that is not doing anything. This screen is the People tab exactly as it ships today.',
+  settings:'Three toggles, three genuinely different promises, sitting in one list. <b>"Suggest me for things" already existed</b> and governs the "would probably go" lines on Discover; the new one is about being a person. The wording is what keeps them apart, and it is why the new one is "as a friend" rather than anything shorter.',
+}
+const knobs=[...document.querySelectorAll('.kbtn')], states=[...document.querySelectorAll('.state')]
+function show(v){
+  knobs.forEach(x=>x.classList.toggle('on',x.dataset.v===v))
+  states.forEach(s=>s.classList.toggle('on',s.dataset.s===v))
+  document.getElementById('cap').textContent=CAPS[v]
+  document.getElementById('note').innerHTML=NOTES[v]
+}
+knobs.forEach(k=>k.addEventListener('click',()=>show(k.dataset.v)))
+show('incoming')
+</script>
+</body>
+</html>

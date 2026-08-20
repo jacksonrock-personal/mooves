@@ -5975,3 +5975,122 @@ This is load-bearing because **Mooves has no blocking** — `DELETE /api/friends
 ### Out of scope
 
 Greens one hop out — the constraint, not an omission. Third degree. Friend suggestions on the People screen (*"you and Marcus both know Ana"*) — needs a request/accept flow and an undiscoverable flag; it is the option deferred, not rejected. Plus-ones / bringing a non-friend to a Moove. Blocking as a general feature. The structured "can't make it / could do Sunday" tap deferred from R28 — it wants R29's traffic first, so the shape is drawn from real comments rather than guessed.
+
+---
+
+## R30 — You can read a Moove's name, and Discover shows the date (Fix) — *2026-08-20* · SPEC ✅ · MOCKUP — *(none: three card fixes, two of them plain bugs)* · CODE ✅ 2026-08-20
+
+**Truncated titles.** `PlanCard` set `truncate` on both the title and the when/where line, so a Moove named anything longer than roughly twenty characters was unreadable — and there was nowhere to go to read it, because the card body was inert and every affordance on it was a small control. Both lines now wrap to two, and the tile plus both lines are ONE button opening the sheet. `GroupLabel` had already settled this argument for the group pill (*"names are never truncated, the card grows to fit"*); a group **label** wrapping while the Moove's own **title** clipped was backwards.
+
+**The sheet restates the Moove again, and R5's own reasoning is why.** R5 removed that block because it cost ~120px to tell you *"something you already knew, because you tapped that card to get here."* True while the card showed the whole title; false the moment it clipped it — you tap the card *precisely because* you could not read it. Not a revert: the avatar stack and the "X is doing Y" line stay gone, and what returns is ~52px.
+
+**Discover had no date on it.** Not buried, absent. `MooveCard` built its facts row from `time_text` — the free-text field the sponsor portal writes — which is NULL on all 110 live seeded moves, while `startAt` sat on the payload unread. Every community card rendered a dated event with no date; `MooveDetailSheet` had the identical bug, so tapping in to find out when it was showed you everything else. New `moveWhenLine` leads both rows, bold, falling back to `timeText` for older sponsor rows. The group headings do not make this redundant: "Later" can hold a week, "This weekend" does not say which day, and a heading is off screen exactly when you are comparing two nights. **The 7-day boundary is deliberate** — a week out is the same weekday name, so a bare "Thu" would be wrong rather than terse.
+
+**The banner is conditional.** A fixed 104px block, ~40% of the card, held a gradient and one pill, with the image rendered only when `imageUrl` was set. **Zero of 110** live moves have one. With an image it is unchanged; without one the block is gone and the label moves into the body at ~18px.
+
+### Out of scope
+
+Collecting images in the seeding routine. A real image for community moves.
+
+---
+
+## R31 — Suggested friends, and asking properly (Spec) — *2026-08-20* · SPEC ✅ · MOCKUP ✅ (`mooves-r31-friend-requests.html`, 6 states, approved 2026-08-20) · CODE 🔄
+
+*The consent round. It delivers the People-screen suggestions deferred from R29's "out of scope" AND the shared-Moove path approved as "Option B" — together, because they are the same machinery and shipping them apart would leave the app with two different answers to "how does a person get into my graph".*
+
+### What this changes, and what it very deliberately does not
+
+Friendships have been **unilateral and instant** since baseline: `POST /api/friendships` takes a referral code and writes both rows, with no accept step. That is not sloppiness, it is the consent model — it is safe *because holding the code proves the other person handed you something.*
+
+R31 opens the first path to someone who handed you nothing. So it builds the accept step the app has never had.
+
+**⚠ THE THREE EXISTING PATHS DO NOT CHANGE.** A personal invite link, a round-up QR, a group invite link — all stay instant and unilateral, because in all three the other person gave you the thing. Only the **suggestion** path requires a request. "We added friend requests" must not be read as "every add is now a request": that would put an accept step in the middle of onboarding, which is the one place friction is fatal.
+
+**Option B is revised, in daylight.** It was approved as an instant one-tap add once two people are in the same Moove, on the reasoning that showing up together is consent. That was wrong and is not being built. Ana consented to attending a Moove; she did not consent to sharing when she is free, which is what a friendship hands over. Co-attendance now makes her a **strongly-ranked suggestion with the reason attached** — it changes the ordering, not the consent. One model, no bypass.
+
+### R31.1 — Suggestions
+
+**Computed, never stored.** A `friend_suggestions(viewer)` RPC returns people who are:
+
+- exactly one hop out (friends of your friends, not already your friends), **or** someone you have been in a Moove with
+- `friend_suggestable = true`
+- not already in a `friend_requests` row with you, in **either** direction and **any** status
+- not on your `fof_hidden` list — hiding someone's Mooves and wanting them suggested are not states that coexist
+
+**Every suggestion carries a REASON, and the reason is ranked before the count.**
+
+| Reason | Line | Rank |
+|---|---|---|
+| `coAttended` | "You were both at Trivia at Emporium" | first |
+| `mutualFriends` | "You both know Marcus, Dev and 2 others" | by mutual count, descending |
+
+Co-attendance outranks any number of mutuals because it is the only signal that is *evidence rather than inference*: you were in a room together. That is also exactly where friendships form in the real world, which is the whole thesis of R29.
+
+**Mutual friends are NAMED**, up to three plus a count, consistent with R29's "through Marcus". The names are the entire reason to consider the person; a bare "4 in common" makes people wonder who and gives them nothing to decide on.
+
+**Capped at 10** and not aggressively refreshed. A suggestion list that regrows every time you open the tab is a slot machine.
+
+### R31.2 — The request
+
+Three routes, and the guard on the first is the important one.
+
+| Route | Does |
+|---|---|
+| `POST /api/friend-requests/[userId]` | Create a pending request. **REJECTS anyone who is not currently second-degree or co-attended.** Without that check this route is a channel for reaching any user id in the database, which is a worse hole than the one R31 is closing. |
+| `POST /api/friend-requests/[id]/accept` | Writes both friendship rows and marks the request accepted, in that order. |
+| `POST /api/friend-requests/[id]/decline` | Marks declined. Writes nothing else and tells nobody. |
+
+**`friend_requests`**: `id · requester_id · recipient_id · status ('pending'|'accepted'|'declined') · created_at · responded_at`, `UNIQUE (requester_id, recipient_id)`. RLS on, no policies, service-role only — same posture as `fof_hidden` and `plan_comments`.
+
+**Declines are silent and final.** The sender is never told, and a declined row is permanent, which is what removes that person from their suggestions forever. There is no cooldown and no second ask. A "no" that can be re-sent is not a no, and the absence of any signal back is what makes declining feel free — the moment declining has a social cost, people stop doing it and start ignoring instead.
+
+**Crossing requests auto-accept.** If A has a pending request to B and B requests A, both rows are written and both requests are marked accepted. Two people who each asked have both consented, and making either of them tap again would be a bug wearing a rule's clothing.
+
+### R31.3 — Where it lives
+
+**Inside the Friends panel, not a third sub-tab.** People is already Friends / Groups; a third would crowd a two-tab control to make room for a section that is empty most of the time.
+
+**Both new sections sit ABOVE the friend list** (Jackson, at mockup). The draft had suggestions below it, which was wrong for the reason the drawing made obvious: somebody with sixty friends never scrolls that far, so the feature would ship and never be seen. The order is:
+
+1. **Wants to be friends** — incoming requests
+2. **People you might know** — suggestions
+3. **Your friends** — the existing list, unchanged
+
+**Each new section is ABSENT when empty, never an empty state.** A "nobody to suggest yet" block sitting above your actual friends is worse than nothing: it is permanent furniture explaining a feature that is not doing anything. Requests already worked this way and suggestions now match — so a user with neither sees exactly the screen they see today.
+
+**NO BADGE, NO COUNT, NO DOT.** The house rule against unread counts holds here and this is the release most tempted to break it. The signal that a request is waiting is **one push**, and after that the section is either there or it is not. A number on the People tab would be the first unread count in the app.
+
+**Three pushes total, and the third one is the one people forget:**
+
+- request received — "Ana Ruiz wants to be friends"
+- request accepted — "Ana Ruiz is now your friend". Without it the requester never learns; the request just quietly becomes a friendship they have to notice.
+- declined — **nothing.** See above.
+
+### R31.4 — The opt-out
+
+**`users.friend_suggestable BOOLEAN NOT NULL DEFAULT true`** — Settings: **"Suggest me as a friend"**.
+
+Default on, matching R29's reception default and for the same reason: opt-in leaves the list empty and the feature pointless.
+
+**It governs BOTH paths, including co-attendance.** A flag that quietly stops protecting you the moment you attend something is not a setting, it is a trap. Off means off.
+
+**The wording has to hold it apart from the setting already there.** Settings has **"Suggest me for things"** (`hide_from_matches`, 24.0) which governs the *"would probably go"* lines on Discover cards. These are different promises about different objects and they sit in the same list, so: *"Suggest me for **things**"* vs *"Suggest me as a **friend**"*, and the new one goes under Discovery beside it rather than somewhere else.
+
+### Data model (R31)
+
+| Change | Why |
+|---|---|
+| `friend_requests` table | R31.2. UNIQUE on the pair; declined rows persist deliberately. |
+| `users.friend_suggestable` | R31.4. Default true. |
+| `friend_suggestions(viewer)` RPC | R31.1. Reason + ranked, computed live. |
+| Index on `move_joins (joiner_id, plan_id)` | Co-attendance reads joins by person, which the plan-first index cannot serve. |
+
+**Reuses R29's `friendships (friend_id, user_id)` reverse index** for the second-degree walk — the same traversal `get_plans` already does, and worth keeping the two in step if either is ever tuned.
+
+### Out of scope
+
+**Blocking.** Still does not exist, and R31 does not add it. Declining plus `fof_hidden` covers the cases R29 and R31 create; a general block is its own feature with its own surface area.
+
+**Search for a person by name or phone.** Deliberately not built, and not an oversight — the only reach into a stranger is second-degree or co-attendance, both of which carry a reason a human can evaluate. A search box turns Mooves into a directory and makes the accept step the only thing standing between any user and any other, which is far more weight than one tap should carry.
+
+Third degree. Suggested *groups*. Any "people who viewed you" surface. Re-asking after a decline.

@@ -89,6 +89,33 @@ export type Database = {
         }
         Relationships: []
       }
+      friend_requests: {
+        Row: {
+          created_at: string
+          id: string
+          recipient_id: string
+          requester_id: string
+          responded_at: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          recipient_id: string
+          requester_id: string
+          responded_at?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          recipient_id?: string
+          requester_id?: string
+          responded_at?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       friendships: {
         Row: {
           created_at: string
@@ -835,6 +862,7 @@ export type Database = {
           created_at: string
           display_name: string | null
           fof_mooves_enabled: boolean
+          friend_suggestable: boolean
           hide_from_matches: boolean
           id: string
           interests: string[] | null
@@ -871,6 +899,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           fof_mooves_enabled?: boolean
+          friend_suggestable?: boolean
           hide_from_matches?: boolean
           id?: string
           interests?: string[] | null
@@ -907,6 +936,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           fof_mooves_enabled?: boolean
+          friend_suggestable?: boolean
           hide_from_matches?: boolean
           id?: string
           interests?: string[] | null
@@ -976,7 +1006,20 @@ export type Database = {
     }
     Functions: {
       availability_cron_tick: { Args: never; Returns: undefined }
+      can_request_friend: { Args: { viewer: string; target: string }; Returns: boolean }
       can_see_week: { Args: { viewer: string; target: string }; Returns: boolean }
+      friend_suggestions: {
+        Args: { viewer: string }
+        Returns: {
+          id: string
+          display_name: string | null
+          avatar_url: string | null
+          reason: string
+          co_plan_title: string | null
+          mutual_names: string[] | null
+          mutual_count: number
+        }[]
+      }
       friend_week_counts: {
         Args: { viewer: string }
         Returns: {
