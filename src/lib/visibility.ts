@@ -56,11 +56,69 @@ export async function sanitizeVisibleUserIds(
   return allowed.length > 0 ? allowed : null
 }
 
-/** The audience fields every caller of `canSeePlan` has to select. */
+/**
+ * The audience fields every caller of `canSeePlan` has to select.
+ *
+ * `open_to_fof` is REQUIRED rather than optional, deliberately. Optional would
+ * compile for a caller that forgot to select it and then silently deny every
+ * one-hop-out viewer — a wrong answer that looks like a working feature. Making
+ * it required turns that into a type error at the call site.
+ */
 export interface PlanAudience {
   author_id: string
   visible_to: string[] | null
   visible_user_ids: string[] | null
+  open_to_fof: boolean
+}
+
+/**
+ * R29 — is `viewer` exactly one hop from `authorId`?
+ *
+ * Mirrors the `fof` CTE in get_plans and has to keep mirroring it: the feed
+ * decides what you can SEE, this decides what you can JOIN and COMMENT on, and
+ * the two disagreeing is the bug R27 spent three weeks shipping.
+ *
+ * Four conditions, all required — the viewer accepts one-hop Mooves at all,
+ * has not hidden this author, is not already their friend (checked by the
+ * caller), and some friend of theirs is friends with the author.
+ */
+async function isOneHopOut(
+  supabase: ReturnType<typeof createServiceClient>,
+  authorId: string,
+  viewerId: string,
+): Promise<boolean> {
+  const { data: me } = await supabase
+    .from('users')
+    .select('fof_mooves_enabled')
+    .eq('id', viewerId)
+    .maybeSingle()
+  if (!me?.fof_mooves_enabled) return false
+
+  const { data: hidden } = await supabase
+    .from('fof_hidden')
+    .select('hidden_user_id')
+    .eq('user_id', viewerId)
+    .eq('hidden_user_id', authorId)
+    .maybeSingle()
+  if (hidden) return false
+
+  // Two hops, as two bounded reads rather than one join, because supabase-js
+  // cannot express the self-join and a user's friend list is small.
+  const { data: mine } = await supabase
+    .from('friendships')
+    .select('friend_id')
+    .eq('user_id', viewerId)
+  const bridgeIds = (mine ?? []).map(f => f.friend_id)
+  if (bridgeIds.length === 0) return false
+
+  const { data: bridge } = await supabase
+    .from('friendships')
+    .select('user_id')
+    .in('user_id', bridgeIds)
+    .eq('friend_id', authorId)
+    .limit(1)
+
+  return (bridge?.length ?? 0) > 0
 }
 
 /**
@@ -100,10 +158,20 @@ export async function canSeePlan(
     supabase.rpc('viewer_group_ids', { p_user: userId }),
   ])
 
-  if (!friendship) return false
-
   const groupScoped = (plan.visible_to?.length ?? 0) > 0
   const userScoped = (plan.visible_user_ids?.length ?? 0) > 0
+
+  if (!friendship) {
+    // R29 — the one-hop arm. Note the order: scoping is checked BEFORE the
+    // expensive graph walk, and a scoped Moove is refused outright however
+    // `open_to_fof` reads. Narrowing beats widening, always, and saying so here
+    // as well as in the write path means a row that somehow carried both could
+    // still never reach a stranger.
+    if (!plan.open_to_fof) return false
+    if (groupScoped || userScoped) return false
+    return isOneHopOut(supabase, plan.author_id, userId)
+  }
+
   // Unscoped means NEITHER array was set — visible to all of the author's
   // friends. An empty array is treated as unset, matching the SQL.
   if (!groupScoped && !userScoped) return true

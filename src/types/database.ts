@@ -71,6 +71,24 @@ export type Database = {
           },
         ]
       }
+      fof_hidden: {
+        Row: {
+          created_at: string
+          hidden_user_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          hidden_user_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          hidden_user_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       friendships: {
         Row: {
           created_at: string
@@ -439,6 +457,7 @@ export type Database = {
           location_text: string | null
           note: string | null
           show_groups: boolean
+          open_to_fof: boolean
           sponsored_move_id: string | null
           start_at: string
           time_mode: string
@@ -457,6 +476,7 @@ export type Database = {
           location_text?: string | null
           note?: string | null
           show_groups?: boolean
+          open_to_fof?: boolean
           sponsored_move_id?: string | null
           start_at: string
           time_mode?: string
@@ -475,6 +495,7 @@ export type Database = {
           location_text?: string | null
           note?: string | null
           show_groups?: boolean
+          open_to_fof?: boolean
           sponsored_move_id?: string | null
           start_at?: string
           time_mode?: string
@@ -813,6 +834,7 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           display_name: string | null
+          fof_mooves_enabled: boolean
           hide_from_matches: boolean
           id: string
           interests: string[] | null
@@ -848,6 +870,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
+          fof_mooves_enabled?: boolean
           hide_from_matches?: boolean
           id?: string
           interests?: string[] | null
@@ -883,6 +906,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
+          fof_mooves_enabled?: boolean
           hide_from_matches?: boolean
           id?: string
           interests?: string[] | null
