@@ -30,6 +30,7 @@ import { railSeed, type RailPerson } from '@/lib/rail'
 import PlanCard from './PlanCard'
 import PlanComposer, { type PlanPrefill } from './PlanComposer'
 import MooveActionsSheet from './MooveActionsSheet'
+import FofActionsSheet from './FofActionsSheet'
 import MooveSheet, { type MoovePane } from './MooveSheet'
 import GreenSheet from './GreenSheet'
 import type { PickableFriend } from '@/components/visibility/FriendPickerPane'
@@ -128,6 +129,8 @@ export default function FeedScreen() {
   const [composerOpen, setComposerOpen] = useState(false)
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null)
   const [actionsPlan, setActionsPlan] = useState<Plan | null>(null)
+  /** R29 - the vouch chip was tapped on a one-hop-out Moove. */
+  const [viaPlan, setViaPlan] = useState<Plan | null>(null)
   // Phase 21, second revision — one sheet for the whole feed, opened on the
   // pane the tapped half of the card asked for.
   const [sheet, setSheet] = useState<{ plan: Plan; pane: MoovePane } | null>(null)
@@ -1088,6 +1091,7 @@ export default function FeedScreen() {
                       onToggleJoin={handleTogglePlanJoin}
                       onBlast={handlePlanBlast}
                       onActions={setActionsPlan}
+                      onVia={setViaPlan}
                       onOpenSheet={(plan, pane) => setSheet({ plan, pane })}
                     />
                   ))
@@ -1293,6 +1297,21 @@ export default function FeedScreen() {
             void refetchPlans()
           }}
           onClose={() => setActionsPlan(null)}
+        />
+      )}
+
+      {viaPlan && (
+        <FofActionsSheet
+          plan={viaPlan}
+          onHidden={() => {
+            const who = viaPlan.authorName ?? 'them'
+            setViaPlan(null)
+            setToastMessage(`You won't see Mooves from ${who}.`)
+            // Their Mooves leave the feed on the next read, because the hide is
+            // enforced in get_plans rather than filtered here.
+            void refetchPlans()
+          }}
+          onClose={() => setViaPlan(null)}
         />
       )}
 

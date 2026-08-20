@@ -56,7 +56,7 @@ async function access(
 ): Promise<Access | null> {
   const { data: plan } = await supabase
     .from('plans')
-    .select('id, author_id, title, cancelled_at, expires_at, visible_to, visible_user_ids')
+    .select('id, author_id, title, cancelled_at, expires_at, visible_to, visible_user_ids, open_to_fof')
     .eq('id', planId)
     .maybeSingle()
 

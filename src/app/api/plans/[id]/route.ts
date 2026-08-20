@@ -25,7 +25,10 @@ function trimmed(value: unknown, max: number): string | null {
 async function requireAuthor(supabase: ReturnType<typeof createServiceClient>, planId: string, userId: string) {
   const { data } = await supabase
     .from('plans')
-    .select('id, author_id, title, cancelled_at')
+    // R29 pulls the audience columns too: this is a PARTIAL update, so the
+    // narrowing-vs-widening rule has to be checked against the state the row
+    // will END UP in, not against whatever this one request happened to mention.
+    .select('id, author_id, title, cancelled_at, visible_to, visible_user_ids, open_to_fof')
     .eq('id', planId)
     .maybeSingle()
   if (!data) return { error: 'notfound' as const }
@@ -58,6 +61,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     visibleTo?: string[] | null
     /** R16 — individual friends, unioned with the groups above. */
     visibleUserIds?: string[] | null
+    /** R29 — open this one Moove a single hop out. */
+    openToFof?: boolean
   }
 
   type PlanUpdate = Database['public']['Tables']['plans']['Update']
@@ -108,6 +113,23 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   // silently widening a Moove on save is precisely the R12 bug.
   if ('visibleUserIds' in body) {
     updates.visible_user_ids = await sanitizeVisibleUserIds(supabase, userId, body.visibleUserIds)
+  }
+
+  if ('openToFof' in body) updates.open_to_fof = body.openToFof === true
+
+  // R29 — the same rejection as the create route, but resolved against the row
+  // as it WILL BE. An edit that scopes a Moove to a group without mentioning
+  // openToFof, on a Moove that is already open, is the case a request-only
+  // check would wave through — and it is the likeliest one, because narrowing
+  // an open Moove is exactly what somebody does when they change their mind.
+  const finalGroups = 'visibleTo' in body ? updates.visible_to : gate.plan.visible_to
+  const finalUsers = 'visibleUserIds' in body ? updates.visible_user_ids : gate.plan.visible_user_ids
+  const finalOpen = 'openToFof' in body ? updates.open_to_fof : gate.plan.open_to_fof
+  if (finalOpen && ((finalGroups?.length ?? 0) > 0 || (finalUsers?.length ?? 0) > 0)) {
+    return NextResponse.json(
+      { error: 'A Moove shared with a group or specific friends cannot also open to friends of friends' },
+      { status: 400 },
+    )
   }
 
   const { error } = await supabase.from('plans').update(updates).eq('id', id)
