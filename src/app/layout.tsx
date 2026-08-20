@@ -31,11 +31,28 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  // NOTE: pinch-zoom is intentionally NOT disabled — `maximumScale: 1` / `userScalable: false`
-  // fail WCAG 1.4.4 (users must be able to zoom). The old lock also suppressed iOS's
-  // auto-zoom-on-focus; that will now return for any text input < 16px (several are 13–15px).
-  // Fix that during the redesign by bumping inputs to ≥16px (note: DS body-md is 15px — inputs
-  // should use ≥16px / body-lg to avoid the zoom).
+  // Pinch-zoom is intentionally NOT disabled, and R32 kept it that way after
+  // re-examining it. Three reasons, in order of how much they matter:
+  //
+  //   1. `userScalable: false` / `maximumScale: 1` fail WCAG 1.4.4, and in this
+  //      app that is not a technicality. Mooves sets every size in px against a
+  //      webfont, so iOS Dynamic Type does nothing here — pinch is the ONLY way
+  //      anyone can make this text bigger. Taking it away leaves no route at all.
+  //   2. Safari ignores both properties in a normal tab anyway (since iOS 10).
+  //      Setting them would fix nothing for most users while reading, in the
+  //      code, as though zoom had been dealt with.
+  //   3. Pinch was never the actual complaint. Zoom was arriving by two other
+  //      doors, and R32 shut both:
+  //        · iOS auto-zoom when focusing an input under 16px — the real culprit,
+  //          reported as "tapping around zooms me in and I can't get back".
+  //          Every phone-surface input is now >= 16px, with a floor in
+  //          globals.css for anything that does not set its own.
+  //        · double-tap-to-zoom, now off via `touch-action: manipulation` on
+  //          body, which leaves scrolling and pinch untouched.
+  //
+  // So: the two accidental doors are closed and the deliberate one is still
+  // open. If pinch-zoom itself ever needs blocking, the honest way is a
+  // `gesturestart` preventDefault, and it should be argued for on its own.
   themeColor: '#7C5CDB',
 }
 

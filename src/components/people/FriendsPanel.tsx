@@ -144,7 +144,7 @@ export default function FriendsPanel() {
               value={query}
               onChange={e => handleQueryChange(e.target.value)}
               placeholder="Search friends"
-              className={`w-full bg-surface-bg rounded-xl py-2.5 pl-9 pr-3.5 font-sans text-[14px] text-text-primary outline-none border-[1.5px] ${
+              className={`w-full bg-surface-bg rounded-xl py-2.5 pl-9 pr-3.5 font-sans text-[16px] text-text-primary outline-none border-[1.5px] ${
                 query.trim() ? 'border-mooves-purple' : 'border-[#E8E4F5]'
               }`}
             />

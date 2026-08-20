@@ -606,7 +606,7 @@ export default function MooveSheet({
                 onChange={e => onDraftChange(e.target.value.slice(0, COMMENT_MAX))}
                 placeholder="Add a comment"
                 rows={1}
-                className={`flex-1 min-h-[44px] max-h-36 bg-grey-100 px-[17px] py-3 font-sans text-[14.5px] leading-snug text-ink-900 placeholder:text-grey-300 focus:outline-none focus:bg-card-white resize-none ${
+                className={`flex-1 min-h-[44px] max-h-36 bg-grey-100 px-[17px] py-3 font-sans text-[16px] leading-snug text-ink-900 placeholder:text-grey-300 focus:outline-none focus:bg-card-white resize-none ${
                   draft.length > 0
                     ? 'rounded-[22px] ring-[1.5px] ring-purple-500'
                     : 'rounded-full'
@@ -724,7 +724,7 @@ export default function MooveSheet({
               value={editDraft}
               onChange={e => setEditDraft(e.target.value.slice(0, COMMENT_MAX))}
               rows={3}
-              className="w-full rounded-xl border-[1.5px] border-[#E8E4F5] bg-surface-bg px-3 py-2 font-sans text-[14px] leading-snug text-ink-900 focus:border-purple-500 focus:bg-card-white focus:outline-none resize-none mb-4"
+              className="w-full rounded-xl border-[1.5px] border-[#E8E4F5] bg-surface-bg px-3 py-2 font-sans text-[16px] leading-snug text-ink-900 focus:border-purple-500 focus:bg-card-white focus:outline-none resize-none mb-4"
             />
             <button
               onClick={() => void saveEdit()}
