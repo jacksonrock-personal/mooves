@@ -93,7 +93,7 @@ export default function FriendPickerPane({
           value={query}
           onChange={e => setQuery(e.target.value)}
           placeholder="Search friends"
-          className={`w-full bg-purple-50 rounded-xl py-2.5 pl-8 pr-3 font-sans text-[14px] outline-none border-[1.5px] text-ink-900 ${
+          className={`w-full bg-purple-50 rounded-xl py-2.5 pl-8 pr-3 font-sans text-[16px] outline-none border-[1.5px] text-ink-900 ${
             query.trim() ? 'border-purple-500' : 'border-[#E8E4F5] placeholder:text-ink-500'
           }`}
         />

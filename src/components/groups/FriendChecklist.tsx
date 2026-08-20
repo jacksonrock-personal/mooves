@@ -57,7 +57,7 @@ export default function FriendChecklist({ friends, selected, onChange }: FriendC
           value={query}
           onChange={e => setQuery(e.target.value)}
           placeholder="Search friends"
-          className={`w-full bg-surface-bg rounded-[10px] py-2 pl-8 pr-3 font-sans text-[13px] outline-none border-[1.5px] ${
+          className={`w-full bg-surface-bg rounded-[10px] py-2 pl-8 pr-3 font-sans text-[16px] outline-none border-[1.5px] ${
             query.trim()
               ? 'border-mooves-purple text-text-primary'
               : 'border-[#E8E4F5] text-text-primary placeholder:text-text-secondary'

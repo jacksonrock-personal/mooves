@@ -22,6 +22,31 @@
     @apply bg-surface-bg text-text-primary font-sans;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+
+    /* R32 — DOUBLE-TAP TO ZOOM, OFF.
+       `manipulation` means "use touches for scrolling and pinch, and nothing
+       else", so it kills the double-tap gesture and leaves both of those alone.
+       That matters: this app is a grid of small round buttons, two quick taps on
+       a rail tile or a join pill is an ordinary thing to do, and on iOS the
+       second tap was zooming the page instead of registering.
+       It does NOT disable pinch — see the note in layout.tsx for why we are
+       keeping that. useSheetDrag sets its own touch-action on sheets and still
+       wins there, because those are inline styles on descendants. */
+    touch-action: manipulation;
+  }
+
+  /* R32 — 16px IS THE ZOOM THRESHOLD, NOT A TASTE DECISION.
+     iOS Safari zooms the whole viewport when you focus a text field whose
+     font-size is under 16px, and it does not reliably zoom back out — which is
+     the bug: tap "Search friends", get zoomed in, and now be stuck with content
+     off the right edge and no obvious way back.
+     This is the floor for any input that does not set its own size. The ones
+     that DO set it are bumped individually, because a Tailwind utility class
+     beats an element selector on specificity and would quietly keep zooming. */
+  input,
+  textarea,
+  select {
+    font-size: 16px;
   }
 }
 

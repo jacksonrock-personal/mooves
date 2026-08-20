@@ -37,7 +37,7 @@ export default function DeleteSheet({ open, onConfirm, onCancel }: DeleteSheetPr
         placeholder="Type DELETE"
         autoComplete="off"
         autoCapitalize="characters"
-        className={`w-full rounded-xl border-[1.5px] px-4 py-3 mb-5 font-sans text-[15px] tracking-[0.04em] outline-none ${
+        className={`w-full rounded-xl border-[1.5px] px-4 py-3 mb-5 font-sans text-[16px] tracking-[0.04em] outline-none ${
           confirmed
             ? 'border-[#E8405A] bg-[#FFF8F8] text-text-primary font-semibold'
             : 'border-[#E8E4F5] bg-surface-bg text-text-primary placeholder:text-text-secondary'

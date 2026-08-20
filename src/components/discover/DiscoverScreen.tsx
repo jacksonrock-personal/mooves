@@ -277,7 +277,7 @@ export default function DiscoverScreen() {
             onChange={e => setQ(e.target.value)}
             placeholder="Search moves, places"
             aria-label="Search moves and places"
-            className="flex-1 min-w-0 bg-transparent border-0 outline-none font-sans text-[13.5px] text-ink-900 placeholder:text-grey-300"
+            className="flex-1 min-w-0 bg-transparent border-0 outline-none font-sans text-[16px] text-ink-900 placeholder:text-grey-300"
           />
         </div>
 
