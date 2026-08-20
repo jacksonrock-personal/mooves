@@ -23,6 +23,7 @@
 
 import type { SocialLine } from '@/lib/nearMatch'
 import type { NearMove } from '@/app/api/discover/route'
+import { moveWhenLine } from '@/lib/discoverGroups'
 
 interface MooveCardProps {
   move: NearMove
@@ -125,50 +126,83 @@ function Social({ social }: { social: SocialLine }) {
 export default function MooveCard({ move, onMakeMoove, onOpenDetail }: MooveCardProps) {
   const paid = move.origin === 'sponsor'
 
-  const facts = [
-    move.timeText,
-    move.neighborhood,
-  ].filter(Boolean) as string[]
+  // R30 — the real date and time lead the row.
+  //
+  // This used to be `[move.timeText, move.neighborhood]`. `time_text` is the
+  // free-text field the sponsor portal writes and it is NULL on every seeded
+  // move, so a card for a dated event was rendering with no date on it at all.
+  // `startAt` was already on the payload the whole time; nothing read it.
+  //
+  // timeText is kept as the fallback rather than dropped: the older
+  // sponsor-authored rows carry their when in it and nothing else.
+  const whenLine = moveWhenLine(move.startAt) ?? move.timeText
+  const facts = [move.neighborhood].filter(Boolean) as string[]
 
   return (
     <div
       onClick={() => onOpenDetail(move)}
       className="bg-white border-[1.5px] border-[#E8E4F5] rounded-[18px] overflow-hidden mb-2.5 cursor-pointer"
     >
-      {/* The label sits on the image, same shape for both kinds. Community and
-          Sponsored differ only in colour, so the distinction is read rather than
-          felt as an interruption — and a shelf that is mostly community events
-          never reads as an ad break. */}
-      <div className="relative h-[104px] flex items-end p-[9px] bg-gradient-to-br from-purple-100 to-[#DCD3F7]">
-        {move.imageUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
+      {/* R30 — THE BANNER IS CONDITIONAL NOW.
+
+          It was a fixed 104px block, roughly 40% of the card, holding a gradient
+          and one small pill, with the image rendered only `{move.imageUrl && …}`.
+          At the time of writing, 0 of 110 live moves have an image_url — the
+          seeding routine does not collect one and none of the five validation
+          bars asks for it — so on every card in production that block was 104px
+          of purple spent on a chip.
+
+          With an image it is genuinely good and it stays exactly as it was. With
+          no image the block is gone and the label moves into the body, above the
+          title, where it costs about 18px instead of 104. */}
+      {move.imageUrl && (
+        <div className="relative h-[104px] flex items-end p-[9px] bg-gradient-to-br from-purple-100 to-[#DCD3F7]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={move.imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
-        )}
-        <span
-          className={`relative inline-flex items-center gap-1 rounded-full px-2 py-[3px] bg-white/90 backdrop-blur-sm font-sans text-[9.5px] font-bold uppercase tracking-[0.06em] ${
-            paid ? 'text-purple-700' : 'text-ink-500'
-          }`}
-        >
-          <span className={`w-[5px] h-[5px] rounded-full ${paid ? 'bg-purple-500' : 'bg-grey-300'}`} />
-          {paid ? `Sponsored${move.brand ? ` · ${move.brand}` : ''}` : 'Community Moove'}
-        </span>
-      </div>
+          <span
+            className={`relative inline-flex items-center gap-1 rounded-full px-2 py-[3px] bg-white/90 backdrop-blur-sm font-sans text-[9.5px] font-bold uppercase tracking-[0.06em] ${
+              paid ? 'text-purple-700' : 'text-ink-500'
+            }`}
+          >
+            <span className={`w-[5px] h-[5px] rounded-full ${paid ? 'bg-purple-500' : 'bg-grey-300'}`} />
+            {paid ? `Sponsored${move.brand ? ` · ${move.brand}` : ''}` : 'Community Moove'}
+          </span>
+        </div>
+      )}
 
       <div className="px-3.5 pt-[13px] pb-3.5">
+        {/* Same pill, same colours, same rule — Community and Sponsored differ
+            only in colour so the distinction is read rather than felt, and a
+            shelf that is mostly community events never reads as an ad break. */}
+        {!move.imageUrl && (
+          <span
+            className={`inline-flex items-center gap-1 rounded-full px-2 py-[3px] mb-2 font-sans text-[9.5px] font-bold uppercase tracking-[0.06em] ${
+              paid ? 'bg-purple-100 text-purple-700' : 'bg-grey-100 text-ink-500'
+            }`}
+          >
+            <span className={`w-[5px] h-[5px] rounded-full ${paid ? 'bg-purple-500' : 'bg-grey-300'}`} />
+            {paid ? `Sponsored${move.brand ? ` · ${move.brand}` : ''}` : 'Community Moove'}
+          </span>
+        )}
+
         <h4 className="font-display font-extrabold text-[16px] text-ink-900 tracking-[-0.01em] leading-[1.2]">
           {move.title}
         </h4>
 
         <div className="flex items-center gap-[7px] flex-wrap mt-1.5 font-sans text-[12.5px] text-ink-500">
+          {/* Ink-900 and bold: when is the thing you are scanning for, and it
+              has to survive being read at speed against the neighbourhood and
+              the price sitting beside it in the same row. */}
+          {whenLine && <span className="font-bold text-ink-900">{whenLine}</span>}
           {facts.map((f, i) => (
             <span key={f} className="flex items-center gap-[7px]">
-              {i > 0 && <span className="w-[3px] h-[3px] rounded-full bg-grey-300" />}
+              {(i > 0 || whenLine) && <span className="w-[3px] h-[3px] rounded-full bg-grey-300" />}
               {f}
             </span>
           ))}
           {move.priceText && (
             <span className="flex items-center gap-[7px]">
-              {facts.length > 0 && <span className="w-[3px] h-[3px] rounded-full bg-grey-300" />}
+              {(facts.length > 0 || whenLine) && <span className="w-[3px] h-[3px] rounded-full bg-grey-300" />}
               <span className="font-bold text-ink-900">{move.priceText}</span>
             </span>
           )}

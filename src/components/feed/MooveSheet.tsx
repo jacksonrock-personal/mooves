@@ -28,7 +28,7 @@ import Avatar from '@/components/ui/Avatar'
 import { posthog } from '@/lib/posthog'
 import { useSheetDrag } from '@/lib/useSheetDrag'
 import SheetGrabber from '@/components/ui/SheetGrabber'
-import { type Plan } from '@/lib/plans'
+import { planWhenLine, type Plan } from '@/lib/plans'
 import {
   COMMENT_MAX,
   COMMENT_COUNTER_AT,
@@ -73,6 +73,15 @@ export default function MooveSheet({
   // enforces the identical rule via canSeePlan, so there is no state where the
   // compose pill posts and the API refuses.
   const isIn = plan.isMine || plan.joinedByMe
+  // The SAME formatter the card uses. Two functions describing one Moove is how
+  // the sheet ends up saying something the card did not.
+  const whenLine = planWhenLine(
+    new Date(plan.startAt),
+    plan.hasTime,
+    plan.locationText,
+    new Date(),
+    plan.timeMode,
+  )
 
   const [pane, setPane] = useState<MoovePane>(initialPane)
   const [comments, setComments] = useState<PlanComment[]>([])
@@ -315,11 +324,29 @@ export default function MooveSheet({
             rather than the 5px pill it draws. */}
         <SheetGrabber drag={drag} className="mt-[18px]" pillClassName="w-11 h-[5px] rounded-full bg-[#DDD8EC]" />
 
-        {/* R5 — the Moove is NOT restated here any more. The avatar stack, the
-            "X is doing Y" line and the when/location line are gone from both
-            panes: they cost ~120px, about a comment and a half, to tell you
-            something you already knew, because you tapped that card to get here.
-            The sheet now opens straight onto the two things it is for. */}
+        {/* R30 — the title and the when/where line come BACK, and R5's own
+            reasoning is why.
+
+            R5 removed the restatement because it cost ~120px "to tell you
+            something you already knew, because you tapped that card to get
+            here." That was sound while the card showed the whole title. It
+            stopped being true the moment the card truncated it: you tap the card
+            PRECISELY BECAUSE you could not read it, so the sheet was withholding
+            the one thing you came for.
+
+            This is not R5's block returning. The avatar stack and the "X is
+            doing Y" line stay gone — those really were restating the obvious.
+            What is here is the title, unclipped and wrapping, and the when and
+            where, which is about 52px rather than 120. R30 also un-truncates the
+            card itself, so in the common case this header confirms rather than
+            reveals; it earns its space on the long titles, which are exactly the
+            ones that sent you here. */}
+        <div className="mx-[18px] mt-3 shrink-0">
+          <h2 className="font-display font-extrabold text-[17px] leading-tight tracking-tight text-ink-900">
+            {plan.title}
+          </h2>
+          <p className="font-sans text-[12.5px] leading-snug text-ink-500 mt-1">{whenLine}</p>
+        </div>
 
         {/* R28: the tabs are unconditional now. Wall 3 has not moved — it is
             enforced one level up, by whether this sheet can be opened at all. */}

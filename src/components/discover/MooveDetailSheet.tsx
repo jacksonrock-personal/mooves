@@ -18,6 +18,7 @@
 // Never public, never the sponsor, never a stranger in the same metro.
 
 import { useState } from 'react'
+import { moveWhenLine } from '@/lib/discoverGroups'
 import Sheet from '@/components/ui/Sheet'
 import { posthog } from '@/lib/posthog'
 import type { NearMove } from '@/app/api/discover/route'
@@ -72,7 +73,14 @@ export default function MooveDetailSheet({
     window.open(move.linkUrl, '_blank', 'noopener,noreferrer')
   }
 
-  const facts = [move.timeText, move.neighborhood, move.priceText].filter(Boolean) as string[]
+  // R30 — the same fix as the card, because it was the same bug: this read
+  // `timeText` alone, which is NULL on every seeded move, so tapping a dated
+  // event to find out when it was showed you everything except that.
+  const facts = [
+    moveWhenLine(move.startAt) ?? move.timeText,
+    move.neighborhood,
+    move.priceText,
+  ].filter(Boolean) as string[]
 
   return (
     <Sheet open={!!move} onClose={onClose} className="px-5 pb-6">
