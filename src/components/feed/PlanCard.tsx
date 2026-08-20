@@ -56,65 +56,43 @@ export default function PlanCard({
       }`}
     >
       <div className="flex items-center gap-3">
-        {/* Lead tile: time when there is one, otherwise the date. A date-only
-            Moove should read as deliberate, not as a Moove missing its time. */}
-        <div className="w-[46px] h-[46px] shrink-0 rounded-[13px] bg-purple-100 flex flex-col items-center justify-center gap-px px-0.5">
-          <span className="font-display font-extrabold text-[13px] leading-none tracking-tight text-purple-700">
-            {tile.top}
-          </span>
-          <span className="font-sans text-[8.5px] font-bold tracking-[0.04em] leading-none text-purple-700/75 text-center">
-            {tile.bottom}
-          </span>
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <p className="font-display font-bold text-[15px] leading-tight tracking-tight text-ink-900 truncate">
-            {plan.title}
-          </p>
-          <p className="font-sans text-[12.5px] leading-snug text-ink-500 mt-0.5 truncate">{when}</p>
-          <div className="flex items-center gap-1.5 mt-1">
-            <span className="font-sans text-[10.5px] font-bold text-purple-700 bg-purple-100 px-1.5 py-0.5 rounded-full">
-              {plan.isMine ? 'Your Moove' : (plan.authorName ?? 'A friend')}
+        {/* R30 — the tile and the two text lines are ONE button, opening the
+            sheet on "Who's in". The card previously had no body tap target at
+            all: every affordance on it was a small control, and the largest
+            region was inert. The chips are lifted out of this button rather
+            than left inside it because the R29 vouch chip is itself a button,
+            and a button inside a button is invalid. */}
+        <button
+          onClick={() => onOpenSheet(plan, 'who')}
+          aria-label={`${plan.title}. ${when}. Open details.`}
+          className="flex items-center gap-3 flex-1 min-w-0 text-left"
+        >
+          {/* Lead tile: time when there is one, otherwise the date. A date-only
+              Moove should read as deliberate, not as a Moove missing its time. */}
+          <div className="w-[46px] h-[46px] shrink-0 rounded-[13px] bg-purple-100 flex flex-col items-center justify-center gap-px px-0.5">
+            <span className="font-display font-extrabold text-[13px] leading-none tracking-tight text-purple-700">
+              {tile.top}
             </span>
-            {/* R29 — the vouch, and also the only way to reach Hide.
-                Drawn in GroupLabel's shape on purpose: it sits in the same row
-                as that label and the author pill, and a third visual language
-                here would make the row read as three unrelated things.
-                It is a BUTTON because the mockup found there is nowhere else for
-                Hide to live — on someone else's card the right-hand slot holds
-                "I'm in", and Hide must not displace the primary action. The chip
-                renders only on one-hop-out Mooves, so the affordance exists
-                exactly where the thing it manages does. */}
-            {plan.viaName && (
-              <button
-                onClick={() => onVia(plan)}
-                aria-label={`${plan.authorName ?? 'They'} are connected to you through ${plan.viaName}. Options.`}
-                className="inline-flex items-start gap-1.5 max-w-full min-w-0 rounded-[13px] border border-[#E8E4F5] bg-white pl-[7px] pr-2.5 py-[3px]"
-              >
-                <svg
-                  width="11"
-                  height="11"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.4"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="shrink-0 mt-[3px] text-grey-300"
-                  aria-hidden="true"
-                >
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                  <circle cx="9" cy="7" r="4" />
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                </svg>
-                <span className="font-sans text-[11px] font-semibold text-ink-500 leading-[1.4] break-words min-w-0">
-                  through {plan.viaName}
-                </span>
-              </button>
-            )}
-            <GroupLabel groups={plan.visibleGroups} />
+            <span className="font-sans text-[8.5px] font-bold tracking-[0.04em] leading-none text-purple-700/75 text-center">
+              {tile.bottom}
+            </span>
           </div>
-        </div>
+
+          <div className="flex-1 min-w-0">
+            {/* R30 — WRAPS, up to two lines. It was `truncate`, so a Moove
+                called anything longer than about 22 characters was unreadable
+                in the feed and there was nowhere to go to read it. GroupLabel
+                already settled this argument for the group pill — "names are
+                never truncated, the card grows to fit" — and the Moove's own
+                title has a better claim to that than the label does.
+                Two lines rather than unbounded: 80 chars is the write-side cap
+                and clamping keeps a pathological title from owning the feed. */}
+            <p className="font-display font-bold text-[15px] leading-tight tracking-tight text-ink-900 line-clamp-2">
+              {plan.title}
+            </p>
+            <p className="font-sans text-[12.5px] leading-snug text-ink-500 mt-0.5 line-clamp-2">{when}</p>
+          </div>
+        </button>
 
         {plan.isMine ? (
           <button
@@ -139,6 +117,55 @@ export default function PlanCard({
             {plan.joinedByMe ? "You're in ✓" : "I'm in"}
           </button>
         )}
+      </div>
+
+      {/* R30 — the chips get their own row. They used to sit inside the middle
+          column, which is now a button, and the R29 vouch chip is itself a
+          button. pl-[58px] is the tile (46) plus the row gap (12), so the row
+          lands on the same left edge the title sits on and nothing moved
+          visually. flex-wrap because a long group name plus a vouch can exceed
+          one line, and GroupLabel's rule is that names never truncate. */}
+      <div className="flex items-center gap-1.5 flex-wrap mt-1.5 pl-[58px]">
+          <span className="font-sans text-[10.5px] font-bold text-purple-700 bg-purple-100 px-1.5 py-0.5 rounded-full">
+            {plan.isMine ? 'Your Moove' : (plan.authorName ?? 'A friend')}
+          </span>
+          {/* R29 — the vouch, and also the only way to reach Hide.
+              Drawn in GroupLabel's shape on purpose: it sits in the same row
+              as that label and the author pill, and a third visual language
+              here would make the row read as three unrelated things.
+              It is a BUTTON because the mockup found there is nowhere else for
+              Hide to live — on someone else's card the right-hand slot holds
+              "I'm in", and Hide must not displace the primary action. The chip
+              renders only on one-hop-out Mooves, so the affordance exists
+              exactly where the thing it manages does. */}
+          {plan.viaName && (
+            <button
+              onClick={() => onVia(plan)}
+              aria-label={`${plan.authorName ?? 'They'} are connected to you through ${plan.viaName}. Options.`}
+              className="inline-flex items-start gap-1.5 max-w-full min-w-0 rounded-[13px] border border-[#E8E4F5] bg-white pl-[7px] pr-2.5 py-[3px]"
+            >
+              <svg
+                width="11"
+                height="11"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="shrink-0 mt-[3px] text-grey-300"
+                aria-hidden="true"
+              >
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+              </svg>
+              <span className="font-sans text-[11px] font-semibold text-ink-500 leading-[1.4] break-words min-w-0">
+                through {plan.viaName}
+              </span>
+            </button>
+          )}
+        <GroupLabel groups={plan.visibleGroups} />
       </div>
 
       {plan.note && (

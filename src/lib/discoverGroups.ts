@@ -88,3 +88,36 @@ export function groupMoves<T extends Datedish>(moves: T[], now: Date = new Date(
     .filter(([, ms]) => ms.length > 0)
     .map(([label, ms]) => ({ label, moves: ms }))
 }
+
+/**
+ * R30 — the day and time, for the card itself.
+ *
+ * The Discover cards were rendering `time_text`, a free-text field the sponsor
+ * portal writes. Every one of the 110 seeded moves live at the time of writing
+ * has it NULL and a real `start_at` set, so the facts row was silently dropping
+ * the single most important thing about a dated event: when it is.
+ *
+ * The group headings (Today / Tomorrow / This weekend / Later) do NOT make this
+ * redundant. "Later" can hold forty cards spanning a week, and "This weekend"
+ * does not say Saturday or Sunday. Once you have scrolled past a heading it is
+ * off screen anyway, which is exactly the moment you are comparing two nights.
+ *
+ * Returns null for an undated move — those group under "Weekly & recurring",
+ * where a fabricated date would be a lie rather than a gap.
+ */
+export function moveWhenLine(startAt: string | null, now: Date = new Date()): string | null {
+  if (!startAt) return null
+  const d = new Date(startAt)
+  if (Number.isNaN(d.getTime())) return null
+
+  const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+  const offset = dayIndex(startAt, now)
+
+  // d < 0 happens inside the expiry grace period, where "Today" is still right.
+  if (offset <= 0) return `Today, ${time}`
+  if (offset === 1) return `Tomorrow, ${time}`
+  // Inside a week the weekday alone is unambiguous; past that it is not, and
+  // "Thu" for a Thursday sixteen days out is actively misleading.
+  if (offset < 7) return `${d.toLocaleDateString('en-US', { weekday: 'short' })}, ${time}`
+  return `${d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}, ${time}`
+}
