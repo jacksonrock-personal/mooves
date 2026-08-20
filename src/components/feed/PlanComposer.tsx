@@ -99,6 +99,7 @@ export default function PlanComposer({
   // R16 — individual friends, unioned with the groups above.
   const [visibleUserIds, setVisibleUserIds] = useState<string[]>([])
   const [showGroups, setShowGroups] = useState(false)
+  const [openToFof, setOpenToFof] = useState(false)
   /** 0 = the form, 1 = the friend picker. R16: a pane, never a second sheet. */
   const [pane, setPane] = useState(0)
   // Coarse is the default; `exact` swaps the chips for real pickers.
@@ -138,6 +139,7 @@ export default function PlanComposer({
       // it was actually shared with.
       setVisibleUserIds(editing.visibleUserIds ?? [])
       setShowGroups(editing.showGroups)
+      setOpenToFof(editing.openToFof)
     } else if (prefill) {
       // A dated sponsored move already has everything the composer asks for.
       // A sponsored move already has a real date and time, so it opens exact.
@@ -152,6 +154,7 @@ export default function PlanComposer({
       setVisibleTo([])
       setVisibleUserIds([])
       setShowGroups(false)
+      setOpenToFof(false)
     } else {
       setTitle('')
       setExact(false)
@@ -163,6 +166,7 @@ export default function PlanComposer({
       setVisibleTo([])
       setVisibleUserIds([])
       setShowGroups(false)
+      setOpenToFof(false)
     }
     setPane(0)
     setError(null)
@@ -229,6 +233,10 @@ export default function PlanComposer({
       note: note.trim() || null,
       visibleTo: visibleTo.length > 0 ? visibleTo : null,
       visibleUserIds: visibleUserIds.length > 0 ? visibleUserIds : null,
+      // R29. Scoping wins: the toggle is disabled in that state, but sending
+      // the pair anyway would have the server 400 a save the user cannot see
+      // is contradictory, so it is resolved to false on the way out too.
+      openToFof: openToFof && visibleTo.length === 0 && visibleUserIds.length === 0,
       // Carries 13.8's disclosure requirement through to the friend feed.
       sponsoredMoveId: !editing && prefill ? prefill.sponsoredMoveId : null,
     }
@@ -447,6 +455,11 @@ export default function PlanComposer({
                 onPickFriends={() => {
                   posthog.capture('visibility_friends_opened', { surface: 'composer' })
                   setPane(1)
+                }}
+                openToFof={openToFof}
+                onOpenToFofChange={on => {
+                  posthog.capture('plan_open_to_fof_toggled', { on })
+                  setOpenToFof(on)
                 }}
               />
 

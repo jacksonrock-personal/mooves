@@ -28,6 +28,17 @@ interface VisibilityRowProps {
   onShowGroupsChange: (on: boolean) => void
   /** Opens the friend picker pane. This row never owns that pane's state. */
   onPickFriends: () => void
+  /**
+   * R29 — the one-hop-out toggle, composer only.
+   *
+   * Passed in rather than owned here, and OMITTED by the two green surfaces
+   * that also use this component. That omission is the load-bearing constraint
+   * of the whole round expressed as a prop: a green is when you are free and
+   * roughly where you are, and it never leaves the friend graph. Wiring this
+   * control into GoGreenSheet would be the one change that breaks R29.
+   */
+  openToFof?: boolean
+  onOpenToFofChange?: (on: boolean) => void
 }
 
 export function friendCountLabel(n: number): string {
@@ -43,9 +54,16 @@ export default function VisibilityRow({
   onUserIdsChange,
   onShowGroupsChange,
   onPickFriends,
+  openToFof,
+  onOpenToFofChange,
 }: VisibilityRowProps) {
   const everyone = selectedGroupIds.length === 0 && selectedUserIds.length === 0
   const hasFriends = selectedUserIds.length > 0
+  // R29 — narrowing and widening are contradictory, so scoping DISABLES the
+  // toggle rather than silently winning. The server refuses the combination
+  // too; this is the half that explains itself.
+  const fofOffered = onOpenToFofChange !== undefined
+  const fofBlocked = !everyone
 
   function toggleGroup(id: string) {
     const next = selectedGroupIds.includes(id)
@@ -94,6 +112,57 @@ export default function VisibilityRow({
           </Chip>
         ))}
       </div>
+
+      {/* R29 — the one-hop-out toggle. Same card as 18.2's below, deliberately:
+          the composer should not grow a second visual language for switches.
+          Disabled rather than hidden when a scope is picked, with the reason
+          spelled out — a greyed control that does not say why is the most
+          annoying thing in an app, and the rule is one sentence long. */}
+      {fofOffered && (
+        <>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={openToFof === true && !fofBlocked}
+            disabled={fofBlocked}
+            onClick={() => onOpenToFofChange?.(!openToFof)}
+            className={`w-full flex items-start gap-3 text-left rounded-2xl border-[1.5px] px-3.5 py-3 ${
+              fofBlocked
+                ? 'border-[#E8E4F5] bg-purple-50 opacity-45 mb-2'
+                : 'border-purple-500 bg-purple-50 mb-4'
+            }`}
+          >
+            <span className="flex-1 min-w-0">
+              <span className="block font-sans text-[13px] font-semibold text-ink-900 leading-snug">
+                Open to friends of friends
+              </span>
+              <span className="block font-sans text-[11.5px] text-ink-500 leading-snug mt-0.5">
+                {openToFof && !fofBlocked
+                  ? 'On, your friends’ friends can see this one and join it. They see which friend connects you.'
+                  : 'Your friends’ friends can see this one and join it.'}
+              </span>
+            </span>
+            <span
+              aria-hidden="true"
+              className={`shrink-0 mt-0.5 w-11 h-6 rounded-full relative transition-colors ${
+                openToFof && !fofBlocked ? 'bg-green-700' : 'bg-grey-300'
+              }`}
+            >
+              <span
+                className={`absolute top-[3px] w-[18px] h-[18px] rounded-full bg-white shadow-sm transition-all ${
+                  openToFof && !fofBlocked ? 'left-[23px]' : 'left-[3px]'
+                }`}
+              />
+            </span>
+          </button>
+          {fofBlocked && (
+            <p className="font-sans text-[11.5px] text-purple-700 leading-snug px-0.5 mb-4">
+              This Moove only goes to who you picked, so it can’t also open up. Choose Everyone to
+              open it.
+            </p>
+          )}
+        </>
+      )}
 
       {/* 18.2 — groups only, never individuals. The sub-line says so out loud
           once both kinds are picked, because that is the moment somebody would

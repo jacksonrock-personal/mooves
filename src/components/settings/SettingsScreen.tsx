@@ -27,6 +27,7 @@ interface Me {
   avatarUrl: string | null
   areaZip: string | null
   hideFromMatches: boolean
+  fofMoovesEnabled: boolean
   areaCity: string | null
   areaState: string | null
   interests: string[]
@@ -66,6 +67,7 @@ export default function SettingsScreen() {
           avatarUrl: string | null
           areaZip: string | null
           hideFromMatches?: boolean
+          fofMoovesEnabled?: boolean
           areaCity: string | null
           areaState: string | null
           interests: string[]
@@ -86,6 +88,7 @@ export default function SettingsScreen() {
         avatarUrl: profile.avatarUrl,
         areaZip: profile.areaZip,
         hideFromMatches: profile.hideFromMatches ?? false,
+        fofMoovesEnabled: profile.fofMoovesEnabled ?? true,
         areaCity: profile.areaCity,
         areaState: profile.areaState,
         interests: profile.interests ?? [],
@@ -127,6 +130,23 @@ export default function SettingsScreen() {
   // 24.0 wall 4. Optimistic, rolled back on failure — a switch that silently
   // fails to save is worse than one that says so, because the user believes
   // they are hidden when they are not.
+  async function handleFofChange(next: boolean) {
+    const previous = me
+    setMe(prev => (prev ? { ...prev, fofMoovesEnabled: next } : prev))
+    try {
+      const res = await fetch('/api/users/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fofMoovesEnabled: next }),
+      })
+      if (!res.ok) throw new Error('save failed')
+      posthog.capture('settings_fof_mooves', { enabled: next })
+    } catch {
+      setMe(previous)
+      setToastMessage("Couldn't save that, try again.")
+    }
+  }
+
   async function handleHideFromMatchesChange(next: boolean) {
     const previous = me
     setMe(prev => (prev ? { ...prev, hideFromMatches: next } : prev))
@@ -303,6 +323,44 @@ export default function SettingsScreen() {
                 Pick what you want to see in Discover.
               </div>
               <InterestPicker selected={me.interests} onChange={handleInterestsChange} />
+            </div>
+
+            <div className="h-3.5" />
+
+            {/* R29 - one hop out, and the description ends on the thing people
+                will actually worry about. "Does this show strangers when I'm
+                free?" is the first question anyone asks, and the answer is no:
+                greens never leave the friend graph, only Mooves can be opened,
+                and only one at a time by the person who made them.
+
+                It lives under Discovery with the other reach controls rather
+                than under Notifications, because it changes what is in the feed
+                and not what buzzes. */}
+            <div className="bg-white border border-[#E8E4F5] rounded-[20px] p-4 mx-4 flex items-start gap-3">
+              <span className="flex-1">
+                <span className="block font-sans font-bold text-[15px] text-ink-900">
+                  Mooves from friends of friends
+                </span>
+                <span className="block font-sans text-[13px] text-ink-500 mt-1 leading-[1.45]">
+                  Mooves your friends&apos; friends chose to open up. You always see which friend
+                  connects you, and they never see when you&apos;re free.
+                </span>
+              </span>
+              <button
+                onClick={() => void handleFofChange(!me.fofMoovesEnabled)}
+                role="switch"
+                aria-checked={me.fofMoovesEnabled}
+                aria-label="Mooves from friends of friends"
+                className={`shrink-0 w-[46px] h-[28px] rounded-full relative transition-colors ${
+                  me.fofMoovesEnabled ? 'bg-green-500' : 'bg-grey-300'
+                }`}
+              >
+                <span
+                  className={`absolute top-[3px] w-[22px] h-[22px] rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.2)] transition-all ${
+                    me.fofMoovesEnabled ? 'left-[21px]' : 'left-[3px]'
+                  }`}
+                />
+              </button>
             </div>
 
             <div className="h-3.5" />

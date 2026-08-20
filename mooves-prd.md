@@ -5897,7 +5897,7 @@ A structured "can't make it / could do another day" tap (deferred: see R29's not
 
 ---
 
-## R29 — Mooves that open one hop out (Spec) — *2026-08-19* · SPEC 🔄 *awaiting approval* · MOCKUP ⬜ · CODE ⬜
+## R29 — Mooves that open one hop out (Spec) — *2026-08-19* · SPEC ✅ · MOCKUP ✅ (`mooves-r29-friends-of-friends.html`, 6 states, approved 2026-08-20) · CODE 🔄
 
 *The growth round. The complaint it answers: **"it's always the usual suspects from the same friend group."** Note that the feature built to widen the feed with non-friend content is Community Mooves, which R27 had to resurrect — some of this complaint was that outage, and R29 should be judged on what is left after the feed has been full for a week.*
 
@@ -5948,6 +5948,10 @@ Viewer **V** sees author **A**'s Moove one hop out when *all* hold:
 **`fof_hidden (user_id, hidden_user_id)`, PK both columns.** "Hide Mooves from this person", from the card.
 
 This is load-bearing because **Mooves has no blocking** — `DELETE /api/friendships/[friendId]` exists and works (swipe-left on a friend row, both rows deleted), but nothing prevents a re-add and there is no report path. R29 is the first time a **non-friend's** content reaches your feed, so the existing remedy is unavailable by definition: you cannot unfriend someone you were never friends with. Without `fof_hidden` the only escape is the global switch, which kills the feature for that person entirely, or unfriending the bridge, which punishes Marcus for something Marcus did not do.
+
+**⚠ Where it is reached from — decided at mockup, and the mockup is what forced it.** Drawing R29 against the real `PlanCard` showed there is no `···` button on somebody else's card: that slot holds the join pill, and Hide cannot displace the primary action. A long-press was drawn instead and rejected on the spot — an affordance-free gesture is a feature nobody finds, which is fatal for the one control that exists to be found in an uncomfortable moment.
+
+**The “through Marcus” chip is the button.** Tapping it opens the action sheet. The chip renders only on one-hop-out cards, so the affordance exists exactly where the thing it manages does and nowhere else; it needs no new slot; and it is already the card's odd element, which is the element someone reaches for. The sheet leads with the connection before offering Hide, so the common tap — *who is this person?* — is answered rather than punished.
 
 ### R29.6 — Volume
 
