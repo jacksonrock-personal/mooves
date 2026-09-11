@@ -284,6 +284,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          last_attempted_pull: string | null
           last_successful_pull: string | null
           thin_alerted_at: string | null
           lat: number
@@ -295,6 +296,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          last_attempted_pull?: string | null
           last_successful_pull?: string | null
           thin_alerted_at?: string | null
           lat: number
@@ -306,6 +308,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          last_attempted_pull?: string | null
           last_successful_pull?: string | null
           thin_alerted_at?: string | null
           lat?: number
@@ -1047,6 +1050,10 @@ export type Database = {
       increment_move_impressions: {
         Args: { move_ids: string[] }
         Returns: undefined
+      }
+      ensure_metro_for_zip: {
+        Args: { p_zip: string }
+        Returns: string
       }
       nearby_zips: {
         Args: { p_radius_miles?: number; p_zip: string }
