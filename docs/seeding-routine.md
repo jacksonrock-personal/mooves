@@ -1,8 +1,15 @@
-# Community Mooves — the daily seeding routine (Phase 24.9)
+# Community Mooves — the seeding routine (Phase 24.9, R33)
 
-Runs as a **scheduled Claude Code cloud routine**, **once daily** at 10:07 UTC
-(6:07am ET), on the existing subscription. **No metered Anthropic API.** That is a hard constraint, not a
-preference — the whole design below follows from it.
+Runs as a **scheduled Claude Code cloud routine**, **hourly at :07**, on the
+existing subscription. **No metered Anthropic API.** That is a hard constraint,
+not a preference — the whole design below follows from it.
+
+**Hourly is the tick, not the pull rate.** Each metro is still pulled **once per
+UTC day**; `/api/ingest/metros` hands back only the metros that are actually due,
+so 23 of every 24 runs get an empty list and stop immediately. The hourly tick
+exists for one reason: metros now create themselves when a user sets an area
+(R33), and a brand-new metro should not wait up to 24 hours for its first
+content. See **The queue** below.
 
 The routine **never touches the database**. It searches, structures, and POSTs.
 Validation, dedupe and persistence live in the app (`/api/ingest/*`), so the
@@ -21,6 +28,11 @@ before it is configured.
 >
 > **1.** `GET {APP_URL}/api/ingest/metros` with `Authorization: Bearer {INGEST_TOKEN}`.
 > You get back a list of metros, each with a `window` and a `known` array.
+>
+> **If `metros` is empty, you are done. Stop and report "nothing due".** This is
+> the normal outcome of most runs and it is not a failure — the endpoint returns
+> only metros that have not already been pulled today. Do not search anyway, and
+> do not go looking for metros by other means.
 >
 > **2.** For each metro, use web search to find real, public events inside that
 > metro's window. `window.full` means search the whole 7 days; otherwise search
@@ -99,8 +111,58 @@ recurring Thursday trivia night, every day, forever.
 
 **Metros, not zips.** 60647 and 60622 are two miles apart and share the same
 inventory. The job scales with cities (tens), not users (thousands) — but it
-*does* scale with cities. At four metros, each new one is roughly +25% on the
-daily cost.
+*does* scale with cities. Each metro is one search and one write per day, so the
+daily cost is linear in the number of metros that exist. That is the number to
+watch, and it is why the answer to "seed the whole country" is no: there are
+31,575 distinct city/state pairs in `zip_codes`, and even the ~380 real MSAs
+would be roughly 95× today's spend to serve, at the time of writing, eleven
+people.
+
+## The queue (R33)
+
+`/api/ingest/metros` used to return **every** metro on **every** run. Its header
+comment had claimed "staleness + the on-demand queue" since 24.9 and no such
+filter existed. It now returns a metro only when:
+
+- it has **not** pulled successfully since the start of the current **UTC day**, and
+- it was not handed out in the last **2 hours** (`RETRY_AFTER_MS`)
+
+Being handed out stamps `metros.last_attempted_pull`; completing the POST stamps
+`last_successful_pull`. Two columns, because one cannot answer both questions: a
+run that takes the work list and then dies never stamps success, and without the
+attempt stamp it would be re-handed the same metro every tick — 24 searches a
+day for the metro that is already failing.
+
+**Why the UTC day and not a rolling 24 hours.** The incremental window offers
+`newlyEnteredDay` exactly once, on the day that day enters the horizon, so the
+whole scheme is only correct if pulls land one per calendar day. A rolling
+interval does not give you that — at 24h the pull time walks an hour later each
+run until it crosses midnight and a day is offered twice; at 23h it walks earlier
+and a day is skipped. Calendar anchoring makes "one new day per run" true by
+construction.
+
+## Metros create themselves (R33)
+
+`POST /api/users/area` calls `ensure_metro_for_zip(zip)` after writing
+`users.area_zip`. If nothing covers that zip, it creates the metro from the zip's
+own city/state/centroid and claims every zip within 30 miles — one function, one
+transaction, so a half-created metro is not a reachable state.
+
+This replaces running `scripts/seed-metros.mjs` by hand, which is what everyone
+had been relying on and which went **five weeks** un-run (2026-08-03 → 09-11).
+Every user who set an area in that window sat in an uncovered zip with a
+permanently empty Discover feed, and nothing anywhere reported it:
+`last_successful_pull` was green the whole time for all four metros that existed,
+because the failure was in the metros that *did not exist*. No timestamp can go
+stale on a row nobody inserted.
+
+The script remains, as the bulk-repair tool — it is still the only thing that
+re-derives the whole list from scratch or widens an existing metro's claim after
+a radius change.
+
+**New metros are exempt from the thin alarm** until their first successful pull.
+They are born with zero upcoming moves by definition, and an alarm that fires on
+every creation is an alarm people write a filter for.
 
 **Zero is valid, and it is stated twice.** Models pad to hit a number. If the
 prompt implies 5–10 is expected you will get 5–10 regardless of whether the city
@@ -117,13 +179,21 @@ things stand in:
   database. If a metro stops pulling, that timestamp stops moving and the admin
   console shows it. Staleness is visible without alerting infrastructure — and at
   3 days of staleness the next run widens to a full seven-day scan by itself.
-- **Nothing goes live unreviewed.** Everything lands `pending` in the existing
-  admin queue, so the worst a bad run can do is waste a minute of review.
+- ~~**Nothing goes live unreviewed.**~~ **No longer true, and deliberately so.**
+  R27 inverted this: a seeded row that clears every check in the ingest route
+  publishes immediately with `reviewed_at = NULL`, which lands it in the admin
+  console's audit list — live, but flagged as never looked at. The review gate
+  went unstaffed from 2026-08-04, 386 rows piled up, every metro ran dark for
+  fifteen days, and nothing errored, because an empty queue and an ignored queue
+  look identical from outside. An unstaffed gate does not filter bad content, it
+  filters *all* content. Sponsor-authored moves keep the real gate; `origin` is
+  the boundary.
 
 ## Review
 
-There is **no new review UI**. Seeded moves are `sponsored_moves` rows with
-`status='pending'`, so they appear in the existing desktop admin console
-alongside sponsor submissions. At 5–10 per metro per day against the quality bar
-above, that is a few minutes daily. If it ever feels like a queue, the prompt's
-filter is too loose — do not fix it by reviewing faster.
+There is **no new review UI**. Since R27, seeded moves publish on arrival and
+appear in the admin console's audit list as `reviewed_at = NULL` — live, flagged
+as never looked at. The human pass still happens; it just stopped being the thing
+standing between a real event and the feed. At 5–10 per metro per day against the
+quality bar above, that is a few minutes daily. If it ever feels like a queue,
+the prompt's filter is too loose — do not fix it by reviewing faster.

@@ -44,6 +44,26 @@ export async function POST(req: Request) {
 
   if (error) return NextResponse.json({ error: 'Update failed' }, { status: 500 })
 
+  // R33 — make sure something actually seeds where this person just said they are.
+  //
+  // Discover matches moves by zip radius, and moves only exist for zips some
+  // metro claims. Until now the only thing that created metros was somebody
+  // remembering to run scripts/seed-metros.mjs by hand. It went five weeks
+  // un-run, and every user who set an area in that window — Princeton TX,
+  // Hailey ID — got a permanently empty feed with no error anywhere to explain
+  // it. A metro list maintained by memory is a metro list that goes stale.
+  //
+  // BEST-EFFORT, DELIBERATELY. The area write above is what the user actually
+  // asked for and it has already committed. Failing the request now would throw
+  // away the area they just set in exchange for a feed that would have filled
+  // tomorrow — strictly worse. It logs, and seed-metros.mjs remains the net.
+  try {
+    const { error: metroError } = await supabase.rpc('ensure_metro_for_zip', { p_zip: area.zip })
+    if (metroError) console.error('ensure_metro_for_zip failed for', area.zip, metroError)
+  } catch (e) {
+    console.error('ensure_metro_for_zip threw for', area.zip, e)
+  }
+
   return NextResponse.json(area)
 }
 

@@ -88,7 +88,7 @@ export async function POST(req: Request) {
   // ── Pass 2: the freshness alarm ────────────────────────────────────────────
   const { data: metros, error: metroError } = await supabase
     .from('metros')
-    .select('id, name, state, thin_alerted_at')
+    .select('id, name, state, thin_alerted_at, last_successful_pull')
 
   if (metroError) {
     return NextResponse.json({ error: 'Metro query failed' }, { status: 500 })
@@ -105,6 +105,25 @@ export async function POST(req: Request) {
       .gt('start_at', nowIso)
 
     const upcoming = count ?? 0
+
+    // R33 — a metro that has never pulled is not thin, it is NEW.
+    //
+    // Metros now create themselves the moment a user sets an area there
+    // (ensure_metro_for_zip), and they are born with zero upcoming moves by
+    // definition — the routine has not had its first chance at them yet. Without
+    // this, every single new metro pages ops within the hour, about a condition
+    // that is both expected and already being fixed. An alarm that fires on
+    // every creation is an alarm people build a filter for, and this one exists
+    // because the last alarm nobody was watching cost fifteen days of dark feed.
+    //
+    // The metro is not unwatched in the meantime: last_successful_pull staying
+    // NULL is itself visible in the admin console, and it becomes alertable here
+    // the moment the first pull lands.
+    if (!metro.last_successful_pull) {
+      report.push({ metro: metro.name, upcoming, alerted: false })
+      continue
+    }
+
     const thin = upcoming < THIN_THRESHOLD
 
     if (!thin) {
