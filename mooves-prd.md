@@ -50,6 +50,8 @@
 | — | **R24 — the go-green tile is a traffic light, feed corrections, landing page rebuilt** — "Near you tonight" → "Near you" · "See all" becomes a real pill · the near-you shelf reshuffles per app open · every rail ring was being clipped · "Katherine is in" → "would go" / "is free and might be interested" (R24.1) · **your greyscale face + the purple `+` becomes a traffic light labelled "Go green", and going green swaps it for your face** (R24.2) · **landing page rebuilt on outernetexplorer.com's structure** (R24.3) | ✅ **Spec 2026-08-04** (see "R24" at EOF) — amends **R21b/R22** (the tile) and supersedes **R20's landing spec + 24.0's copy patch** · ✅ **Mockups both approved 2026-08-04**: `mooves-phase25-rail-tile-experiment.html` (Jackson dictated all four parameters at round 2: circle housing, `purple-100` disc, bright lamps in an `ink-900` signal box, label "Go green", **swap** on green) + `mooves-phase25-landing.html` (headline, case, face and CTA all locked at round 3). **Amendment at mockup:** because the light *swaps away* on green it only ever depicts one state, so **nothing in it is dimmed** — a signal box with two dark lamps reads as a dark blob at 54px, and availability is carried by the ring as it is for everyone else · ✅ **Code 2026-08-04, approved by Jackson** (`feat/r24-traffic-light-landing`, branched fresh off `main` — the Phase 24 branch had already merged via #57/#58) — `tsc --noEmit` + `next build` clean, **no migration, no new endpoint**; new `src/lib/seededShuffle.ts` (the rail's hash, now shared with the shelf) and `src/components/ui/GoGreenLight.tsx` (size-prop, so the rail's 54px and onboarding's 42px cannot drift); **"Go free" retired app-wide** across `Rail`, `MoovesLoop`, `AmbientTier`, `GoGreenSheet` and three design docs; R23's *tap your own face, tap the cow* symmetry restated as **tap the light, tap the cow** (Jackson's call: option A). **Landing verified live at 320/375/393/785/1265** — three defects the fixed-width mockup could not show were found and fixed there (nav overflowed 47px at 320, polaroids scrolled the page sideways, headline hit 86px at 768) · ⬜ **device test pending** (both the tile and the landing page) · ⚠ **watch:** the tile's disc is `purple-100`, which is also `PlanCard`'s date block and the group chips |
 | — | **R25 — the Discover tab returns, and you can see a friend's week** — Discover is a tab again and the bar rebalances to **two + cow + two**; the tab renders **exactly the screen "See all" already pushes**, and "See all" is untouched (R25.1) · **tap any friend in the rail or any Friends row to see the week they set** — a 7×3 strip, one sheet, two doors (R25.2) | ✅ **Spec 2026-08-04** (see "R25" at EOF) — amends **24.6** (the cut tab) and **R21b** (grey tiles are buttons now); partially delivers **Phase 23**, which should now be read as "extend R25's window to 30 days" · ✅ **Mockups both approved 2026-08-04**: `mooves-r25-discover-tab.html` + `mooves-r25-friend-week.html` (**v3** — Jackson chose the strip over the grid and the answer-list at round 1, spelled the row labels out in full, cut the footer disclosure and both filler captions, then at round 3 made planned slots **green on a faint green fill** and **cut the second CTA**) · ✅ **Code 2026-08-04** (`feat/r25-discover-tab-friend-week`, stacked on `feat/r24-traffic-light-landing`) — `tsc --noEmit` + `next build` clean; **nav verified live at 375 and 320, nothing clips, bar is 94px against the 95px `--nav-h` so no screen's padding moved**; new `FriendWeekSheet`, new `GET /api/friends/[friendId]/week`, `/api/friends` gains a **scoped** `weekCount` · ⚠ **MIGRATION `20260804140000_r25_friend_week.sql` NOT YET APPLIED** — Jackson runs `npm run db:push`; adds `users.week_visible_to` / `week_visible_user_ids` and four functions (`can_see_week`, `week_start_for`, `get_friend_week`, `friend_week_counts`), **redefines nothing** · ⚠ **the scope columns are enforced but written by nobody** — the picker belongs on the Phase 22 ritual sheet and is a separate change; until it exists every week is visible to every confirmed friend, which is the signed-off default · ⬜ **device test pending**; **untested against a database** (no Docker locally — the date arithmetic and the R16 null-array predicate were each verified as standalone read-only queries against prod, and every column and function the migration depends on was confirmed to exist) |
 | — | **R26 — a morning on every day** — the week ritual offers **Morning / Day / Evening on all seven days**; the weekday/weekend split is gone | ✅ **Spec 2026-08-04** (see "R26" at EOF) — amends **Phase 22's** slot vocabulary and retires the caveat **R25.2** shipped with (its middle row meant "afternoon" at weekends; both are 12–17 now, so the label "Day" is exactly true every day) · **No mockup** — this changes which cells a shipped grid offers, not how it looks · ⚠ **The overlap forced a second decision:** old `morning` 08–12 and `day` 09–17 share three hours, so `day` **narrows to 12–17** and `afternoon` **folds into it** — that direction because "Morning / Day / Evening" is the vocabulary already on screen. **No user's availability moves by a minute**; the windows are identical, so this is a rename of live data · ✅ **Code 2026-08-04** (`feat/r26-morning-every-day`, off `main` @ `a47c71f`) — `tsc --noEmit` + `next build` clean; **grid verified live at 21 cells** (Morning ×7, Day ×7, Evening ×7, no spacers, past cells disabled) and a **full 21-slot save round-tripped 200/21 stored** — *the old cap of 16 would have rejected a full week outright, which is the defect this round was most likely to ship* — plus a stale-client `afternoon` confirmed to fold to `day` rather than vanish · ⚠ **MIGRATION `20260804190000_r26_morning_every_day.sql` NOT YET APPLIED** — Jackson runs `npm run db:push`; it is a **data** migration (8 `afternoon` rows → `day`, deleting losers first so it stays re-runnable against the unique index), adds no columns and redefines no functions · ⬜ **device test pending** · **`day` had zero rows ever** — its own verdict on a 09–17 weekday slot |
+| — | **R35 — Add a Moove to your calendar** — per-Moove "Add to calendar" (Apple `.ics` / Google template) + one subscribable feed of every Moove you created or joined, with reset | ✅ **Spec 2026-10-16** (see "R35" at EOF) · ⬜ Mockup · ⬜ Code |
+| — | **R36 — Past Mooves + photo albums (photos only)** — a Past section at the foot of the feed; a private album per Moove for its creator + joiners; photo comments exactly like Moove comments, **amending Phase 21 wall 4 for photos only** | ✅ **Spec 2026-10-16** (see "R36" at EOF) · ⬜ Mockup · ⬜ Code |
 
 ---
 
@@ -6094,3 +6096,127 @@ Default on, matching R29's reception default and for the same reason: opt-in lea
 **Search for a person by name or phone.** Deliberately not built, and not an oversight — the only reach into a stranger is second-degree or co-attendance, both of which carry a reason a human can evaluate. A search box turns Mooves into a directory and makes the accept step the only thing standing between any user and any other, which is far more weight than one tap should carry.
 
 Third degree. Suggested *groups*. Any "people who viewed you" surface. Re-asking after a decline.
+
+---
+
+## R35 — Add a Moove to your calendar (Spec) — *2026-10-16* · SPEC ✅ · MOCKUP ⬜ · CODE ⬜
+
+> **Reconciling with design principle 2 ("never an event page or calendar app").** Mooves does not become a calendar. It *exports* to the calendar you already use, which is the same move as the text handoff: the logistics leave the app. Nothing calendar-shaped is rendered inside Mooves.
+
+### Purpose
+Get the Mooves you are in onto your own calendar, so they sit next to everything else when you look at the next week or two.
+
+### Entry points
+- **"Add to calendar"** on a Moove you are in (author or joiner), on the card and in the Moove sheet. Never shown to someone who has not joined.
+- **Settings → "Calendar sync"**.
+- **One-time prompt after your first ever join:** "Put your Mooves on your calendar?" [Set up] / [Not now]. Once per account, ever.
+
+### States
+- **Add sheet:** Apple Calendar · Google Calendar · "Sync all my Mooves instead" (→ Calendar sync).
+- **Calendar sync, not set up:** one line of explanation, [Apple Calendar], [Google Calendar].
+- **Calendar sync, set up:** the same two buttons + "Copy link" + **Reset link** (confirm: "Your old link stops working. You'll need to add the new one again.").
+- **Google instructions:** subscribing by URL is only on Google Calendar's *website*; the Google Calendar phone app cannot add one, and calendar.google.com on a phone serves a mobile view without the option. On a phone it works by switching the browser to the desktop site first (Safari: **aA → Request Desktop Website**). So the sheet shows: copy link → open Google's "Add by URL" page → tip about Desktop Website. On a computer it is just the link.
+- **Undated "This week" Mooves:** no add button (nothing to schedule yet).
+- **First-join prompt.**
+
+### User flows
+1. **One Moove, Apple:** Add to calendar → Apple Calendar → `.ics` downloads → iOS opens its Add Event sheet → Add.
+2. **One Moove, Google:** Add to calendar → Google Calendar → prefilled event in Google → Save.
+3. **Sync, Apple:** Settings → Calendar sync → Apple Calendar → `webcal://` subscribe dialog → Subscribe.
+4. **Sync, Google:** Settings → Calendar sync → Google Calendar → copy link → Google "Add by URL" (desktop site on a phone) → Add calendar.
+5. **Reset:** Reset link → confirm → new token; the old feed URL 404s.
+
+### Time mapping
+| Moove | Calendar event |
+|---|---|
+| Date + time | Start at time, 2h long |
+| Date only | All-day |
+| Tonight | 19:00–22:00 in the viewer's timezone |
+| This weekend | All-day Sat–Sun |
+| This week | Excluded until it has a date |
+
+**Event body:** title, location, note, who's in, link back to the Moove. **Stable UID = plan id**, so an edited Moove updates in place. **Reminder:** `VALARM` 1 hour before, in both the single `.ics` and the feed.
+
+> **Recorded limit (accepted 2026-10-16):** the reminder is only guaranteed on a single Apple add. iOS strips alerts from subscribed calendars by default and Google ignores `VALARM` in subscribed feeds; Google's one-tap add uses the user's own default reminder. Google may also take up to ~a day to refresh a subscribed feed. The UI does not promise otherwise.
+
+### Data
+- **`users.calendar_token`** — nullable, random 32+ bytes, minted on first sync setup, rotated by Reset.
+- **`GET /api/cal/[token].ics`** — unauthenticated (calendar apps can't log in), so the token *is* the auth. Contains Mooves the user authored or joined, `start_at` ≥ now − 30 days, not cancelled, not left. Never Mooves merely visible to them.
+- **`GET /api/plans/[id]/ics`** — authenticated, author or joiner only.
+- No new tables.
+
+### Out of scope
+Two-way sync · reading your calendar into Mooves · calendar "busy" blocking greens · Outlook-specific buttons (the feed URL works there, no dedicated UI).
+
+### Open questions
+None.
+
+### Acceptance criteria
+- [ ] Add button shows only for author/joiners, never on undated "This week" Mooves.
+- [ ] Apple add opens the iOS Add Event sheet with correct time, place, and 1-hour alert.
+- [ ] Google add opens a prefilled event.
+- [ ] Feed contains exactly authored + joined Mooves, minus cancelled and left.
+- [ ] Editing a Moove's time updates the existing event rather than duplicating.
+- [ ] Reset makes the old URL return 404.
+- [ ] First-join prompt shows once per account, never again.
+
+---
+
+## R36 — Past Mooves + photo albums (Spec) — *2026-10-16* · SPEC ✅ · MOCKUP ⬜ · CODE ⬜
+
+> **⚠ Amends Phase 21 wall 4, for photos only, in daylight (Jackson, 2026-10-16).** Wall 4 says comments die with the Moove and there is "never history, never anything to scroll back to." An album you can revisit is history by design. **Photo comments keep walls 1–3 exactly** (only on a Moove, only author + joiners, invisible and unhinted to everyone else) and use the same likes, @mentions (roster-bounded, R8/R11), 500 cap and batched push. **Wall 4 is amended for photo comments only: they live as long as the photo.** The Moove's own comment thread still dies at expiry; Past shows the album, never the old thread.
+>
+> **Moderation, amended from the draft (Jackson, 2026-10-16):** the **Moove's creator can remove any photo** in its album (and, as with Phase 21.4, any photo comment). Uploaders can delete their own. There is still no reporting or blocking; the creator-remove is the safety story, accepted knowingly because photos, unlike comments, are permanent.
+
+### Purpose
+The Mooves you went to don't vanish. Each becomes a small private album the people who were there can add to, comment on, and save from.
+
+### Entry points
+- **"Past" section at the foot of the feed**, collapsed by default. Mooves you authored or joined, newest first; cancelled excluded. **Absent when empty** (R31's no-empty-furniture rule).
+- **Morning-after push**, once, to author + joiners: "Add your photos from {title}".
+
+### States
+- **Past row:** title, date, who was in (avatars), up to 3 thumbnails when the album has photos.
+- **Album, empty:** the Moove header + [Add photos].
+- **Album, populated:** grid.
+- **Uploading:** per-photo progress; failed tile with retry.
+- **Closed (> 30 days after the Moove):** [Add photos] gone; viewing, commenting, saving continue.
+- **At cap:** "You've added 50" in place of the button.
+- **Photo viewer:** full screen, swipe between photos, "{Name} · {when}", comments beneath, "···" with Save, Delete (own photo), Remove photo (creator, others' photos).
+- **Non-member:** no Past row, no album, no hint. Direct URL → not found.
+
+### User flows
+1. **Add:** Past → Moove → Add photos → multi-select from camera roll → resized client-side (~2048px long edge, JPEG) and **EXIF/location stripped** → upload → visible to the roster.
+2. **Comment:** open photo → "Add a comment" — identical behaviour to Moove comments.
+3. **Save:** "···" → Save → Web Share sheet with the file ("Save Image") on iOS; download elsewhere.
+4. **Delete / remove:** uploader deletes own; creator removes any. Both confirm.
+5. **Leaving the Moove:** you lose access to the album; your photos stay.
+
+### Notifications (15.3 pipeline: quiet hours, cooldown, per-group mute)
+- Photos added → "{Name} added 6 photos to {title}", ≤ 1 per Moove per recipient per hour, never to the uploader.
+- Photo comments → same as Moove comments ("3 new comments"), batched.
+- Morning-after nudge, once.
+
+### Data
+- **`plan_photos`**: `id · plan_id (FK, cascade) · uploader_id · storage_path · width · height · created_at`.
+- **`plan_photo_comments`** + likes, mirroring `plan_comments` and its likes table.
+- **Storage:** private bucket `plan-photos`, served via short-lived signed URLs only.
+- **Access** = author + `move_joins` rows for the plan (never `plan_id IS NULL` green rows), checked on every route.
+- **Server-enforced:** 50 per uploader per plan, uploads only until `start_at + 30 days`.
+- RLS on, no policies, service-role only, matching `plan_comments`.
+
+### Out of scope
+Video · download-all/zip · captions · albums for Mooves you only saw · sharing a photo outside Mooves · reporting/blocking · showing the expired comment thread in Past.
+
+### Open questions
+None.
+
+### Acceptance criteria
+- [ ] Past lists only authored/joined Mooves, never cancelled, and is absent when empty.
+- [ ] Only author + joiners can open an album; others get not-found.
+- [ ] Uploads rejected after 30 days or past 50 per person.
+- [ ] Uploaded files carry no EXIF location.
+- [ ] Photo comments behave exactly like Moove comments and persist past the Moove's expiry.
+- [ ] Uploader can delete own photo; creator can remove any; leaving the Moove keeps your photos.
+- [ ] Save offers "Save Image" on iOS.
+- [ ] Morning-after push fires once; photo-added pushes ≤ 1/Moove/hour.
