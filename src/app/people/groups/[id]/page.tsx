@@ -8,7 +8,8 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { posthog } from '@/lib/posthog'
 import GroupForm from '@/components/groups/GroupForm'
-import GroupMemberView, { type RosterMember } from '@/components/groups/GroupMemberView'
+import GroupMemberView from '@/components/groups/GroupMemberView'
+import type { RosterMember } from '@/components/groups/RosterRow'
 import InviteLinkSheet from '@/components/groups/InviteLinkSheet'
 import Sheet from '@/components/ui/Sheet'
 
@@ -27,12 +28,6 @@ interface Group {
   memberIds: string[]
 }
 
-interface Me {
-  id: string
-  displayName: string | null
-  avatarUrl: string | null
-}
-
 export default function GroupDetailPage() {
   const router = useRouter()
   const params = useParams<{ id: string }>()
@@ -40,7 +35,8 @@ export default function GroupDetailPage() {
 
   const [friends, setFriends] = useState<Friend[]>([])
   const [group, setGroup] = useState<Group | null>(null)
-  const [me, setMe] = useState<Me | null>(null)
+  const [members, setMembers] = useState<RosterMember[]>([])
+  const [addingId, setAddingId] = useState<string | null>(null)
   const [loaded, setLoaded] = useState(false)
   const [saving, setSaving] = useState(false)
   const [leaving, setLeaving] = useState(false)
@@ -52,21 +48,24 @@ export default function GroupDetailPage() {
     let cancelled = false
 
     async function load() {
-      const [friendsRes, groupsRes, meRes] = await Promise.all([
+      // The roster comes from the group itself, not from your friends list —
+      // co-members you aren't friends with used to render as "Friend" + "?".
+      const [friendsRes, groupRes] = await Promise.all([
         fetch('/api/friends').then(r => r.json()) as Promise<{ friends: Friend[] }>,
-        fetch('/api/groups').then(r => r.json()) as Promise<{ groups: Group[] }>,
-        fetch('/api/users/me').then(r => r.json()) as Promise<Me>,
+        fetch(`/api/groups/${groupId}`).then(r => (r.ok ? r.json() : null)) as Promise<
+          { group: Group; members: RosterMember[] } | null
+        >,
       ])
       if (cancelled) return
 
-      const match = (groupsRes.groups ?? []).find(g => g.id === groupId)
-      if (!match) {
+      if (!groupRes) {
         router.replace('/people')
         return
       }
+      const match = groupRes.group
       setFriends(friendsRes.friends ?? [])
       setGroup(match)
-      setMe({ id: meRes.id, displayName: meRes.displayName, avatarUrl: meRes.avatarUrl })
+      setMembers(groupRes.members)
       setLoaded(true)
 
       // Arriving straight from group creation → open the invite link to share.
@@ -130,7 +129,28 @@ export default function GroupDetailPage() {
     }
   }
 
-  if (!loaded || !group || !me) {
+  async function handleAddFriend(id: string) {
+    if (addingId) return
+    setAddingId(id)
+    const setRelation = (relation: RosterMember['relation']) =>
+      setMembers(prev => prev.map(m => (m.id === id ? { ...m, relation } : m)))
+    setRelation('asked')
+    try {
+      const res = await fetch(`/api/friend-requests/${id}`, { method: 'POST' })
+      if (!res.ok) throw new Error('failed')
+      const data = (await res.json()) as { status: string; crossed?: boolean }
+      posthog.capture('friend_request_sent', { source: 'group_roster' })
+      // They had already asked you — the server made it a friendship.
+      if (data.crossed) setRelation('friend')
+    } catch {
+      setRelation('add')
+      setError("Couldn't do that, try again.")
+    } finally {
+      setAddingId(null)
+    }
+  }
+
+  if (!loaded || !group) {
     return (
       <main className="min-h-screen bg-purple-50 flex items-center justify-center">
         <p className="font-sans text-[14px] text-ink-500">Loading…</p>
@@ -140,32 +160,19 @@ export default function GroupDetailPage() {
 
   // Member (not owner): read-only roster + leave.
   if (!group.isOwner) {
-    const friendMap = new Map(friends.map(f => [f.id, f]))
-    const seen = new Set<string>()
-    const members: RosterMember[] = []
-    for (const id of [group.ownerId, ...group.memberIds]) {
-      if (seen.has(id)) continue
-      seen.add(id)
-      const isYou = id === me.id
-      const f = friendMap.get(id)
-      members.push({
-        id,
-        displayName: isYou ? me.displayName : (f?.displayName ?? null),
-        avatarUrl: isYou ? me.avatarUrl : (f?.avatarUrl ?? null),
-        isOwner: id === group.ownerId,
-        isYou,
-      })
-    }
-
+    // Owner first, as before.
+    const ordered = [...members].sort((a, b) => Number(b.isOwner) - Number(a.isOwner))
     return (
       <GroupMemberView
         groupId={groupId}
         name={group.name}
         emoji={group.emoji}
-        members={members}
+        members={ordered}
         leaving={leaving}
+        addingId={addingId}
         onBack={() => router.push('/people')}
         onLeave={() => void handleLeave()}
+        onAddFriend={id => void handleAddFriend(id)}
       />
     )
   }
@@ -179,6 +186,9 @@ export default function GroupDetailPage() {
         initialEmoji={group.emoji}
         initialMemberIds={group.memberIds}
         friends={friends}
+        others={members.filter(m => m.relation !== 'you' && m.relation !== 'friend')}
+        addingId={addingId}
+        onAddFriend={id => void handleAddFriend(id)}
         saving={saving}
         error={error}
         onSave={handleSave}
