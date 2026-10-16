@@ -6099,7 +6099,7 @@ Third degree. Suggested *groups*. Any "people who viewed you" surface. Re-asking
 
 ---
 
-## R35 — Add a Moove to your calendar (Spec) — *2026-10-16* · SPEC ✅ · MOCKUP ✅ (`mooves-r35-calendar.html`) · CODE ⬜
+## R35 — Add a Moove to your calendar (Spec) — *2026-10-16* · SPEC ✅ · MOCKUP ✅ (`mooves-r35-calendar.html`) · CODE ✅ 2026-10-16 (PR #73)
 
 > **Reconciling with design principle 2 ("never an event page or calendar app").** Mooves does not become a calendar. It *exports* to the calendar you already use, which is the same move as the text handoff: the logistics leave the app. Nothing calendar-shaped is rendered inside Mooves.
 
@@ -6162,7 +6162,7 @@ None.
 
 ---
 
-## R36 — Past Mooves + photo albums (Spec) — *2026-10-16* · SPEC ✅ · MOCKUP ✅ (`mooves-r36-past-albums.html`) · CODE ⬜
+## R36 — Past Mooves + photo albums (Spec) — *2026-10-16* · SPEC ✅ · MOCKUP ✅ (`mooves-r36-past-albums.html`) · CODE ✅ 2026-10-16 (PR #73)
 
 > **⚠ Amends Phase 21 wall 4, for photos only, in daylight (Jackson, 2026-10-16).** Wall 4 says comments die with the Moove and there is "never history, never anything to scroll back to." An album you can revisit is history by design. **Photo comments keep walls 1–3 exactly** (only on a Moove, only author + joiners, invisible and unhinted to everyone else) and use the same likes, @mentions (roster-bounded, R8/R11), 500 cap and batched push. **Wall 4 is amended for photo comments only: they live as long as the photo.** The Moove's own comment thread still dies at expiry; Past shows the album, never the old thread.
 >
