@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mooves — R36: Past Mooves + photo albums</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  /* Values lifted from shipped components and the R29/R31/Phase 21 mockups:
+     FeedScreen.tsx, PlanCard.tsx, MooveSheet.tsx (comments, hearts, compose),
+     MooveActionsSheet.tsx (native action sheet), BottomNav.tsx, CowIllustration.tsx. */
+  :root{
+    --green-100:#E3F9EC; --green-500:#2ECC71; --green-700:#167A43;
+    --purple-50:#F8F6FF; --purple-100:#EDE9FF; --purple-500:#7C5CDB; --purple-700:#5F3FC4;
+    --purple-400:#9B7FE8; --purple-300:#A98FF0;
+    --ink-900:#1C1730; --ink-500:#6B628A;
+    --grey-100:#F1EEFA; --grey-300:#BDB5D4; --hair:#E8E4F5;
+    --red:#E8405A; --white:#fff; --safetop:44px; --nav-h:95px;
+    /* avatar + photo tones already in use across Mooves mockups and the cow */
+    --t-sand:#C9A87C; --t-rose:#E8A0B4; --t-sky:#7FA8E8; --t-sage:#8FBF9F;
+    --t-gold:#CEAD6A; --t-pink:#F0AABB; --t-cream:#F5F0ED;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:Inter,sans-serif;background:#1C1730;color:#fff;padding:34px 18px 90px;-webkit-font-smoothing:antialiased}
+  h1{font-family:'Plus Jakarta Sans',sans-serif;font-size:25px;font-weight:800;letter-spacing:-.02em;text-align:center}
+  .sub{text-align:center;color:#9990BC;font-size:13.5px;margin-top:9px;max-width:760px;margin-left:auto;margin-right:auto;line-height:1.65}
+  .sub b{color:#CFC6EC;font-weight:600}
+  .knoblbl{text-align:center;font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#5E5480;margin:24px 0 0}
+  .knobs{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:11px auto 0;max-width:960px}
+  .kbtn{background:#2A2340;border:1.5px solid #3A3355;color:#CFC6EC;font-family:inherit;font-size:12.5px;font-weight:600;
+        padding:9px 14px;border-radius:99px;cursor:pointer;transition:.16s}
+  .kbtn:hover{border-color:var(--purple-500)}
+  .kbtn.on{background:var(--purple-500);border-color:var(--purple-500);color:#fff}
+  .rule{width:100%;height:1px;background:#2E2748;max-width:960px;margin:24px auto 0}
+
+  .stage{display:flex;flex-direction:column;align-items:center;margin-top:28px}
+  .state{display:none;flex-direction:column;align-items:center}
+  .state.on{display:flex}
+  .note{font-size:12.5px;color:#9990BC;line-height:1.6;width:340px;max-width:100%;margin-top:16px;text-align:center}
+  .screen-label{margin-top:14px;text-align:center;color:#6E6690;font-size:12px;letter-spacing:.04em}
+
+  /* ── phone shell: 320 wide, 44 radius ─────────────────────────── */
+  .phone{position:relative;width:320px;height:660px;border-radius:44px;background:var(--purple-50);
+         border:1px solid #2E2748;overflow:hidden;box-shadow:0 30px 70px rgba(0,0,0,.45);color:var(--ink-900)}
+  .cal{position:absolute;left:50%;transform:translateX(-50%);top:9px;width:96px;height:26px;background:#0F0C1A;border-radius:99px;z-index:90}
+  .screen{position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden;background:var(--purple-50)}
+  .feedbody{flex:1;display:flex;flex-direction:column;padding:calc(var(--safetop) + 12px) 14px calc(var(--nav-h) + 22px);overflow:hidden}
+  .feedbody.bottom{justify-content:flex-end}
+
+  .seclbl{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-500);padding:4px 2px 10px}
+
+  /* ── PlanCard ─────────────────────────────────────────────────── */
+  .pcard{border-radius:16px;border:1.5px solid var(--hair);background:var(--white);padding:12px;margin-bottom:8px}
+  .prow{display:flex;align-items:center;gap:11px}
+  .ptile{width:46px;height:46px;flex:0 0 auto;border-radius:13px;background:var(--purple-100);
+         display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:0 2px}
+  .ptile .t{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:13px;line-height:1;letter-spacing:-.02em;color:var(--purple-700)}
+  .ptile .b{font-size:8.5px;font-weight:700;letter-spacing:.04em;line-height:1;color:rgba(95,63,196,.75);text-align:center}
+  .pmid{flex:1;min-width:0}
+  .ptitle{font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:15px;line-height:1.2;letter-spacing:-.02em;color:var(--ink-900);
+          overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pwhen{font-size:12.5px;line-height:1.35;color:var(--ink-500);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pchips{display:flex;align-items:center;gap:6px;margin-top:4px}
+  .authchip{font-size:10.5px;font-weight:700;color:var(--purple-700);background:var(--purple-100);padding:2px 6px;border-radius:99px}
+  .pjoin{flex:0 0 auto;padding:8px 13px;border-radius:99px;font-family:inherit;font-weight:700;font-size:12.5px;color:#fff;background:var(--purple-500);border:0}
+  .pjoin.in{background:var(--green-700)}
+  .pfoot{display:flex;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--grey-100)}
+  .stack{display:flex;flex:0 0 auto}
+  .stack .sa{width:23px;height:23px;border-radius:99px;box-shadow:0 0 0 2px #fff;display:flex;align-items:center;justify-content:center;
+             font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:9px;color:#fff}
+  .stack .sa+.sa{margin-left:-8px}
+  .pin{font-size:11.5px;font-weight:600;color:var(--ink-500);margin-left:8px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pbubble{margin-left:auto;flex:0 0 auto;display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:99px;background:var(--grey-100);color:var(--ink-500)}
+  .pbubble b{font-size:12px;font-weight:700}
+
+  /* ── R36: the Past disclosure ─────────────────────────────────── */
+  .pastbtn{display:flex;align-items:center;gap:6px;width:100%;background:none;border:0;font-family:inherit;cursor:pointer;
+           padding:16px 2px 10px;margin-top:8px;border-top:1px solid var(--hair)}
+  .pastbtn span{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-500)}
+  .pastbtn svg{color:var(--ink-500);transition:transform .2s}
+  .pastbtn.open svg{transform:rotate(180deg)}
+  .pastlist{border-radius:16px;border:1.5px solid var(--hair);background:#fff;overflow:hidden}
+  .prow2{padding:11px 12px;cursor:pointer}
+  .prow2+.prow2{border-top:1px solid var(--grey-100)}
+  .ptile.past{background:var(--grey-100)}
+  .ptile.past .t{color:var(--ink-500)}
+  .ptile.past .b{color:rgba(107,98,138,.8)}
+  .pfoot2{display:flex;align-items:center;margin-top:9px}
+  .pfoot2 .stack .sa{width:20px;height:20px;font-size:8px}
+  .pfoot2 .stack .sa+.sa{margin-left:-7px}
+  .thumbs{margin-left:auto;flex:0 0 auto;display:flex;gap:3px;padding-left:8px}
+  .thumbs i{display:block;width:30px;height:30px;border-radius:7px}
+
+  /* ── BottomNav ───────────────────────────────────────────────── */
+  .nav{position:absolute;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--hair);display:flex;z-index:30;height:var(--nav-h)}
+  .ntab{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:5px;padding:16px 2px;font-size:10px;font-weight:600;color:var(--grey-300)}
+  .ntab.on{color:var(--purple-500)}
+  .nplan{flex:1;flex-grow:1.32;min-width:0;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
+         gap:5px;padding:16px 2px;font-size:10px;font-weight:700;color:var(--purple-500)}
+  .ndisc{position:absolute;top:-26px;width:70px;height:70px;border-radius:99px;background:var(--purple-500);border:5.5px solid #fff;
+         box-shadow:0 8px 22px rgba(124,92,219,.42);display:flex;align-items:center;justify-content:center}
+  .nbadge{position:absolute;right:-4px;bottom:-4px;width:28px;height:28px;border-radius:99px;background:#fff;border:3.5px solid #fff;
+          display:flex;align-items:center;justify-content:center}
+  .nplan .lbl{margin-top:46px;white-space:nowrap}
+
+  /* ── album sheet (MooveSheet geometry, tall) ─────────────────── */
+  .scrim{position:absolute;inset:0;background:rgba(28,23,48,.45);z-index:40}
+  .sheet{position:absolute;left:0;right:0;bottom:0;top:54px;z-index:50;background:#fff;border-radius:22px 22px 0 0;display:flex;flex-direction:column;
+         box-shadow:0 -8px 40px rgba(28,23,48,.18)}
+  .grab{width:44px;height:5px;border-radius:99px;background:#DDD8EC;margin:12px auto 0;flex:0 0 auto}
+  .ahead{padding:14px 16px 0;flex:0 0 auto}
+  .ah2{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:19px;letter-spacing:-.02em;line-height:1.2;color:var(--ink-900);display:flex;align-items:center;gap:8px}
+  .awhen{font-size:12.5px;color:var(--ink-500);margin-top:4px;line-height:1.35}
+  .awho{display:flex;align-items:center;margin-top:11px}
+  .awho .stack .sa{width:26px;height:26px;font-size:9.5px}
+  .awho .stack .sa+.sa{margin-left:-9px}
+  .awho .pin{font-size:12.5px}
+  .addbtn{margin:14px 16px 0;padding:13px;border-radius:16px;background:var(--purple-500);color:#fff;border:0;flex:0 0 auto;
+          font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:15px;letter-spacing:-.02em;
+          display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 6px 18px rgba(124,92,219,.28);cursor:pointer}
+  .quiet{margin:14px 16px 0;padding:12px 14px;border-radius:16px;background:var(--grey-100);color:var(--ink-500);
+         font-size:13px;font-weight:600;text-align:center;flex:0 0 auto;line-height:1.4}
+  .quiet.line{background:none;padding:2px 2px 0;font-weight:500;font-size:12.5px;text-align:left}
+  .adiv{height:1px;background:var(--hair);margin:14px 16px 0;flex:0 0 auto}
+  .ascroll{flex:1;overflow-y:auto;padding:12px 16px 24px;scrollbar-width:none}
+  .ascroll::-webkit-scrollbar{display:none}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;border-radius:12px;overflow:hidden}
+  .tile{position:relative;aspect-ratio:1/1;cursor:pointer}
+  .gfoot{font-size:11.5px;color:var(--grey-300);text-align:center;margin-top:12px;font-weight:500}
+
+  /* uploading */
+  .ovl{position:absolute;inset:0;background:rgba(28,23,48,.42);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px}
+  .ovl.fail{background:rgba(28,23,48,.66)}
+  .rbtn{width:34px;height:34px;border-radius:99px;background:#fff;display:flex;align-items:center;justify-content:center}
+  .rlbl{font-size:10.5px;font-weight:700;color:#fff;letter-spacing:.01em}
+
+  /* empty */
+  .aempty{display:flex;flex-direction:column;align-items:center;text-align:center;padding:34px 22px 0}
+  .aempty h3{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:16px;letter-spacing:-.02em;margin-top:14px}
+  .aempty p{font-size:13px;color:var(--ink-500);line-height:1.55;margin-top:5px}
+
+  /* ── photo viewer ────────────────────────────────────────────── */
+  .viewer{position:absolute;inset:0;background:var(--ink-900);display:flex;flex-direction:column}
+  .vbar{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;padding:calc(var(--safetop) + 2px) 10px 8px}
+  .vbtn{width:40px;height:40px;border-radius:99px;display:flex;align-items:center;justify-content:center;color:#fff;background:rgba(255,255,255,.1)}
+  .vphoto{flex:0 0 auto;height:236px;margin:0}
+  .vdots{flex:0 0 auto;display:flex;gap:5px;justify-content:center;padding:10px 0 12px}
+  .vdots i{width:5px;height:5px;border-radius:99px;background:rgba(255,255,255,.25)}
+  .vdots i.on{background:rgba(255,255,255,.75)}
+  .vpanel{flex:1;min-height:0;background:#fff;border-radius:22px 22px 0 0;display:flex;flex-direction:column}
+  .vby{flex:0 0 auto;display:flex;align-items:center;gap:9px;padding:14px 18px 0}
+  .vby .av{width:28px;height:28px;border-radius:99px;display:flex;align-items:center;justify-content:center;font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:10px;color:#fff}
+  .vby b{font-size:13.5px;font-weight:700;color:var(--ink-900)}
+  .vby span{font-size:13.5px;color:var(--ink-500)}
+  .vdiv{height:1px;background:var(--hair);margin:12px 18px 0;flex:0 0 auto}
+  .cmlist{flex:1;min-height:0;overflow:hidden;padding:6px 18px 0}
+  .cmrow{display:flex;gap:10px;padding:8px 0;align-items:flex-start}
+  .cmav{width:32px;height:32px;border-radius:99px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:800}
+  .cmb{flex:1;min-width:0}
+  .cmmeta{display:flex;align-items:baseline;gap:6px}
+  .cmname{font-size:13.5px;font-weight:700;color:var(--ink-900)}
+  .cmname.me{color:var(--purple-700)}
+  .cmtime{font-size:11.5px;color:var(--grey-300);font-weight:500}
+  .cmtext{font-size:14px;color:var(--ink-900);line-height:1.45;margin-top:1px;word-wrap:break-word}
+  .mention{color:var(--purple-700);font-weight:700}
+  .heart{display:flex;flex-direction:column;align-items:center;gap:1px;flex:0 0 auto;width:26px;padding-top:2px;background:none;border:0;cursor:pointer}
+  .heart .hc{font-family:Inter,sans-serif;font-size:10.5px;font-weight:700;color:var(--grey-300);line-height:1}
+  .heart.on .hc{color:var(--red)}
+  .cmdots{width:26px;height:26px;border-radius:99px;display:flex;align-items:center;justify-content:center;color:var(--grey-300);flex:0 0 auto;margin-top:1px}
+  .compose{flex:0 0 auto;padding:10px 16px 18px;display:flex;gap:9px;align-items:flex-end;background:#fff}
+  .cfield{flex:1;min-height:44px;border-radius:99px;background:var(--grey-100);padding:12px 17px;font-size:14.5px;color:var(--grey-300);line-height:1.35}
+  .csend{width:40px;height:40px;border-radius:99px;background:var(--grey-300);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+
+  /* ── native action sheet (MooveActionsSheet list variant) ────── */
+  .ascrim{position:absolute;inset:0;background:rgba(28,23,48,.5);z-index:60}
+  .asheet{position:absolute;left:0;right:0;bottom:0;z-index:61;padding:0 8px 26px;display:flex;flex-direction:column;gap:8px}
+  .agroup{border-radius:16px;overflow:hidden;border:1px solid var(--hair);background:rgba(248,246,255,.96);backdrop-filter:blur(18px)}
+  .atitle{font-size:12px;font-weight:500;color:var(--ink-500);text-align:center;padding:12px 16px 9px;border-bottom:1px solid var(--hair);line-height:1.45}
+  .arow{width:100%;padding:16px 12px;font-family:inherit;font-size:17px;font-weight:600;color:var(--purple-500);background:none;border:0;display:block;text-align:center}
+  .arow+.arow{border-top:1px solid var(--hair)}
+  .arow.d{color:var(--red)}
+  .arow .asub{display:block;font-size:12px;font-weight:500;color:var(--ink-500);line-height:1.45;margin-top:4px;padding:0 6px}
+  .acancel{width:100%;padding:16px;border-radius:16px;border:1px solid var(--hair);background:rgba(248,246,255,.96);backdrop-filter:blur(18px);
+           font-family:inherit;font-size:17px;font-weight:700;color:var(--ink-900)}
+
+  /* ── iOS share sheet, illustrated ────────────────────────────── */
+  .ios{position:absolute;left:0;right:0;bottom:0;z-index:61;background:var(--grey-100);border-radius:14px 14px 0 0;padding:12px 12px 30px;display:flex;flex-direction:column;gap:12px}
+  .iostag{position:absolute;left:50%;transform:translateX(-50%);top:-36px;z-index:62;font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+          color:rgba(255,255,255,.75);border:1px dashed rgba(255,255,255,.4);border-radius:99px;padding:5px 11px;white-space:nowrap}
+  .ioshead{display:flex;align-items:center;gap:10px;padding:2px 2px 12px;border-bottom:1px solid var(--hair)}
+  .ioshead i{display:block;width:44px;height:44px;border-radius:8px;flex:0 0 auto}
+  .ioshead b{display:block;font-size:13.5px;font-weight:600;color:var(--ink-900)}
+  .ioshead span{display:block;font-size:12px;color:var(--ink-500);margin-top:1px}
+  .iosx{margin-left:auto;width:28px;height:28px;border-radius:99px;background:var(--hair);display:flex;align-items:center;justify-content:center;color:var(--ink-500)}
+  .iosapps{display:flex;justify-content:space-between;padding:2px 4px}
+  .iosapp{display:flex;flex-direction:column;align-items:center;gap:6px;width:58px}
+  .iosapp i{display:flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:13px;background:#fff;border:1px solid var(--hair);color:var(--ink-500)}
+  .iosapp span{font-size:10.5px;color:var(--ink-900)}
+  .iosgroup{background:#fff;border-radius:12px;overflow:hidden}
+  .iosrow{display:flex;align-items:center;justify-content:space-between;padding:13px 14px;font-size:15px;color:var(--ink-900)}
+  .iosrow+.iosrow{border-top:1px solid var(--grey-100)}
+  .iosrow svg{color:var(--ink-500)}
+  .iosrow.hl{background:var(--purple-100);color:var(--purple-700);font-weight:600;box-shadow:inset 0 0 0 2px var(--purple-500);border-radius:12px}
+  .iosrow.hl svg{color:var(--purple-700)}
+  .iosrow.hl + .iosrow{border-top-color:transparent}
+
+  /* ── lock screen ─────────────────────────────────────────────── */
+  .lock{position:absolute;inset:0;background:linear-gradient(170deg,#1C1730 0%,#5F3FC4 58%,#9B7FE8 100%);display:flex;flex-direction:column;align-items:center;color:#fff}
+  .lstat{align-self:stretch;display:flex;justify-content:space-between;padding:15px 28px 0;font-size:12.5px;font-weight:600}
+  .ldate{margin-top:40px;font-size:15px;font-weight:600;color:rgba(255,255,255,.85)}
+  .ltime{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:72px;letter-spacing:-.03em;line-height:1;margin-top:2px}
+  .lnotes{margin-top:auto;align-self:stretch;padding:0 10px;display:flex;flex-direction:column;gap:8px}
+  .lnote{background:rgba(248,246,255,.86);backdrop-filter:blur(20px);border-radius:20px;padding:11px 13px;display:flex;gap:11px;align-items:flex-start;color:var(--ink-900)}
+  .licon{width:36px;height:36px;border-radius:9px;background:var(--purple-500);flex:0 0 auto;display:flex;align-items:center;justify-content:center}
+  .lnb{flex:1;min-width:0}
+  .lnh{display:flex;justify-content:space-between;align-items:baseline}
+  .lnh b{font-size:13.5px;font-weight:700}
+  .lnh span{font-size:11.5px;color:var(--ink-500)}
+  .lnt{font-size:13.5px;line-height:1.35;margin-top:1px}
+  .lfoot{align-self:stretch;display:flex;justify-content:space-between;padding:22px 40px 34px}
+  .lfoot i{width:44px;height:44px;border-radius:99px;background:rgba(28,23,48,.35);display:block}
+
+  /* ── photos, painted from the palette ─────────────────────────── */
+  .s1{background:radial-gradient(circle at 18% 20%,var(--t-gold) 0 4%,transparent 5%),radial-gradient(circle at 40% 13%,var(--t-gold) 0 4%,transparent 5%),
+      radial-gradient(circle at 62% 19%,var(--t-gold) 0 4%,transparent 5%),radial-gradient(circle at 84% 12%,var(--t-gold) 0 4%,transparent 5%),
+      radial-gradient(ellipse 70% 40% at 50% 112%,var(--t-rose) 0 60%,transparent 61%),linear-gradient(170deg,var(--ink-900),var(--purple-700))}
+  .s2{background:radial-gradient(circle at 40% 50%,var(--t-sage) 0 6%,transparent 7%),radial-gradient(circle at 58% 56%,var(--t-rose) 0 6%,transparent 7%),
+      radial-gradient(circle at 50% 44%,var(--t-gold) 0 5%,transparent 6%),
+      radial-gradient(ellipse 42% 30% at 50% 52%,var(--t-cream) 0 96%,transparent 100%),linear-gradient(160deg,var(--t-sand),var(--t-gold))}
+  .s3{background:radial-gradient(circle at 27% 60%,var(--t-sand) 0 12%,transparent 13%),radial-gradient(circle at 52% 52%,var(--t-rose) 0 13%,transparent 14%),
+      radial-gradient(circle at 77% 61%,var(--purple-400) 0 11%,transparent 12%),
+      radial-gradient(ellipse 22% 26% at 27% 100%,var(--purple-700) 0 96%,transparent 100%),radial-gradient(ellipse 24% 30% at 52% 100%,var(--ink-900) 0 96%,transparent 100%),
+      radial-gradient(ellipse 21% 25% at 77% 100%,var(--green-700) 0 96%,transparent 100%),linear-gradient(180deg,var(--t-sky),var(--purple-100))}
+  .s4{background:radial-gradient(circle at 50% 66%,var(--t-pink) 0 14%,transparent 15%),
+      linear-gradient(180deg,var(--t-rose) 0%,var(--purple-400) 55%,var(--purple-700) 72%,var(--ink-900) 73%,var(--ink-900) 100%)}
+  .s5{background:repeating-linear-gradient(115deg,var(--green-700) 0 12%,var(--t-gold) 12% 24%,var(--t-pink) 24% 36%,var(--purple-500) 36% 48%)}
+  .s6{background:radial-gradient(ellipse 13% 28% at 36% 58%,var(--t-gold) 0 60%,var(--t-cream) 61% 96%,transparent 100%),
+      radial-gradient(ellipse 13% 28% at 64% 58%,var(--t-pink) 0 60%,var(--t-cream) 61% 96%,transparent 100%),linear-gradient(170deg,var(--t-sage),var(--green-700))}
+  .s7{background:linear-gradient(var(--t-gold),var(--t-gold)) 50% 78%/58% 34% no-repeat,linear-gradient(var(--t-cream),var(--t-cream)) 50% 80%/66% 42% no-repeat,
+      linear-gradient(180deg,var(--purple-700) 0 42%,var(--purple-500) 42% 100%)}
+  .s8{background:radial-gradient(circle at 50% 50%,transparent 0 30%,var(--purple-100) 31%),
+      conic-gradient(var(--t-rose),var(--t-gold),var(--green-500),var(--t-sky),var(--purple-400),var(--t-rose))}
+  .s9{background:radial-gradient(circle at 30% 82%,var(--t-pink) 0 5%,transparent 9%),radial-gradient(circle at 70% 82%,var(--t-pink) 0 5%,transparent 9%),
+      radial-gradient(circle at 74% 26%,var(--t-cream) 0 6%,transparent 7%),linear-gradient(180deg,var(--ink-900) 0 70%,var(--purple-700) 100%)}
+</style>
+</head>
+<body>
+
+<h1>R36 — Past Mooves + photo albums</h1>
+<p class="sub">The Mooves you went to become small private albums for the people who were there. Built on the shipped vocabulary: <b>PlanCard</b> rows, the <b>MooveSheet</b> header, comments, hearts and compose pill, <b>MooveActionsSheet</b>, <b>BottomNav</b>. No counts styled as unread, no dots, no badges.</p>
+
+<p class="knoblbl">State</p>
+<div class="knobs">
+  <button class="kbtn on" data-v="collapsed">1 · Feed, Past collapsed</button>
+  <button class="kbtn" data-v="expanded">2 · Past expanded</button>
+  <button class="kbtn" data-v="empty">3 · Album, empty</button>
+  <button class="kbtn" data-v="populated">4 · Album, populated</button>
+  <button class="kbtn" data-v="uploading">5 · Uploading</button>
+  <button class="kbtn" data-v="viewer">6 · Photo viewer</button>
+  <button class="kbtn" data-v="own">7 · ··· on your photo</button>
+  <button class="kbtn" data-v="creator">8 · ··· as creator</button>
+  <button class="kbtn" data-v="share">9 · Save (iOS share sheet)</button>
+  <button class="kbtn" data-v="closed">10 · Closed (after 30 days)</button>
+  <button class="kbtn" data-v="cap">11 · At your cap</button>
+  <button class="kbtn" data-v="push">12 · Pushes</button>
+</div>
+<div class="rule"></div>
+
+<div class="stage">
+
+  <!-- 1 ── FEED, PAST COLLAPSED ─────────────────────────────── -->
+  <div class="state on" data-s="collapsed">
+    <div class="phone"><div class="cal"></div>
+      <div class="screen">
+        <div class="feedbody bottom">
+          <div class="seclbl">Mooves</div>
+          <div class="pcard">
+            <div class="prow">
+              <div class="ptile"><span class="t">FRI</span><span class="b">OCT 17</span></div>
+              <div class="pmid">
+                <div class="ptitle">Climbing at First Ascent</div>
+                <div class="pwhen">Friday 6:30 PM, Avondale</div>
+                <div class="pchips"><span class="authchip">Ari</span></div>
+              </div>
+              <button class="pjoin in">You're in ✓</button>
+            </div>
+            <div class="pfoot">
+              <span class="stack"><span class="sa" style="background:var(--t-sage)">AR</span><span class="sa" style="background:var(--t-rose)">CL</span><span class="sa" style="background:var(--purple-500)">YO</span></span>
+              <span class="pin">4 in</span>
+            </div>
+          </div>
+          <div class="pcard">
+            <div class="prow">
+              <div class="ptile"><span class="t">SUN</span><span class="b">OCT 19</span></div>
+              <div class="pmid">
+                <div class="ptitle">Farmers market loop</div>
+                <div class="pwhen">Sunday 10:00 AM, Logan Square</div>
+                <div class="pchips"><span class="authchip">Maya</span></div>
+              </div>
+              <button class="pjoin">I'm in</button>
+            </div>
+          </div>
+          <button class="pastbtn" data-go="expanded"><span>Past</span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+        </div>
+        <div class="nav"></div>
+      </div>
+    </div>
+    <p class="note">The foot of the feed. "Past" is the section label with a chevron, nothing more: no count, no thumbnails peeking out. It does not render at all until you have a past Moove.</p>
+  </div>
+
+  <!-- 2 ── PAST EXPANDED ────────────────────────────────────── -->
+  <div class="state" data-s="expanded">
+    <div class="phone"><div class="cal"></div>
+      <div class="screen">
+        <div class="feedbody bottom">
+          <div class="pcard">
+            <div class="prow">
+              <div class="ptile"><span class="t">SUN</span><span class="b">OCT 19</span></div>
+              <div class="pmid">
+                <div class="ptitle">Farmers market loop</div>
+                <div class="pwhen">Sunday 10:00 AM, Logan Square</div>
+                <div class="pchips"><span class="authchip">Maya</span></div>
+              </div>
+              <button class="pjoin">I'm in</button>
+            </div>
+          </div>
+          <button class="pastbtn open" data-go="collapsed"><span>Past</span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+          <div class="pastlist">
+            <div class="prow2" data-go="populated">
+              <div class="prow">
+                <div class="ptile past"><span class="t">SAT</span><span class="b">OCT 11</span></div>
+                <div class="pmid"><div class="ptitle">Tacos at Lupe's</div><div class="pwhen">Sat Oct 11, Pilsen</div></div>
+              </div>
+              <div class="pfoot2">
+                <span class="stack"><span class="sa" style="background:var(--t-rose)">CL</span><span class="sa" style="background:var(--t-sky)">JO</span><span class="sa" style="background:var(--t-sage)">AR</span></span>
+                <span class="pin">Chloe, John, Ari +2</span>
+                <span class="thumbs"><i class="s3"></i><i class="s2"></i><i class="s1"></i></span>
+              </div>
+            </div>
+            <div class="prow2" data-go="empty">
+              <div class="prow">
+                <div class="ptile past"><span class="t">THU</span><span class="b">OCT 9</span></div>
+                <div class="pmid"><div class="ptitle">Trivia at Emporium</div><div class="pwhen">Thu Oct 9, Logan Square</div></div>
+              </div>
+              <div class="pfoot2">
+                <span class="stack"><span class="sa" style="background:var(--purple-400)">DP</span><span class="sa" style="background:var(--t-sand)">MA</span></span>
+                <span class="pin">Dev, Maya</span>
+              </div>
+            </div>
+            <div class="prow2">
+              <div class="prow">
+                <div class="ptile past"><span class="t">SUN</span><span class="b">OCT 5</span></div>
+                <div class="pmid"><div class="ptitle">Sunday hike, Palos</div><div class="pwhen">Sun Oct 5, Sag Bridge trailhead</div></div>
+              </div>
+              <div class="pfoot2">
+                <span class="stack"><span class="sa" style="background:var(--t-sky)">JO</span><span class="sa" style="background:var(--purple-700)">TS</span></span>
+                <span class="pin">John, Tasha</span>
+                <span class="thumbs"><i class="s4"></i><i class="s6"></i></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="nav"></div>
+      </div>
+    </div>
+    <p class="note">Mooves you started or joined, newest first, cancelled left out. Past rows wear a grey date tile so they never read as something you can still join. Tap a row to open its album.</p>
+  </div>
+
+  <!-- 3 ── ALBUM, EMPTY ─────────────────────────────────────── -->
+  <div class="state" data-s="empty">
+    <div class="phone"><div class="cal"></div>
+      <div class="screen">
+        <div class="feedbody"></div><div class="nav"></div>
+        <div class="scrim"></div>
+        <div class="sheet">
+          <div class="grab"></div>
+          <div class="ahead" data-head="trivia"></div>
+          <button class="addbtn" data-addbtn></button>
+          <div class="adiv"></div>
+          <div class="ascroll">
+            <div class="aempty">
+              <svg width="64" height="70" viewBox="0 0 120 120" aria-label="Cow"><ellipse cx="11" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(-28 11 33)"/><ellipse cx="109" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(28 109 33)"/><ellipse cx="11" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(-28 11 34)"/><ellipse cx="109" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(28 109 34)"/><ellipse cx="38" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(-14 38 19)"/><ellipse cx="82" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(14 82 19)"/><rect x="15" y="20" width="90" height="92" rx="30" fill="#F5F0ED"/><ellipse cx="41" cy="44" rx="19" ry="13" fill="#7A7282" transform="rotate(-10 41 44)"/><ellipse cx="79" cy="69" rx="14" ry="9" fill="#7A7282" transform="rotate(16 79 69)"/><circle cx="44" cy="57" r="6" fill="#2A1E38"/><circle cx="76" cy="57" r="6" fill="#2A1E38"/><circle cx="46.5" cy="54.5" r="2.2" fill="white"/><circle cx="78.5" cy="54.5" r="2.2" fill="white"/><ellipse cx="60" cy="90" rx="27" ry="20" fill="#F0AABB"/><circle cx="50" cy="91" r="9" fill="#2ECC71"/><circle cx="70" cy="91" r="9" fill="#BDB5D4"/></svg>
+              <h3>No photos yet</h3>
+              <p>Add yours, and everyone who was there can see them.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note">The album opens as a tall Moove sheet over the feed, with the same restated header. One cow cameo, one line, and the button does the rest.</p>
+  </div>
+
+  <!-- 4 ── ALBUM, POPULATED ─────────────────────────────────── -->
+  <div class="state" data-s="populated">
+    <div class="phone"><div class="cal"></div>
+      <div class="screen">
+        <div class="feedbody"></div><div class="nav"></div>
+        <div class="scrim"></div>
+        <div class="sheet">
+          <div class="grab"></div>
+          <div class="ahead" data-head="tacos"></div>
+          <button class="addbtn" data-addbtn></button>
+          <div class="adiv"></div>
+          <div class="ascroll">
+            <div class="grid" data-grid="s3 s1 s2 s8 s4 s7 s6 s9 s5"></div>
+            <div class="gfoot">Only the 6 of you who were there can see these.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note">Three across, newest first, square crops. Tap any photo to open it full screen. [Add photos] stays put above the grid.</p>
+  </div>
+
+  <!-- 5 ── UPLOADING ────────────────────────────────────────── -->
+  <div class="state" data-s="uploading">
+    <div class="phone"><div class="cal"></div>
+      <div class="screen">
+        <div class="feedbody"></div><div class="nav"></div>
+        <div class="scrim"></div>
+        <div class="sheet">
+          <div class="grab"></div>
+          <div class="ahead" data-head="tacos"></div>
+          <button class="addbtn" data-addbtn></button>
+          <div class="adiv"></div>
+          <div class="ascroll">
+            <div class="grid" data-grid="up:78:s4 up:40:s6 up:8:s9 fail:s7 s3 s1 s2 s8 s5"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note">Your picks land at the front of the grid right away, each with its own ring. The one that failed says so and retries on tap. Everyone else sees nothing until a photo finishes.</p>
+  </div>
+
+  <!-- 6 ── PHOTO VIEWER ─────────────────────────────────────── -->
+  <div class="state" data-s="viewer">
+    <div class="phone"><div class="cal"></div><div class="viewer" data-viewer="chloe"></div></div>
+    <p class="note">Full screen, swipe sideways between photos. The dots stay faint. Comments under the photo are Moove comments exactly: hearts, roster-only @mentions, 500 cap. These ones last as long as the photo.</p>
+  </div>
+
+  <!-- 7 ── ··· ON YOUR PHOTO ────────────────────────────────── -->
+  <div class="state" data-s="own">
+    <div class="phone"><div class="cal"></div>
+      <div class="viewer" data-viewer="you"></div>
+      <div class="ascrim"></div>
+      <div class="asheet">
+        <div class="agroup">
+          <div class="atitle">Your photo</div>
+          <button class="arow" data-go="share">Save</button>
+          <button class="arow d">Delete photo</button>
+        </div>
+        <button class="acancel">Cancel</button>
+      </div>
+    </div>
+    <p class="note">Your own photo: Save, or Delete. Delete asks once more before it goes, and its comments go with it.</p>
+  </div>
+
+  <!-- 8 ── ··· AS CREATOR ───────────────────────────────────── -->
+  <div class="state" data-s="creator">
+    <div class="phone"><div class="cal"></div>
+      <div class="viewer" data-viewer="chloe"></div>
+      <div class="ascrim"></div>
+      <div class="asheet">
+        <div class="agroup">
+          <div class="atitle">Chloe's photo</div>
+          <button class="arow" data-go="share">Save</button>
+          <button class="arow d">Remove photo<span class="asub">You started this Moove, so you can remove any photo.</span></button>
+        </div>
+        <button class="acancel">Cancel</button>
+      </div>
+    </div>
+    <p class="note">You started the Moove, so you can take down anyone's photo. "Remove" rather than "Delete", because it's not yours. Confirms first. A joiner looking at Chloe's photo sees Save and Cancel only.</p>
+  </div>
+
+  <!-- 9 ── SAVE, iOS SHARE SHEET ────────────────────────────── -->
+  <div class="state" data-s="share">
+    <div class="phone"><div class="cal"></div>
+      <div class="viewer" data-viewer="chloe"></div>
+      <div class="ascrim"></div>
+      <div class="ios">
+        <div class="iostag">iOS system sheet</div>
+        <div class="ioshead">
+          <i class="s3"></i>
+          <div><b>Photo</b><span>JPEG Image · 1.2 MB</span></div>
+          <span class="iosx"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span>
+        </div>
+        <div class="iosapps">
+          <div class="iosapp"><i><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="2"/><path d="M8.5 15.5a5 5 0 0 1 0-7M15.5 8.5a5 5 0 0 1 0 7M5.6 18.4a9 9 0 0 1 0-12.8M18.4 5.6a9 9 0 0 1 0 12.8"/></svg></i><span>AirDrop</span></div>
+          <div class="iosapp"><i><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 0 1-12.4 7.6L3 21l1.9-5.6A8.5 8.5 0 1 1 21 11.5z"/></svg></i><span>Messages</span></div>
+          <div class="iosapp"><i><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></i><span>Mail</span></div>
+          <div class="iosapp"><i><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg></i><span>Notes</span></div>
+        </div>
+        <div class="iosgroup">
+          <div class="iosrow">Copy<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg></div>
+          <div class="iosrow hl">Save Image<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg></div>
+          <div class="iosrow">Assign to Contact<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></div>
+          <div class="iosrow">Print<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2M6 14h12v7H6z"/></svg></div>
+        </div>
+      </div>
+    </div>
+    <p class="note">Save hands the file to the Web Share sheet, so iOS offers "Save Image" to the camera roll. This sheet belongs to iOS, we only supply the file. On desktop and Android, Save is a plain download.</p>
+  </div>
+
+  <!-- 10 ── CLOSED ──────────────────────────────────────────── -->
+  <div class="state" data-s="closed">
+    <div class="phone"><div class="cal"></div>
+      <div class="screen">
+        <div class="feedbody"></div><div class="nav"></div>
+        <div class="scrim"></div>
+        <div class="sheet">
+          <div class="grab"></div>
+          <div class="ahead" data-head="tacos">
+          </div>
+          <div class="quiet line" style="margin:12px 16px 0;">Adding photos closed 30 days after the Moove.</div>
+          <div class="adiv"></div>
+          <div class="ascroll">
+            <div class="grid" data-grid="s3 s1 s2 s8 s4 s7 s6 s9 s5 s2 s4 s1"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note">Mid November. The button is gone and one quiet line says why. Opening, commenting, liking and saving all carry on as before.</p>
+  </div>
+
+  <!-- 11 ── AT CAP ──────────────────────────────────────────── -->
+  <div class="state" data-s="cap">
+    <div class="phone"><div class="cal"></div>
+      <div class="screen">
+        <div class="feedbody"></div><div class="nav"></div>
+        <div class="scrim"></div>
+        <div class="sheet">
+          <div class="grab"></div>
+          <div class="ahead" data-head="tacos"></div>
+          <div class="quiet">You've added 50</div>
+          <div class="adiv"></div>
+          <div class="ascroll">
+            <div class="grid" data-grid="s1 s9 s4 s3 s2 s8 s7 s5 s6 s3 s1 s2"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note">The cap is per person, so the button becomes a flat grey panel in the same spot. It's not a button and there's no upsell. Delete one of yours and the button comes back.</p>
+  </div>
+
+  <!-- 12 ── PUSHES ──────────────────────────────────────────── -->
+  <div class="state" data-s="push">
+    <div class="phone"><div class="cal"></div>
+      <div class="lock">
+        <div class="lstat"><span></span><span>●●● 100%</span></div>
+        <div class="ldate">Sunday, October 12</div>
+        <div class="ltime">11:02</div>
+        <div class="lnotes">
+          <div class="lnote"><span class="licon" data-cow></span><div class="lnb"><div class="lnh"><b>Mooves</b><span>now</span></div><div class="lnt">Chloe added 6 photos to Tacos at Lupe's</div></div></div>
+          <div class="lnote"><span class="licon" data-cow></span><div class="lnb"><div class="lnh"><b>Mooves</b><span>1h ago</span></div><div class="lnt">Add your photos from Tacos at Lupe's</div></div></div>
+        </div>
+        <div class="lfoot"><i></i><i></i></div>
+      </div>
+    </div>
+    <p class="note">The morning after, once, to everyone who was in. "Added photos" goes out at most once an hour per Moove, never to the person who uploaded, and follows quiet hours and group mute.</p>
+  </div>
+
+  <div class="screen-label">R36 — Past Mooves + photo albums</div>
+</div>
+
+<script>
+const COW = `<svg width="28" height="28" viewBox="0 0 48 48" fill="none"><ellipse cx="24" cy="27" rx="15" ry="12.5" fill="#fff"/><ellipse cx="18.5" cy="25" rx="2.2" ry="2.8" fill="#1C1730"/><ellipse cx="29.5" cy="25" rx="2.2" ry="2.8" fill="#1C1730"/><ellipse cx="24" cy="33" rx="7" ry="5" fill="#EDE9FF"/><ellipse cx="21.4" cy="32.6" rx="1.15" ry="1.5" fill="#1C1730"/><ellipse cx="26.6" cy="32.6" rx="1.15" ry="1.5" fill="#1C1730"/><path d="M9.5 19.5c-1.6-3 .4-6 3.4-5.4 2.2.45 3.6 2.6 3.9 4.7" fill="#fff"/><path d="M38.5 19.5c1.6-3-.4-6-3.4-5.4-2.2.45-3.6 2.6-3.9 4.7" fill="#fff"/></svg>`
+const NAV = `
+  <div class="ntab on"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Feed</span></div>
+  <div class="ntab"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M15.6 8.4l-2.05 5.15-5.15 2.05 2.05-5.15z"/></svg><span>Discover</span></div>
+  <div class="nplan"><span class="ndisc">${COW.replace(/width="28" height="28"/,'width="46" height="46"')}
+    <span class="nbadge"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7C5CDB" stroke-width="3.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
+  </span><span class="lbl">Plan a Moove</span></div>
+  <div class="ntab"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg><span>People</span></div>
+  <div class="ntab"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6h.09A1.65 1.65 0 0 0 10 3.09V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></div>`
+document.querySelectorAll('.nav').forEach(el => el.innerHTML = NAV)
+document.querySelectorAll('[data-cow]').forEach(el => el.innerHTML = COW)
+
+const HEADS = {
+  tacos: `<div class="ah2">Tacos at Lupe's <span class="authchip">Your Moove</span></div>
+    <div class="awhen">Sat Oct 11 · 7:30 PM · Lupe's Taqueria, Pilsen</div>
+    <div class="awho"><span class="stack"><span class="sa" style="background:var(--t-rose)">CL</span><span class="sa" style="background:var(--t-sky)">JO</span><span class="sa" style="background:var(--t-sage)">AR</span><span class="sa" style="background:var(--purple-500)">YO</span></span><span class="pin">Chloe, John, Ari +2</span></div>`,
+  trivia: `<div class="ah2">Trivia at Emporium</div>
+    <div class="awhen">Thu Oct 9 · 8:00 PM · Emporium, Logan Square</div>
+    <div class="awho"><span class="stack"><span class="sa" style="background:var(--purple-400)">DP</span><span class="sa" style="background:var(--t-sand)">MA</span><span class="sa" style="background:var(--purple-500)">YO</span></span><span class="pin">Dev, Maya and you</span></div>`
+}
+document.querySelectorAll('[data-head]').forEach(el => el.innerHTML = HEADS[el.dataset.head])
+document.querySelectorAll('[data-addbtn]').forEach(el => el.innerHTML =
+  `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="9" cy="9" r="1.8"/><path d="M21 15l-5-5L5 21"/></svg>Add photos`)
+
+const RETRY = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E8405A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>`
+function ring(p){
+  const c = 2*Math.PI*12
+  return `<svg width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="3"/><circle cx="16" cy="16" r="12" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-dasharray="${c*p/100} ${c}" transform="rotate(-90 16 16)"/></svg>`
+}
+document.querySelectorAll('[data-grid]').forEach(el => {
+  el.innerHTML = el.dataset.grid.split(' ').map(t => {
+    const parts = t.split(':')
+    if (parts[0] === 'up') return `<div class="tile ${parts[2]}"><div class="ovl">${ring(+parts[1])}</div></div>`
+    if (parts[0] === 'fail') return `<div class="tile ${parts[1]}"><div class="ovl fail"><span class="rbtn">${RETRY}</span><span class="rlbl">Retry</span></div></div>`
+    return `<div class="tile ${t}" data-go="viewer"></div>`
+  }).join('')
+})
+
+const HEART = (on, n) => `<button class="heart${on?' on':''}"><svg width="17" height="17" viewBox="0 0 24 24" fill="${on?'#E8405A':'none'}" stroke="${on?'#E8405A':'#BDB5D4'}" stroke-width="2"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1L12 21.2l7.7-7.8 1.1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>${n?`<span class="hc">${n}</span>`:''}</button>`
+const DOTS = `<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>`
+const VIEWERS = {
+  chloe: { photo:'s3', av:'CL', col:'var(--t-rose)', name:'Chloe', when:'Sat', dot:2, comments:`
+      <div class="cmrow"><span class="cmav" style="background:var(--t-sky)">JO</span><span class="cmb"><span class="cmmeta"><span class="cmname">John</span><span class="cmtime">Sat</span></span><span class="cmtext">Best al pastor in Pilsen, no contest.</span></span>${HEART(true,2)}</div>
+      <div class="cmrow"><span class="cmav" style="background:var(--t-sage)">AR</span><span class="cmb"><span class="cmmeta"><span class="cmname">Ari</span><span class="cmtime">Sun</span></span><span class="cmtext"><span class="mention">@Chloe</span> send me the one with the piñata</span></span>${HEART(false,0)}</div>
+      <div class="cmrow"><span class="cmav" style="background:var(--purple-500)">YO</span><span class="cmb"><span class="cmmeta"><span class="cmname me">You</span><span class="cmtime">2h</span></span><span class="cmtext">Horchata next time.</span></span>${HEART(false,1)}<span class="cmdots">${DOTS}</span></div>` },
+  you: { photo:'s8', av:'YO', col:'var(--purple-500)', name:'You', when:'Sun', dot:4, comments:`
+      <div class="cmrow"><span class="cmav" style="background:var(--t-rose)">CL</span><span class="cmb"><span class="cmmeta"><span class="cmname">Chloe</span><span class="cmtime">Sun</span></span><span class="cmtext">The piñata never stood a chance.</span></span>${HEART(true,3)}</div>
+      <div class="cmrow"><span class="cmav" style="background:var(--t-sky)">JO</span><span class="cmb"><span class="cmmeta"><span class="cmname">John</span><span class="cmtime">Sun</span></span><span class="cmtext"><span class="mention">@Ari</span> that swing was all you</span></span>${HEART(false,0)}</div>` }
+}
+document.querySelectorAll('[data-viewer]').forEach(el => {
+  const v = VIEWERS[el.dataset.viewer]
+  const dots = Array.from({length:7},(_,i)=>`<i class="${i===v.dot?'on':''}"></i>`).join('')
+  el.innerHTML = `
+    <div class="vbar">
+      <span class="vbtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span>
+      <span class="vbtn">${DOTS}</span>
+    </div>
+    <div class="vphoto ${v.photo}"></div>
+    <div class="vdots">${dots}</div>
+    <div class="vpanel">
+      <div class="vby"><span class="av" style="background:${v.col}">${v.av}</span><b>${v.name}</b><span>· ${v.when}</span></div>
+      <div class="vdiv"></div>
+      <div class="cmlist">${v.comments}</div>
+      <div class="compose"><div class="cfield">Add a comment</div><span class="csend"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
+    </div>`
+})
+
+// hearts toggle; a zero never renders as "0"
+document.addEventListener('click', e => {
+  const h = e.target.closest('.heart')
+  if (!h) return
+  e.stopPropagation()
+  const svg = h.querySelector('svg'), hc = h.querySelector('.hc')
+  let n = hc ? +hc.textContent : 0
+  const on = !h.classList.contains('on')
+  h.classList.toggle('on', on)
+  n += on ? 1 : -1
+  svg.setAttribute('fill', on ? '#E8405A' : 'none')
+  svg.setAttribute('stroke', on ? '#E8405A' : '#BDB5D4')
+  if (n > 0) { if (hc) hc.textContent = n; else h.insertAdjacentHTML('beforeend', `<span class="hc">${n}</span>`) }
+  else if (hc) hc.remove()
+}, true)
+
+function show(v){
+  document.querySelectorAll('.kbtn').forEach(b => b.classList.toggle('on', b.dataset.v === v))
+  document.querySelectorAll('.state').forEach(s => s.classList.toggle('on', s.dataset.s === v))
+}
+document.querySelectorAll('.kbtn').forEach(b => b.addEventListener('click', () => show(b.dataset.v)))
+// small click-through: Past opens and closes, rows open albums, tiles open the viewer
+document.addEventListener('click', e => {
+  const g = e.target.closest('[data-go]')
+  if (g) show(g.dataset.go)
+})
+</script>
+</body>
+</html>
