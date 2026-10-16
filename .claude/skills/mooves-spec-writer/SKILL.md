@@ -70,6 +70,9 @@ Numbered steps for the primary action(s). One flow per primary action.
 - What triggers realtime updates (if any)?
 - What writes does this screen make?
 
+### Onboarding & copy impact
+Required, never blank. Does this change make anything in onboarding, the Mooves Loop replay, the landing page, or a permission/setup prompt (push, install, text alerts, calendar, weekly availability) untrue, incomplete, or newly necessary? List each affected surface and what changes, or write "None — checked onboarding, Loop, landing, prompts."
+
 ### Out of scope
 What this screen explicitly does NOT do (prevents scope creep in the mockup stage).
 

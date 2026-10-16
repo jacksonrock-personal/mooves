@@ -87,6 +87,18 @@ npx tsc --noEmit
 
 Fix any errors before proceeding. Don't hand off code that doesn't type-check.
 
+### Step 4b — Onboarding drift check (mandatory, every build)
+
+Jackson's rule: **onboarding never goes stale or wrong.** Before handing off, check this change against every surface that *teaches or asks for* things, and fix anything it made untrue in the same PR:
+
+- [ ] Onboarding flow: `src/app/onboarding/**` (profile → free → invite, and the invited branch)
+- [ ] The Mooves Loop replay: `src/components/onboarding/MoovesLoop.tsx`
+- [ ] Landing page copy: `src/app/page.tsx` and its components
+- [ ] Permission + setup prompts: push opt-in, install nudge, text alerts opt-in, calendar first-join prompt, weekly availability sheet
+- [ ] Settings copy that describes the feature
+
+Then say which of these you checked in the hand-off message, and either "no onboarding impact" or what you changed. If the change *should* be taught or asked in onboarding and isn't, say so — don't silently leave it to context.
+
 ### Step 5 — Human gate
 
 Tell Jackson what was built and where to find it:
