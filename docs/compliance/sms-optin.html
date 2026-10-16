@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mooves text alerts opt-in</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#EDE9FF;font-family:Inter,sans-serif;color:#1C1730;display:flex;gap:28px;justify-content:center;padding:28px}
+  .phone{width:360px;background:#F8F6FF;border-radius:44px;border:10px solid #1C1730;overflow:hidden;min-height:740px;display:flex;flex-direction:column}
+  .top{height:44px}
+  header{background:#fff;border-bottom:1px solid #E8E4F5;padding:10px 16px 12px;display:flex;align-items:center}
+  header .back{color:#7C5CDB;font-weight:500;font-size:15px;width:60px}
+  header h1{flex:1;text-align:center;font-family:'Plus Jakarta Sans';font-weight:800;font-size:16px}
+  header .sp{width:60px}
+  .body{padding:20px 18px;display:flex;flex-direction:column;gap:16px;flex:1}
+  h2{font-family:'Plus Jakarta Sans';font-weight:800;font-size:22px;letter-spacing:-.01em}
+  .lead{font-size:14px;color:#6B628A;line-height:1.5}
+  label.f{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#6B628A;display:block;margin-bottom:6px}
+  .input{background:#fff;border:1.5px solid #E8E4F5;border-radius:12px;padding:12px 14px;font-size:16px}
+  .card{background:#fff;border:1px solid #E8E4F5;border-radius:16px;padding:14px;display:flex;gap:12px;align-items:flex-start}
+  .box{width:22px;height:22px;border-radius:6px;border:2px solid #BDB5D4;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center}
+  .box.on{background:#7C5CDB;border-color:#7C5CDB}
+  .card p{font-size:15px;font-weight:600;line-height:1.35}
+  .fine{font-size:12.5px;color:#6B628A;line-height:1.55}
+  .fine a{color:#7C5CDB;font-weight:600;text-decoration:underline}
+  .btn{margin-top:auto;background:#7C5CDB;color:#fff;text-align:center;border-radius:16px;padding:15px;font-family:'Plus Jakarta Sans';font-weight:800;font-size:16px}
+  .btn.off{opacity:.4}
+  .cap{text-align:center;font-size:12px;color:#6B628A;margin-top:10px}
+</style></head><body>
+<script>
+const states=[{on:false,cap:'Before: the box is never pre-checked'},{on:true,cap:'After: you check the box yourself, then tap the button'}];
+document.write(states.map(s=>`<div><div class="phone"><div class="top"></div>
+<header><span class="back">‹ Back</span><h1>Text alerts</h1><span class="sp"></span></header>
+<div class="body">
+<h2>Get a text when friends make a Moove</h2>
+<p class="lead">When a friend makes a Moove you can see, we'll text you its name, time and a link to it.</p>
+<div><label class="f">Mobile number</label><div class="input">(312) 555-0142</div></div>
+<div class="card"><div class="box ${s.on?'on':''}">${s.on?'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>':''}</div>
+<p>Yes, text me when friends make a Moove</p></div>
+<p class="fine">By checking this box you agree to receive recurring automated text alerts from Mooves at the number above. Msg frequency varies, up to 5 msgs/day. Msg &amp; data rates may apply. Reply HELP for help, STOP to cancel. Consent is not a condition of using Mooves. See our <a>Terms of Service</a> (makemooves.app/terms) and <a>Privacy Policy</a> (makemooves.app/privacy).</p>
+<div class="btn ${s.on?'':'off'}">Yes, sign me up</div>
+</div></div><p class="cap">${s.cap}</p></div>`).join(''));
+</script>
+</body></html>

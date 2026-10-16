@@ -10,9 +10,14 @@
 //
 // No green anywhere: a Moove is not availability, so the tile is purple.
 
+import { useEffect, useRef, useState } from 'react'
 import Avatar from '@/components/ui/Avatar'
 import { posthog } from '@/lib/posthog'
 import { planTile, planWhenLine, type Plan } from '@/lib/plans'
+import { isCalendarable } from '@/lib/calendar'
+import AddToCalendarSheet from '@/components/calendar/AddToCalendarSheet'
+import FirstJoinPrompt, { maybeCalendarPrompt } from '@/components/calendar/FirstJoinPrompt'
+import { CalendarIcon } from '@/components/calendar/parts'
 import GroupLabel from './GroupLabel'
 import type { MoovePane } from './MooveSheet'
 
@@ -48,6 +53,34 @@ export default function PlanCard({
     posthog.capture(plan.joinedByMe ? 'plan_join_removed' : 'plan_join_added')
     onToggleJoin(plan.id, plan.joinedByMe)
   }
+
+  // R35 — only someone who is IN gets the calendar, and never on an undated
+  // "This week": there is nothing to schedule until it has a date.
+  const isIn = plan.isMine || plan.joinedByMe
+  const canCalendar = isIn && isCalendarable(plan)
+  const [calendarOpen, setCalendarOpen] = useState(false)
+  const [promptOpen, setPromptOpen] = useState(false)
+
+  // R35 — the one-time first-join prompt. Watches this card's joinedByMe go
+  // false → true rather than hooking the click, because a join from the Moove
+  // sheet lands here too (the sheet closes on join, the card stays). The server
+  // confirms the join really happened and spends the prompt atomically, so an
+  // optimistic join that fails, or a second tab, can never show it twice.
+  const wasJoined = useRef(plan.joinedByMe)
+  useEffect(() => {
+    const was = wasJoined.current
+    wasJoined.current = plan.joinedByMe
+    if (was || !plan.joinedByMe || plan.isMine) return
+    let live = true
+    void maybeCalendarPrompt().then(show => {
+      if (!show || !live) return
+      posthog.capture('calendar_prompt_shown')
+      setPromptOpen(true)
+    })
+    return () => {
+      live = false
+    }
+  }, [plan.joinedByMe, plan.isMine])
 
   return (
     <div
@@ -219,7 +252,19 @@ export default function PlanCard({
           </span>
         </button>
 
-        {(plan.isMine || plan.joinedByMe) && (
+        {/* R35 — Add to calendar sits left of the bubble with NO fill, so it
+            reads a step below it and the row gains no height. */}
+        {canCalendar && (
+          <button
+            onClick={() => setCalendarOpen(true)}
+            className="shrink-0 flex items-center gap-[5px] px-1.5 py-1.5 mr-1 font-sans text-[11.5px] font-semibold text-ink-500 whitespace-nowrap"
+          >
+            <CalendarIcon size={14} />
+            Add to calendar
+          </button>
+        )}
+
+        {isIn && (
           <button
             onClick={() => onOpenSheet(plan, 'comments')}
             aria-label="Comments"
@@ -270,6 +315,11 @@ export default function PlanCard({
           Start a group text
         </button>
       )}
+
+      {calendarOpen && (
+        <AddToCalendarSheet plan={plan} meId={meId} source="card" onClose={() => setCalendarOpen(false)} />
+      )}
+      {promptOpen && <FirstJoinPrompt onClose={() => setPromptOpen(false)} />}
     </div>
   )
 }

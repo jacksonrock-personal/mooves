@@ -47,6 +47,9 @@ import BottomNav from '@/components/ui/BottomNav'
 import FriendWeekSheet from '@/components/people/FriendWeekSheet'
 import CowIllustration from '@/components/ui/CowIllustration'
 import Toast from '@/components/ui/Toast'
+import PastSection from '@/components/album/PastSection'
+import AlbumSheet from '@/components/album/AlbumSheet'
+import type { PastMoove } from '@/lib/photos'
 
 interface Joiner {
   id: string
@@ -154,6 +157,12 @@ export default function FeedScreen() {
    * refresh does not reopen it.
    */
   const [pendingPlanId, setPendingPlanId] = useState<string | null>(null)
+  // R36 — the Mooves you went to, and the album open on top of the feed.
+  // `pastMoves` empty means the Past section does not render at all. The album
+  // is addressed by plan id alone, so a ?album= push can open one before the
+  // Past list has loaded; the API's 404 is what keeps a non-member out.
+  const [pastMoves, setPastMoves] = useState<PastMoove[]>([])
+  const [albumPlanId, setAlbumPlanId] = useState<string | null>(null)
   // R17 — "Your green", opened by tapping your own face in the rail. Replaces
   // both MyMoveCard and the standalone Free-until sheet, which is now a pane.
   const [greenSheetOpen, setGreenSheetOpen] = useState(false)
@@ -411,6 +420,9 @@ export default function FeedScreen() {
       ])
       if (!mountedRef.current) return
       setPlans(plansRes.plans ?? [])
+      // R36 — fire-and-forget: Past is the last thing on the feed, so it must
+      // never hold up anything above it.
+      void refetchPast()
       setMyStatusExpiresAt(greenExpired ? null : meData.statusExpiresAt ?? null)
 
       friendIdsRef.current = new Set(friendsRes.friends.map(f => f.id))
@@ -563,6 +575,16 @@ export default function FeedScreen() {
         if (typeof window !== 'undefined') window.history.replaceState({}, '', '/feed')
       }
 
+      // R36 — arriving from a photo push ("added photos", photo comments, the
+      // morning-after nudge). Opens the album directly; a non-member gets the
+      // API's 404 and the sheet closes itself without a word.
+      const albumParam = searchParams.get('album')
+      if (albumParam) {
+        setAlbumPlanId(albumParam)
+        posthog.capture('album_push_opened')
+        if (typeof window !== 'undefined') window.history.replaceState({}, '', '/feed')
+      }
+
       // Arriving from the onboarding launchpad "Go green" (Screen 3 loop):
       // open the go-green sheet once, unless the user is already available.
       if (searchParams.get('gogreen') === '1') {
@@ -706,6 +728,17 @@ export default function FeedScreen() {
     setPendingPlanId(null)
     if (target) setSheet({ plan: target, pane: 'who' })
   }, [pendingPlanId, plans])
+
+  async function refetchPast() {
+    try {
+      const res = await fetch('/api/plans/past')
+      if (!res.ok) return
+      const data = (await res.json()) as { moves?: PastMoove[] }
+      if (mountedRef.current) setPastMoves(data.moves ?? [])
+    } catch {
+      // the section just does not render
+    }
+  }
 
   async function refetchPlans() {
     try {
@@ -1157,6 +1190,9 @@ export default function FeedScreen() {
                 <TipJar visible={friends.length + plans.length + (isAvailable ? 1 : 0) >= 3} />
               </>
             )}
+
+            {/* R36 — the foot of the feed, in every state. Absent when empty. */}
+            <PastSection moves={pastMoves} meId={me.id} onOpen={m => setAlbumPlanId(m.id)} />
           </>
         )}
       </div>
@@ -1168,6 +1204,22 @@ export default function FeedScreen() {
           setComposerOpen(true)
         }}
       />
+
+      {/* R36 — a past Moove's album. */}
+      {albumPlanId && me && (
+        <AlbumSheet
+          key={albumPlanId}
+          planId={albumPlanId}
+          meId={me.id}
+          meName={me.displayName}
+          meAvatar={me.avatarUrl}
+          onClose={() => {
+            setAlbumPlanId(null)
+            void refetchPast()
+          }}
+          onChanged={() => void refetchPast()}
+        />
+      )}
 
       {/* R25 — the rail's second door. Rendered here rather than inside Rail so
           the rail stays a pure presentational strip. */}
