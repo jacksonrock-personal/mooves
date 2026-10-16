@@ -30,6 +30,9 @@ import { useSheetDrag } from '@/lib/useSheetDrag'
 import { useKeyboardInset } from '@/lib/useKeyboardInset'
 import SheetGrabber from '@/components/ui/SheetGrabber'
 import { planWhenLine, type Plan } from '@/lib/plans'
+import { isCalendarable } from '@/lib/calendar'
+import AddToCalendarSheet from '@/components/calendar/AddToCalendarSheet'
+import { CalendarIcon } from '@/components/calendar/parts'
 import {
   COMMENT_MAX,
   COMMENT_COUNTER_AT,
@@ -101,6 +104,8 @@ export default function MooveSheet({
    * collapses the picker back to roster-only.
    */
   const [taggable, setTaggable] = useState<TaggableFriend[]>([])
+  /** R35 — the Add to calendar sheet, stacked over this one. */
+  const [calendarOpen, setCalendarOpen] = useState(false)
   const drag = useSheetDrag(onClose)
   // The sheet is mounted only while open, so it is always active here.
   const keyboardInset = useKeyboardInset(true)
@@ -377,6 +382,16 @@ export default function MooveSheet({
             {plan.title}
           </h2>
           <p className="font-sans text-[12.5px] leading-snug text-ink-500 mt-1">{whenLine}</p>
+          {/* R35 — same rule as the card: in, and dated. */}
+          {isIn && isCalendarable(plan) && (
+            <button
+              onClick={() => setCalendarOpen(true)}
+              className="-ml-1.5 mt-1 flex items-center gap-[5px] px-1.5 py-1.5 font-sans text-[11.5px] font-semibold text-ink-500"
+            >
+              <CalendarIcon size={14} />
+              Add to calendar
+            </button>
+          )}
         </div>
 
         {/* R28: the tabs are unconditional now. Wall 3 has not moved — it is
@@ -733,6 +748,10 @@ export default function MooveSheet({
             </button>
           </div>
         </>
+      )}
+
+      {calendarOpen && (
+        <AddToCalendarSheet plan={plan} meId={meId} source="sheet" onClose={() => setCalendarOpen(false)} />
       )}
 
       {editing && (

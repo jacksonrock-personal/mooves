@@ -20,6 +20,7 @@ import { syncTimezone } from '@/lib/timezone'
 import InterestPicker from '@/components/discover/InterestPicker'
 import LogoutSheet from './LogoutSheet'
 import DeleteSheet from './DeleteSheet'
+import CalendarSyncSheet from '@/components/calendar/CalendarSyncSheet'
 
 interface Me {
   phone: string
@@ -50,6 +51,9 @@ export default function SettingsScreen() {
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
+  // R35 — null while unknown, so the row never flashes "Off" for someone who is on.
+  const [calendarOn, setCalendarOn] = useState<boolean | null>(null)
+  const [calendarOpen, setCalendarOpen] = useState(false)
 
   const libraryInputRef = useRef<HTMLInputElement>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
@@ -108,6 +112,17 @@ export default function SettingsScreen() {
     }
 
     void init()
+
+    // R35 — separate from init so a slow or failed read never holds the screen.
+    fetch('/api/users/me/calendar')
+      .then(r => (r.ok ? (r.json() as Promise<{ url: string | null }>) : null))
+      .then(data => {
+        if (!cancelled && data) setCalendarOn(data.url !== null)
+      })
+      .catch(() => {
+        // The row still opens the sheet, which loads (and retries) on its own.
+      })
+
     return () => {
       cancelled = true
     }
@@ -501,6 +516,43 @@ export default function SettingsScreen() {
 
             <div className="h-6" />
 
+            {/* R35 — its own one-row group right under Availability, which
+                holds the time zone that "tonight" is placed in. */}
+            <h2 className="font-sans text-[11px] font-bold uppercase tracking-[0.06em] text-ink-500 px-5 mb-2">
+              Calendar
+            </h2>
+            <div className="mx-4 overflow-hidden rounded-[20px] border border-[#E8E4F5] bg-white">
+              <button
+                onClick={() => setCalendarOpen(true)}
+                className="flex w-full items-center gap-2.5 p-4 text-left"
+              >
+                <span className="min-w-0">
+                  <span className="block font-sans text-[15px] font-bold text-ink-900">Calendar sync</span>
+                  <span className="mt-0.5 block font-sans text-[13px] text-ink-500">
+                    Your Mooves on your own calendar
+                  </span>
+                </span>
+                <span className="ml-auto whitespace-nowrap font-sans text-[13px] font-semibold text-ink-500">
+                  {calendarOn === null ? '' : calendarOn ? 'On' : 'Off'}
+                </span>
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#BDB5D4"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="shrink-0"
+                >
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="h-6" />
+
             <NotificationSettings />
 
             <div className="h-6" />
@@ -600,6 +652,14 @@ export default function SettingsScreen() {
             </button>
           </div>
         </>
+      )}
+
+      {calendarOpen && (
+        <CalendarSyncSheet
+          source="settings"
+          onClose={() => setCalendarOpen(false)}
+          onStatusChange={setCalendarOn}
+        />
       )}
 
       <LogoutSheet

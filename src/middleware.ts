@@ -19,6 +19,9 @@ const PUBLIC_PREFIXES = [
   // (INGEST_TOKEN) and refuse outright when it is unset.
   '/api/ingest/',
   '/api/stripe/webhook', // Stripe calls this unauthenticated; gated by signature
+  '/api/cal/',      // R35: the subscribed calendar feed. Calendar apps poll it
+                    // and cannot log in, so the URL's token IS the auth; the
+                    // route verifies it (HMAC) and answers 404 on any miss.
   '/api/cron/',     // Phase 22: pg_cron calls these from Postgres, so there is no
                     // session cookie to check. Each self-gates on CRON_SECRET and
                     // answers 404 — not 401 — when it is wrong.
