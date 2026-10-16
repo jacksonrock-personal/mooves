@@ -13,6 +13,42 @@ function OnboardingContent() {
   const searchParams = useSearchParams()
   const inviteCode = searchParams.get('invite')
 
+  // 24.2 — "invited" means ANY way in that comes with friends attached, not just
+  // a personal link. Group links (Phase 10.2) and "add everyone here" codes
+  // (Phase 19.1) carry their code through auth in sessionStorage, not the URL,
+  // and the feed completes those joins from there. Checking only `?invite=`
+  // sent group joiners through the cold flow — rehearsing a green nobody sees,
+  // then being told to create a group seconds after joining one.
+  function arrivedInvited(): boolean {
+    if (inviteCode) return true
+    try {
+      return (
+        !!sessionStorage.getItem('mooves_group_invite_code') ||
+        !!sessionStorage.getItem('mooves_roundup_code')
+      )
+    } catch {
+      return false
+    }
+  }
+  const invitedFeedUrl = inviteCode ? `/feed?invite=${inviteCode}` : '/feed'
+
+  // The invited path ends at the feed, so onboarding must be marked complete
+  // BEFORE navigating — otherwise the feed reads onboardingComplete=false and
+  // bounces straight back here.
+  async function finishInvited() {
+    try {
+      await fetch('/api/users/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ onboardingComplete: true }),
+      })
+    } catch {
+      // Network blip: the feed will route back here and this runs again.
+    }
+    posthog.capture('onboarding_completed', { path: 'invited' })
+    router.push(invitedFeedUrl)
+  }
+
   const [name, setName] = useState('')
   const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
@@ -27,15 +63,12 @@ function OnboardingContent() {
       .then(r => r.json())
       .then((data: { onboardingComplete?: boolean; displayName?: string | null }) => {
         if (data.onboardingComplete) {
-          router.replace(inviteCode ? `/feed?invite=${inviteCode}` : '/feed')
+          router.replace(invitedFeedUrl)
           return
         }
         if (data.displayName) {
-          router.replace(
-            inviteCode
-              ? `/feed?invite=${inviteCode}`
-              : '/onboarding/free',
-          )
+          if (arrivedInvited()) void finishInvited()
+          else router.replace('/onboarding/free')
         }
       })
 
@@ -116,14 +149,8 @@ function OnboardingContent() {
     // is finished; the feed does the rest.
     //
     // The recruit ask reaches them later, on their own terms (24.3).
-    if (inviteCode) {
-      void fetch('/api/users/me', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ onboardingComplete: true }),
-      })
-      posthog.capture('onboarding_completed', { path: 'invited' })
-      router.push(`/feed?invite=${inviteCode}`)
+    if (arrivedInvited()) {
+      await finishInvited()
       return
     }
     router.push('/onboarding/free')
