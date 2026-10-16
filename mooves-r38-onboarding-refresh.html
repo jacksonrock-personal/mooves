@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mooves R38 Onboarding</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --green-100:#E3F9EC; --green-500:#2ECC71; --green-700:#167A43;
+    --purple-50:#F8F6FF; --purple-100:#EDE9FF; --purple-500:#7C5CDB; --purple-700:#5F3FC4;
+    --ink-900:#1C1730; --ink-500:#6B628A;
+    --grey-100:#F1EEFA; --grey-300:#BDB5D4; --hair:#E8E4F5; --white:#FFFFFF;
+    --chrome:#2A2342; --note:#9990BC;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:Inter,sans-serif;background:#1C1730;color:#fff;padding:28px 16px 60px;-webkit-font-smoothing:antialiased;min-height:100vh}
+  .ttl{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:22px;letter-spacing:-.02em;text-align:center}
+  .toggles{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:16px auto 0;max-width:860px}
+  .tg{background:#262040;border:1.5px solid #3A3160;color:#CFC6EC;font-family:inherit;font-size:12.5px;font-weight:600;
+      padding:8px 14px;border-radius:99px;cursor:pointer}
+  .tg:hover{border-color:var(--purple-500)}
+  .tg.on{background:var(--purple-500);border-color:var(--purple-500);color:#fff}
+  .stage{margin-top:26px}
+  .state{display:none;flex-direction:column;align-items:center}
+  .state.on{display:flex}
+  .pair{display:flex;flex-wrap:wrap;gap:34px;justify-content:center;align-items:flex-start}
+  .col{display:flex;flex-direction:column;align-items:center}
+  .cap{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--note);margin-bottom:10px;height:14px}
+  .cap.after{color:#B9AEE4}
+  .note{font-size:12.5px;color:var(--note);margin-top:16px;text-align:center;max-width:680px;line-height:1.55}
+  .label{text-align:center;color:var(--note);font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-top:14px}
+
+  /* phone */
+  .phone{position:relative;width:320px;height:660px;border-radius:44px;background:var(--purple-50);overflow:hidden;
+         box-shadow:0 0 0 7px var(--chrome),0 24px 56px rgba(0,0,0,.45);color:var(--ink-900);display:flex;flex-direction:column}
+  .notch{position:absolute;left:50%;transform:translateX(-50%);top:0;width:118px;height:24px;background:var(--chrome);border-radius:0 0 15px 15px;z-index:80}
+  .disp{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800}
+
+  /* onboarding shell (free step vocabulary, used on every step now) */
+  .ob{flex:1;min-height:0;overflow-y:auto;padding:54px 22px 6px;scrollbar-width:none}
+  .ob::-webkit-scrollbar{display:none}
+  .ob.center{text-align:center;display:flex;flex-direction:column;align-items:center}
+  .eb{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--purple-500);margin-bottom:11px}
+  .h1{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:23px;letter-spacing:-.025em;line-height:1.14;color:var(--ink-900)}
+  .lede{font-size:13.5px;line-height:1.55;color:var(--ink-500);margin-top:10px}
+  .foot{flex:0 0 auto;padding:12px 22px 26px}
+  .dots{display:flex;gap:6px;justify-content:center;padding-bottom:14px}
+  .dots i{width:6px;height:6px;border-radius:99px;background:var(--grey-300)}
+  .dots i.on{background:var(--purple-500);width:18px}
+  .cta{width:100%;padding:15px;border:0;border-radius:16px;background:var(--purple-500);color:#fff;
+       font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:15.5px;letter-spacing:-.02em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+  .cta2{width:100%;margin-top:9px;padding:12px;border-radius:16px;border:1.5px solid var(--hair);background:#fff;color:var(--purple-500);
+        font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:14.5px;letter-spacing:-.01em}
+  .skip{display:block;width:100%;text-align:center;margin-top:11px;background:none;border:0;font-family:inherit;font-size:13px;font-weight:500;color:var(--ink-500)}
+
+  /* time chips, as TimeChips.tsx */
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+  .chip{flex:1 1 calc(50% - 4px);min-height:46px;display:flex;align-items:center;justify-content:center;border:0;border-radius:12px;
+        background:var(--purple-100);color:var(--purple-700);font-family:inherit;font-size:13.5px;font-weight:600}
+  .chip.on{background:var(--purple-500);color:#fff}
+
+  /* Same every week row */
+  .sew{margin-top:14px;background:#fff;border:1.5px solid var(--hair);border-radius:16px;overflow:hidden}
+  .sew-h{display:flex;align-items:center;gap:11px;padding:12px 13px;text-align:left}
+  .sew-ic{flex:0 0 auto;width:34px;height:34px;border-radius:10px;background:var(--purple-100);display:flex;align-items:center;justify-content:center;color:var(--purple-700)}
+  .sew-t{flex:1;min-width:0}
+  .sew-t b{display:block;font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:14px;letter-spacing:-.01em;color:var(--ink-900)}
+  .sew-t span{display:block;font-size:11.5px;color:var(--ink-500);margin-top:1px}
+  .sew-chev{color:var(--grey-300);flex:0 0 auto}
+  .sew.open{border-color:var(--purple-500)}
+  .sew-b{padding:0 11px 12px}
+  .lock{display:inline-flex;align-items:center;gap:5px;border-radius:99px;background:var(--grey-100);padding:5px 9px 5px 7px;font-size:10.5px;font-weight:600;color:var(--ink-500);margin-bottom:10px}
+  .grid{display:flex;flex-direction:column;gap:5px}
+  .gr{display:flex;align-items:center;gap:5px}
+  .gd{width:32px;flex:0 0 auto;font-size:11.5px;font-weight:700;color:var(--ink-900);text-align:left}
+  .gd.we{color:var(--purple-700)}
+  .gc{flex:1;height:32px;border-radius:11px;border:1.5px solid var(--hair);background:#fff;font-family:inherit;font-size:10.5px;font-weight:600;color:var(--ink-500)}
+  .gc.on{border-color:var(--purple-500);background:var(--purple-100);color:var(--purple-700);font-weight:700}
+
+  /* rail tiles, as Rail.tsx */
+  .rail{display:flex;gap:14px;align-items:flex-start;padding:6px 2px 4px}
+  .rp{flex:0 0 auto;width:58px;display:flex;flex-direction:column;align-items:center;gap:4px}
+  .ring{position:relative;display:block;width:54px;height:54px}
+  .ring::after{content:'';position:absolute;inset:-4px;border-radius:99px;pointer-events:none}
+  .rp.grey .ring::after{border:1.25px solid var(--grey-300)}
+  .rp.now .ring::after{border:2.5px solid var(--green-500)}
+  .rp.later .ring::after{border:2.5px solid rgba(46,204,113,.4)}
+  .rp.me .ring::after{border-style:dashed}
+  .av{width:54px;height:54px;border-radius:99px;display:flex;align-items:center;justify-content:center;font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:19px;color:#fff}
+  .rp.grey .av{filter:grayscale(1);opacity:.48}
+  .nm{max-width:58px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:600;color:var(--ink-500)}
+  .rp.me .nm{font-weight:700;color:var(--ink-900)}
+  .wh{height:13px;line-height:13px;font-size:9.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--green-700)}
+  .rp.later .wh{color:var(--ink-500)}
+  .ghost{flex:0 0 auto;width:54px;height:54px;border-radius:99px;border:1.5px dashed var(--grey-300);opacity:.55}
+
+  /* GoGreenLight.tsx at 54px: 22x41 box, 10.5 lamps, 3.5 gap, 7 radius */
+  .light{display:flex;align-items:center;justify-content:center;border-radius:99px;background:var(--purple-100)}
+  .light .box{display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--ink-900);box-shadow:inset 0 0 0 1px rgba(255,255,255,.07)}
+  .light .box i{display:block;border-radius:99px}
+
+  /* nav, as BottomNav.tsx, scaled for 320 */
+  .nav{flex:0 0 auto;position:relative;background:#fff;border-top:1px solid var(--hair);display:flex;padding-bottom:12px}
+  .nav a,.nav .pb{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:4px;padding:13px 2px 0;font-size:9px;font-weight:600;color:var(--grey-300);text-decoration:none}
+  .nav a.on{color:var(--purple-500)}
+  .nav a.wide{flex:1}
+  .nav .pb{position:relative;flex:1.32;justify-content:flex-end;font-weight:700;color:var(--purple-500)}
+  .nav .pb .lb{margin-top:38px;white-space:nowrap}
+  .cdisc{position:absolute;border-radius:99px;background:var(--purple-500);border-style:solid;border-color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(124,92,219,.42)}
+  .cdisc .bdg{position:absolute;border-radius:99px;background:#fff;border-style:solid;border-color:#fff;display:flex;align-items:center;justify-content:center}
+
+  /* teach line */
+  .teach{display:flex;align-items:center;gap:12px;margin-top:18px}
+  .teach .ill{position:relative;flex:0 0 auto;width:44px;height:44px}
+  .teach p{font-size:13.5px;font-weight:600;color:var(--ink-900);line-height:1.4}
+  .lightline{font-size:13.5px;font-weight:600;color:var(--ink-900);margin-top:12px}
+
+  /* profile */
+  .photo{width:84px;height:84px;border-radius:99px;border:2px dashed var(--purple-500);background:var(--purple-100);display:flex;align-items:center;justify-content:center;
+         font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:22px;color:var(--purple-500)}
+  .addp{font-size:12.5px;font-weight:600;color:var(--purple-500);margin-top:9px}
+  .flab{display:block;width:100%;text-align:left;font-size:11.5px;font-weight:600;color:var(--ink-500);text-transform:uppercase;letter-spacing:.04em;margin:26px 0 8px}
+  .field{width:100%;height:52px;border-radius:16px;border:2px solid var(--purple-500);background:#fff;padding:0 15px;display:flex;align-items:center;
+         font-size:16px;font-weight:500;color:var(--ink-900);text-align:left}
+  .field.semi{font-weight:600;border-radius:14px}
+  .hint{font-size:12px;color:var(--ink-500);margin-top:7px;text-align:left;width:100%}
+  .crewicon{width:66px;height:66px;border-radius:19px;background:var(--purple-100);display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+  .strong{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:15px;letter-spacing:-.01em;line-height:1.35;margin-top:20px}
+  .quiet{font-size:11.5px;color:var(--grey-300);text-align:center;margin-top:4px}
+
+  /* Loop */
+  .loopskip{flex:0 0 auto;display:flex;justify-content:flex-end;padding:40px 22px 0;height:62px;font-size:13px;font-weight:600;color:var(--ink-500)}
+  .loopcard{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 26px;text-align:center}
+  .vis{width:190px;height:160px;border-radius:28px;display:flex;align-items:center;justify-content:center;margin-bottom:26px}
+  .lk{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--purple-500);margin-bottom:9px}
+  .lh{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:25px;letter-spacing:-.02em;line-height:1.1;margin-bottom:11px}
+  .lp{font-size:14px;line-height:1.55;color:var(--ink-500);max-width:250px}
+  .lstack{display:flex;flex-direction:column;gap:9px;max-width:256px}
+  .lstack p{font-size:14px;line-height:1.4;color:var(--ink-500)}
+  .lstack .bold{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:16.5px;color:var(--ink-900);letter-spacing:-.01em}
+  .lstack .new{color:var(--ink-900);font-weight:500}
+  .lctl{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;padding:16px 26px 34px}
+  .ldots{display:flex;gap:6px}
+  .ldots i{height:8px;width:8px;border-radius:99px;background:var(--hair)}
+  .ldots i.on{width:22px;background:var(--purple-500)}
+  .lnext{width:50px;height:50px;border-radius:99px;background:var(--purple-500);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(124,92,219,.32)}
+  .mini{width:44px;display:flex;flex-direction:column;align-items:center;gap:4px}
+  .mini .ring{width:42px;height:42px}
+  .mini .av{width:42px;height:42px;font-size:15px}
+  .mini .ring::after{border-width:1px}
+  .mini.now .ring::after{border:2px solid var(--green-500)}
+  .mini.later .ring::after{border:2px solid rgba(46,204,113,.4)}
+  .mini .nm{font-size:9.5px}
+  .mini .wh{font-size:8px;height:10px;line-height:10px}
+  .changed{background:var(--purple-100);border-radius:6px;padding:0 2px;color:var(--ink-900)}
+
+  /* feed */
+  .feed{flex:1;min-height:0;overflow:hidden;padding:44px 16px 0;position:relative}
+  .feb{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-500);padding:14px 2px 8px}
+  .empty{border-radius:16px;border:1.5px dashed #DED7F2;background:rgba(248,246,255,.6);padding:22px 16px;display:flex;flex-direction:column;align-items:center;text-align:center}
+  .empty .tl{width:46px;height:46px;border-radius:13px;border:1.5px dashed rgba(124,92,219,.4);background:rgba(237,233,255,.6);display:flex;align-items:center;justify-content:center;margin-bottom:12px}
+  .empty b{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:15.5px;margin-bottom:4px}
+  .empty p{font-size:12.5px;color:var(--ink-500);line-height:1.4;max-width:230px;margin-bottom:14px}
+  .pill{padding:9px 18px;border-radius:99px;background:var(--purple-500);color:#fff;font-size:13px;font-weight:700}
+
+  /* sheets */
+  .scrim{position:absolute;inset:0;background:rgba(28,23,48,.5);z-index:40}
+  .sheet{position:absolute;left:0;right:0;bottom:0;z-index:50;background:#fff;border-radius:24px 24px 0 0;padding:0 20px 24px}
+  .sheet.tint{background:var(--purple-50);padding:0 14px 18px}
+  .grab{height:34px;display:flex;align-items:center;justify-content:center}
+  .grab i{width:36px;height:4px;border-radius:99px;background:var(--grey-300)}
+  .cowtile{width:60px;height:60px;border-radius:18px;background:#F5F0ED;display:flex;align-items:center;justify-content:center;margin:0 auto 13px;overflow:hidden}
+  .sh2{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:19px;text-align:center;letter-spacing:-.01em;line-height:1.2}
+  .shp{font-size:13px;color:var(--ink-500);text-align:center;margin-top:8px;line-height:1.5;padding:0 4px}
+  .shp + .shp{margin-top:4px}
+  .pcta{width:100%;padding:14px;margin-top:20px;border-radius:99px;background:var(--purple-500);color:#fff;font-size:15px;font-weight:700;text-align:center}
+  .pno{width:100%;padding:11px;margin-top:2px;color:var(--ink-500);font-size:13.5px;font-weight:600;text-align:center}
+  .strike{text-decoration:line-through;text-decoration-color:rgba(107,98,138,.6)}
+  .gonebadge{position:absolute;top:50px;left:50%;transform:translateX(-50%);z-index:70;background:var(--ink-900);color:#fff;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:6px 11px;border-radius:99px;white-space:nowrap}
+</style>
+</head>
+<body>
+
+<div class="ttl">R38, onboarding refresh</div>
+<div class="toggles" id="toggles"></div>
+
+<div class="stage">
+
+<!-- 1 ═══ Free step, collapsed ═══════════════════════════════════════ -->
+<section class="state on" data-s="free" data-t="1 · Free step">
+  <div class="pair"><div class="col">
+    <div class="cap">Cold path, step 2 of 4</div>
+    <div class="phone"><div class="notch"></div>
+      <div class="ob">
+        <div class="eb">Step 2 of 4</div>
+        <div class="h1">When are you free<br>this week?</div>
+        <p class="lede">Pick one. You can change it any time, and it only lasts as long as you say.</p>
+        <div class="chips">
+          <button class="chip on">Tonight</button><button class="chip">Tomorrow</button>
+          <button class="chip">This week</button><button class="chip">This weekend</button>
+        </div>
+        <div class="sew">
+          <div class="sew-h">
+            <span class="sew-ic" data-ic="cal"></span>
+            <span class="sew-t"><b>Same every week?</b><span>Pick your usual times, if you have them.</span></span>
+            <svg class="sew-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="foot">
+        <div class="dots"><i></i><i class="on"></i><i></i><i></i></div>
+        <button class="cta">That's when I'm free</button>
+        <button class="skip">Skip for now</button>
+      </div>
+    </div>
+  </div></div>
+  <p class="note">Chips exactly as shipped (Now hidden). "Same every week?" sits collapsed beneath them, optional, so the one-tap path is unchanged.</p>
+</section>
+
+<!-- 2 ═══ Free step, expanded ════════════════════════════════════════ -->
+<section class="state" data-s="grid" data-t="2 · Same every week, open">
+  <div class="pair"><div class="col">
+    <div class="cap">Cold path, step 2 of 4, scrolled</div>
+    <div class="phone"><div class="notch"></div>
+      <div class="ob" data-scroll="1">
+        <div class="eb">Step 2 of 4</div>
+        <div class="h1">When are you free<br>this week?</div>
+        <p class="lede">Pick one. You can change it any time, and it only lasts as long as you say.</p>
+        <div class="chips">
+          <button class="chip on">Tonight</button><button class="chip">Tomorrow</button>
+          <button class="chip">This week</button><button class="chip">This weekend</button>
+        </div>
+        <div class="sew open">
+          <div class="sew-h">
+            <span class="sew-ic" data-ic="cal"></span>
+            <span class="sew-t"><b>Same every week?</b><span>Pick your usual times, if you have them.</span></span>
+            <svg class="sew-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg>
+          </div>
+          <div class="sew-b">
+            <span class="lock"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Only you can see this</span>
+            <div class="grid" id="grid"></div>
+          </div>
+        </div>
+      </div>
+      <div class="foot">
+        <div class="dots"><i></i><i class="on"></i><i></i><i></i></div>
+        <button class="cta">That's when I'm free</button>
+        <button class="skip">Skip for now</button>
+      </div>
+    </div>
+  </div></div>
+  <p class="note">The Phase 22 grid, same cells and purple-not-green selection, inline. Saves availability with the chip; the CTA carries on to the reveal.</p>
+</section>
+
+<!-- 3 ═══ Reveal ═════════════════════════════════════════════════════ -->
+<section class="state" data-s="reveal" data-t="3 · Reveal">
+  <div class="pair"><div class="col">
+    <div class="cap">Cold path, step 2 of 4</div>
+    <div class="phone"><div class="notch"></div>
+      <div class="ob">
+        <div class="eb">Step 2 of 4</div>
+        <div class="h1">You're free tonight.<br>Nobody can see it yet.</div>
+        <p class="lede">Mooves only does anything once your people are here. Right now it's just you.</p>
+        <div class="rail" style="margin-top:26px">
+          <div class="rp me later"><span class="ring" data-light="54"></span><span class="nm">You</span><span class="wh">Tonight</span></div>
+          <span class="ghost"></span><span class="ghost"></span><span class="ghost"></span>
+        </div>
+        <p class="lightline">Tap your light whenever you're around.</p>
+        <div class="teach">
+          <span class="ill" data-cowdisc="44"></span>
+          <p>Tap the cow to plan a Moove.</p>
+        </div>
+      </div>
+      <div class="foot">
+        <div class="dots"><i></i><i class="on"></i><i></i><i></i></div>
+        <button class="cta">Create your Group</button>
+      </div>
+    </div>
+  </div></div>
+  <p class="note">The real GoGreenLight tile and rail ring replace the "You" avatar; the cow disc is the nav button, scaled down, plus badge and all.</p>
+</section>
+
+<!-- 4 ═══ Crew ═══════════════════════════════════════════════════════ -->
+<section class="state" data-s="crew" data-t="4 · Crew step">
+  <div class="pair"><div class="col">
+    <div class="cap">Cold path, step 3 of 4</div>
+    <div class="phone"><div class="notch"></div>
+      <div class="ob center">
+        <div class="eb">Step 3 of 4</div>
+        <div class="crewicon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#7C5CDB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+        <div class="h1">Who would you<br>want to hang with?</div>
+        <p class="lede" style="margin-top:7px">Name them, then drop the link in the group chat you already have.</p>
+        <span class="flab" style="margin-top:18px">Group name</span>
+        <div class="field semi">Group Chat</div>
+        <p class="hint">Rename it whatever you all call it. Start typing to replace.</p>
+        <p class="strong">Everyone who taps it becomes friends<br>with everyone else, not just with you.</p>
+      </div>
+      <div class="foot">
+        <div class="dots"><i></i><i></i><i class="on"></i><i></i></div>
+        <button class="cta"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy invite link</button>
+        <button class="cta2">Share</button>
+        <button class="skip" style="font-weight:600">I'll do this later</button>
+      </div>
+    </div>
+  </div></div>
+  <p class="note">Content unchanged. Was three filled dots meaning "done"; now step 3 of 4, and copying the link leads to text alerts instead of the feed.</p>
+</section>
+
+<!-- 5 ═══ Invited profile ════════════════════════════════════════════ -->
+<section class="state" data-s="invited" data-t="5 · Invited profile">
+  <div class="pair"><div class="col">
+    <div class="cap">Invited path, step 1 of 2</div>
+    <div class="phone"><div class="notch"></div>
+      <div class="ob center">
+        <div class="eb">Step 1 of 2</div>
+        <div class="h1">What should we<br>call you?</div>
+        <p class="lede" style="margin-top:7px">This is how your friends will see you.</p>
+        <div style="margin-top:28px;display:flex;flex-direction:column;align-items:center">
+          <div class="photo">M</div><div class="addp">Add a photo</div>
+        </div>
+        <span class="flab">Your name</span>
+        <div class="field">Maya</div>
+        <div class="teach" style="margin-top:22px;align-self:stretch;justify-content:center">
+          <span class="ill" data-cowdisc="38" style="width:38px;height:38px"></span>
+          <p style="font-size:13px">Tap the cow to plan a Moove.</p>
+        </div>
+      </div>
+      <div class="foot">
+        <div class="dots"><i class="on"></i><i></i></div>
+        <button class="cta">Continue</button>
+      </div>
+    </div>
+  </div></div>
+  <p class="note">The invited path never sees the reveal, so the cow line lives here, under the name, the last thing read before Continue. Next: text alerts, then the feed.</p>
+</section>
+
+<!-- 6 ═══ Loop rail card ═════════════════════════════════════════════ -->
+<section class="state" data-s="loop" data-t="6 · Loop rail card">
+  <div class="pair">
+    <div class="col"><div class="cap">Before</div>
+      <div class="phone"><div class="notch"></div>
+        <div class="loopskip">Skip</div>
+        <div class="loopcard">
+          <div class="vis" style="background:var(--green-100)" data-loopvis></div>
+          <div class="lk">The Mooves Loop · 2</div>
+          <div class="lh">Whoever's free<br>jumps to the front</div>
+          <p class="lp">Everyone sits in the rail, and the green ring is the whole signal. Tap a face to text them, no public feed and no reason to hang around in here.</p>
+        </div>
+        <div class="lctl"><div class="ldots"><i></i><i class="on"></i><i></i><i></i><i></i></div><span class="lnext" data-ic="next"></span></div>
+      </div>
+    </div>
+    <div class="col"><div class="cap after">After</div>
+      <div class="phone"><div class="notch"></div>
+        <div class="loopskip">Skip</div>
+        <div class="loopcard">
+          <div class="vis" style="background:var(--green-100)" data-loopvis></div>
+          <div class="lk">The Mooves Loop · 2</div>
+          <div class="lh">Whoever's free<br>jumps to the front</div>
+          <p class="lp">Everyone sits in the rail, and the green ring is the whole signal. <span class="changed">Tap a face to see their week. Friends' Mooves sit below, and Discover has more going on nearby.</span></p>
+        </div>
+        <div class="lctl"><div class="ldots"><i></i><i class="on"></i><i></i><i></i><i></i></div><span class="lnext" data-ic="next"></span></div>
+      </div>
+    </div>
+  </div>
+  <p class="note">MoovesLoop.tsx card 2: tapping a face opens their week (R25), and there is a feed of Mooves plus a Discover tab. Highlight marks changed copy only.</p>
+</section>
+
+<!-- 7 ═══ Stance card ════════════════════════════════════════════════ -->
+<section class="state" data-s="stance" data-t="7 · Loop stance card">
+  <div class="pair">
+    <div class="col"><div class="cap">Before</div>
+      <div class="phone"><div class="notch"></div>
+        <div class="loopskip">Skip</div>
+        <div class="loopcard">
+          <div class="vis" style="background:var(--purple-100)" data-ic="eye"></div>
+          <div class="lk">The Mooves Loop · 4</div>
+          <div class="lh">The whole idea</div>
+          <div class="lstack">
+            <p>We don't want your attention.</p>
+            <p>We want you off the app and out the door.</p>
+            <p class="bold">Green means <span style="color:var(--green-700)">free.</span> That's it.</p>
+          </div>
+        </div>
+        <div class="lctl"><div class="ldots"><i></i><i></i><i></i><i class="on"></i><i></i></div><span class="lnext" data-ic="next"></span></div>
+      </div>
+    </div>
+    <div class="col"><div class="cap after">After</div>
+      <div class="phone"><div class="notch"></div>
+        <div class="loopskip">Skip</div>
+        <div class="loopcard">
+          <div class="vis" style="background:var(--purple-100)" data-ic="eye"></div>
+          <div class="lk">The Mooves Loop · 4</div>
+          <div class="lh">The whole idea</div>
+          <div class="lstack">
+            <p>We don't want your attention.</p>
+            <p>We want you off the app and out the door.</p>
+            <p><span class="changed">You can set your week ahead too, and only you see it.</span></p>
+            <p class="bold">Green means <span style="color:var(--green-700)">free.</span> That's it.</p>
+          </div>
+        </div>
+        <div class="lctl"><div class="ldots"><i></i><i></i><i></i><i class="on"></i><i></i></div><span class="lnext" data-ic="next"></span></div>
+      </div>
+    </div>
+  </div>
+  <p class="note">The new line goes before the closer, so "That's it." still ends the card and stays true: a planned week is private, green is still the only thing friends see.</p>
+</section>
+
+<!-- 8 ═══ Push opt-in ════════════════════════════════════════════════ -->
+<section class="state" data-s="push" data-t="8 · Push opt-in">
+  <div class="pair">
+    <div class="col"><div class="cap">Before</div>
+      <div class="phone"><div class="notch"></div>
+        <div class="feed" data-feed></div><nav class="nav" data-nav></nav>
+        <div class="scrim"></div>
+        <div class="sheet">
+          <div class="grab"><i></i></div>
+          <div class="cowtile" data-cow="42"></div>
+          <div class="sh2">Know when your<br>group's free</div>
+          <p class="shp">Get a heads up when someone in your group goes free, even when Mooves is closed. Only your groups, no noise.</p>
+          <div class="pcta">Turn on notifications</div>
+          <div class="pno">Not now</div>
+        </div>
+      </div>
+    </div>
+    <div class="col"><div class="cap after">After</div>
+      <div class="phone"><div class="notch"></div>
+        <div class="feed" data-feed></div><nav class="nav" data-nav></nav>
+        <div class="scrim"></div>
+        <div class="sheet">
+          <div class="grab"><i></i></div>
+          <div class="cowtile" data-cow="42"></div>
+          <div class="sh2">Know when there's<br>a Moove</div>
+          <p class="shp">New Mooves from your groups, and what's happening on the ones you're in.</p>
+          <p class="shp">Plus friend requests, photos afterward, and your weekly reminder.</p>
+          <div class="pcta">Turn on notifications</div>
+          <div class="pno">Not now</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="note">NotificationOptIn.tsx: pushes never fire on someone going free, so the title and body now name what actually arrives, in two lines.</p>
+</section>
+
+<!-- 9 ═══ First feed visit ═══════════════════════════════════════════ -->
+<section class="state" data-s="feed" data-t="9 · First feed visit">
+  <div class="pair">
+    <div class="col"><div class="cap">Before</div>
+      <div class="phone"><div class="notch"></div>
+        <div class="feed" data-feed></div><nav class="nav" data-nav></nav>
+        <div class="scrim"></div>
+        <div class="sheet tint">
+          <div class="grab"><i></i></div>
+          <div class="sh2" style="text-align:left;font-size:18px">Set your week</div>
+          <p class="shp" style="text-align:left;padding:0;margin-top:4px;font-size:12px">Tap the times you might be free. You can change any of it later.</p>
+          <span class="lock" style="margin-top:8px">Only you can see this</span>
+          <div class="grid" data-minigrid></div>
+          <div class="pcta" style="border-radius:16px;margin-top:12px;padding:12px;font-size:14px">Save your week</div>
+        </div>
+      </div>
+    </div>
+    <div class="col"><div class="cap after">After, usual week set</div>
+      <div class="phone"><div class="notch"></div>
+        <div class="feed" data-feed></div><nav class="nav" data-nav></nav>
+      </div>
+    </div>
+  </div>
+  <p class="note">Before, the weekly ritual sheet auto-opened here on a new user's first visit. With slots saved in onboarding it stays shut; the feed is just the feed.</p>
+</section>
+
+</div>
+
+<div class="label">R38 — Onboarding refresh</div>
+
+<script>
+const COW = s => `<svg width="${s}" height="${s}" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" aria-label="Mooves">
+<ellipse cx="11" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(-28 11 33)"/><ellipse cx="109" cy="33" rx="8" ry="17" fill="#ECE8F2" transform="rotate(28 109 33)"/>
+<ellipse cx="11" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(-28 11 34)"/><ellipse cx="109" cy="34" rx="4.5" ry="10" fill="#EAA8BB" transform="rotate(28 109 34)"/>
+<ellipse cx="38" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(-14 38 19)"/><ellipse cx="82" cy="19" rx="6" ry="13" fill="#CEAD6A" transform="rotate(14 82 19)"/>
+<rect x="15" y="20" width="90" height="92" rx="30" fill="#F5F0ED"/>
+<ellipse cx="41" cy="44" rx="19" ry="13" fill="#7A7282" transform="rotate(-10 41 44)"/><ellipse cx="79" cy="69" rx="14" ry="9" fill="#7A7282" transform="rotate(16 79 69)"/>
+<circle cx="44" cy="57" r="6" fill="#2A1E38"/><circle cx="76" cy="57" r="6" fill="#2A1E38"/>
+<circle cx="46.5" cy="54.5" r="2.2" fill="white"/><circle cx="78.5" cy="54.5" r="2.2" fill="white"/>
+<ellipse cx="60" cy="90" rx="27" ry="20" fill="#F0AABB"/><circle cx="50" cy="91" r="9" fill="#2ECC71"/><circle cx="70" cy="91" r="9" fill="#BDB5D4"/></svg>`;
+
+/* GoGreenLight.tsx, every dimension derived from the 54px tile */
+const LAMPS=[['#FF3B30','rgba(255,59,48,0.85)'],['#FFB300','rgba(255,179,0,0.85)'],['#2ECC71','rgba(46,204,113,0.95)']];
+function light(size){
+  const l=size*10.5/54;
+  return `<span class="light" style="width:${size}px;height:${size}px"><span class="box" style="width:${size*22/54}px;height:${size*41/54}px;border-radius:${size*7/54}px;gap:${size*3.5/54}px">`
+    + LAMPS.map(([f,g])=>`<i style="width:${l}px;height:${l}px;background:${f};box-shadow:0 0 ${l*.55}px ${g}"></i>`).join('')
+    + `</span></span>`;
+}
+
+/* The nav's cow disc (BottomNav.tsx: 70 disc, 5.5 border, cow 46, 28 badge), scaled to any size */
+function cowDisc(d){
+  const k=d/70;
+  return `<span class="cdisc" style="width:${d}px;height:${d}px;border-width:${Math.max(2.5,5.5*k)}px;left:0;top:0;box-shadow:0 ${8*k}px ${22*k}px rgba(124,92,219,.42)">${COW(Math.round(46*k))}
+    <span class="bdg" style="width:${28*k}px;height:${28*k}px;right:${-4*k}px;bottom:${-4*k}px;border-width:${Math.max(1.5,3.5*k)}px">
+    <svg width="${15*k}" height="${15*k}" viewBox="0 0 24 24" fill="none" stroke="#7C5CDB" stroke-width="3.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></span>`;
+}
+
+const IC={
+  cal:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
+  next:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>',
+  eye:'<svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#7C5CDB" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 10 8 10 8a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 8 10 8a9.74 9.74 0 0 0 5.39-1.61"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="2" y1="2" x2="22" y2="22"/></svg>'
+};
+const NAVIC={
+  feed:'<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+  discover:'<circle cx="12" cy="12" r="9.5"/><path d="M15.6 8.4l-2.05 5.15-5.15 2.05 2.05-5.15z"/>',
+  people:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>'
+};
+const tab=(k,l,on)=>`<a class="${on?'on':''}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${NAVIC[k]}</svg><span>${l}</span></a>`;
+document.querySelectorAll('[data-nav]').forEach(n=>{
+  n.innerHTML=tab('feed','Feed',true)+tab('discover','Discover')
+   +`<span class="pb"><span style="position:absolute;top:-22px;left:50%;margin-left:-30px;width:60px;height:60px">${cowDisc(60)}</span><span class="lb">Plan a Moove</span></span>`
+   +tab('people','People')+tab('settings','Settings');
+});
+
+document.querySelectorAll('[data-light]').forEach(e=>e.innerHTML=light(+e.dataset.light));
+document.querySelectorAll('[data-cowdisc]').forEach(e=>e.innerHTML=cowDisc(+e.dataset.cowdisc));
+document.querySelectorAll('[data-cow]').forEach(e=>e.innerHTML=COW(+e.dataset.cow));
+document.querySelectorAll('[data-ic]').forEach(e=>e.innerHTML=IC[e.dataset.ic]);
+
+/* Loop card 2 visual, as MoovesLoop.tsx */
+document.querySelectorAll('[data-loopvis]').forEach(e=>{
+  const F=[{i:'D',n:'Dana',c:'#E8A0B4',w:'Now',k:'now'},{i:'P',n:'Priya',c:'#7C5CDB',w:'Wknd',k:'later'},{i:'J',n:'Jonah',c:'#5FB0E8',w:'',k:'grey'}];
+  e.innerHTML=`<div style="display:flex;gap:11px">`+F.map(f=>`<div class="mini rp ${f.k}"><span class="ring"><span class="av" style="background:${f.c}">${f.i}</span></span><span class="nm">${f.n}</span><span class="wh">${f.w}</span></div>`).join('')+`</div>`;
+});
+
+/* Phase 22 grid */
+const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const ON=new Set(['Tue:2','Thu:2','Fri:2','Sat:1','Sat:2','Sun:0']);
+function grid(el,h){
+  el.innerHTML=DAYS.map(d=>`<div class="gr"><span class="gd ${d==='Sat'||d==='Sun'?'we':''}">${d}</span>`
+    +['Morning','Day','Evening'].map((p,i)=>`<button class="gc ${ON.has(d+':'+i)?'on':''}" style="${h?'height:'+h+'px':''}">${p}</button>`).join('')+`</div>`).join('');
+}
+grid(document.getElementById('grid'));
+document.querySelectorAll('[data-minigrid]').forEach(e=>{ON.clear();grid(e,27);});
+
+/* Feed, first visit after onboarding */
+document.querySelectorAll('[data-feed]').forEach(e=>{
+  e.innerHTML=`<div class="rail">
+     <div class="rp me later"><span class="ring"><span class="av" style="background:#5F3FC4">M</span></span><span class="nm">You</span><span class="wh">Tonight</span></div>
+     <div class="rp later"><span class="ring"><span class="av" style="background:#E8A0B4">D</span></span><span class="nm">Dana</span><span class="wh">Wknd</span></div>
+     <div class="rp grey"><span class="ring"><span class="av" style="background:#5FB0E8">R</span></span><span class="nm">Ray</span><span class="wh"></span></div>
+     <div class="rp grey"><span class="ring"><span class="av" style="background:#7C5CDB">J</span></span><span class="nm">Jonah</span><span class="wh"></span></div>
+   </div>
+   <div class="feb">Mooves</div>
+   <div class="empty"><span class="tl"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7C5CDB" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
+     <b>Nothing planned yet.</b><p>Friends are free up there. Give them something to join.</p><span class="pill">Plan a Moove</span></div>`;
+});
+
+/* toggles */
+const states=[...document.querySelectorAll('.state')];
+const T=document.getElementById('toggles');
+states.forEach((s,i)=>{
+  const b=document.createElement('button');
+  b.className='tg'+(i===0?' on':'');b.textContent=s.dataset.t;
+  b.onclick=()=>{
+    states.forEach(x=>x.classList.toggle('on',x===s));
+    T.querySelectorAll('.tg').forEach(x=>x.classList.toggle('on',x===b));
+    s.querySelectorAll('[data-scroll]').forEach(x=>x.scrollTop=x.scrollHeight);
+  };
+  T.appendChild(b);
+});
+</script>
+</body>
+</html>
