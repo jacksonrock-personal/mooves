@@ -476,6 +476,129 @@ export type Database = {
           },
         ]
       }
+      plan_photo_comment_likes: {
+        Row: {
+          comment_id: string
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          comment_id: string
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          comment_id?: string
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_photo_comment_likes_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "plan_photo_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_photo_comment_likes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plan_photo_comments: {
+        Row: {
+          author_id: string
+          body: string
+          created_at: string
+          edited_at: string | null
+          id: string
+          mentions: string[]
+          photo_id: string
+        }
+        Insert: {
+          author_id: string
+          body: string
+          created_at?: string
+          edited_at?: string | null
+          id?: string
+          mentions?: string[]
+          photo_id: string
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          created_at?: string
+          edited_at?: string | null
+          id?: string
+          mentions?: string[]
+          photo_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_photo_comments_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_photo_comments_photo_id_fkey"
+            columns: ["photo_id"]
+            isOneToOne: false
+            referencedRelation: "plan_photos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plan_photos: {
+        Row: {
+          created_at: string
+          height: number | null
+          id: string
+          plan_id: string
+          storage_path: string
+          uploader_id: string
+          width: number | null
+        }
+        Insert: {
+          created_at?: string
+          height?: number | null
+          id?: string
+          plan_id: string
+          storage_path: string
+          uploader_id: string
+          width?: number | null
+        }
+        Update: {
+          created_at?: string
+          height?: number | null
+          id?: string
+          plan_id?: string
+          storage_path?: string
+          uploader_id?: string
+          width?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_photos_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_photos_uploader_id_fkey"
+            columns: ["uploader_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plans: {
         Row: {
           author_id: string
@@ -488,6 +611,7 @@ export type Database = {
           note: string | null
           show_groups: boolean
           open_to_fof: boolean
+          photo_nudge_sent_at: string | null
           sponsored_move_id: string | null
           start_at: string
           time_mode: string
@@ -507,6 +631,7 @@ export type Database = {
           note?: string | null
           show_groups?: boolean
           open_to_fof?: boolean
+          photo_nudge_sent_at?: string | null
           sponsored_move_id?: string | null
           start_at: string
           time_mode?: string
@@ -526,6 +651,7 @@ export type Database = {
           note?: string | null
           show_groups?: boolean
           open_to_fof?: boolean
+          photo_nudge_sent_at?: string | null
           sponsored_move_id?: string | null
           start_at?: string
           time_mode?: string

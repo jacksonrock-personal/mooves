@@ -551,3 +551,138 @@ export async function sendFriendAcceptedPush(
     url: '/people',
   })
 }
+
+// ── R36: photo albums ───────────────────────────────────────────────────────
+//
+// Three pushes, all aimed only at the people who were IN the Moove (author +
+// move_joins rows for that plan — never plan_id IS NULL green rows), all
+// landing in the album via /feed?album=<planId>. They ride the same pipeline
+// as Phase 21's comment push: the rate_limits table is the cooldown, and like
+// sendCommentPush they never carry content (no caption, no comment text).
+
+/** Author + joiners of a plan. plan_id matched explicitly, as everywhere. */
+async function albumMemberIds(
+  supabase: ReturnType<typeof createServiceClient>,
+  planId: string,
+): Promise<{ title: string; ids: string[] } | null> {
+  const { data: plan } = await supabase
+    .from('plans')
+    .select('author_id, title, cancelled_at')
+    .eq('id', planId)
+    .maybeSingle()
+  if (!plan || plan.cancelled_at) return null
+
+  const { data: joins } = await supabase
+    .from('move_joins')
+    .select('joiner_id')
+    .eq('plan_id', planId)
+
+  return {
+    title: plan.title,
+    ids: [...new Set([plan.author_id, ...(joins ?? []).map(j => j.joiner_id)])],
+  }
+}
+
+/** Photo pushes share the comment cooldown length: one per Moove per hour. */
+const PHOTO_PUSH_COOLDOWN_SECONDS = COMMENT_PUSH_COOLDOWN_SECONDS
+
+/**
+ * "{Name} added 6 photos to {title}".
+ *
+ * Called once per upload BATCH (the client signals the end of a selection),
+ * not once per photo. ≤ 1 per Moove per recipient per hour, never to the
+ * uploader. The count is the uploader's photos on this Moove over the trailing
+ * hour, which is the same honest-count trick sendCommentPush uses in place of a
+ * real queue.
+ */
+export async function sendPhotosAddedPush(planId: string, uploaderId: string): Promise<void> {
+  const supabase = createServiceClient()
+  const members = await albumMemberIds(supabase, planId)
+  if (!members) return
+  const recipients = members.ids.filter(id => id !== uploaderId)
+  if (!recipients.length) return
+
+  const since = new Date(Date.now() - PHOTO_PUSH_COOLDOWN_SECONDS * 1000).toISOString()
+  const { count } = await supabase
+    .from('plan_photos')
+    .select('id', { count: 'exact', head: true })
+    .eq('plan_id', planId)
+    .eq('uploader_id', uploaderId)
+    .gte('created_at', since)
+  if (!count) return
+
+  const eligible: string[] = []
+  for (const id of recipients) {
+    if (await checkRateLimit(`photos:push:${planId}:${id}`, 1, PHOTO_PUSH_COOLDOWN_SECONDS)) {
+      eligible.push(id)
+    }
+  }
+  if (!eligible.length) return
+
+  const name = await displayNameOf(supabase, uploaderId)
+  await pushToUsers(supabase, eligible, {
+    title: 'Mooves',
+    body: `${name} added ${count === 1 ? 'a photo' : `${count} photos`} to ${members.title}`,
+    url: `/feed?album=${planId}`,
+  })
+}
+
+/**
+ * A new comment on a photo. Mirrors sendCommentPush exactly: aggregate, never
+ * names the commenter or carries the text, title is the Moove's title, one per
+ * Moove per recipient per hour, count taken over the trailing window across
+ * every photo in the album.
+ */
+export async function sendPhotoCommentPush(
+  planId: string,
+  title: string,
+  commenterId: string,
+): Promise<void> {
+  const supabase = createServiceClient()
+  const members = await albumMemberIds(supabase, planId)
+  if (!members) return
+  const recipientIds = members.ids.filter(id => id !== commenterId)
+  if (!recipientIds.length) return
+
+  const eligible: string[] = []
+  for (const id of recipientIds) {
+    if (await checkRateLimit(`photo-comments:push:${planId}:${id}`, 1, COMMENT_PUSH_COOLDOWN_SECONDS)) {
+      eligible.push(id)
+    }
+  }
+  if (!eligible.length) return
+
+  const { data: photos } = await supabase.from('plan_photos').select('id').eq('plan_id', planId)
+  const photoIds = (photos ?? []).map(p => p.id)
+  let n = 1
+  if (photoIds.length) {
+    const since = new Date(Date.now() - COMMENT_PUSH_COOLDOWN_SECONDS * 1000).toISOString()
+    const { count } = await supabase
+      .from('plan_photo_comments')
+      .select('id', { count: 'exact', head: true })
+      .in('photo_id', photoIds)
+      .gte('created_at', since)
+    n = count && count > 0 ? count : 1
+  }
+
+  await pushToUsers(supabase, eligible, {
+    title,
+    body: n === 1 ? '1 new comment.' : `${n} new comments.`,
+    url: `/feed?album=${planId}`,
+  })
+}
+
+/**
+ * The morning-after nudge: "Add your photos from {title}". Once per Moove,
+ * ever — the cron route owns the once (plans.photo_nudge_sent_at) and the
+ * timing. This only sends.
+ */
+export async function sendPhotoNudgePush(planId: string, title: string, userIds: string[]): Promise<void> {
+  if (!userIds.length) return
+  const supabase = createServiceClient()
+  await pushToUsers(supabase, userIds, {
+    title: 'Mooves',
+    body: `Add your photos from ${title}`,
+    url: `/feed?album=${planId}`,
+  })
+}
