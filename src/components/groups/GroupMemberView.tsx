@@ -4,16 +4,8 @@
 // invite link, Phase 10). Shows the group + everyone in it; you can leave.
 // Editing / renaming / member management / the invite link stay owner-only.
 
-import Avatar from '@/components/ui/Avatar'
 import GroupNotifyToggle from './GroupNotifyToggle'
-
-export interface RosterMember {
-  id: string
-  displayName: string | null
-  avatarUrl: string | null
-  isOwner: boolean
-  isYou: boolean
-}
+import RosterRow, { type RosterMember } from './RosterRow'
 
 interface GroupMemberViewProps {
   groupId: string
@@ -21,8 +13,10 @@ interface GroupMemberViewProps {
   emoji: string
   members: RosterMember[]
   leaving: boolean
+  addingId: string | null
   onBack: () => void
   onLeave: () => void
+  onAddFriend: (id: string) => void
 }
 
 export default function GroupMemberView({
@@ -31,8 +25,10 @@ export default function GroupMemberView({
   emoji,
   members,
   leaving,
+  addingId,
   onBack,
   onLeave,
+  onAddFriend,
 }: GroupMemberViewProps) {
   return (
     <div className="min-h-screen flex flex-col bg-purple-50">
@@ -77,17 +73,7 @@ export default function GroupMemberView({
             In this group
           </p>
           {members.map(m => (
-            <div key={m.id} className="flex items-center gap-3 px-5 py-2.5 border-t border-[#E8E4F5]">
-              <Avatar src={m.avatarUrl} name={m.displayName ?? '?'} size={40} className="shrink-0" />
-              <span className="flex-1 font-sans text-[15px] font-medium text-ink-900 truncate">
-                {m.isYou ? 'You' : (m.displayName ?? 'Friend')}
-              </span>
-              {m.isOwner && (
-                <span className="shrink-0 font-sans text-[11px] font-semibold text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full">
-                  Owner
-                </span>
-              )}
-            </div>
+            <RosterRow key={m.id} member={m} busy={addingId !== null} onAddFriend={onAddFriend} />
           ))}
         </div>
 

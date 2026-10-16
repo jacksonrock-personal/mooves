@@ -8,6 +8,7 @@ import { useState } from 'react'
 import EmojiPicker from './EmojiPicker'
 import FriendChecklist from './FriendChecklist'
 import MemberEditor from './MemberEditor'
+import RosterRow, { type RosterMember } from './RosterRow'
 
 interface Friend {
   id: string
@@ -27,6 +28,13 @@ interface GroupFormProps {
   onBack: () => void
   onDelete?: () => void
   onShareInvite?: () => void
+  /** Members who aren't your friends (joined via the invite link). Shown
+   *  read-only — the checklist can only hold friends, and before this they
+   *  were in the group but invisible to its owner. Their ids stay in
+   *  `selected`, so saving never drops them. */
+  others?: RosterMember[]
+  addingId?: string | null
+  onAddFriend?: (id: string) => void
 }
 
 export default function GroupForm({
@@ -41,6 +49,9 @@ export default function GroupForm({
   onBack,
   onDelete,
   onShareInvite,
+  others = [],
+  addingId = null,
+  onAddFriend,
 }: GroupFormProps) {
   const [name, setName] = useState(initialName)
   const [emoji, setEmoji] = useState(initialEmoji)
@@ -152,6 +163,17 @@ export default function GroupForm({
           <p className="font-sans text-[14px] text-text-secondary leading-relaxed px-6 py-7 text-center">
             No friends to add yet. Name your group, then share its invite link to fill it up.
           </p>
+        )}
+
+        {others.length > 0 && onAddFriend && (
+          <div className="bg-card-white mt-2 border-t border-[#E8E4F5]">
+            <p className="font-sans text-[11px] font-semibold text-text-secondary uppercase tracking-[0.08em] px-5 pt-3 pb-1">
+              Joined via invite link
+            </p>
+            {others.map(m => (
+              <RosterRow key={m.id} member={m} busy={addingId !== null} onAddFriend={onAddFriend} />
+            ))}
+          </div>
         )}
 
         {/* Inline reason the button is disabled */}
