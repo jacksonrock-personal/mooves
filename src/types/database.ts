@@ -865,6 +865,8 @@ export type Database = {
           created_at: string
           display_name: string | null
           fof_mooves_enabled: boolean
+          calendar_prompted_at: string | null
+          calendar_token: string | null
           friend_suggestable: boolean
           hide_from_matches: boolean
           id: string
@@ -902,6 +904,8 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           fof_mooves_enabled?: boolean
+          calendar_prompted_at?: string | null
+          calendar_token?: string | null
           friend_suggestable?: boolean
           hide_from_matches?: boolean
           id?: string
@@ -939,6 +943,8 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           fof_mooves_enabled?: boolean
+          calendar_prompted_at?: string | null
+          calendar_token?: string | null
           friend_suggestable?: boolean
           hide_from_matches?: boolean
           id?: string
