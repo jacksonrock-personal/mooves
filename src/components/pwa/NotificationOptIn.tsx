@@ -106,12 +106,17 @@ export default function NotificationOptIn() {
           <CowMark size={44} />
         </div>
         <h2 className="font-display font-extrabold text-[20px] text-ink-900 text-center tracking-[-0.01em] leading-tight">
-          Know when your
+          Know when there&apos;s
           <br />
-          group&apos;s free
+          a Moove
         </h2>
+        {/* R38 — pushes never fire on someone going free, so this names what
+            actually arrives. */}
         <p className="text-[13.5px] text-ink-500 text-center mt-2 leading-relaxed px-2">
-          Get a heads up when someone in your group goes free, even when Mooves is closed. Only your groups, no noise.
+          New Mooves from your groups, and what&apos;s happening on the ones you&apos;re in.
+        </p>
+        <p className="text-[13.5px] text-ink-500 text-center mt-1 leading-relaxed px-2">
+          Plus friend requests, photos afterward, and your weekly reminder.
         </p>
         <button
           onClick={() => void enable()}

@@ -98,14 +98,14 @@ export default function NotificationSettings() {
           <div className="flex-1 min-w-0">
             <div className="font-sans font-bold text-[15px] text-ink-900">Notifications</div>
             <div className="font-sans text-[12.5px] text-ink-500 mt-0.5 leading-snug">
-              Know when someone in your group is free.
+              Know when there&apos;s a Moove.
             </div>
           </div>
           <Toggle on={on} onChange={next => void toggle(next)} disabled={busy || supported === null} label="Notifications" />
         </div>
       </div>
       <p className="font-sans text-[12px] text-ink-500 px-5 pt-3 leading-relaxed">
-        You only get notified when a friend goes free for a group you&apos;re in. Turn any group off from its own page.
+        New Mooves from your groups, what&apos;s happening on Mooves you&apos;re in, friend requests and photos afterward. Turn any group off from its own page.
       </p>
 
       {/* 17.1 — green-wave push opt-out */}

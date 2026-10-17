@@ -199,8 +199,8 @@ export default function MoovesLoop() {
               Whoever&apos;s free<br />jumps to the front
             </h1>
             <p className="font-sans text-[15px] leading-relaxed text-text-secondary max-w-[250px]">
-              Everyone sits in the rail, and the green ring is the whole signal. Tap a face to text
-              them, no public feed and no reason to hang around in here.
+              Everyone sits in the rail, and the green ring is the whole signal. Tap a face to see
+              their week. Friends&apos; Mooves sit below, and Discover has more going on nearby.
             </p>
           </div>
 
@@ -266,6 +266,10 @@ export default function MoovesLoop() {
             <div className="flex flex-col gap-2.5 max-w-[260px]">
               <p className="font-sans text-[15px] leading-snug text-text-secondary">We don&apos;t want your attention.</p>
               <p className="font-sans text-[15px] leading-snug text-text-secondary">We want you off the app and out the door.</p>
+              {/* R38 — acknowledges scheduled availability (Phase 22) without
+                  undoing the closer: a planned week is private, so green is
+                  still the only thing friends see. */}
+              <p className="font-sans text-[15px] leading-snug text-text-secondary">You can set your week ahead too, and only you see it.</p>
               <p className="font-display font-extrabold text-[17px] text-text-primary tracking-tight">Green means <span className="text-green-700">free.</span> That&apos;s it.</p>
             </div>
           </div>

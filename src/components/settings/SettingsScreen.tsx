@@ -3,7 +3,7 @@
 // Screen 10: Settings / Profile Edit
 // Mockup: mooves-screen10-settings.html
 // Profile edits are inline and auto-save. Log out and delete are confirmed
-// via bottom sheets. No sub-navigation.
+// via bottom sheets. One sub-screen: Text alerts (R37, /settings/text-alerts).
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -21,6 +21,7 @@ import InterestPicker from '@/components/discover/InterestPicker'
 import LogoutSheet from './LogoutSheet'
 import DeleteSheet from './DeleteSheet'
 import CalendarSyncSheet from '@/components/calendar/CalendarSyncSheet'
+import { isPushSupported } from '@/lib/firebase/messaging'
 
 interface Me {
   phone: string
@@ -54,6 +55,12 @@ export default function SettingsScreen() {
   // R35 — null while unknown, so the row never flashes "Off" for someone who is on.
   const [calendarOn, setCalendarOn] = useState<boolean | null>(null)
   const [calendarOpen, setCalendarOpen] = useState(false)
+  // R37 — same null-while-unknown rule as the calendar row.
+  const [textAlertsOn, setTextAlertsOn] = useState<boolean | null>(null)
+  // NotificationSettings hides itself (heading included) where push can't
+  // work. Text alerts don't need push, so the row stays and brings its own
+  // heading in that case.
+  const [pushSupported, setPushSupported] = useState<boolean | null>(null)
 
   const libraryInputRef = useRef<HTMLInputElement>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
@@ -122,6 +129,20 @@ export default function SettingsScreen() {
       .catch(() => {
         // The row still opens the sheet, which loads (and retries) on its own.
       })
+
+    // R37 — Off / On on the Text alerts row. Stopped-by-STOP reads Off.
+    fetch('/api/users/me/text-alerts')
+      .then(r => (r.ok ? (r.json() as Promise<{ status: 'off' | 'on' | 'stopped' }>) : null))
+      .then(data => {
+        if (!cancelled && data) setTextAlertsOn(data.status === 'on')
+      })
+      .catch(() => {
+        // The row still opens the screen, which loads on its own.
+      })
+
+    void isPushSupported().then(ok => {
+      if (!cancelled) setPushSupported(ok)
+    })
 
     return () => {
       cancelled = true
@@ -554,6 +575,52 @@ export default function SettingsScreen() {
             <div className="h-6" />
 
             <NotificationSettings />
+
+            {/* R37 — the last card of Notifications, after Green waves: what
+                buzzes lives together. Outside NotificationSettings because
+                that component renders nothing where push is unsupported, and
+                texts work everywhere. */}
+            {pushSupported === false && (
+              <h2 className="font-sans text-[11px] font-bold uppercase tracking-[0.06em] text-ink-500 px-5 mb-2">
+                Notifications
+              </h2>
+            )}
+            <div
+              className={`mx-4 overflow-hidden rounded-[20px] border border-[#E8E4F5] bg-white ${
+                pushSupported === false ? '' : 'mt-3'
+              }`}
+            >
+              <button
+                onClick={() => {
+                  posthog.capture('settings_text_alerts_opened')
+                  router.push('/settings/text-alerts')
+                }}
+                className="flex w-full items-center gap-2.5 p-4 text-left"
+              >
+                <span className="min-w-0">
+                  <span className="block font-sans text-[15px] font-bold text-ink-900">Text alerts</span>
+                  <span className="mt-0.5 block font-sans text-[13px] text-ink-500">
+                    A text when a friend makes a Moove
+                  </span>
+                </span>
+                <span className="ml-auto whitespace-nowrap font-sans text-[13px] font-semibold text-ink-500">
+                  {textAlertsOn === null ? '' : textAlertsOn ? 'On' : 'Off'}
+                </span>
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#BDB5D4"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="shrink-0"
+                >
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
+            </div>
 
             <div className="h-6" />
 

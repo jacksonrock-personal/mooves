@@ -11,6 +11,9 @@
 import { Suspense, useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { posthog } from '@/lib/posthog'
+import { COLD_STEPS, StepDots, StepEyebrow } from '@/components/onboarding/StepProgress'
+
+const STEP = 3
 
 const DEFAULT_NAME = 'Group Chat'
 const GROUP_EMOJI = '💬'
@@ -41,9 +44,9 @@ function InviteContent() {
     }
   }, [])
 
-  // 24.2 — this is the terminal step now. MoovesLoop used to mark onboarding
-  // complete on its way past; it is retired from the chain (Settings still
-  // replays it), so completion is marked here.
+  // R37/R38 — no longer the terminal step. Text alerts (step 4 of 4) follow,
+  // and that step marks onboarding complete, so a user who leaves here is
+  // still mid-onboarding and the feed routes them back.
   function finish() {
     void fetch('/api/users/me', {
       method: 'PATCH',
@@ -51,10 +54,9 @@ function InviteContent() {
       // 24.3 — completing (or skipping) the crew step spends the one recruit
       // ask. A cold-start user has just been asked for their people; asking
       // again the first time they go green would be the same request twice.
-      body: JSON.stringify({ onboardingComplete: true, recruitAskShown: true }),
+      body: JSON.stringify({ recruitAskShown: true }),
     })
-    posthog.capture('onboarding_completed', { path: 'cold' })
-    router.replace(inviteCode ? `/feed?invite=${inviteCode}` : '/feed')
+    router.replace(inviteCode ? `/onboarding/alerts?invite=${inviteCode}` : '/onboarding/alerts')
   }
 
   function onNameChange(value: string) {
@@ -130,15 +132,10 @@ function InviteContent() {
 
   return (
     <main className="min-h-screen bg-surface-bg flex flex-col">
-      {/* 24.2 — three steps now, not four. Area and interests left the chain. */}
-      <div className="flex gap-1.5 justify-center pt-12">
-        <div className="w-2 h-2 rounded-full bg-mooves-purple" />
-        <div className="w-2 h-2 rounded-full bg-mooves-purple" />
-        <div className="w-2 h-2 rounded-full bg-mooves-purple" />
-      </div>
-
-      {/* Body */}
-      <div className="flex-1 flex flex-col items-center px-7 pt-8">
+      {/* Body. R38 — step 3 of 4: the eyebrow here, the dots above the CTA,
+          the same pair every onboarding step carries. */}
+      <div className="flex-1 flex flex-col items-center px-7 pt-[calc(env(safe-area-inset-top)+3.5rem)]">
+        <StepEyebrow index={STEP} count={COLD_STEPS} />
         <div className="w-[72px] h-[72px] rounded-[20px] bg-purple-tint flex items-center justify-center mb-5">
           <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#7C5CDB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -193,6 +190,7 @@ function InviteContent() {
 
       {/* CTAs */}
       <div className="px-7 pb-9 pt-4">
+        <StepDots index={STEP} count={COLD_STEPS} />
         <button
           onClick={() => void handleCopy()}
           disabled={busy}

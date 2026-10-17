@@ -804,6 +804,51 @@ export type Database = {
           },
         ]
       }
+      sms_outbox: {
+        Row: {
+          created_at: string
+          due_at: string
+          id: string
+          plan_id: string
+          sent_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          due_at: string
+          id?: string
+          plan_id: string
+          sent_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          due_at?: string
+          id?: string
+          plan_id?: string
+          sent_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sms_outbox_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sms_outbox_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sponsored_moves: {
         Row: {
           area_zip: string
@@ -1008,6 +1053,10 @@ export type Database = {
           phone: string
           recruit_ask_shown_at: string | null
           referral_code: string
+          sms_alerts_opt_in_at: string | null
+          sms_consent_version: string | null
+          sms_opted_out_at: string | null
+          sms_opted_out_via: string | null
           status_expires_at: string | null
           status_move_id: string | null
           status_note: string | null
@@ -1047,6 +1096,10 @@ export type Database = {
           phone: string
           recruit_ask_shown_at?: string | null
           referral_code?: string
+          sms_alerts_opt_in_at?: string | null
+          sms_consent_version?: string | null
+          sms_opted_out_at?: string | null
+          sms_opted_out_via?: string | null
           status_expires_at?: string | null
           status_move_id?: string | null
           status_note?: string | null
@@ -1086,6 +1139,10 @@ export type Database = {
           phone?: string
           recruit_ask_shown_at?: string | null
           referral_code?: string
+          sms_alerts_opt_in_at?: string | null
+          sms_consent_version?: string | null
+          sms_opted_out_at?: string | null
+          sms_opted_out_via?: string | null
           status_expires_at?: string | null
           status_move_id?: string | null
           status_note?: string | null
@@ -1232,6 +1289,11 @@ export type Database = {
         Args: { p_code: string; p_user: string }
         Returns: number
       }
+      sms_claim: {
+        Args: { p_user: string; p_row_ids: string[]; p_day_start: string; p_cap: number }
+        Returns: string | null
+      }
+      sms_digest_cron_tick: { Args: never; Returns: undefined }
       viewer_group_ids: {
         Args: { p_user: string }
         Returns: {
