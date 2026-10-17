@@ -52,6 +52,8 @@
 | — | **R26 — a morning on every day** — the week ritual offers **Morning / Day / Evening on all seven days**; the weekday/weekend split is gone | ✅ **Spec 2026-08-04** (see "R26" at EOF) — amends **Phase 22's** slot vocabulary and retires the caveat **R25.2** shipped with (its middle row meant "afternoon" at weekends; both are 12–17 now, so the label "Day" is exactly true every day) · **No mockup** — this changes which cells a shipped grid offers, not how it looks · ⚠ **The overlap forced a second decision:** old `morning` 08–12 and `day` 09–17 share three hours, so `day` **narrows to 12–17** and `afternoon` **folds into it** — that direction because "Morning / Day / Evening" is the vocabulary already on screen. **No user's availability moves by a minute**; the windows are identical, so this is a rename of live data · ✅ **Code 2026-08-04** (`feat/r26-morning-every-day`, off `main` @ `a47c71f`) — `tsc --noEmit` + `next build` clean; **grid verified live at 21 cells** (Morning ×7, Day ×7, Evening ×7, no spacers, past cells disabled) and a **full 21-slot save round-tripped 200/21 stored** — *the old cap of 16 would have rejected a full week outright, which is the defect this round was most likely to ship* — plus a stale-client `afternoon` confirmed to fold to `day` rather than vanish · ⚠ **MIGRATION `20260804190000_r26_morning_every_day.sql` NOT YET APPLIED** — Jackson runs `npm run db:push`; it is a **data** migration (8 `afternoon` rows → `day`, deleting losers first so it stays re-runnable against the unique index), adds no columns and redefines no functions · ⬜ **device test pending** · **`day` had zero rows ever** — its own verdict on a 09–17 weekday slot |
 | — | **R35 — Add a Moove to your calendar** — per-Moove "Add to calendar" (Apple `.ics` / Google template) + one subscribable feed of every Moove you created or joined, with reset | ✅ **Spec 2026-10-16** (see "R35" at EOF) · ✅ **Mockup** `mooves-r35-calendar.html` (10 states, approved 2026-10-16) · ✅ **Code 2026-10-16** (PR #74; `tsc` + `next build` clean; migration `20261016130000` applied) · ⚠ feed subscription testable only on makemooves.app after merge |
 | — | **R36 — Past Mooves + photo albums (photos only)** — a Past section at the foot of the feed; a private album per Moove for its creator + joiners; photo comments exactly like Moove comments, **amending Phase 21 wall 4 for photos only** | ✅ **Spec 2026-10-16** (see "R36" at EOF) · ✅ **Mockup** `mooves-r36-past-albums.html` (12 states, approved 2026-10-16) · ✅ **Code 2026-10-16** (PR #74; `tsc` + `next build` clean; migration `20261016140000` applied) |
+| — | **R37 — Text alerts** — a text when a direct friend makes a Moove you can see; 8am digest for overnight Mooves; 5/day cap; STOP/START/HELP; Screen 11 moves to the toll-free number; ships dark behind `SMS_ALERTS_ENABLED` until Twilio toll-free verification clears | ✅ **Spec 2026-10-16** (see "R37" at EOF) · ✅ **Mockup** `mooves-r37-text-alerts.html` (10 states, approved 2026-10-17) · ⬜ Code |
+| — | **R38 — Onboarding refresh** — usual week in the first step · real traffic-light tile + the cow taught in the flow · stale Loop + push copy fixed · step counters agree · orphaned `/onboarding/area` + `/interests` deleted · Loop stance card reconciled with 22.0a | ✅ **Spec 2026-10-16** (see "R38" at EOF) · ✅ **Mockup** `mooves-r38-onboarding-refresh.html` (9 states, approved 2026-10-17) · ⬜ Code |
 
 ---
 
@@ -6220,3 +6222,108 @@ None.
 - [ ] Uploader can delete own photo; creator can remove any; leaving the Moove keeps your photos.
 - [ ] Save offers "Save Image" on iOS.
 - [ ] Morning-after push fires once; photo-added pushes ≤ 1/Moove/hour.
+
+---
+
+## R37 — Text alerts (Spec) — *2026-10-16* · SPEC ✅ · MOCKUP ✅ (`mooves-r37-text-alerts.html`) · CODE ⬜
+
+> **Ships dark.** Nothing sends until `SMS_ALERTS_ENABLED=true` is set in Vercel, which happens only after Twilio toll-free verification is approved (submitted 2026-10-16, opt-in proof: `docs/compliance/mooves-sms-optin.png`). The opt-in screens MUST match that proof — reviewers compare them.
+
+### Purpose
+Get a text when a friend makes a Moove you can see, with a link straight back into it.
+
+### Entry points
+- **Onboarding, final step** (new): the exact screen from the Twilio proof, plus a quiet "Not now". Cold path: after the crew step. Invited path: after profile.
+- **Settings → Text alerts**: the same screen, with "Turn off" once on.
+- **No other prompts** (Jackson, 2026-10-16: two asks, never a nag).
+
+### States
+- **Off**: box unchecked, "Yes, sign me up" disabled.
+- **Checked**: button active.
+- **On**: "You'll get texts at {phone}" + Turn off.
+- **Stopped by text**: "You turned these off by replying STOP. Check the box to turn them back on."
+- Phone shown is the auth number, read-only.
+
+### Who gets texted
+Opted-in users, when a **direct friend** creates a Moove **visible to them** (any visibility mode). Never friends-of-friends Mooves, Discover/community Mooves, or your own. **New Mooves only** — no texts for cancellations or edits. Texts send whether or not the person also has push.
+
+### Timing and cap
+- **08:00–22:00 recipient-local** → sent immediately.
+- **Overnight** → held; at 08:00 one digest: "Mooves: 2 new Mooves from friends: Tacos at Lupe's (Fri), Hike (Sun). https://makemooves.app/feed Reply STOP to opt out." Held Mooves cancelled before 08:00 are dropped.
+- **Cap: 5 texts per person per local day, digest included.** Past the cap, nothing more that day (the Mooves are in the feed). This is the frequency promised to Twilio.
+
+### Copy
+- Single: "Mooves: {Name} made a Moove, {title}, {when}. See who's in: https://makemooves.app/feed?plan={id} Reply STOP to opt out."
+- Full domain, never a shortener (carrier filtering).
+
+### Inbound (one Mooves number)
+| Reply | Does |
+|---|---|
+| STOP, STOPALL, UNSUBSCRIBE, CANCEL, END, QUIT | Opt out (`sms_opted_out_via='stop'`); empty TwiML — Twilio sends the carrier confirmation |
+| START, UNSTOP | Opt back in |
+| HELP, INFO | "Mooves alerts: texts when friends make a Moove, up to 5 msgs/day. Reply STOP to cancel. makemooves.app/terms" |
+| Anything else, from a Mooves user | Screen 11 feed check, now served on this number |
+
+### Go-live checklist (Jackson, after approval)
+1. Vercel env: `TWILIO_PHONE_NUMBER` = the toll-free number, `SMS_ALERTS_ENABLED=true`.
+2. Twilio → the number → Messaging → "A message comes in" webhook = `https://makemooves.app/api/sms/inbound` (POST).
+
+### Data
+- `users`: `sms_alerts_opt_in_at`, `sms_consent_version` (the disclosure version agreed to), `sms_opted_out_at`, `sms_opted_out_via` (`settings`|`stop`). The consent record.
+- `sms_outbox`: `user_id · plan_id · due_at · sent_at · status ('queued'|'sent'|'dropped'|'capped')` — drives the overnight hold, digest, cap, and cancel-drop.
+- Hourly pg_cron tick → `/api/cron/sms-digest`, same Vault + `CRON_SECRET` pattern as the other crons.
+
+### Onboarding & copy impact
+- Onboarding: new final step on both paths (step counters updated in R38).
+- Settings: new Text alerts row.
+- Terms §6: name text alerts and the 5/day cap, matching what Twilio reviewed. Privacy §3 already covers SMS consent and non-sharing — unchanged.
+- Mooves Loop: unchanged.
+
+### Out of scope
+Texts for cancellations, edits, comments or friend requests · per-friend text controls · a separate number for texts · a frequency setting.
+
+### Open questions
+None.
+
+### Acceptance criteria
+- [ ] Nothing sends while `SMS_ALERTS_ENABLED` is unset.
+- [ ] Only opted-in direct friends who can see the Moove are texted; never the author.
+- [ ] Overnight Mooves arrive as one 08:00 digest; cancelled ones are dropped.
+- [ ] No one gets more than 5 texts in a local day.
+- [ ] STOP opts out (Settings says so), START opts back in, HELP replies, anything else gets the feed check.
+- [ ] Opt-in screens match the Twilio proof: unchecked box, identical disclosure.
+
+---
+
+## R38 — Onboarding refresh (Spec) — *2026-10-16* · SPEC ✅ · MOCKUP ✅ (`mooves-r38-onboarding-refresh.html`) · CODE ⬜
+
+*From the 2026-10-16 onboarding audit against R15–R36. The group-link arrival bug that audit found shipped separately (PR #75).*
+
+### Purpose
+Onboarding teaches the app as it is today, and never goes stale.
+
+### Changes
+> ⚠ **Amended at mockup (Jackson, 2026-10-17).** The draft's "Same every week?" contradicted Phase 22.0 (a weekly ritual: nothing carries over, no template, no "usually"). **Phase 22 stands.** The row is **"Set the rest of your week?"** and saves **this week's** slots only; the weekly ritual takes it from there. Separately, the reveal shows the traffic light **and** your green ring together, a deliberate one-screen exception to R24's light-or-face rule, because that is the moment the gesture is taught.
+
+1. **This week in the first step.** "When are you free this week?" keeps its chips; beneath them a "Set the rest of your week?" row opens the Phase 22 Morning/Day/Evening grid and saves **this week's** availability. Having set it, the weekly ritual sheet does **not** auto-open on the first feed visit.
+2. **Teach the two gestures.** The reveal shows the **real traffic-light tile** (replacing the "You" avatar) with "Tap your light whenever you're around", plus one line: "Tap the cow to plan a Moove." Both paths get the cow line.
+3. **Fix stale copy.** Mooves Loop "Tap a face to text them, no public feed" (`MoovesLoop.tsx:202`) → tapping a face shows their week, and Mooves + Discover exist. Push opt-in drops "goes free… Only your groups" (`NotificationOptIn.tsx:114`) and says what pushes actually cover.
+4. **Step counters agree.** Cold path counts profile → free → crew → text alerts. Invited path counts profile → text alerts.
+5. **Delete** orphaned `/onboarding/area` and `/onboarding/interests`.
+6. **Loop stance card** ("Green means free. That's it.") gains a line acknowledging scheduled availability, resolving the tension recorded at 22.0a.
+
+### Onboarding & copy impact
+This entire spec.
+
+### Out of scope
+Teaching calendar sync, albums, friend requests or friends-of-friends in onboarding — each has its own contextual moment.
+
+### Open questions
+None.
+
+### Acceptance criteria
+- [ ] A new user can set their usual week during onboarding; the ritual sheet doesn't ambush their first feed visit.
+- [ ] The reveal shows the real light; both paths name the cow.
+- [ ] No onboarding, Loop or prompt copy contradicts the app.
+- [ ] Step counters agree on both paths.
+- [ ] Orphaned routes are gone.
