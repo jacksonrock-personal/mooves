@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function TermsPage() {
   return (
-    <LegalShell title="Terms of Use" lastUpdated="July 20, 2026">
+    <LegalShell title="Terms of Use" lastUpdated="October 17, 2026">
       <p>
         These Terms of Use (&ldquo;Terms&rdquo;) are a legal agreement between you and{' '}
         <strong>Mooves</strong> (&ldquo;Mooves,&rdquo; &ldquo;we,&rdquo; &ldquo;us,&rdquo; or
@@ -73,6 +73,14 @@ export default function TermsPage() {
         message and data rates may apply. Reply <strong>STOP</strong> to opt out of notification texts or{' '}
         <strong>HELP</strong> for help. See our{' '}
         <a href="/privacy">Privacy Policy</a> for details on how we handle your number.
+      </p>
+      <p>
+        <strong>Text alerts.</strong> If you check the box to turn on text alerts (during sign-up or in
+        Settings), Mooves will send recurring automated texts to your number when a friend makes a Moove
+        you can see, with its name, time and a link to it. Msg frequency varies, up to 5 msgs/day. Msg
+        &amp; data rates may apply. Reply <strong>HELP</strong> for help, <strong>STOP</strong> to cancel.
+        Consent is not a condition of using Mooves, and you can turn text alerts off in Settings at any
+        time.
       </p>
 
       <h2>7. Payments, tips, and sponsored moves</h2>

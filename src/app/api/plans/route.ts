@@ -8,12 +8,13 @@
 // green expiry, 9.5 Part A) because the server does not know their timezone —
 // it only sanity-bounds what it is handed.
 
-import { NextResponse } from 'next/server'
+import { NextResponse, after } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { checkRateLimit, tooManyRequests } from '@/lib/ratelimit'
 import { PLAN_TITLE_MAX, PLAN_LOCATION_MAX, PLAN_NOTE_MAX, type Plan } from '@/lib/plans'
 import { sendPlanPush } from '@/lib/push'
 import { sanitizeVisibleUserIds } from '@/lib/visibility'
+import { enqueuePlanAlerts } from '@/lib/sms'
 
 // A Moove may be scheduled up to a year out; anything past that is a typo or an
 // attempt to park a row in the feed forever.
@@ -174,6 +175,18 @@ export async function POST(req: Request) {
       // best effort
     }
   }
+
+  // R37 — text alerts to opted-in direct friends who can see it. Runs after
+  // the response and can never fail the write; a no-op while
+  // SMS_ALERTS_ENABLED is unset.
+  const planId = data.id
+  after(async () => {
+    try {
+      await enqueuePlanAlerts(planId)
+    } catch (e) {
+      console.error('text alerts enqueue failed:', e)
+    }
+  })
 
   return NextResponse.json({ id: data.id }, { status: 201 })
 }

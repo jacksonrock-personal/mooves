@@ -2,9 +2,19 @@
 // Twilio webhook — fires when someone texts the Mooves toll-free number.
 // Looks up the sender, finds their green friends (respecting group visibility),
 // and returns a TwiML SMS reply. Uses the service role to query across users.
+//
+// R37 — the same number now sends text alerts, so the carrier keywords are
+// answered FIRST, before the feed check ever runs:
+//   STOP · STOPALL · UNSUBSCRIBE · CANCEL · END · QUIT → opt out, empty TwiML
+//     (Twilio sends the carrier's own confirmation; we add nothing)
+//   START · UNSTOP → opt back in, empty TwiML
+//   HELP · INFO    → the help line
+// Matching is on the whole message after trim/uppercase/punctuation-strip, so
+// "Stop." is STOP and "stop texting me tacos" is a feed check.
 
 import { createServiceClient } from '@/lib/supabase/server'
-import { validateTwilioSignature, twimlResponse } from '@/lib/twilio'
+import { validateTwilioSignature, twimlResponse, emptyTwimlResponse } from '@/lib/twilio'
+import { classifyKeyword, SMS_HELP_TEXT, SMS_START_KEYWORD_VERSION } from '@/lib/smsCopy'
 import { captureServerEvent } from '@/lib/posthog-server'
 import { userGroupIds } from '@/lib/groups'
 
@@ -61,6 +71,44 @@ export async function POST(req: Request) {
   }
 
   const supabase = createServiceClient()
+
+  // R37 — carrier keywords first. Answered for anyone, user or not.
+  const keyword = classifyKeyword(params.Body)
+  if (keyword === 'help') return twimlResponse(SMS_HELP_TEXT)
+  if (keyword === 'stop' || keyword === 'start') {
+    const { data: who } = await supabase
+      .from('users')
+      .select('id, sms_consent_version')
+      .eq('phone', from)
+      .maybeSingle()
+    if (who) {
+      const now = new Date().toISOString()
+      const { error } =
+        keyword === 'stop'
+          ? await supabase
+              .from('users')
+              .update({ sms_opted_out_at: now, sms_opted_out_via: 'stop' })
+              .eq('id', who.id)
+          : await supabase
+              .from('users')
+              .update({
+                sms_alerts_opt_in_at: now,
+                // Keep the disclosure they actually agreed to; someone who
+                // never opted in on a screen is on record as joining by keyword.
+                sms_consent_version: who.sms_consent_version ?? SMS_START_KEYWORD_VERSION,
+                sms_opted_out_at: null,
+                sms_opted_out_via: null,
+              })
+              .eq('id', who.id)
+      if (error) console.error(`sms inbound ${keyword} write failed:`, error.message)
+      await captureServerEvent(
+        who.id,
+        keyword === 'stop' ? 'text_alerts_opted_out' : 'text_alerts_opted_in',
+        { source: 'keyword' },
+      )
+    }
+    return emptyTwimlResponse()
+  }
 
   // 1. Look up sender by phone number
   const { data: sender } = await supabase
