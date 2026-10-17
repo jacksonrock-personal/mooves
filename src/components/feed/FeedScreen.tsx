@@ -49,7 +49,7 @@ import CowIllustration from '@/components/ui/CowIllustration'
 import Toast from '@/components/ui/Toast'
 import PastSection from '@/components/album/PastSection'
 import AlbumSheet from '@/components/album/AlbumSheet'
-import type { PastMoove } from '@/lib/photos'
+import { PAST_PREVIEW_COUNT, type PastMoove, type PastPage } from '@/lib/photos'
 
 interface Joiner {
   id: string
@@ -731,9 +731,10 @@ export default function FeedScreen() {
 
   async function refetchPast() {
     try {
-      const res = await fetch('/api/plans/past')
+      // R39 — the feed only shows a preview; the whole history is on /past.
+      const res = await fetch(`/api/plans/past?limit=${PAST_PREVIEW_COUNT}`)
       if (!res.ok) return
-      const data = (await res.json()) as { moves?: PastMoove[] }
+      const data = (await res.json()) as Partial<PastPage>
       if (mountedRef.current) setPastMoves(data.moves ?? [])
     } catch {
       // the section just does not render
