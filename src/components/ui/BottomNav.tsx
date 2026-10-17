@@ -124,7 +124,8 @@ export default function BottomNav({ onPlanTap }: BottomNavProps = {}) {
   const router = useRouter()
 
   function tab({ href, label, Icon }: (typeof LEFT_TABS)[number]) {
-    const active = pathname.startsWith(href)
+    // R39 — /past is reached from the feed and belongs to it.
+    const active = pathname.startsWith(href) || (href === '/feed' && pathname.startsWith('/past'))
     return (
       <Link
         key={href}

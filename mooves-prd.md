@@ -54,7 +54,7 @@
 | — | **R36 — Past Mooves + photo albums (photos only)** — a Past section at the foot of the feed; a private album per Moove for its creator + joiners; photo comments exactly like Moove comments, **amending Phase 21 wall 4 for photos only** | ✅ **Spec 2026-10-16** (see "R36" at EOF) · ✅ **Mockup** `mooves-r36-past-albums.html` (12 states, approved 2026-10-16) · ✅ **Code 2026-10-16** (PR #74; `tsc` + `next build` clean; migration `20261016140000` applied) |
 | — | **R37 — Text alerts** — a text when a direct friend makes a Moove you can see; 8am digest for overnight Mooves; 5/day cap; STOP/START/HELP; Screen 11 moves to the toll-free number; ships dark behind `SMS_ALERTS_ENABLED` until Twilio toll-free verification clears | ✅ **Spec 2026-10-16** (see "R37" at EOF) · ✅ **Mockup** `mooves-r37-text-alerts.html` (10 states, approved 2026-10-17) · ⬜ Code |
 | — | **R38 — Onboarding refresh** — usual week in the first step · real traffic-light tile + the cow taught in the flow · stale Loop + push copy fixed · step counters agree · orphaned `/onboarding/area` + `/interests` deleted · Loop stance card reconciled with 22.0a | ✅ **Spec 2026-10-16** (see "R38" at EOF) · ✅ **Mockup** `mooves-r38-onboarding-refresh.html` (9 states, approved 2026-10-17) · ⬜ Code |
-| — | **R39 — Past Mooves becomes a real page** — the collapsed feed toggle becomes a labelled 2-row preview + "See all"; a dedicated `/past` page, month-grouped, cursor-paged, server-side search by name/place; photos lead. **Amends R36's entry point only** | ✅ **Spec 2026-10-17** (see "R39" at EOF) · ✅ **Mockup** `mooves-r39-past-page.html` (10 states, approved 2026-10-17) · ⬜ Code |
+| — | **R39 — Past Mooves becomes a real page** — the collapsed feed toggle becomes a labelled 2-row preview + "See all"; a dedicated `/past` page, month-grouped, cursor-paged, server-side search by name/place; photos lead. **Amends R36's entry point only** | ✅ **Spec 2026-10-17** (see "R39" at EOF) · ✅ **Mockup** `mooves-r39-past-page.html` (10 states, approved 2026-10-17) · ✅ **Code 2026-10-17** (`feat/r39-past-page`; needs migration `20261017130000_r39_past_mooves`) |
 
 ---
 
@@ -6331,7 +6331,7 @@ None.
 
 ---
 
-## R39 — Past Mooves becomes a real page (Spec) — *2026-10-17* · SPEC ✅ · MOCKUP ✅ (`mooves-r39-past-page.html`) · CODE ⬜
+## R39 — Past Mooves becomes a real page (Spec) — *2026-10-17* · SPEC ✅ · MOCKUP ✅ (`mooves-r39-past-page.html`) · CODE ✅
 
 > **Amends R36's entry point only.** The album, photo viewer, comments, pushes, caps and access rules from R36 are unchanged. What changes is how you *find* a past Moove: the collapsed "PAST ⌄" toggle at the foot of the feed is replaced by a labelled preview on the feed and a dedicated, searchable, paged Past Mooves page.
 
