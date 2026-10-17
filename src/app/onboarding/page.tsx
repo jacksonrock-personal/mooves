@@ -2,11 +2,16 @@
 
 // Screen 3a: Profile Setup
 // Mockup: mooves-screen3-onboarding.html
+// R38: mooves-r38-onboarding-refresh.html (state 5). Step 1 of 4 on the cold
+// path, 1 of 2 on the invited path, and the invited path names the cow here
+// because it never sees the reveal.
 
 import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { posthog } from '@/lib/posthog'
+import CowDisc from '@/components/onboarding/CowDisc'
+import { COLD_STEPS, INVITED_STEPS, StepDots, StepEyebrow } from '@/components/onboarding/StepProgress'
 
 function OnboardingContent() {
   const router = useRouter()
@@ -32,22 +37,22 @@ function OnboardingContent() {
   }
   const invitedFeedUrl = inviteCode ? `/feed?invite=${inviteCode}` : '/feed'
 
-  // The invited path ends at the feed, so onboarding must be marked complete
-  // BEFORE navigating — otherwise the feed reads onboardingComplete=false and
-  // bounces straight back here.
-  async function finishInvited() {
-    try {
-      await fetch('/api/users/me', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ onboardingComplete: true }),
-      })
-    } catch {
-      // Network blip: the feed will route back here and this runs again.
-    }
-    posthog.capture('onboarding_completed', { path: 'invited' })
-    router.push(invitedFeedUrl)
+  // R38 — the invited path is profile → text alerts → feed. The alerts step is
+  // now the true end, so IT marks onboarding complete (awaited, before routing
+  // to the feed), not this page. `path=invited` tells it which counter to
+  // show; the invite code rides along so the feed can complete the friendship.
+  // Group / roundup codes stay in sessionStorage, where the feed reads them.
+  const invitedAlertsUrl = `/onboarding/alerts?path=invited${inviteCode ? `&invite=${inviteCode}` : ''}`
+  function goInvitedAlerts(replace = false) {
+    if (replace) router.replace(invitedAlertsUrl)
+    else router.push(invitedAlertsUrl)
   }
+
+  // Which path this is, for the counter and the cow line. sessionStorage is
+  // client-only, so it is resolved after mount; until then the counter is
+  // held invisible rather than flashing the wrong total.
+  const [invited, setInvited] = useState<boolean | null>(inviteCode ? true : null)
+  const stepCount = invited ? INVITED_STEPS : COLD_STEPS
 
   const [name, setName] = useState('')
   const [photoFile, setPhotoFile] = useState<File | null>(null)
@@ -58,6 +63,8 @@ function OnboardingContent() {
   const [supabaseToken, setSupabaseToken] = useState<string | null>(null)
 
   useEffect(() => {
+    setInvited(arrivedInvited())
+
     // Resume logic: if display_name already set, skip to step 3b
     fetch('/api/users/me')
       .then(r => r.json())
@@ -67,7 +74,7 @@ function OnboardingContent() {
           return
         }
         if (data.displayName) {
-          if (arrivedInvited()) void finishInvited()
+          if (arrivedInvited()) goInvitedAlerts(true)
           else router.replace('/onboarding/free')
         }
       })
@@ -140,17 +147,17 @@ function OnboardingContent() {
       return
     }
 
-    // 24.2 — the invited user's path ends here.
+    // 24.2 — the invited user skips the rehearsal and the crew step.
     //
     // They arrived through a friend or a group link, so they ALREADY have
     // friends and their feed is not empty. Asking them to rehearse a green
     // nobody can see, and then to build a community they have just joined, is
-    // the wasteful version of the best-converting cohort there is. Onboarding
-    // is finished; the feed does the rest.
+    // the wasteful version of the best-converting cohort there is.
     //
+    // R37/R38 — one step remains: text alerts, then the feed.
     // The recruit ask reaches them later, on their own terms (24.3).
     if (arrivedInvited()) {
-      await finishInvited()
+      goInvitedAlerts()
       return
     }
     router.push('/onboarding/free')
@@ -161,16 +168,11 @@ function OnboardingContent() {
 
   return (
     <main className="min-h-screen bg-surface-bg flex flex-col">
-      {/* Step dots — step 1 of 4 */}
-      <div className="flex gap-1.5 justify-center pt-12">
-        <div className="w-2 h-2 rounded-full bg-mooves-purple" />
-        <div className="w-2 h-2 rounded-full bg-[#E8E4F5]" />
-        <div className="w-2 h-2 rounded-full bg-[#E8E4F5]" />
-        <div className="w-2 h-2 rounded-full bg-[#E8E4F5]" />
-      </div>
-
       {/* Body */}
-      <div className="flex-1 flex flex-col items-center px-7 pt-9">
+      <div className="flex-1 flex flex-col items-center px-7 pt-[calc(env(safe-area-inset-top)+3.5rem)]">
+        <div className={invited === null ? 'invisible' : ''}>
+          <StepEyebrow index={1} count={stepCount} />
+        </div>
         <h1 className="font-display font-extrabold text-[26px] text-text-primary tracking-tight leading-[1.15] text-center mb-2 w-full">
           What should we<br />call you?
         </h1>
@@ -248,10 +250,24 @@ function OnboardingContent() {
             {photoError}
           </p>
         )}
+
+        {/* R38 — the invited path never sees the reveal, so the cow is named
+            here, the last thing read before Continue. */}
+        {invited && (
+          <div className="flex items-center justify-center gap-3 mt-6 w-full">
+            <CowDisc size={38} />
+            <p className="font-sans text-[13.5px] font-semibold text-ink-900 leading-snug">
+              Tap the cow to plan a Moove.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* CTA */}
-      <div className="px-7 pb-11">
+      <div className="px-7 pb-11 pt-3.5">
+        <div className={invited === null ? 'invisible' : ''}>
+          <StepDots index={1} count={stepCount} />
+        </div>
         <button
           onClick={() => void handleContinue()}
           disabled={!canContinue}
