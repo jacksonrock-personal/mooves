@@ -52,8 +52,8 @@
 | — | **R26 — a morning on every day** — the week ritual offers **Morning / Day / Evening on all seven days**; the weekday/weekend split is gone | ✅ **Spec 2026-08-04** (see "R26" at EOF) — amends **Phase 22's** slot vocabulary and retires the caveat **R25.2** shipped with (its middle row meant "afternoon" at weekends; both are 12–17 now, so the label "Day" is exactly true every day) · **No mockup** — this changes which cells a shipped grid offers, not how it looks · ⚠ **The overlap forced a second decision:** old `morning` 08–12 and `day` 09–17 share three hours, so `day` **narrows to 12–17** and `afternoon` **folds into it** — that direction because "Morning / Day / Evening" is the vocabulary already on screen. **No user's availability moves by a minute**; the windows are identical, so this is a rename of live data · ✅ **Code 2026-08-04** (`feat/r26-morning-every-day`, off `main` @ `a47c71f`) — `tsc --noEmit` + `next build` clean; **grid verified live at 21 cells** (Morning ×7, Day ×7, Evening ×7, no spacers, past cells disabled) and a **full 21-slot save round-tripped 200/21 stored** — *the old cap of 16 would have rejected a full week outright, which is the defect this round was most likely to ship* — plus a stale-client `afternoon` confirmed to fold to `day` rather than vanish · ⚠ **MIGRATION `20260804190000_r26_morning_every_day.sql` NOT YET APPLIED** — Jackson runs `npm run db:push`; it is a **data** migration (8 `afternoon` rows → `day`, deleting losers first so it stays re-runnable against the unique index), adds no columns and redefines no functions · ⬜ **device test pending** · **`day` had zero rows ever** — its own verdict on a 09–17 weekday slot |
 | — | **R35 — Add a Moove to your calendar** — per-Moove "Add to calendar" (Apple `.ics` / Google template) + one subscribable feed of every Moove you created or joined, with reset | ✅ **Spec 2026-10-16** (see "R35" at EOF) · ✅ **Mockup** `mooves-r35-calendar.html` (10 states, approved 2026-10-16) · ✅ **Code 2026-10-16** (PR #74; `tsc` + `next build` clean; migration `20261016130000` applied) · ⚠ feed subscription testable only on makemooves.app after merge |
 | — | **R36 — Past Mooves + photo albums (photos only)** — a Past section at the foot of the feed; a private album per Moove for its creator + joiners; photo comments exactly like Moove comments, **amending Phase 21 wall 4 for photos only** | ✅ **Spec 2026-10-16** (see "R36" at EOF) · ✅ **Mockup** `mooves-r36-past-albums.html` (12 states, approved 2026-10-16) · ✅ **Code 2026-10-16** (PR #74; `tsc` + `next build` clean; migration `20261016140000` applied) |
-| — | **R37 — Text alerts** — a text when a direct friend makes a Moove you can see; 8am digest for overnight Mooves; 5/day cap; STOP/START/HELP; Screen 11 moves to the toll-free number; ships dark behind `SMS_ALERTS_ENABLED` until Twilio toll-free verification clears | ✅ **Spec 2026-10-16** (see "R37" at EOF) · ⬜ Mockup · ⬜ Code |
-| — | **R38 — Onboarding refresh** — usual week in the first step · real traffic-light tile + the cow taught in the flow · stale Loop + push copy fixed · step counters agree · orphaned `/onboarding/area` + `/interests` deleted · Loop stance card reconciled with 22.0a | ✅ **Spec 2026-10-16** (see "R38" at EOF) · ⬜ Mockup · ⬜ Code |
+| — | **R37 — Text alerts** — a text when a direct friend makes a Moove you can see; 8am digest for overnight Mooves; 5/day cap; STOP/START/HELP; Screen 11 moves to the toll-free number; ships dark behind `SMS_ALERTS_ENABLED` until Twilio toll-free verification clears | ✅ **Spec 2026-10-16** (see "R37" at EOF) · ✅ **Mockup** `mooves-r37-text-alerts.html` (10 states, approved 2026-10-17) · ⬜ Code |
+| — | **R38 — Onboarding refresh** — usual week in the first step · real traffic-light tile + the cow taught in the flow · stale Loop + push copy fixed · step counters agree · orphaned `/onboarding/area` + `/interests` deleted · Loop stance card reconciled with 22.0a | ✅ **Spec 2026-10-16** (see "R38" at EOF) · ✅ **Mockup** `mooves-r38-onboarding-refresh.html` (9 states, approved 2026-10-17) · ⬜ Code |
 
 ---
 
@@ -6225,7 +6225,7 @@ None.
 
 ---
 
-## R37 — Text alerts (Spec) — *2026-10-16* · SPEC ✅ · MOCKUP ⬜ · CODE ⬜
+## R37 — Text alerts (Spec) — *2026-10-16* · SPEC ✅ · MOCKUP ✅ (`mooves-r37-text-alerts.html`) · CODE ⬜
 
 > **Ships dark.** Nothing sends until `SMS_ALERTS_ENABLED=true` is set in Vercel, which happens only after Twilio toll-free verification is approved (submitted 2026-10-16, opt-in proof: `docs/compliance/mooves-sms-optin.png`). The opt-in screens MUST match that proof — reviewers compare them.
 
@@ -6295,7 +6295,7 @@ None.
 
 ---
 
-## R38 — Onboarding refresh (Spec) — *2026-10-16* · SPEC ✅ · MOCKUP ⬜ · CODE ⬜
+## R38 — Onboarding refresh (Spec) — *2026-10-16* · SPEC ✅ · MOCKUP ✅ (`mooves-r38-onboarding-refresh.html`) · CODE ⬜
 
 *From the 2026-10-16 onboarding audit against R15–R36. The group-link arrival bug that audit found shipped separately (PR #75).*
 
@@ -6303,7 +6303,9 @@ None.
 Onboarding teaches the app as it is today, and never goes stale.
 
 ### Changes
-1. **Usual week in the first step.** "When are you free this week?" keeps its chips; beneath them a "Same every week?" row opens the Phase 22 Morning/Day/Evening grid and saves availability. Having set it, the weekly ritual sheet does **not** auto-open on the first feed visit.
+> ⚠ **Amended at mockup (Jackson, 2026-10-17).** The draft's "Same every week?" contradicted Phase 22.0 (a weekly ritual: nothing carries over, no template, no "usually"). **Phase 22 stands.** The row is **"Set the rest of your week?"** and saves **this week's** slots only; the weekly ritual takes it from there. Separately, the reveal shows the traffic light **and** your green ring together, a deliberate one-screen exception to R24's light-or-face rule, because that is the moment the gesture is taught.
+
+1. **This week in the first step.** "When are you free this week?" keeps its chips; beneath them a "Set the rest of your week?" row opens the Phase 22 Morning/Day/Evening grid and saves **this week's** availability. Having set it, the weekly ritual sheet does **not** auto-open on the first feed visit.
 2. **Teach the two gestures.** The reveal shows the **real traffic-light tile** (replacing the "You" avatar) with "Tap your light whenever you're around", plus one line: "Tap the cow to plan a Moove." Both paths get the cow line.
 3. **Fix stale copy.** Mooves Loop "Tap a face to text them, no public feed" (`MoovesLoop.tsx:202`) → tapping a face shows their week, and Mooves + Discover exist. Push opt-in drops "goes free… Only your groups" (`NotificationOptIn.tsx:114`) and says what pushes actually cover.
 4. **Step counters agree.** Cold path counts profile → free → crew → text alerts. Invited path counts profile → text alerts.
