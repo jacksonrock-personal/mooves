@@ -54,6 +54,7 @@
 | — | **R36 — Past Mooves + photo albums (photos only)** — a Past section at the foot of the feed; a private album per Moove for its creator + joiners; photo comments exactly like Moove comments, **amending Phase 21 wall 4 for photos only** | ✅ **Spec 2026-10-16** (see "R36" at EOF) · ✅ **Mockup** `mooves-r36-past-albums.html` (12 states, approved 2026-10-16) · ✅ **Code 2026-10-16** (PR #74; `tsc` + `next build` clean; migration `20261016140000` applied) |
 | — | **R37 — Text alerts** — a text when a direct friend makes a Moove you can see; 8am digest for overnight Mooves; 5/day cap; STOP/START/HELP; Screen 11 moves to the toll-free number; ships dark behind `SMS_ALERTS_ENABLED` until Twilio toll-free verification clears | ✅ **Spec 2026-10-16** (see "R37" at EOF) · ✅ **Mockup** `mooves-r37-text-alerts.html` (10 states, approved 2026-10-17) · ⬜ Code |
 | — | **R38 — Onboarding refresh** — usual week in the first step · real traffic-light tile + the cow taught in the flow · stale Loop + push copy fixed · step counters agree · orphaned `/onboarding/area` + `/interests` deleted · Loop stance card reconciled with 22.0a | ✅ **Spec 2026-10-16** (see "R38" at EOF) · ✅ **Mockup** `mooves-r38-onboarding-refresh.html` (9 states, approved 2026-10-17) · ⬜ Code |
+| — | **R39 — Past Mooves becomes a real page** — the collapsed feed toggle becomes a labelled 2-row preview + "See all"; a dedicated `/past` page, month-grouped, cursor-paged, server-side search by name/place; photos lead. **Amends R36's entry point only** | ✅ **Spec 2026-10-17** (see "R39" at EOF) · ✅ **Mockup** `mooves-r39-past-page.html` (10 states, approved 2026-10-17) · ⬜ Code |
 
 ---
 
@@ -6327,3 +6328,83 @@ None.
 - [ ] No onboarding, Loop or prompt copy contradicts the app.
 - [ ] Step counters agree on both paths.
 - [ ] Orphaned routes are gone.
+
+---
+
+## R39 — Past Mooves becomes a real page (Spec) — *2026-10-17* · SPEC ✅ · MOCKUP ✅ (`mooves-r39-past-page.html`) · CODE ⬜
+
+> **Amends R36's entry point only.** The album, photo viewer, comments, pushes, caps and access rules from R36 are unchanged. What changes is how you *find* a past Moove: the collapsed "PAST ⌄" toggle at the foot of the feed is replaced by a labelled preview on the feed and a dedicated, searchable, paged Past Mooves page.
+
+### Purpose
+One place to find the Mooves you went to and the photos from them — that still works when you've been to 200.
+
+### Why (the defects in R36's entry)
+1. **Unclear what it is.** A bare "PAST" eyebrow + chevron doesn't say what's inside or why you'd open it.
+2. **Unclear what happens.** It expands inline at the very bottom of the feed, pushing everything down.
+3. **Doesn't scale.** Everything up to a hard 60-row cap, no search, no paging; beyond 60, older Mooves are unreachable.
+
+### Entry points
+- **Feed foot preview** (replaces the toggle): a labelled section **"Past Mooves"** with a one-line subhead *"The Mooves you went to, and the photos from them."*, the **2 most recent** past Mooves as rows, then a **"See all past Mooves"** pill. Always expanded; no chevron. **Absent when you have no past Mooves** (R31 no-empty-furniture).
+- **Morning-after push / photo pushes** (R36) still open the album directly; closing returns to wherever you came from.
+- Direct route `/past` (auth-gated like every app route; bottom nav visible, Feed tab active).
+
+### Layout — the Past Mooves page
+- **Header:** back chevron, title "Past Mooves", the same subhead line.
+- **Search field** pinned under the header: placeholder *"Search by name or place"*.
+- **List grouped by month**, newest first, sticky month headers ("October 2026"; current-year months drop the year → "October").
+- **Rows lead with photos (pitch = memories):**
+  - **With photos:** grey date tile · title · when/where line · a **strip of up to 4 thumbnails** at real size (not R36's 30px chips), "+N" on the last if more · who-was-in avatars + line.
+  - **Without photos:** the same compact row as R36 (tile, title, when/where, who was in) plus a quiet **"Add photos"** hint while the 30-day window is open; no hint after.
+- Tap a row → the R36 album sheet opens over the page.
+
+### States
+- **Loading (first page):** skeleton rows (3) with a month header.
+- **Populated:** grouped list as above.
+- **Loading more:** small spinner row at the bottom while the next page loads.
+- **End of list:** muted line *"That's everything since {Month Year of your first Moove}"* — no "you're all caught up" engagement copy.
+- **Searching:** results replace the grouped list; month grouping kept; matches highlighted in title/place; results page the same way.
+- **No results:** *"No past Mooves match "{q}"."* + "Clear search".
+- **Empty (no past Mooves at all, e.g. direct URL):** cow illustration, *"Nothing here yet. Mooves you go to end up here, with their photos."* No CTA.
+- **Error:** inline "Couldn't load your past Mooves" + "Try again" in place of the list (or of the load-more row on later pages).
+- **Non-member (R36):** unchanged — you never see a Moove you didn't author or join.
+
+### User flows
+1. **Browse:** Feed → scroll to "Past Mooves" → "See all past Mooves" → page → scroll; more months load automatically near the bottom.
+2. **Find one:** Page → type in search (debounced ~250ms, ≥2 chars) → results → tap → album.
+3. **Revisit from feed:** tap one of the 2 preview rows → album opens directly over the feed.
+4. **Back out:** album close → page (scroll position + search preserved) → back → feed.
+
+### Data
+- **One paged query** over Mooves you authored OR have a `move_joins` row for (never `plan_id IS NULL`), excluding cancelled, `expires_at <= now`; ordered `start_at DESC, id DESC`; **cursor on (start_at, id)**, not offsets, so new past Mooves arriving don't shift pages. Page size 20. **The 60-row cap is removed.**
+- **Search:** case-insensitive substring on `title` and `location_text` over the same membership set, server-side so it covers the whole history, not just what's loaded.
+- **Per row (as R36):** roster, `photoCount` (a total, never unread), signed thumbnail URLs — thumbnails rise from 3 → **4**.
+- **Feed preview** uses the same query with limit 2 (+ whether more exist), so the feed no longer pulls the whole history.
+- **No new tables, no new writes.** An index may be needed to keep the authored∪joined union fast (decided at build).
+- **Analytics:** retire R36's `past_section_opened`; add `past_preview_shown`, `past_see_all_tapped`, `past_page_viewed`, `past_search_used` (no query text sent), `past_album_opened {source: feed|page}`.
+
+### Decisions (Jackson, 2026-10-17)
+- Own page, linked from the feed via a small preview + "See all" (not People, not Settings, not a nav tab).
+- Leads with photos/memories.
+- **Search only** — no person / has-photos / mine-vs-joined filters.
+- Made by Claude ("you decide"): cursor paging of 20 with auto-load, month grouping, 2-row feed preview, empty/end/no-results copy.
+
+### Onboarding & copy impact
+None — checked onboarding, Loop, landing, prompts. R38 deliberately leaves albums to their own contextual moment (the morning-after push), and nothing in onboarding, the Mooves Loop or the landing page mentions the Past toggle being replaced. The only copy that changes is R36's feed-foot section, replaced here.
+
+> **Folded in 2026-10-17.** Drafted in a separate session as "R37", which collided with R37 Text alerts (already merged); renumbered **R39**, mockup renamed `mooves-r39-past-page.html`. Two em dashes in UI copy were brought to the house rule (commas), matching the mockup, which already had it right.
+
+### Out of scope
+Filters beyond search · a nav tab for Past · a cross-Moove "all photos" grid · unread/new-photo badges anywhere · sort options · showing the expired comment thread · everything R36 already lists as out of scope.
+
+### Open questions
+None.
+
+### Acceptance criteria
+- [ ] The feed's collapsed "PAST" toggle is gone; the feed shows a labelled "Past Mooves" preview (subhead, 2 latest, "See all past Mooves"), absent when there are none.
+- [ ] `/past` lists every authored/joined, non-cancelled past Moove — no 60 cap — grouped by month, newest first.
+- [ ] Paging is cursor-based, 20 per page, auto-loads on scroll, and shows an end-of-list line.
+- [ ] Search matches title or place across the entire history, server-side, with no-results and clear states.
+- [ ] Rows with photos show up to 4 larger thumbnails + "+N"; rows without photos show "Add photos" only while the 30-day window is open.
+- [ ] Album open/close from the page preserves the page's scroll position and search.
+- [ ] Push deep-links to an album still work unchanged.
+- [ ] Non-members never see a row; R36 access rules hold on the new query.
