@@ -47,6 +47,32 @@ export interface PastMoove {
   photoCount: number
 }
 
+// R39 — the Past Mooves page.
+export const PAST_PAGE_SIZE = 20
+/** Search waits for this many characters; one letter matches nearly everything. */
+export const PAST_SEARCH_MIN = 2
+/** How many past Mooves the feed's preview shows above "See all past Mooves". */
+export const PAST_PREVIEW_COUNT = 2
+
+/** One page of GET /api/plans/past. `nextCursor` null means this is the end. */
+export interface PastPage {
+  moves: PastMoove[]
+  nextCursor: string | null
+}
+
+/** Month group label: "October" this year, "December 2025" otherwise. */
+export function pastMonthLabel(startAt: string, now: Date = new Date()): string {
+  const d = new Date(startAt)
+  return d.getFullYear() === now.getFullYear()
+    ? d.toLocaleDateString('en-US', { month: 'long' })
+    : d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+}
+
+/** End-of-list line's date: always with the year, "March 2026". */
+export function pastMonthYear(startAt: string): string {
+  return new Date(startAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+}
+
 export interface AlbumPhoto {
   id: string
   uploaderId: string

@@ -1220,6 +1220,24 @@ export type Database = {
         }[]
       }
       generate_referral_code: { Args: never; Returns: string }
+      past_mooves: {
+        Args: {
+          viewer: string
+          q?: string
+          before_start?: string
+          before_id?: string
+          page_size?: number
+        }
+        Returns: {
+          id: string
+          author_id: string
+          title: string
+          start_at: string
+          has_time: boolean
+          time_mode: string
+          location_text: string | null
+        }[]
+      }
       get_feed: { Args: { viewer: string }; Returns: Json }
       get_friend_week: { Args: { viewer: string; target: string }; Returns: Json }
       get_plans: { Args: { viewer: string }; Returns: Json }
